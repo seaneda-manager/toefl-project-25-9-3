@@ -1,23 +1,32 @@
 // apps/web/lib/supabaseServer.ts
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import 'server-only';
+import { cookies } from 'next/headers';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
-// 이미 생성된 서버용 Supabase 클라이언트를 내보냅니다(함수 호출 X).
-export const supabaseServer = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    cookies: {
-      get(name: string) {
-        return cookies().get(name)?.value;
+export function getSupabaseServer() {
+  const cookieStore = cookies();
+
+  // ⚠️ RSC에서는 cookies().set 호출이 금지 → set/remove는 no-op 처리
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(_name: string, _value: string, _options: CookieOptions) {
+          // no-op in RSC to avoid "Cookies can only be modified..." error
+        },
+        remove(_name: string, _options: CookieOptions) {
+          // no-op in RSC
+        },
       },
-      set(name: string, value: string, options: CookieOptions) {
-        // 토큰 갱신 시 쿠키를 갱신할 수 있도록 설정
-        cookies().set({ name, value, ...options });
-      },
-      remove(name: string, options: CookieOptions) {
-        cookies().set({ name, value: "", ...options, maxAge: 0 });
-      },
-    },
-  }
-);
+    }
+  );
+}
+
+/**
+ * 추후 Server Action / Route Handler에서만 쓰는 변형 (필요해질 때 도입)
+ * 거기서는 cookies().set 허용되므로 set/remove 구현 가능
+ */
