@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [role, setRole] = useState<'student' | 'teacher'>('student');
@@ -32,7 +33,7 @@ export default function LoginPage() {
           </label>
         </div>
 
-        {/* ✅ 무조건 그리드로 강제 (왼쪽: 아이디/비번 수직, 오른쪽: 버튼) */}
+        {/* ✅ 그리드 레이아웃: 좌(아이디/비번), 우(버튼) */}
         <form
           style={{
             display: 'grid',
@@ -79,7 +80,9 @@ export default function LoginPage() {
         {/* 하단 링크 */}
         <div className="mt-6 text-gray-600 flex gap-3 text-sm">
           <a href="#" className="hover:underline">아이디 찾기</a><span>|</span>
-          <a href="#" className="hover:underline">비밀번호 찾기</a><span>|</span>
+          <Link href="/auth/forgot-password" className="hover:underline">
+            비밀번호 재설정
+          </Link><span>|</span>
           <a href="#" className="hover:underline">회원가입</a>
         </div>
       </div>
