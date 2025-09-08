@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 type Stage = "exchanging" | "ready" | "done" | "error";
@@ -13,13 +14,14 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const run = async () => {
       try {
         const url = new URL(location.href);
 
-        // 0) 쿼리 에러(만료 등) → 바로 에러 화면
+        // 0) 쿼리 에러(만료 등)
         const qErr = url.searchParams.get("error");
         const qErrCode = url.searchParams.get("error_code");
         const qErrDesc = url.searchParams.get("error_description");
@@ -34,7 +36,7 @@ export default function UpdatePasswordPage() {
           return;
         }
 
-        // 1) 해시 토큰(implicit) 우선 처리
+        // 1) 해시 토큰(implicit) 우선
         const hash = location.hash.startsWith("#") ? location.hash.slice(1) : location.hash;
         if (hash) {
           const h = new URLSearchParams(hash);
@@ -42,10 +44,7 @@ export default function UpdatePasswordPage() {
           const access_token = h.get("access_token");
           const refresh_token = h.get("refresh_token");
           if (type === "recovery" && access_token && refresh_token) {
-            const { error } = await supabase.auth.setSession({
-              access_token,
-              refresh_token,
-            });
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
             if (error) throw error;
             history.replaceState({}, "", `${location.origin}${location.pathname}`);
             setStage("ready");
@@ -53,15 +52,13 @@ export default function UpdatePasswordPage() {
           }
         }
 
-        // 2) (옵션) PKCE 코드가 왔으면 시도하되, verifier 오류면 안내만
+        // 2) (옵션) PKCE 코드 fallback
         const code = url.searchParams.get("code");
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             if (String(error.message).toLowerCase().includes("verifier")) {
-              setErr(
-                "링크 형식이 맞지 않아 실패했어요. 비밀번호 재설정 링크를 다시 받아 같은 브라우저에서 열어주세요."
-              );
+              setErr("링크 형식 문제로 실패했어요. 재설정 링크를 다시 받아 같은 브라우저에서 열어주세요.");
               setStage("error");
               return;
             }
@@ -72,14 +69,11 @@ export default function UpdatePasswordPage() {
           return;
         }
 
-        // 3) 이미 세션 있으면 통과
+        // 3) 기존 세션 확인
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          setStage("ready");
-          return;
-        }
+        if (session) { setStage("ready"); return; }
 
-        // 4) 여기까지면 세션 없음
+        // 4) 세션 없음
         setErr("세션이 없습니다. 재설정 링크를 다시 받아 같은 브라우저에서 열어주세요.");
         setStage("error");
       } catch (e: any) {
@@ -87,7 +81,6 @@ export default function UpdatePasswordPage() {
         setStage("error");
       }
     };
-
     run();
   }, []);
 
@@ -102,8 +95,10 @@ export default function UpdatePasswordPage() {
       setLoading(true);
       const { error } = await supabase.auth.updateUser({ password: pw });
       if (error) throw error;
+
       setMsg("비밀번호가 변경되었습니다. 로그인해 주세요.");
       setStage("done");
+      router.push("/auth/login?reset=1"); // ✅ 성공 후 로그인 화면 배너 노출
     } catch (e: any) {
       setErr(e?.message ?? "비밀번호 변경 중 오류가 발생했습니다.");
     } finally {
@@ -115,21 +110,15 @@ export default function UpdatePasswordPage() {
     <main className="mx-auto max-w-md px-6 py-12">
       <h1 className="text-2xl font-semibold mb-6">비밀번호 변경</h1>
 
-      {stage === "exchanging" && (
-        <p className="text-sm text-gray-600">링크 검증 중...</p>
-      )}
+      {stage === "exchanging" && <p className="text-sm text-gray-600">링크 검증 중...</p>}
 
       {stage === "error" && (
         <div className="space-y-3">
           {err && <p className="text-red-600 text-sm">{err}</p>}
           <p className="text-sm">
-            <Link href="/auth/forgot-password" className="underline">
-              재설정 링크 다시 받기
-            </Link>
+            <Link href="/auth/forgot-password" className="underline">재설정 링크 다시 받기</Link>
           </p>
-          <p className="text-xs text-gray-500">
-            링크는 일정 시간 안에만 유효하고, 한 번 사용하면 만료됩니다. 반드시 같은 브라우저에서 열어주세요.
-          </p>
+          <p className="text-xs text-gray-500">링크는 일정 시간만 유효하며, 한 번 사용하면 만료됩니다.</p>
         </div>
       )}
 
@@ -179,9 +168,7 @@ export default function UpdatePasswordPage() {
       {stage === "done" && (
         <div className="space-y-4">
           {msg && <p className="text-green-600 text-sm">{msg}</p>}
-          <Link href="/auth/login" className="underline">
-            로그인 화면으로 이동
-          </Link>
+          <Link href="/auth/login" className="underline">로그인 화면으로 이동</Link>
         </div>
       )}
     </main>
