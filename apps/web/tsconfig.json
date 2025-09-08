@@ -1,7 +1,6 @@
 {
-  "extends": "next/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -10,6 +9,7 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
 
     "baseUrl": ".",
     "paths": {
@@ -21,7 +21,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["node"],
     "plugins": [{ "name": "next" }]
   },
   "include": [
