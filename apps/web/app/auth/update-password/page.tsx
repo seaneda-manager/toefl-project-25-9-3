@@ -1,12 +1,13 @@
+// apps/web/app/auth/update-password/page.tsx
 import { redirect } from "next/navigation";
-// ⬇️ 기존 "@/lib/supabase/server" 말고, 실제 파일 이름에 맞춰서!
 import { supabaseServer } from "@/lib/supabaseServer";
 import UpdatePasswordClient from "./UpdatePasswordClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const supabase = supabaseServer();
+  // 함수 호출 X — 이미 생성된 클라이언트 객체를 그대로 사용
+  const supabase = supabaseServer;
 
   const {
     data: { session },
