@@ -1,9 +1,44 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
   const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const router = useRouter();
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setErr('이메일을 올바르게 입력해주세요.');
+      return;
+    }
+    if (!password) {
+      setErr('비밀번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      // TODO: 필요하면 role에 따라 다른 경로로 보내기
+      router.push('/');        // 예: 대시보드 경로로 바꿔도 됨
+      router.refresh();        // 상단 Nav 등 세션 반영
+    } catch (e: any) {
+      setErr(e?.message ?? '로그인 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     // ✅ 화면 전체를 100vh로, 중앙 정렬
@@ -33,7 +68,7 @@ export default function LoginPage() {
           </label>
         </div>
 
-        {/* ✅ 그리드 레이아웃: 좌(아이디/비번), 우(버튼) */}
+        {/* ✅ 그리드: 좌(이메일/비번), 우(버튼) */}
         <form
           style={{
             display: 'grid',
@@ -42,23 +77,27 @@ export default function LoginPage() {
             gap: '12px',
             alignItems: 'stretch',
           }}
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={onSubmit}
         >
-          {/* 아이디 */}
+          {/* 이메일(아이디) */}
           <input
-            name="id"
-            placeholder="아이디"
+            name="email"
+            type="email"
+            placeholder="이메일(아이디)"
             autoComplete="username"
             className="border rounded-lg px-4 py-3 w-full"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
 
-          {/* 로그인 버튼 (2칸 높이) */}
+          {/* 로그인 버튼 (2칸 높이 유지: 디자인 그대로) */}
           <button
             type="submit"
             style={{ gridRow: '1 / span 2', gridColumn: '2', height: '100%' }}
-            className="bg-blue-600 text-white font-semibold rounded-lg px-6 hover:bg-blue-700 active:bg-blue-800 transition"
+            className="bg-blue-600 text-white font-semibold rounded-lg px-6 hover:bg-blue-700 active:bg-blue-800 transition disabled:opacity-50"
+            disabled={loading}
           >
-            로그인
+            {loading ? '로그인 중...' : '로그인'}
           </button>
 
           {/* 비밀번호 */}
@@ -68,8 +107,13 @@ export default function LoginPage() {
             placeholder="비밀번호"
             autoComplete="current-password"
             className="border rounded-lg px-4 py-3 w-full"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </form>
+
+        {/* 에러 메시지 */}
+        {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
 
         {/* 아이디 저장 */}
         <div className="mt-4 flex items-center gap-2">
