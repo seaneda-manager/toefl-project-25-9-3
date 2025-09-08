@@ -30,9 +30,9 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // TODO: 필요하면 role에 따라 다른 경로로 보내기
-      router.push('/');        // 예: 대시보드 경로로 바꿔도 됨
-      router.refresh();        // 상단 Nav 등 세션 반영
+      // TODO: role에 따라 라우팅 분기 가능
+      router.push('/');
+      router.refresh();
     } catch (e: any) {
       setErr(e?.message ?? '로그인 중 오류가 발생했습니다.');
     } finally {
@@ -79,7 +79,7 @@ export default function LoginPage() {
           }}
           onSubmit={onSubmit}
         >
-          {/* 이메일(아이디) */}
+          {/* 이메일 */}
           <input
             name="email"
             type="email"
@@ -90,7 +90,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          {/* 로그인 버튼 (2칸 높이 유지: 디자인 그대로) */}
+          {/* 로그인 버튼 (2칸 높이 유지) */}
           <button
             type="submit"
             style={{ gridRow: '1 / span 2', gridColumn: '2', height: '100%' }}
@@ -115,7 +115,7 @@ export default function LoginPage() {
         {/* 에러 메시지 */}
         {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
 
-        {/* 아이디 저장 */}
+        {/* 아이디 저장 (UI만) */}
         <div className="mt-4 flex items-center gap-2">
           <input id="saveId" type="checkbox" className="accent-blue-600" />
           <label htmlFor="saveId">아이디 저장</label>
