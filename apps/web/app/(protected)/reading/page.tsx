@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type Question = {
   number: number;
@@ -68,30 +68,19 @@ const DEMO_SET: ReadingSet = {
   ],
 };
 
-function lsKeyAns(setId: string) {
-  return `reading_${setId}`;
-}
-function lsKeyTrans(setId: string) {
-  return `reading_trans_${setId}`;
-}
+const lsKeyAns = (setId: string) => `reading_${setId}`;
+const lsKeyTrans = (setId: string) => `reading_trans_${setId}`;
 
-export default function ReadingStudyPage() {
+export default function ReadingPage() {
   const [stage, setStage] = useState<Stage>('hub');
-  const [setData, setSetData] = useState<ReadingSet>(DEMO_SET);
+  const [setData] = useState<ReadingSet>(DEMO_SET);
   const [current, setCurrent] = useState<Question | null>(null);
   const [retryOrder, setRetryOrder] = useState<number[]>([]);
   const [retryIdx, setRetryIdx] = useState(0);
   const [picks, setPicks] = useState<number[]>([]);
   const [showModel, setShowModel] = useState(false);
 
-  // 정/오답 판정
-  const isCorrect = (q: Question, p: number[]) => {
-    const a = [...(q.correct || [])].sort().join(',');
-    const b = [...(p || [])].sort().join(',');
-    return a === b && b !== '';
-  };
-
-  // localStorage helpers
+  // 저장된 답/번역 로드
   const savedAns = useMemo<Record<string, number[]>>(() => {
     try {
       return JSON.parse(localStorage.getItem(lsKeyAns(setData.set_id)) || '{}');
@@ -116,15 +105,22 @@ export default function ReadingStudyPage() {
     localStorage.setItem(lsKeyTrans(setData.set_id), JSON.stringify(m || {}));
   };
 
-  // 허브 타일 클릭: 정답/오답 리스트
+  // ---------- 타입 안전 보강 ----------
+  const isCorrect = (q: Question, p?: number[]) => {
+    const a = [...(q.correct ?? [])].sort().join(',');
+    const b = [...(p ?? [])].sort().join(',');
+    return a === b && b !== '';
+  };
+  const getPick = (num: number) => savedAns[String(num)] ?? [];
+  // -----------------------------------
+
+  // 허브 타일: 정답/오답 리스트
   const listBy = (wantCorrect: boolean) => {
     const qs = [...setData.questions].sort((a, b) => a.number - b.number);
-    const filt = qs.filter((q) => isCorrect(q, savedAns[q.number]));
     if (wantCorrect) {
       setStage('correct');
-      // correct 화면용 state는 별도 필요 없어서 종료
     } else {
-      const wrong = qs.filter((q) => !isCorrect(q, savedAns[q.number]));
+      const wrong = qs.filter((q) => !isCorrect(q, getPick(q.number)));
       setRetryOrder(wrong.map((w) => w.number));
       setStage('wrong');
     }
@@ -133,7 +129,7 @@ export default function ReadingStudyPage() {
   // Retry 시작
   const startRetry = (q: Question, list: Question[]) => {
     setRetryOrder(list.map((x) => x.number));
-    setRetryIdx(list.findIndex((x) => x.number === q.number));
+    setRetryIdx(Math.max(0, list.findIndex((x) => x.number === q.number)));
     setCurrent(q);
     setPicks([]);
     setStage('retry');
@@ -142,13 +138,13 @@ export default function ReadingStudyPage() {
   // Retry 제출
   const submitRetry = () => {
     if (!current) return;
-    const map = { ...savedAns, [current.number]: picks };
+    const key = String(current.number);
+    const map = { ...savedAns, [key]: picks };
     saveAns(map);
-    // 간단 피드백: alert (실사용 땐 토스트/상단 메시지로 교체)
+
     if (isCorrect(current, picks)) alert('Correct ✔');
     else alert('Wrong ✖ — Passage/Evidence 확인해 보세요.');
 
-    // 다음 오답으로 이동
     const nextIdx = Math.min(retryOrder.length - 1, retryIdx + 1);
     setRetryIdx(nextIdx);
     const nextQ = setData.questions.find((x) => x.number === retryOrder[nextIdx]) || null;
@@ -156,11 +152,14 @@ export default function ReadingStudyPage() {
     setPicks([]);
   };
 
-  // Evidence 간단 보기(해당 문장 하이라이트 스크롤은 추후)
+  // Evidence 간단 보기
   const evidenceHtml = (q: Question) => {
     const H = new Set(q.evidence_sent_idx || []);
     return (setData.sentences || [])
-      .map((s, i) => `<div style="padding:4px;border-radius:6px;${H.has(i) ? 'background:#fef3c7' : ''}">${i + 1}. ${s}</div>`)
+      .map(
+        (s, i) =>
+          `<div style="padding:4px;border-radius:6px;${H.has(i) ? 'background:#fef3c7' : ''}">${i + 1}. ${s}</div>`
+      )
       .join('');
   };
 
@@ -194,7 +193,7 @@ export default function ReadingStudyPage() {
           <div className="border rounded-lg divide-y">
             {[...setData.questions]
               .sort((a, b) => a.number - b.number)
-              .filter((q) => isCorrect(q, savedAns[q.number]))
+              .filter((q) => isCorrect(q, getPick(q.number)))
               .map((q) => (
                 <div key={q.number} className="p-3">
                   <div className="text-sm text-gray-600">Q{q.number}</div>
@@ -215,7 +214,7 @@ export default function ReadingStudyPage() {
           <div className="border rounded-lg divide-y">
             {[...setData.questions]
               .sort((a, b) => a.number - b.number)
-              .filter((q) => !isCorrect(q, savedAns[q.number]))
+              .filter((q) => !isCorrect(q, getPick(q.number)))
               .map((q) => (
                 <button
                   key={q.number}
@@ -223,7 +222,9 @@ export default function ReadingStudyPage() {
                   onClick={() =>
                     startRetry(
                       q,
-                      [...setData.questions].sort((a, b) => a.number - b.number).filter((x) => !isCorrect(x, savedAns[x.number])),
+                      [...setData.questions]
+                        .sort((a, b) => a.number - b.number)
+                        .filter((x) => !isCorrect(x, getPick(x.number))),
                     )
                   }
                 >
@@ -240,9 +241,7 @@ export default function ReadingStudyPage() {
         <section className="mt-6">
           <div className="mb-3 flex items-center justify-between">
             <button onClick={() => setStage('wrong')} className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50">Back</button>
-            <div className="text-sm text-gray-500">
-              {retryIdx + 1}/{retryOrder.length}
-            </div>
+            <div className="text-sm text-gray-500">{retryIdx + 1}/{retryOrder.length}</div>
           </div>
 
           <h2 className="font-medium">Retry — Q{current.number}</h2>
@@ -250,7 +249,7 @@ export default function ReadingStudyPage() {
 
           <div className="mt-3 space-y-2">
             {current.choices.map((c, i) => {
-              const multi = current.type === 'multi' || (current.correct || []).length > 1;
+              const multi = (current.type === 'multi') || ((current.correct?.length ?? 0) > 1);
               const checked = picks.includes(i);
               return (
                 <label key={i} className="flex items-center gap-2 border rounded-md p-2">
@@ -273,12 +272,7 @@ export default function ReadingStudyPage() {
           </div>
 
           <div className="mt-3 flex items-center gap-2">
-            <button
-              onClick={submitRetry}
-              className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50"
-            >
-              Submit
-            </button>
+            <button onClick={submitRetry} className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50">Submit</button>
             <details className="ml-2">
               <summary className="cursor-pointer text-sm underline">Passage</summary>
               <div
