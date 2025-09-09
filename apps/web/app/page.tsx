@@ -1,22 +1,28 @@
 ﻿'use client';
+
+import { useRouter } from 'next/navigation';
 import HomeSelector from '@/components/HomeSelector';
-export default function Page(){
+
+export default function Page() {
+  const router = useRouter();
+  const go = (path: string) => router.push(path); // SPA 네비
+
   return (
     <HomeSelector
-      onStart={({section,mode})=>{
-        if(mode==='study'){
-          if(section==='reading') location.href='/reading/study';
-          else if(section==='listening') location.href='/listening/study';
+      onStart={({ section, mode }: { section: string; mode: string }) => {
+        if (mode === 'study') {
+          if (section === 'reading') go('/reading/study');
+          else if (section === 'listening') go('/listening/study');
           else alert('Study UI 준비중');
         } else {
-          if(section==='reading') location.href='/reading/test';
-          else if(section==='listening') location.href='/listening/test';
+          if (section === 'reading') go('/reading/test');
+          else if (section === 'listening') go('/listening/test');
           else alert('Test UI 준비중');
         }
       }}
-      onTeacher={({section})=>{
-        if(section==='reading') location.href='/teacher/reading';
-        else if(section==='listening') location.href='/teacher/listening';
+      onTeacher={({ section }: { section: string }) => {
+        if (section === 'reading') go('/teacher/reading');
+        else if (section === 'listening') go('/teacher/listening');
         else alert('Teacher UI 준비중');
       }}
     />

@@ -1,20 +1,30 @@
-// apps/web/app/(protected)/dashboard/page.tsx
-import Link from 'next/link';
+'use client';
 
-export default async function DashboardPage() {
-  // ...여기 세션 가드 코드가 있다면 그대로 두고
+import { useRouter } from 'next/navigation';
+import HomeSelector from '@/components/HomeSelector';
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const go = (p: string) => router.push(p);
 
   return (
-    <main className="mx-auto max-w-5xl p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p>로그인한 사람만 볼 수 있는 대시보드입니다.</p>
-
-      <Link
-        href="/"
-        className="inline-block rounded-lg border px-4 py-2 hover:bg-gray-50"
-      >
-        ← Home으로 가기
-      </Link>
-    </main>
+    <HomeSelector
+      onStart={({ section, mode }: { section: string; mode: string }) => {
+        if (mode === 'study') {
+          if (section === 'reading') go('/reading/study');
+          else if (section === 'listening') go('/listening/study');
+          else alert('Study UI 준비중');
+        } else {
+          if (section === 'reading') go('/reading/test');
+          else if (section === 'listening') go('/listening/test');
+          else alert('Test UI 준비중');
+        }
+      }}
+      onTeacher={({ section }: { section: string }) => {
+        if (section === 'reading') go('/teacher/reading');
+        else if (section === 'listening') go('/teacher/listening');
+        else alert('Teacher UI 준비중');
+      }}
+    />
   );
 }
