@@ -2,9 +2,8 @@
 import { useMemo, useState } from 'react';
 import PassagePane from '../components/PassagePane';
 import QuestionCard from '../components/QuestionCard';
-import { startReadingSession, submitReadingAnswer } from '@/app/actions/reading';
-import type { Passage } from '@/app/lib/types-reading';
-
+import { startReadingSession, submitReadingAnswer } from '@/actions/reading';
+import type { Passage } from '@/types/types-reading';
 
 export default function StudyRunner({ passage }: { passage: Passage; }) {
 const [sessionId, setSessionId] = useState<string | null>(null);
