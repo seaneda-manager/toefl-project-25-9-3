@@ -1,10 +1,11 @@
 import { getSupabaseServer } from '@/app/lib/supabaseServer';
-import StudyRunner from './StudyRunner';
+import TestRunner from './TestRunner';
 import type { Passage, Question, Choice } from '@/app/lib/types-reading';
 
 
 export default async function Page() {
 const supabase = getSupabaseServer();
+// 임시로 가장 최근 passage 1개 로드 (원하면 쿼리스트링/선택 UI 연결)
 const { data: p } = await supabase.from('reading_passages').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
 if (!p) return <div>Passage가 없습니다.</div>;
 const { data: qs } = await supabase
@@ -30,5 +31,5 @@ choices: (q.choices ?? []).map((c: any) => ({ id: c.id, label: c.label, text: c.
 };
 
 
-return <StudyRunner passage={passage} />;
+return <TestRunner passage={passage} />;
 }
