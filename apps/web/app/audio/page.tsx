@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -45,19 +45,19 @@ export default function Page(){
           ))}
         </ul>
         <div style={{border:'1px solid #e5e7eb',borderRadius:8,padding:8}}>
-          <div style={{fontSize:12,color:'#666'}}>미리듣기</div>
+          <div style={{fontSize:12,color:'#666'}}>誘몃━?ｊ린</div>
           <select onChange={e=>{
             const a = document.getElementById('aud') as HTMLAudioElement;
             a.src = e.target.value || '';
             a.load(); a.play().catch(()=>{});
           }}>
-            <option value="">-- 선택 --</option>
+            <option value="">-- ?좏깮 --</option>
             {items.filter(it=>/\.(mp3|wav|m4a|ogg)$/i.test(it.name)).map((it,i)=>(
               <option key={i} value={urlFor(it.name)}>{it.name}</option>
             ))}
           </select>
           <audio id="aud" controls style={{width:'100%',marginTop:8}} />
-          <div style={{marginTop:8,fontSize:12,color:'#6b7280'}}>※ 업로드는 OWNER/교직원만 허용 (RLS). 권한 없으면 'permission denied'가 표시됩니다.</div>
+          <div style={{marginTop:8,fontSize:12,color:'#6b7280'}}>???낅줈?쒕뒗 OWNER/援먯쭅?먮쭔 ?덉슜 (RLS). 沅뚰븳 ?놁쑝硫?'permission denied'媛 ?쒖떆?⑸땲??</div>
         </div>
       </div>
     </div>

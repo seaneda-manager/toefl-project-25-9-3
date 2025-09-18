@@ -1,4 +1,4 @@
-// apps/web/lib/supabaseClient.ts
+﻿// apps/web/lib/supabaseClient.ts
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
@@ -23,5 +23,5 @@ export function getSupabaseBrowser(): SupabaseClient {
   return _client;
 }
 
-// 너의 import 형태에 맞춘 싱글톤
+// ?깃????대낫?닿린 (?대씪?댁뼵???꾩슜)
 export const supabase = getSupabaseBrowser();

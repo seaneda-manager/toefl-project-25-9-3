@@ -1,4 +1,4 @@
-// apps/web/app/auth/forgot-password/page.tsx
+﻿// apps/web/app/auth/forgot-password/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
     setErr(null);
 
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setErr("이메일을 올바르게 입력해주세요.");
+      setErr("?대찓?쇱쓣 ?щ컮瑜닿쾶 ?낅젰?댁＜?몄슂.");
       return;
     }
 
@@ -25,16 +25,16 @@ export default function ForgotPasswordPage() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
-      // 이메일로 비밀번호 재설정 링크 발송
+      // ?대찓?쇰줈 鍮꾨?踰덊샇 ?ъ꽕??留곹겕 諛쒖넚
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${origin}/auth/update-password`,
       });
       if (error) throw error;
 
-      setMsg("재설정 링크를 이메일로 보냈어요. 메일함을 확인해주세요!");
+      setMsg("?ъ꽕??留곹겕瑜??대찓?쇰줈 蹂대깉?댁슂. 硫붿씪?⑥쓣 ?뺤씤?댁＜?몄슂!");
       setEmail("");
     } catch (e: any) {
-      setErr(e?.message ?? "메일 발송 중 오류가 발생했습니다.");
+      setErr(e?.message ?? "硫붿씪 諛쒖넚 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.");
     } finally {
       setLoading(false);
     }
@@ -42,13 +42,12 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">비밀번호 재설정</h1>
+      <h1 className="text-2xl font-semibold mb-6">鍮꾨?踰덊샇 ?ъ꽕??/h1>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm mb-1">
-            이메일
-          </label>
+            ?대찓??          </label>
           <input
             id="email"
             type="email"
@@ -66,7 +65,7 @@ export default function ForgotPasswordPage() {
           disabled={loading}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
         >
-          {loading ? "전송 중..." : "재설정 링크 보내기"}
+          {loading ? "?꾩넚 以?.." : "?ъ꽕??留곹겕 蹂대궡湲?}
         </button>
 
         {msg && <p className="text-green-600 text-sm">{msg}</p>}

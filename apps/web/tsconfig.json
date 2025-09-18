@@ -15,11 +15,23 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@/types/*": ["./app/types/*"]
+      "@/app/*": ["./app/*"],
+      "@/types/*": ["./app/types/*"],
+      "@/actions/*": ["./actions/*", "./app/actions/*"],
+      "@/components/*": ["./components/*", "./app/components/*"],
+      "@/lib/*": ["./lib/*", "./app/lib/*"],
+      "@/hooks/*": ["./hooks/*", "./app/hooks/*", "./app/(protected)/_hooks/*"]
     },
-    "types": ["node"]
+    "types": ["node"],
+    "incremental": true,
+    "forceConsistentCasingInFileNames": true,
+    "plugins": [{ "name": "next" }]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"],
-  "plugins": [{ "name": "next" }]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }

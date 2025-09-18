@@ -1,97 +1,47 @@
-'use client';
+﻿'use client'
+import { useEffect, useMemo, useState } from 'react'
+import { startListeningSession, submitListeningAnswer, finishListeningSession } from '@/actions/listening'
+import type { ListeningTrack as ListeningTrackSample, ListeningQuestion } from '@/types/types-listening'
+import { SAMPLE_TRACK } from '../_sample'
 
-import { useEffect, useMemo, useState } from 'react';
-import AudioPlayer from '../components/AudioPlayer';
-import LTimer from '../components/LTimer';
-import { startListeningSession, submitListeningAnswer } from '@/actions/listening';
-import type { ListeningTrack, LQuestion } from '@/types/types-listening';
-
-export default function ListeningStudyRunner({ track }: { track: ListeningTrack }) {
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | null>>({});
-  const total = track.questions.length;
-  const q: LQuestion | undefined = total > 0 ? track.questions[current] : undefined;
+export default function ListeningStudyRunner({ trackId }: { trackId?: string }) {
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const track: ListeningTrackSample = useMemo(() => SAMPLE_TRACK, [])
 
   useEffect(() => {
     (async () => {
-      const { sessionId } = await startListeningSession({ trackId: track.id, mode: 'study' });
-      setSessionId(sessionId);
-    })();
-  }, [track.id]);
+      const { sessionId } = await startListeningSession(trackId ?? track.id)
+      setSessionId(sessionId)
+    })()
+  }, [trackId, track.id])
 
-  const clamp = (i: number) => Math.min(Math.max(0, i), Math.max(0, total - 1));
-
-  async function pick(choiceId: string) {
-    if (!q) return;
-    setAnswers((s) => ({ ...s, [q.id]: choiceId }));
-    if (!sessionId) return;
-    await submitListeningAnswer({ sessionId, questionId: q.id, choiceId });
+  async function onAnswer(q: ListeningQuestion, choiceId: string) {
+    if (!sessionId) return
+    await submitListeningAnswer(sessionId, q.id, choiceId)
   }
 
-  const answeredByIndex = useMemo(() => {
-    const map: Record<number, boolean> = {};
-    track.questions.forEach((qq, i) => { map[i] = answers[qq.id] != null; });
-    return map;
-  }, [track.questions, answers]);
-
-  if (total === 0) return <div className="p-6 text-center text-gray-600">문항이 없습니다.</div>;
+  async function onFinish() {
+    if (!sessionId) return
+    await finishListeningSession(sessionId)
+    setSessionId(null)
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{track.title} (Study)</h2>
-          <LTimer seconds={track.timeLimitSec ?? 600} />
-        </div>
-        <AudioPlayer src={track.audioUrl} />
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: total }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(clamp(i))}
-              className={[
-                'w-9 h-9 rounded border text-sm',
-                i === current ? 'bg-black text-white border-black' : 'bg-white',
-                answeredByIndex[i] ? 'border-green-500' : 'border-gray-300',
-              ].join(' ')}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">{current + 1} / {total}</div>
-          <div className="space-x-2">
-            <button className="px-3 py-2 rounded border" onClick={() => setCurrent(clamp(current - 1))} disabled={current<=0}>&larr; Prev</button>
-            <button className="px-3 py-2 rounded border" onClick={() => setCurrent(clamp(current + 1))} disabled={current>=total-1}>Next &rarr;</button>
+    <div className="space-y-4">
+      <div>Track: {track.id}</div>
+      {track.questions.map((q) => (
+        <div key={q.id} className="border rounded-xl p-3">
+          <div className="font-medium mb-2">{q.prompt}</div>
+          <div className="grid grid-cols-2 gap-2">
+            {q.choices.map((c) => (
+              <button key={c.id} className="border rounded-md px-3 py-2" onClick={() => onAnswer(q, c.id)}>
+                {c.text}
+              </button>
+            ))}
           </div>
         </div>
-
-        {q ? (
-          <div className="rounded border p-4 space-y-3">
-            <div className="font-medium">{q.prompt}</div>
-            <div className="space-y-2">
-              {q.choices.map((c) => (
-                <label key={c.id} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name={`q-${q.id}`}
-                    checked={answers[q.id] === c.id}
-                    onChange={() => pick(c.id)}
-                  />
-                  <span><span className="font-mono">{c.label}.</span> {c.text}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 rounded bg-amber-50 text-amber-800">현재 인덱스 문항이 없습니다.</div>
-        )}
-      </div>
+      ))}
+      <button className="border rounded-xl px-4 py-2" onClick={onFinish}>Finish</button>
     </div>
-  );
+  )
 }

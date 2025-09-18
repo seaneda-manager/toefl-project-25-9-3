@@ -1,6 +1,6 @@
-'use server';
+﻿'use server';
 
-// TODO: 나중에 DB/Supabase 연결
+// TODO: ?섏쨷??DB/Supabase ?곌껐
 export async function startListeningSession(args: { trackId: string; mode: 'study'|'test' }) {
   return { sessionId: crypto.randomUUID() };
 }

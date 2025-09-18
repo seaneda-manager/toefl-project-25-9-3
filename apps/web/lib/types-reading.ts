@@ -1,4 +1,4 @@
-export type Choice = {
+﻿export type Choice = {
   id: string;
   label: string;
   text: string;

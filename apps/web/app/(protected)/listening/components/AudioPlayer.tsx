@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 type Props = { src: string };
 
@@ -9,7 +9,7 @@ export default function AudioPlayer({ src }: Props) {
         <source src={src} />
         Your browser does not support the audio element.
       </audio>
-      <p className="mt-2 text-xs text-gray-500">오디오가 없으면 무시하고 진행해도 됩니다(샘플 경로).</p>
+      <p className="mt-2 text-xs text-gray-500">?ㅻ뵒?ㅺ? ?놁쑝硫?臾댁떆?섍퀬 吏꾪뻾?대룄 ?⑸땲???섑뵆 寃쎈줈).</p>
     </div>
   );
 }

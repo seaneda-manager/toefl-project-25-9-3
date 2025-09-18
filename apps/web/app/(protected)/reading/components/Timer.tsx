@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useRef, useState } from 'react';
 
 export default function Timer({ seconds, onExpire }: { seconds: number; onExpire?: () => void }) {
@@ -24,5 +24,5 @@ export default function Timer({ seconds, onExpire }: { seconds: number; onExpire
   const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
   const ss = String(remaining % 60).padStart(2, '0');
 
-  return <div className="text-sm font-mono">⏱ {mm}:{ss}</div>;
+  return <div className="text-sm font-mono">??{mm}:{ss}</div>;
 }

@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/reading/components/ReviewRow.tsx
+﻿// apps/web/app/(protected)/reading/components/ReviewRow.tsx
 'use client';
 
 import type { Question, Choice } from '../../../types/types-reading';
@@ -22,15 +22,15 @@ export default function ReviewRow({ q, picked }: { q: Question; picked: string |
         {q.choices.map((c: Choice) => (
           <li key={c.id} className={c.is_correct ? 'font-semibold' : ''}>
             {c.label}. {c.text}
-            {picked === c.id && '  ← you'}
-            {c.is_correct && '  ← correct'}
+            {picked === c.id && '  ??you'}
+            {c.is_correct && '  ??correct'}
           </li>
         ))}
       </ul>
 
       {q.clue_quote && (
         <details className="mt-3">
-          <summary className="cursor-pointer text-sm text-gray-500">근거문장</summary>
+          <summary className="cursor-pointer text-sm text-gray-500">洹쇨굅臾몄옣</summary>
           <blockquote className="mt-2 p-3 bg-white/5 rounded-xl whitespace-pre-wrap">
             {q.clue_quote}
           </blockquote>
@@ -39,7 +39,7 @@ export default function ReviewRow({ q, picked }: { q: Question; picked: string |
 
       {q.explanation && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-sm text-gray-500">해설</summary>
+          <summary className="cursor-pointer text-sm text-gray-500">?댁꽕</summary>
           <div className="mt-2 text-sm whitespace-pre-wrap">{q.explanation}</div>
         </details>
       )}

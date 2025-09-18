@@ -1,4 +1,4 @@
-export default function ListeningIndex() {
+﻿export default function ListeningIndex() {
   return (
     <div className="p-6 space-y-3">
       <h1 className="text-xl font-semibold">Listening</h1>

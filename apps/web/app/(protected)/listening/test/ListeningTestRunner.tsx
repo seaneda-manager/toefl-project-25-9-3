@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import AudioPlayer from '../components/AudioPlayer';
@@ -32,7 +32,7 @@ export default function ListeningTestRunner({ track, onFinish }: { track: Listen
   function guardedGo(to: number) {
     if (!q) return;
     if (!answers[q.id] && to !== current) {
-      const ok = window.confirm('현재 문항이 미응답입니다. 이동하시겠습니까?');
+      const ok = window.confirm('?꾩옱 臾명빆??誘몄쓳?듭엯?덈떎. ?대룞?섏떆寃좎뒿?덇퉴?');
       if (!ok) return;
     }
     setCurrent(clamp(to));
@@ -41,7 +41,7 @@ export default function ListeningTestRunner({ track, onFinish }: { track: Listen
   async function finish() {
     const unanswered = track.questions.filter((qq) => !answers[qq.id]).length;
     if (unanswered > 0) {
-      const ok = window.confirm(`${unanswered}문항이 미응답입니다. 제출하시겠습니까?`);
+      const ok = window.confirm(`${unanswered}臾명빆??誘몄쓳?듭엯?덈떎. ?쒖텧?섏떆寃좎뒿?덇퉴?`);
       if (!ok) return;
     }
     if (!sessionId) return;
@@ -55,7 +55,7 @@ export default function ListeningTestRunner({ track, onFinish }: { track: Listen
     return map;
   }, [track.questions, answers]);
 
-  if (total === 0) return <div className="p-6 text-center text-gray-600">문항이 없습니다.</div>;
+  if (total === 0) return <div className="p-6 text-center text-gray-600">臾명빆???놁뒿?덈떎.</div>;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -84,7 +84,7 @@ export default function ListeningTestRunner({ track, onFinish }: { track: Listen
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">{current + 1} / {total} {answers[q?.id ?? ''] ? '' : '· 미응답'}</div>
+          <div className="text-sm text-gray-500">{current + 1} / {total} {answers[q?.id ?? ''] ? '' : '쨌 誘몄쓳??}</div>
           <div className="space-x-2">
             <button className="px-3 py-2 rounded border" onClick={() => guardedGo(current - 1)} disabled={current<=0}>&larr; Prev</button>
             {current < total - 1 ? (
@@ -113,7 +113,7 @@ export default function ListeningTestRunner({ track, onFinish }: { track: Listen
             </div>
           </div>
         ) : (
-          <div className="p-4 rounded bg-amber-50 text-amber-800">현재 인덱스 문항이 없습니다.</div>
+          <div className="p-4 rounded bg-amber-50 text-amber-800">?꾩옱 ?몃뜳??臾명빆???놁뒿?덈떎.</div>
         )}
       </div>
     </div>

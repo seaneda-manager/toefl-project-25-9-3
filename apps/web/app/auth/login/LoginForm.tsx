@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useTransition } from 'react';
 import { signInEmailPassword } from '@/app/actions/auth';
@@ -17,16 +17,16 @@ export default function LoginForm() {
         startTransition(() => {
           signInEmailPassword(formData)
             .then((err) => setError(err ?? null))
-            .catch((e) => setError(e?.message ?? '로그인 중 오류가 발생했습니다.'));
+            .catch((e) => setError(e?.message ?? '濡쒓렇??以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.'));
         });
       }}
     >
-      <h1 className="text-2xl font-bold text-center">로그인</h1>
+      <h1 className="text-2xl font-bold text-center">濡쒓렇??/h1>
 
       <input
         type="email"
         name="email"
-        placeholder="이메일"
+        placeholder="?대찓??
         required
         className="w-full border p-2 rounded"
       />
@@ -34,7 +34,7 @@ export default function LoginForm() {
       <input
         type="password"
         name="password"
-        placeholder="비밀번호"
+        placeholder="鍮꾨?踰덊샇"
         required
         className="w-full border p-2 rounded"
       />
@@ -44,7 +44,7 @@ export default function LoginForm() {
         disabled={isPending}
         className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
       >
-        {isPending ? '로그인 중…' : '로그인'}
+        {isPending ? '濡쒓렇??以묅? : '濡쒓렇??}
       </button>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}

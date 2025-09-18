@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -13,12 +13,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       const { data } = await supabase.auth.getSession();
       if (data.session) { if(mounted) setReady(true); }
       else {
-        // 세션 생길 때까지 구독; 없으면 로그인으로 보냄
+        // ?몄뀡 ?앷만 ?뚭퉴吏 援щ룆; ?놁쑝硫?濡쒓렇?몄쑝濡?蹂대깂
         const { data: sub } = supabase.auth.onAuthStateChange((_e, session)=>{
           if (session && mounted) setReady(true);
         });
-        // 바로 로그인 페이지로
-        router.replace(`/auth/login?next=${encodeURIComponent(path)}`);
+        // 諛붾줈 濡쒓렇???섏씠吏濡?        router.replace(`/auth/login?next=${encodeURIComponent(path)}`);
         return () => { sub.subscription.unsubscribe(); };
       }
     })();

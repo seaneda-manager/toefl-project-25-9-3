@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../../lib/supabaseClient' // ← 경로 확정
+import { supabase } from '../../../lib/supabaseClient' // ??寃쎈줈 ?뺤젙
 
 /**
- * 보호 구역에서 사용: 세션 없으면 /auth/login 으로 보냄
- * 사용법:
+ * 蹂댄샇 援ъ뿭?먯꽌 ?ъ슜: ?몄뀡 ?놁쑝硫?/auth/login ?쇰줈 蹂대깂
+ * ?ъ슜踰?
  *   const { loading, session, user } = useRequireAuth()
  */
 export function useRequireAuth(redirect = '/auth/login') {

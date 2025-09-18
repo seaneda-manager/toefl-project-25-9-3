@@ -1,6 +1,6 @@
-import ListeningStudyRunner from './ListeningStudyRunner';
-import { sampleTrack } from '../_sample';
+﻿import ListeningStudyRunner from './ListeningStudyRunner'
+import { SAMPLE_TRACK } from '../_sample'
 
 export default function Page() {
-  return <ListeningStudyRunner track={sampleTrack} />;
+  return <ListeningStudyRunner trackId={SAMPLE_TRACK.id} />
 }

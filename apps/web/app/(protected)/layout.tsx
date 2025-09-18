@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/layout.tsx
+﻿// apps/web/app/(protected)/layout.tsx
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';

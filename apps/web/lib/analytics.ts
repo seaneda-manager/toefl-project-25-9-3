@@ -1,12 +1,12 @@
-// apps/web/lib/analytics.ts
+﻿// apps/web/lib/analytics.ts
 import mixpanel from 'mixpanel-browser';
 
-// 환경 변수 기반으로 analytics 켜고 끄기
+// ?섍꼍 蹂??湲곕컲?쇰줈 analytics 耳쒓퀬 ?꾧린
 export const isAnalyticsEnabled =
   process.env.NODE_ENV === 'production' &&
   process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
 
-// 초기화 (프로덕션 + ENABLE_ANALYTICS=true 일 때만 실행)
+// 珥덇린??(?꾨줈?뺤뀡 + ENABLE_ANALYTICS=true ???뚮쭔 ?ㅽ뻾)
 export function initAnalytics() {
   if (isAnalyticsEnabled) {
     mixpanel.init(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN ?? '', {
@@ -16,21 +16,21 @@ export function initAnalytics() {
   }
 }
 
-// 이벤트 트래킹 함수
+// ?대깽???몃옒???⑥닔
 export function track(event: string, props?: Record<string, any>) {
   if (isAnalyticsEnabled) {
     mixpanel.track(event, props);
   }
 }
 
-// 사용자 ID 설정
+// ?ъ슜??ID ?ㅼ젙
 export function identify(userId: string) {
   if (isAnalyticsEnabled) {
     mixpanel.identify(userId);
   }
 }
 
-// 사용자 속성 등록
+// ?ъ슜???띿꽦 ?깅줉
 export function setUserProperties(props: Record<string, any>) {
   if (isAnalyticsEnabled) {
     mixpanel.people.set(props);

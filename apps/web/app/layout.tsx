@@ -1,6 +1,6 @@
-// apps/web/app/layout.tsx
+﻿// apps/web/app/layout.tsx
 import type { Metadata } from 'next';
-import './globals.css'; // 있으면 유지
+import './globals.css'; // ?덉쑝硫??좎?
 import SiteHeader from '@/components/SiteHeader';
 
 export const metadata: Metadata = {

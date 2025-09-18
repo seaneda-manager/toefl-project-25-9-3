@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../lib/supabaseClient' // ← 경로 확정
+import { supabase } from '../lib/supabaseClient' // ??寃쎈줈 ?뺤젙
 
 type Props = {
   children: ReactNode
@@ -46,8 +46,7 @@ export default function AuthGate({ children, redirect = '/auth/login' }: Props) 
   if (!ready) {
     return (
       <div className="p-6 text-sm text-gray-500">
-        Checking session…
-      </div>
+        Checking session??      </div>
     )
   }
 

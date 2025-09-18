@@ -12,7 +12,7 @@ import {
   startReadingSession,
   submitReadingAnswer,
   finishReadingSession,
-} from '@/actions/reading'; // 별칭 OK (tsconfig paths: "@/*": ["app/*"])
+} from '@/actions/reading';
 import type { Passage, Question } from '@/types/types-reading';
 
 const TEST_SECONDS = 18 * 60; // 기본 18분
@@ -20,9 +20,12 @@ const TEST_SECONDS = 18 * 60; // 기본 18분
 export default function TestRunner({ passage }: { passage: Passage }) {
   const router = useRouter();
 
-  // 문항 정렬 후 최대 10개 사용
+  // 문항 정렬 후 상위 10개만 사용
   const questions = useMemo(
-    () => [...passage.questions].sort((a, b) => a.number - b.number).slice(0, 10),
+    () =>
+      [...(passage.questions ?? [])]
+        .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
+        .slice(0, 10),
     [passage.questions]
   );
   const total = questions.length;
@@ -36,36 +39,40 @@ export default function TestRunner({ passage }: { passage: Passage }) {
   // 세션 시작
   useEffect(() => {
     (async () => {
-      const { sessionId } = await startReadingSession({ passageId: passage.id, mode: 'test' });
+      const { sessionId } = await startReadingSession({
+        passageId: passage.id,
+        mode: 'test',
+      });
       setSessionId(sessionId);
     })();
   }, [passage.id]);
 
-  // 총 문항 수 변동 시 인덱스 보정
+  // 총 문항 수 변경 시 현재 인덱스 보정
   useEffect(() => {
     setCurrent((c) => clamp(c));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
 
-  // 현재 문항 (undefined 가드)
+  // 현재 문항 (없을 수도 있음)
   const q: Question | undefined = total > 0 ? questions[current] : undefined;
 
-  // 답 선택
+  // 선지 선택
   async function pick(choiceId: string) {
     if (!q) return;
     setAnswers((s) => ({ ...s, [q.id]: choiceId })); // UI 먼저 반영
     if (!sessionId) return;
-    await submitReadingAnswer({ sessionId, questionId: q.id, choiceId, elapsedMs: 0 });
+    // ✅ positional 인자로 호출 (sessionId, questionId, choiceId)
+    await submitReadingAnswer(sessionId, q.id, choiceId);
   }
 
   // 종료
   async function finish() {
     if (!sessionId) return;
-    await finishReadingSession({ sessionId });
+    // ✅ positional 인자로 호출 (sessionId)
+    await finishReadingSession(sessionId);
     router.push(`/reading/review/${sessionId}`);
   }
 
-  // 네비 상태: 인덱스 기반 응답 여부
+  // 인덱스별 응답 여부
   const answeredByIndex = useMemo(() => {
     const map: Record<number, boolean> = {};
     questions.forEach((qq, idx) => {
@@ -80,27 +87,28 @@ export default function TestRunner({ passage }: { passage: Passage }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* 왼쪽: 지문 + 네비 + 타이머 */}
+      {/* 좌측: 타이머 + 지문 + 내비게이션 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold">Test Mode ({total})</div>
           <Timer seconds={TEST_SECONDS} onExpire={finish} />
         </div>
 
-        <PassagePane title={passage.title} content={passage.content} />
+        {/* ✅ string 보장 */}
+        <PassagePane title={passage.title ?? ''} content={passage.content ?? ''} />
 
         <QuestionNav
           total={total}
           current={current}
           onPrev={() => setCurrent((c) => clamp(c - 1))}
           onNext={() => setCurrent((c) => clamp(c + 1))}
-          onJump={(i) => setCurrent(clamp(i))}
+          onJump={(i: number) => setCurrent(clamp(i))} 
           answered={answeredByIndex}
-          // labels={questions.map((qq, i) => qq.number ?? i + 1)} // 실제 번호 표기 원하면 주석 해제
+          // labels={questions.map((qq, i) => qq.number ?? i + 1)}
         />
       </div>
 
-      {/* 오른쪽: 문제 카드 + 이동/완료 */}
+      {/* 우측: 현재 문항 카드 + 이동/종료 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-500">
@@ -135,6 +143,7 @@ export default function TestRunner({ passage }: { passage: Passage }) {
 
         {q ? (
           <QuestionCard
+            key={q.id}
             q={q}
             disabled={false}
             selected={answers[q.id] ?? null}

@@ -1,4 +1,4 @@
-// apps/web/app/auth/callback/page.tsx
+﻿// apps/web/app/auth/callback/page.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -22,9 +22,9 @@ export default function AuthCallbackPage() {
     (async () => {
       try {
         if (hasCode) {
-          // ✅ 여기서 code를 넘겨줘야 함
+          // ???ш린??code瑜??섍꺼以섏빞 ??
           await supabase.auth.exchangeCodeForSession(code!);
-          router.replace('/'); // 원하는 경로
+          router.replace('/'); // ?먰븯??寃쎈줈
           return;
         }
 
@@ -43,5 +43,5 @@ export default function AuthCallbackPage() {
     })();
   }, [router]);
 
-  return <p className="p-4 text-center">Signing you in…</p>;
+  return <p className="p-4 text-center">Signing you in??/p>;
 }

@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+﻿import { redirect } from 'next/navigation';
 import { createSupabaseServer } from '@/lib/supabaseServer';
 
 export default async function StudentLayout({

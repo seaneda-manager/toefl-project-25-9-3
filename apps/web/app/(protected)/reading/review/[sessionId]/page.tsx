@@ -1,4 +1,4 @@
-import { getSupabaseServer } from '@/app/lib/supabaseServer';
+﻿import { getSupabaseServer } from '@/lib/supabaseServer';
 import ReviewRow from '../../components/ReviewRow';
 
 
@@ -12,7 +12,7 @@ const { data: session } = await supabase
 .select('id, passage_id, mode, started_at, finished_at')
 .eq('id', sessionId)
 .maybeSingle();
-if (!session) return <div>세션을 찾을 수 없습니다.</div>;
+if (!session) return <div>?몄뀡??李얠쓣 ???놁뒿?덈떎.</div>;
 
 
 const { data: passage } = await supabase
@@ -33,8 +33,8 @@ return (
 <div className="space-y-6">
 <header className="flex items-center justify-between">
 <div>
-<h1 className="text-xl font-semibold">Review — {passage?.title}</h1>
-<div className="text-sm text-gray-500">mode: {session.mode} · started: {new Date(session.started_at).toLocaleString()} {session.finished_at ? `· finished: ${new Date(session.finished_at).toLocaleString()}` : ''}</div>
+<h1 className="text-xl font-semibold">Review ??{passage?.title}</h1>
+<div className="text-sm text-gray-500">mode: {session.mode} 쨌 started: {new Date(session.started_at).toLocaleString()} {session.finished_at ? `쨌 finished: ${new Date(session.finished_at).toLocaleString()}` : ''}</div>
 </div>
 </header>
 

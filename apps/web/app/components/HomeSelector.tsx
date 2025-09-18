@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 
@@ -26,7 +26,7 @@ export default function HomeSelector() {
       </div>
 
       <p className="text-sm text-gray-500">
-        상단 메뉴가 준비되기 전까지 임시 홈 선택 화면입니다.
+        ?곷떒 硫붾돱媛 以鍮꾨릺湲??꾧퉴吏 ?꾩떆 ???좏깮 ?붾㈃?낅땲??
       </p>
     </div>
   );

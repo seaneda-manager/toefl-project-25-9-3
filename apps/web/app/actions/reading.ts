@@ -1,14 +1,14 @@
-'use server';
+﻿'use server';
 
 
-import { getSupabaseServer } from '@/app/lib/supabaseServer';
+import { getSupabaseServer } from '@/lib/supabaseServer';
 import { revalidatePath } from 'next/cache';
 
 
 export async function startReadingSession({ passageId, mode }: { passageId: string; mode: 'test' | 'study'; }) {
 const supabase = getSupabaseServer();
 const { data: { user } } = await supabase.auth.getUser();
-if (!user) throw new Error('로그인이 필요합니다.');
+if (!user) throw new Error('濡쒓렇?몄씠 ?꾩슂?⑸땲??');
 
 
 const { data, error } = await supabase

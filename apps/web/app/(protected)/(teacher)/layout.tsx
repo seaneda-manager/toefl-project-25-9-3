@@ -1,4 +1,4 @@
-// (teacher) 그룹: 로그인 + teacher 역할 가드
+﻿// (teacher) 洹몃９: 濡쒓렇??+ teacher ??븷 媛??
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSupabaseServer } from "@/lib/supabaseServer";
@@ -14,7 +14,7 @@ export default async function TeacherLayout({ children }: { children: ReactNode 
 
   const role = (user.app_metadata?.role ?? user.user_metadata?.role) as string | undefined;
   if (role !== "teacher") {
-    // 선생님 전용 영역 → 학생이면 대시보드로
+    // ?좎깮???꾩슜 ?곸뿭 ???숈깮?대㈃ ??쒕낫?쒕줈
     redirect("/dashboard");
   }
 

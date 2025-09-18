@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient'; // 경로 맞게 조정
+import { supabase } from '@/lib/supabaseClient';
 
 type Stage = 'checking' | 'ready' | 'updating' | 'done' | 'error';
 
@@ -31,33 +31,30 @@ export default function ResetFinishPage() {
         const hashObj = parseHashParams(hash);
         const qs = new URLSearchParams(search);
 
-        // 1) 해시 토큰(#access_token …) 케이스
+        // 1) #access_token / #refresh_token / type=recovery
         const access_token = hashObj['access_token'];
         const refresh_token = hashObj['refresh_token'];
         const hashType = hashObj['type'];
-
         if (access_token && refresh_token && hashType === 'recovery') {
           const { error } = await supabase.auth.setSession({ access_token, refresh_token });
           if (error) throw error;
-          // URL 정리
           try { history.replaceState(null, '', loc!.pathname); } catch {}
           if (!cancelled) setStage('ready');
           return;
         }
 
-        // 2) 쿼리 파라미터 ?token_hash=…&type=recovery 케이스
+        // 2) ?token_hash=...&type=recovery
         const token_hash = qs.get('token_hash');
         const qsType = qs.get('type');
         if (token_hash && qsType === 'recovery') {
           const { error } = await supabase.auth.verifyOtp({ type: 'recovery', token_hash });
           if (error) throw error;
-          // URL 정리
           try { history.replaceState(null, '', loc!.pathname); } catch {}
           if (!cancelled) setStage('ready');
           return;
         }
 
-        // 3) 드문 케이스: ?code=… (일부 링크/환경)
+        // 3) ?code=...
         const code = qs.get('code');
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -67,14 +64,14 @@ export default function ResetFinishPage() {
           return;
         }
 
-        // 4) 이미 세션이 잡혀있는 경우
+        // 4) 이미 세션이 존재
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           if (!cancelled) setStage('ready');
           return;
         }
 
-        // 5) 위 케이스에 모두 해당 안 되면 링크가 유효하지 않음
+        // 5) 모두 해당 안되면 에러
         if (!cancelled) {
           setErr('유효한 비밀번호 재설정 링크가 아닙니다. 메일의 링크를 다시 클릭하거나, 재설정 메일을 다시 받아주세요.');
           setStage('error');
@@ -112,7 +109,9 @@ export default function ResetFinishPage() {
     <div className="mx-auto max-w-md space-y-4">
       <h1 className="text-2xl font-semibold">비밀번호 재설정</h1>
 
-      {stage === 'checking' && <p className="text-gray-600">링크를 확인하는 중입니다…</p>}
+      {stage === 'checking' && (
+        <p className="text-gray-600">링크를 확인하는 중입니다…</p>
+      )}
 
       {stage === 'error' && (
         <div className="space-y-3">

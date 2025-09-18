@@ -1,55 +1,47 @@
-'use client';
+﻿'use client'
+import { useEffect } from 'react'
+import { useFormState, useFormStatus } from 'react-dom'
+import { useRouter } from 'next/navigation'
+import type { ActionState } from '@/app/actions/auth'
+import { signUp } from '@/app/actions/auth'
 
-import { useState, useTransition } from 'react';
-import { signUp } from '@/app/actions/auth';
+const initial: ActionState = { ok: true, error: null }
+
+async function doSignUp(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return await signUp(formData)
+}
+
+function Submit() {
+  const { pending } = useFormStatus()
+  return (
+    <button className="w-full py-2.5 rounded-xl border" disabled={pending} aria-disabled={pending}>
+      {pending ? '가입 중…' : '가입'}
+    </button>
+  )
+}
 
 export default function SignUpPage() {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const [state, formAction] = useFormState<ActionState, FormData>(doSignUp, initial)
+
+  useEffect(() => {
+    if (state.ok && !state.error) router.push('/auth/login?m=signed-up')
+  }, [state, router])
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <form
-        className="space-y-4 w-full max-w-sm bg-white p-6 rounded shadow"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.currentTarget);
-
-          startTransition(() => {
-            signUp(formData)
-              .then((err) => setError(err ?? null))
-              .catch((e) => setError(e?.message ?? '회원가입 중 오류가 발생했습니다.'));
-          });
-        }}
-      >
-        <h1 className="text-2xl font-bold text-center">회원가입</h1>
-
-        <input
-          type="email"
-          name="email"
-          placeholder="이메일"
-          required
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="password"
-          name="password"
-          placeholder="비밀번호"
-          required
-          className="w-full border p-2 rounded"
-        />
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
-        >
-          {isPending ? '가입 중…' : '가입하기'}
-        </button>
-
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-      </form>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-6">
+        <h1 className="text-2xl font-semibold text-center">회원가입</h1>
+        {state.ok === false && (
+          <div className="rounded-lg border bg-red-50 px-3 py-2 text-sm">{state.error}</div>
+        )}
+        <form className="space-y-3" action={formAction}>
+          <input className="w-full border rounded-md px-3 py-2" name="email" type="email" placeholder="이메일" required />
+          <input className="w-full border rounded-md px-3 py-2" name="password" type="password" placeholder="비밀번호" required />
+          <input className="w-full border rounded-md px-3 py-2" name="role" type="text" placeholder="역할(선택)" />
+          <Submit />
+        </form>
+      </div>
     </div>
-  );
+  )
 }

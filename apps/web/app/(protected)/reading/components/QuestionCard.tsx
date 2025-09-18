@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/reading/components/QuestionCard.tsx
+﻿// apps/web/app/(protected)/reading/components/QuestionCard.tsx
 'use client';
 
 import type { Question, Choice } from '../../../types/types-reading';
