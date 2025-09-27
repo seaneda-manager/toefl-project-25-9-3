@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 // 燧뉛툘 湲곗〈 "@/lib/supabase/browser" 留먭퀬, ?ㅼ젣 ?뚯씪 ?대쫫??留욎떠??
@@ -61,7 +61,7 @@ export default function UpdatePasswordClient() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">鍮꾨?踰덊샇 蹂寃?/h1>
+      <h1 className="text-2xl font-semibold mb-6">비밀번호 변경</h1>
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="pw" className="block text-sm mb-1">??鍮꾨?踰덊샇</label>
@@ -96,7 +96,7 @@ export default function UpdatePasswordClient() {
           disabled={!canSubmit}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
         >
-          {loading ? "蹂寃?以?.." : "鍮꾨?踰덊샇 蹂寃?}
+          {loading ? '변경 중..' : '비밀번호 변경'}
         </button>
 
         {msg && <p role="status" className="text-green-600 text-sm">{msg}</p>}

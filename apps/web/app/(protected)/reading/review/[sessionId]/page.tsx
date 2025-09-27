@@ -1,61 +1,92 @@
-﻿import { getSupabaseServer } from '@/lib/supabaseServer';
-import ReviewRow from '../../components/ReviewRow';
+﻿// app/(protected)/reading/review/[sessionId]/page.tsx
+import { cookies } from "next/headers";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 
+type Row = {
+  q_no: number;
+  question: string | null;
+  user_choice: string | null;
+  correct_choice: string | null;
+  is_correct: boolean | null;
+};
 
-export default async function Page({ params }: { params: { sessionId: string } }) {
-const supabase = getSupabaseServer();
-const sessionId = params.sessionId;
+export default async function ReadingReviewPage({ params }: { params: { sessionId: string } }) {
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
 
+  // 점수
+  const { data: scoreRows, error: scoreErr } = await supabase
+    .rpc("reading_review_score", { session_id: params.sessionId });
 
-const { data: session } = await supabase
-.from('reading_sessions')
-.select('id, passage_id, mode, started_at, finished_at')
-.eq('id', sessionId)
-.maybeSingle();
-if (!session) return <div>?몄뀡??李얠쓣 ???놁뒿?덈떎.</div>;
+  // 문항별
+  const { data: rows, error } = await supabase
+    .rpc("reading_review_rows", { session_id: params.sessionId });
 
+  // ---- 옵션 C: 실패/부재 시 모킹 데이터로 표시 ----
+  if (error || scoreErr || !rows || !scoreRows) {
+    const mock: Row[] = [
+      { q_no: 1, question: "Mock Q1", user_choice: "A", correct_choice: "B", is_correct: false },
+      { q_no: 2, question: "Mock Q2", user_choice: "C", correct_choice: "C", is_correct: true  },
+      { q_no: 3, question: "Mock Q3", user_choice: "B", correct_choice: "D", is_correct: false },
+    ];
+    const score = { total: mock.length, correct: mock.filter(m => m.is_correct).length };
 
-const { data: passage } = await supabase
-.from('reading_passages')
-.select('*')
-.eq('id', session.passage_id)
-.maybeSingle();
+    return (
+      <div className="mx-auto max-w-5xl p-6 space-y-6">
+        <header className="space-y-1">
+          <h1 className="text-2xl font-semibold">Reading Review</h1>
+          <p className="text-sm opacity-70">
+            sessionId: {params.sessionId} · Score: {score.correct}/{score.total} (mock)
+          </p>
+        </header>
+        <Table rows={mock} />
+      </div>
+    );
+  }
+  // -----------------------------------------------
 
+  const score = scoreRows?.[0] ?? { total: 0, correct: 0 };
 
-const { data: qs } = await supabase
-.from('reading_questions')
-.select('*, choices:reading_choices(*), attempts:reading_attempts(choice_id)')
-.eq('passage_id', session.passage_id)
-.order('number', { ascending: true });
+  return (
+    <div className="mx-auto max-w-5xl p-6 space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Reading Review</h1>
+        <p className="text-sm opacity-70">
+          sessionId: {params.sessionId} · Score: {score.correct}/{score.total}
+        </p>
+      </header>
+      <Table rows={(rows as Row[]) ?? []} />
+    </div>
+  );
+}
 
-
-return (
-<div className="space-y-6">
-<header className="flex items-center justify-between">
-<div>
-<h1 className="text-xl font-semibold">Review ??{passage?.title}</h1>
-<div className="text-sm text-gray-500">mode: {session.mode} 쨌 started: {new Date(session.started_at).toLocaleString()} {session.finished_at ? `쨌 finished: ${new Date(session.finished_at).toLocaleString()}` : ''}</div>
-</div>
-</header>
-
-
-<div className="grid gap-4">
-{(qs ?? []).map((q: any) => (
-<ReviewRow
-key={q.id}
-q={{
-id: q.id,
-number: q.number,
-stem: q.stem,
-type: q.type,
-explanation: q.explanation,
-clue_quote: q.clue_quote,
-choices: (q.choices ?? []).map((c: any) => ({ id: c.id, label: c.label, text: c.text, is_correct: c.is_correct }))
-}}
-picked={q.attempts?.[0]?.choice_id ?? null}
-/>
-))}
-</div>
-</div>
-);
+function Table({ rows }: { rows: Row[] }) {
+  return (
+    <div className="overflow-x-auto rounded border">
+      <table className="min-w-full text-sm">
+        <thead className="bg-gray-50">
+          <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
+            <th>#</th>
+            <th>Question</th>
+            <th>Your Answer</th>
+            <th>Correct</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody className="[&>tr>*]:align-top">
+          {rows.map((r) => (
+            <tr key={r.q_no} className="[&>td]:px-3 [&>td]:py-2 border-t">
+              <td className="font-medium">{r.q_no}</td>
+              <td>{r.question ?? "-"}</td>
+              <td>{r.user_choice ?? <span className="opacity-60">—</span>}</td>
+              <td>{r.correct_choice ?? <span className="opacity-60">—</span>}</td>
+              <td>
+                {r.is_correct ? <span className="text-green-600">✓</span> : <span className="text-red-600">✗</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }

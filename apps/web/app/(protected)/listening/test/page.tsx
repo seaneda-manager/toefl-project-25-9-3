@@ -1,15 +1,13 @@
-﻿'use client';
+﻿// 최소 호환 트랙 타입(필요 필드만)
+type ListeningTrack = {
+id: string | number;
+title?: string;
+name?: string;
+label?: string;
+};
 
-import { useRouter } from 'next/navigation';
-import ListeningTestRunner from './ListeningTestRunner';
-import { SAMPLE_TRACK } from '../_sample'; // ← 이름 맞춤
-
-export default function Page() {
-  const router = useRouter();
-  return (
-    <ListeningTestRunner
-      track={SAMPLE_TRACK} // ← 사용도 맞춤
-      onFinish={(sessionId) => router.push(`/review/listening/${sessionId}`)} // ← 경로 정정
-    />
-  );
-}
+// ListeningTestRunner props 예시
+type Props = {
+  track: ListeningTrack;
+  onFinish: (sessionId: string) => void;
+};

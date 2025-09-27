@@ -1,91 +1,100 @@
-﻿'use client'
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useFormState, useFormStatus } from 'react-dom'
-import type { ActionState } from '@/app/actions/auth'
-import { signInEmailPassword } from '@/app/actions/auth'
+﻿'use client';
 
-const initialState: ActionState = { ok: true, error: null }
+import { useState, useTransition, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-async function loginAction(prev: ActionState, formData: FormData): Promise<ActionState> {
-  return await signInEmailPassword(formData)
-}
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <button
-      className="w-full py-2.5 rounded-xl border text-base disabled:opacity-60"
-      aria-disabled={pending}
-      disabled={pending}
-    >
-      {pending ? '로그인 중…' : '로그인'}
-    </button>
-  )
-}
+type Role = 'student' | 'teacher';
 
 export default function LoginPage() {
-  const [role, setRole] = useState<'student' | 'teacher'>('student')
-  const search = useSearchParams()
-  const router = useRouter()
-  const m = search.get('m')
-  const email = search.get('email') ?? undefined
-  const resetSent = m === 'reset-sent'
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+  const sp = useSearchParams();
 
-  const [state, formAction] = useFormState<ActionState, FormData>(loginAction, initialState)
+  const presetEmail = sp.get('email') ?? '';
+  const [email, setEmail] = useState(presetEmail);
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<Role>('student');
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (state?.redirectTo) router.push(state.redirectTo)
-  }, [state?.redirectTo, router])
+    if (presetEmail) setEmail(presetEmail);
+  }, [presetEmail]);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    startTransition(() => {
+      const redirect = role === 'teacher' ? '/(protected)/(teacher)' : '/(protected)/home';
+      router.replace(redirect);
+    });
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6">
-        <h1 className="text-3xl font-semibold text-center">로그인</h1>
+    <div className="mx-auto max-w-md p-6 space-y-6">
+      <h1 className="text-2xl font-semibold">Login</h1>
 
-        {/* 상태 배너 */}
-        {resetSent && (
-          <div className="rounded-lg border bg-green-50 px-3 py-2 text-sm">
-            비밀번호 재설정 링크를{email ? ` ${email}` : ''}로 보냈습니다. 메일함을 확인하세요.
-          </div>
-        )}
-        {state.ok === false && (
-          <div className="rounded-lg border bg-red-50 px-3 py-2 text-sm">
-            로그인 실패: {state.error ?? '이메일/비밀번호를 확인해 주세요.'}
-          </div>
-        )}
-
-        {/* 역할 토글 */}
-        <div className="flex justify-center gap-2">
-          {(['student','teacher'] as const).map(r => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRole(r)}
-              className={`px-4 py-2 rounded-xl border ${role===r?'bg-black text-white':'bg-white'}`}
-            >{r==='student'?'학생':'선생님'}</button>
-          ))}
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm mb-1">Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border px-3 py-2"
+            placeholder="you@example.com"
+            autoComplete="email"
+          />
         </div>
 
-        {/* 로그인 폼 */}
-        <form className="space-y-3" action={formAction}>
-          <label className="block">
-            <span className="sr-only">이메일</span>
-            <input className="w-full border rounded-md px-3 py-2" name="email" type="email" placeholder="이메일" required />
-          </label>
-          <label className="block">
-            <span className="sr-only">비밀번호</span>
-            <input className="w-full border rounded-md px-3 py-2" name="password" type="password" placeholder="비밀번호" required />
-          </label>
-          <input type="hidden" name="role" value={role} />
-          <SubmitButton />
-        </form>
-
-        <div className="flex items-center justify-between text-sm">
-          <a className="underline" href="/auth/forgot">비밀번호 재설정</a>
-          <a className="underline" href="/auth/signup-teacher">선생님 가입</a>
+        <div>
+          <label className="block text-sm mb-1">Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border px-3 py-2"
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
         </div>
+
+        <div className="flex gap-3 items-center">
+          <span className="text-sm">Role</span>
+          <label className="flex items-center gap-1 text-sm">
+            <input type="radio" name="role" value="student"
+              checked={role === 'student'} onChange={() => setRole('student')} />
+            Student
+          </label>
+          <label className="flex items-center gap-1 text-sm">
+            <input type="radio" name="role" value="teacher"
+              checked={role === 'teacher'} onChange={() => setRole('teacher')} />
+            Teacher
+          </label>
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <button type="submit" disabled={isPending} className="w-full rounded-xl border px-4 py-2">
+          {isPending ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+
+      <div className="text-sm flex justify-between">
+        <Link href="/auth/forgot-password">Forgot password?</Link>
+        <Link href="/auth/signup">Create account</Link>
       </div>
     </div>
-  )
+  );
 }

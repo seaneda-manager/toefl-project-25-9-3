@@ -1,9 +1,10 @@
-﻿// apps/web/app/auth/signup-teacher/page.tsx
+// apps/web/app/auth/signup-teacher/page.tsx
 'use client';
 
 import { useState } from 'react';
-// 寃쎈줈 alias 臾몄젣 ?뚰뵾: ?곷?寃쎈줈濡?蹂寃?
-import { signUpTeacher } from '../../actions/auth';
+// 경로 alias 정리: app/actions 쪽으로 고정
+import { signUpTeacher } from '@/actions/auth';
+import type { ActionState } from '@/actions/auth';
 
 export default function SignupTeacherPage() {
   const [email, setEmail] = useState('');
@@ -11,14 +12,14 @@ export default function SignupTeacherPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <h1 className="text-2xl font-semibold">援먯궗 ?뚯썝媛??/h1>
+      <h1 className="text-2xl font-semibold">교사 회원가입</h1>
 
-      {/* onSubmit?쇰줈 濡쒖뺄 pending 泥섎━ */}
+      {/* onSubmit으로 pending 처리 */}
       <form
         action={async (formData) => {
           setSubmitting(true);
           try {
-            await signUpTeacher(formData); // ?쒕쾭 ?≪뀡 ?몄텧 ???대??먯꽌 redirect
+            await signUpTeacher(formData); // 서버 액션에서 redirect 처리
           } finally {
             setSubmitting(false);
           }
@@ -27,7 +28,7 @@ export default function SignupTeacherPage() {
         className="space-y-4"
       >
         <div>
-          <label className="block text-sm mb-1">?대찓??/label>
+          <label className="block text-sm mb-1">이메일</label>
           <input
             name="email"
             type="email"
@@ -40,14 +41,14 @@ export default function SignupTeacherPage() {
         </div>
 
         <div>
-          <label className="block text-sm mb-1">鍮꾨?踰덊샇</label>
+          <label className="block text-sm mb-1">비밀번호</label>
           <input
             name="password"
             type="password"
             required
             minLength={6}
             className="w-full border rounded-lg px-3 py-2"
-            placeholder="6???댁긽"
+            placeholder="6자 이상"
           />
         </div>
 
@@ -56,14 +57,14 @@ export default function SignupTeacherPage() {
           disabled={submitting}
           className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-60"
         >
-          {submitting ? '怨꾩젙 ?앹꽦 以묅? : '援먯궗 怨꾩젙 留뚮뱾湲?}
+          {submitting ? '설정 저장 중' : '교사 설정 만들기'}
         </button>
       </form>
 
       <p className="text-sm">
-        ?대? 怨꾩젙???덈굹??{' '}
+        이미 계정이 있다면{' '}
         <a className="underline" href={`/auth/login?email=${encodeURIComponent(email)}`}>
-          濡쒓렇?명븯湲?
+          로그인하기
         </a>
       </p>
     </div>

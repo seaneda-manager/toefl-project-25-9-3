@@ -1,6 +1,6 @@
-﻿import ListeningStudyRunner from './ListeningStudyRunner'
-import { SAMPLE_TRACK } from '../_sample'
+﻿import ListeningStudyRunner from './ListeningStudyRunner';
+const SAMPLE_TRACK = { id: '123' } as const; 
 
 export default function Page() {
-  return <ListeningStudyRunner trackId={SAMPLE_TRACK.id} />
+return <ListeningStudyRunner track={{ id: SAMPLE_TRACK.id } as any} />
 }

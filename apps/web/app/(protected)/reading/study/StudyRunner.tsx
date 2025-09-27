@@ -21,14 +21,20 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
     let active = true
     ;(async () => {
       const { sessionId } = await startReadingSession({ passageId: passage.id, mode: 'study' })
-      if (active) setSessionId(sessionId)
+      if (active) setSessionId(String(sessionId)) // ✅ string으로 보정
     })()
     return () => { active = false }
   }, [passage.id])
 
   const pick = useCallback(async (questionId: string, choiceId: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: choiceId }))
-    if (sessionId) await submitReadingAnswer(sessionId, questionId, choiceId)
+    if (sessionId) {
+      await submitReadingAnswer({
+        sessionId: String(sessionId), // ✅ 객체 인자 + 문자열 보정
+        questionId,
+        choiceId,
+      })
+    }
   }, [sessionId])
 
   const onFinish = useCallback(async () => {

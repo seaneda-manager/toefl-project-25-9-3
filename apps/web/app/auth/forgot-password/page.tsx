@@ -1,4 +1,4 @@
-﻿// apps/web/app/auth/forgot-password/page.tsx
+// apps/web/app/auth/forgot-password/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">鍮꾨?踰덊샇 ?ъ꽕??/h1>
+      <h1 className="text-2xl font-semibold mb-6">비밀번호 재설정</h1>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
           disabled={loading}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
         >
-          {loading ? "?꾩넚 以?.." : "?ъ꽕??留곹겕 蹂대궡湲?}
+          {loading ? '전송 중..' : '재설정 링크 보내기'}
         </button>
 
         {msg && <p className="text-green-600 text-sm">{msg}</p>}

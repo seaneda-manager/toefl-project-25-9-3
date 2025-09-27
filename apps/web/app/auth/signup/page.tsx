@@ -1,47 +1,46 @@
-﻿'use client'
-import { useEffect } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
-import { useRouter } from 'next/navigation'
-import type { ActionState } from '@/app/actions/auth'
-import { signUp } from '@/app/actions/auth'
+﻿/* 풀: apps/web/app/auth/signup/page.tsx */
+import { redirect } from 'next/navigation';
+import { signUp } from '@/actions/auth';
+import type { ActionState } from '@/actions/auth';
 
-const initial: ActionState = { ok: true, error: null }
-
-async function doSignUp(prev: ActionState, formData: FormData): Promise<ActionState> {
-  return await signUp(formData)
-}
-
-function Submit() {
-  const { pending } = useFormStatus()
-  return (
-    <button className="w-full py-2.5 rounded-xl border" disabled={pending} aria-disabled={pending}>
-      {pending ? '가입 중…' : '가입'}
-    </button>
-  )
-}
+export const dynamic = 'force-dynamic';
 
 export default function SignUpPage() {
-  const router = useRouter()
-  const [state, formAction] = useFormState<ActionState, FormData>(doSignUp, initial)
+  async function signupAction(formData: FormData) {
+    'use server';
+    const r = await signUp(formData);
 
-  useEffect(() => {
-    if (state.ok && !state.error) router.push('/auth/login?m=signed-up')
-  }, [state, router])
+    // ✅ 항상 ActionState로 매핑 (TS2322 해결 포인트)
+    const mapped: ActionState = r.ok
+      ? { ok: true, error: null }
+      : { ok: false, error: r.error ?? 'Unknown error' };
 
+    if (mapped.ok) {
+      redirect('/auth/login?signup=success');
+    }
+    // 실패 시 쿼리스트링으로 메시지 전달(간단 처리)
+    redirect(`/auth/signup?error=${encodeURIComponent(mapped.error ?? 'Unknown error')}`);
+  }
+
+  // 간단한 서버 렌더 폼 (클라 상태관리 없이도 동작)
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6">
-        <h1 className="text-2xl font-semibold text-center">회원가입</h1>
-        {state.ok === false && (
-          <div className="rounded-lg border bg-red-50 px-3 py-2 text-sm">{state.error}</div>
-        )}
-        <form className="space-y-3" action={formAction}>
-          <input className="w-full border rounded-md px-3 py-2" name="email" type="email" placeholder="이메일" required />
-          <input className="w-full border rounded-md px-3 py-2" name="password" type="password" placeholder="비밀번호" required />
-          <input className="w-full border rounded-md px-3 py-2" name="role" type="text" placeholder="역할(선택)" />
-          <Submit />
-        </form>
-      </div>
-    </div>
-  )
+    <main className="mx-auto max-w-md px-6 py-10">
+      <h1 className="text-2xl font-semibold mb-6">Sign Up</h1>
+
+      {/* 에러 메시지 쿼리 파싱은 이 파일에서 필요 시 추가 */}
+      <form action={signupAction} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium">Email</label>
+          <input name="email" type="email" required className="mt-1 w-full rounded border px-3 py-2" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Password</label>
+          <input name="password" type="password" required minLength={6} className="mt-1 w-full rounded border px-3 py-2" />
+        </div>
+        <button type="submit" className="rounded px-4 py-2 border">
+          Create Account
+        </button>
+      </form>
+    </main>
+  );
 }

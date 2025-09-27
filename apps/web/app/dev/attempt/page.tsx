@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ORG_ID } from '@/lib/constants';
@@ -14,7 +14,7 @@ export default function Page(){
 
   const startAttempt = async ()=>{
     const user = (await supabase.auth.getUser()).data.user;
-    if(!user){ alert('濡쒓렇?몄씠 ?꾩슂?⑸땲??); return; }
+    if (!user) { alert('로그인이 필요합니다'); return; }
     const { data, error } = await supabase.from('attempts').insert({
       org_id: ORG_ID, user_id: user.id, section, set_id: setId
     }).select('id').single();
@@ -48,7 +48,7 @@ export default function Page(){
         .upsert([{ attempt_id: attemptId, q_number: q, picks, correct: isCorrect, duration_ms: null }],
                 { onConflict: 'attempt_id,q_number' });
       if(error) throw error;
-      push(`saved q${q}: [${picks.join(',')}] ${isCorrect?'??:'??}`);
+      push(`saved q${q}: [${picks.join(',')}] ${isCorrect ? '정답' : '오답'}`);
     }catch(e:any){ push('save error: '+e.message); }
   };
 

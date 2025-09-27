@@ -1,7 +1,7 @@
 ﻿// apps/web/app/(protected)/layout.tsx
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
-import { getSupabaseServer } from '@/lib/supabaseServer';
+import { getSupabaseServer } from '../../lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

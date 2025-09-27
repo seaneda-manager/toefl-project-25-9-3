@@ -43,5 +43,5 @@ export default function AuthCallbackPage() {
     })();
   }, [router]);
 
-  return <p className="p-4 text-center">Signing you in??/p>;
+  return <p className="p-4 text-center">Signing you in…</p>;
 }

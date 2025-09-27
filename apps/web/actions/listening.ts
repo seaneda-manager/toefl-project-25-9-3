@@ -1,31 +1,46 @@
-﻿import type { ListeningTrack } from '@/types/types-listening' // 프로젝트 타입이 없으면 아래 로컬 타입 복사 사용
+// apps/web/actions/listening.ts
+'use client';
 
+export type StartListeningSessionArgs = {
+  trackId: string;                // 텍스트/식별자
+  mode: 'study' | 'test' | 'p' | 't' | 'r';
+};
+export type SubmitListeningAnswerArgs = {
+  sessionId: string;              // UUID
+  questionId: number;             // BIGINT
+  choiceId: string;
+  elapsedMs?: number;
+};
+export type FinishListeningSessionArgs = {
+  sessionId: string;              // UUID
+};
 
-export async function startListeningSession(trackId: string): Promise<{ sessionId: string; track: ListeningTrack }> {
-return {
-sessionId: crypto.randomUUID(),
-track: {
-id: trackId,
-title: 'Mock Track',
-audioUrl: '/audio/mock.mp3',
-durationSec: 600,
-timeLimitSec: 600,
-questions: [],
-oneShot: true,
-} as ListeningTrack,
+export async function startListeningSession(args: StartListeningSessionArgs) {
+  const res = await fetch('/api/listening/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error(`startListeningSession failed: ${res.status}`);
+  return res.json() as Promise<{ ok: boolean; sessionId: string }>;
 }
+
+export async function submitListeningAnswer(args: SubmitListeningAnswerArgs) {
+  const res = await fetch('/api/listening/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error(`submitListeningAnswer failed: ${res.status}`);
+  return res.json() as Promise<{ ok: boolean }>;
 }
 
-
-export async function submitListeningAnswer(
-sessionId: string,
-questionId: string,
-choiceId: string
-): Promise<{ ok: boolean; correct?: boolean }> {
-return { ok: true, correct: Math.random() > 0.5 }
-}
-
-
-export async function finishListeningSession(sessionId: string): Promise<{ ok: boolean }> {
-return { ok: true }
+export async function finishListeningSession(args: FinishListeningSessionArgs) {
+  const res = await fetch('/api/listening/finish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) throw new Error(`finishListeningSession failed: ${res.status}`);
+  return res.json() as Promise<{ ok: boolean }>;
 }

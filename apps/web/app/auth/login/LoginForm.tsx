@@ -1,53 +1,60 @@
 ﻿'use client';
 
-import { useState, useTransition } from 'react';
-import { signInEmailPassword } from '@/app/actions/auth';
+import { useFormState, useFormStatus } from 'react-dom';
+import { signInEmailPassword } from '@/actions/auth';
+import type { ActionState } from '@/actions/auth';
+import Button from '@/components/ui/Button';
+
+// useFormState가 기대하는 형태: error는 optional string
+type FormState = { ok: boolean; error?: string };
+
+const initialState: FormState = { ok: false };
+
+// 서버 액션을 래핑해 null → undefined로 정규화
+async function signInAdapter(_: FormState, formData: FormData): Promise<FormState> {
+  const r = await signInEmailPassword(formData);
+  return r.ok ? { ok: true } : { ok: false, error: r.error ?? 'Unknown error' };
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? 'Signing in…' : 'Sign in'}
+    </Button>
+  );
+}
 
 export default function LoginForm() {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [state, formAction] = useFormState<FormState, FormData>(signInAdapter, initialState);
 
   return (
-    <form
-      className="space-y-4 w-full max-w-sm bg-white p-6 rounded shadow"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+    <form action={formAction} className="space-y-4 max-w-sm">
+      <div className="space-y-1">
+        <label htmlFor="email" className="text-sm text-gray-700">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500"
+        />
+      </div>
 
-        startTransition(() => {
-          signInEmailPassword(formData)
-            .then((err) => setError(err ?? null))
-            .catch((e) => setError(e?.message ?? '濡쒓렇??以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.'));
-        });
-      }}
-    >
-      <h1 className="text-2xl font-bold text-center">濡쒓렇??/h1>
+      <div className="space-y-1">
+        <label htmlFor="password" className="text-sm text-gray-700">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500"
+        />
+      </div>
 
-      <input
-        type="email"
-        name="email"
-        placeholder="?대찓??
-        required
-        className="w-full border p-2 rounded"
-      />
+      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 
-      <input
-        type="password"
-        name="password"
-        placeholder="鍮꾨?踰덊샇"
-        required
-        className="w-full border p-2 rounded"
-      />
-
-      <button
-        type="submit"
-        disabled={isPending}
-        className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
-      >
-        {isPending ? '濡쒓렇??以묅? : '濡쒓렇??}
-      </button>
-
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <SubmitButton />
     </form>
   );
 }

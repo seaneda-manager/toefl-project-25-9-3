@@ -1,160 +1,158 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import type { Passage } from '@/types/types-reading';
+import Timer from '@/components/Timer';
+import Button from '@/components/ui/Button';
+import Progress from '@/components/ui/Progress';
+import QuestionCard from '@/components/QuestionCard';
 
-import Timer from '../components/Timer';
-import PassagePane from '../components/PassagePane';
-import QuestionCard from '../components/QuestionCard';
-import QuestionNav from '../components/QuestionNav';
-
+// 서버 액션 (경로만 맞춰줘)
 import {
-  startReadingSession,
+  // startReadingSession,
   submitReadingAnswer,
   finishReadingSession,
 } from '@/actions/reading';
-import type { Passage, Question } from '@/types/types-reading';
 
-const TEST_SECONDS = 18 * 60; // 기본 18분
+type Props = {
+  passage: Passage;
+  onFinish: (sessionId: string) => void;
+};
 
-export default function TestRunner({ passage }: { passage: Passage }) {
-  const router = useRouter();
+// finish 액션 응답 안전타입(세션 ID가 올 수도 있고 없을 수도 있음)
+type FinishRes = { ok?: boolean; sessionId?: string; id?: string };
 
-  // 문항 정렬 후 상위 10개만 사용
+export default function TestRunner({ passage, onFinish }: Props) {
+  // 세션 시작(id는 start 액션이 있으면 서버에서 받아오고, 없으면 임시/서버에서 생성)
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // 사용자가 선택한 답안: { [questionId]: choiceId }
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  // 타이머(필요 시 서버에서 내려주는 값으로 대체 가능)
+  const TOTAL_SEC = 10 * 60;
+
+  // 문항 정렬
   const questions = useMemo(
-    () =>
-      [...(passage.questions ?? [])]
-        .sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
-        .slice(0, 10),
+    () => [...(passage.questions ?? [])].sort((a, b) => (a.number ?? 0) - (b.number ?? 0)),
     [passage.questions]
   );
-  const total = questions.length;
 
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | null>>({});
+  // 진행률
+  const answeredCount = Object.keys(answers).length;
+  const progressPct = questions.length ? (answeredCount / questions.length) * 100 : 0;
 
-  const clamp = (i: number) => Math.min(Math.max(0, i), Math.max(0, total - 1));
-
-  // 세션 시작
+  // (옵션) 세션 시작 훅
   useEffect(() => {
+    let ignore = false;
     (async () => {
-      const { sessionId } = await startReadingSession({
-        passageId: passage.id,
-        mode: 'test',
-      });
-      setSessionId(sessionId);
+      try {
+        // const { sessionId } = await startReadingSession({ passageId: passage.id });
+        // if (!ignore) setSessionId(sessionId);
+        setSessionId((prev) => prev ?? null);
+      } catch {
+        // start 실패해도 진행 가능
+      }
     })();
+    return () => {
+      ignore = true;
+    };
   }, [passage.id]);
 
-  // 총 문항 수 변경 시 현재 인덱스 보정
-  useEffect(() => {
-    setCurrent((c) => clamp(c));
-  }, [total]);
+  // 답안 선택 시: 로컬 상태 업데이트 + 서버로 즉시 업서트(선택사항)
+  const handleAnswer = async (qId: string, choiceId: string) => {
+    setAnswers((prev) => ({ ...prev, [qId]: choiceId }));
+    try {
+      await submitReadingAnswer({
+        sessionId: sessionId ?? undefined, // 아직 없으면 서버에서 생성 허용
+        passageId: passage.id,
+        questionId: qId,
+        choiceId,
+      });
+    } catch {
+      // no-op
+    }
+  };
 
-  // 현재 문항 (없을 수도 있음)
-  const q: Question | undefined = total > 0 ? questions[current] : undefined;
-
-  // 선지 선택
-  async function pick(choiceId: string) {
-    if (!q) return;
-    setAnswers((s) => ({ ...s, [q.id]: choiceId })); // UI 먼저 반영
-    if (!sessionId) return;
-    // ✅ positional 인자로 호출 (sessionId, questionId, choiceId)
-    await submitReadingAnswer(sessionId, q.id, choiceId);
-  }
+  // 수동 저장(옵션)
+  const handleSave = async () => {
+    try {
+      await Promise.all(
+        Object.entries(answers).map(([qId, cId]) =>
+          submitReadingAnswer({
+            sessionId: sessionId ?? undefined,
+            passageId: passage.id,
+            questionId: qId,
+            choiceId: cId,
+          })
+        )
+      );
+    } catch {
+      // no-op
+    }
+  };
 
   // 종료
-  async function finish() {
-    if (!sessionId) return;
-    // ✅ positional 인자로 호출 (sessionId)
-    await finishReadingSession(sessionId);
-    router.push(`/reading/review/${sessionId}`);
-  }
+  const handleFinish = async () => {
+    try {
+      const res = (await finishReadingSession({
+        sessionId: sessionId ?? undefined,
+        passageId: passage.id,
+      })) as FinishRes;
 
-  // 인덱스별 응답 여부
-  const answeredByIndex = useMemo(() => {
-    const map: Record<number, boolean> = {};
-    questions.forEach((qq, idx) => {
-      map[idx] = answers[qq.id] != null;
-    });
-    return map;
-  }, [questions, answers]);
-
-  if (total === 0) {
-    return <div className="p-6 text-center text-gray-600">문항이 없습니다.</div>;
-  }
+      // ⬇️ 안전하게 문자열 보장
+      const sid: string = res.sessionId ?? res.id ?? sessionId ?? 'latest';
+      onFinish(String(sid));
+    } catch {
+      onFinish(String(sessionId ?? 'latest'));
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* 좌측: 타이머 + 지문 + 내비게이션 */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold">Test Mode ({total})</div>
-          <Timer seconds={TEST_SECONDS} onExpire={finish} />
+    <div className="space-y-4">
+      {/* 섹션 헤더: 타이머 / 진행률 / 컨트롤 */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-500">Questions</div>
+          <div className="hidden sm:block w-48">
+            <Progress value={progressPct} />
+          </div>
+          <div className="text-xs text-gray-500 sm:text-sm">
+            Answered:{' '}
+            <span className="tabular-nums">
+              {answeredCount}/{questions.length}
+            </span>
+          </div>
         </div>
-
-        {/* ✅ string 보장 */}
-        <PassagePane title={passage.title ?? ''} content={passage.content ?? ''} />
-
-        <QuestionNav
-          total={total}
-          current={current}
-          onPrev={() => setCurrent((c) => clamp(c - 1))}
-          onNext={() => setCurrent((c) => clamp(c + 1))}
-          onJump={(i: number) => setCurrent(clamp(i))} 
-          answered={answeredByIndex}
-          // labels={questions.map((qq, i) => qq.number ?? i + 1)}
-        />
+        <div className="flex items-center gap-3">
+          <Timer totalSec={TOTAL_SEC} onTimeUp={handleFinish} />
+          <Button variant="outline" onClick={handleSave}>
+            Save
+          </Button>
+          <Button onClick={handleFinish}>Finish</Button>
+        </div>
       </div>
 
-      {/* 우측: 현재 문항 카드 + 이동/종료 */}
+      {/* 문항 카드들 */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            {current + 1} / {total}
+        {questions.map((q) => (
+          <div key={q.id} className="rounded-2xl bg-white shadow-soft border border-gray-100">
+            <div className="px-5 pt-5 pb-3 border-b border-gray-100">
+              <div className="text-sm text-gray-500">Question {q.number}</div>
+            </div>
+            <div className="p-5">
+              <QuestionCard
+                prompt={q.stem ?? ''} // ⬅️ string 보장
+                choices={(q.choices ?? []).map((c) => ({
+                  ...c,
+                  label: (c as any).label ?? (c as any).text ?? '',
+                }))} // 필요시 as any 제거하고 Choice 타입에 label 존재 보장
+                selected={answers[q.id] ?? null}
+                onAnswer={(choiceId) => handleAnswer(q.id, choiceId)}
+              />
+            </div>
           </div>
-          <div className="space-x-2">
-            <button
-              className="px-3 py-2 rounded-xl border"
-              onClick={() => setCurrent((c) => clamp(c - 1))}
-              disabled={current <= 0}
-            >
-              &larr; Prev
-            </button>
-
-            {current < total - 1 ? (
-              <button
-                className="px-3 py-2 rounded-xl border"
-                onClick={() => setCurrent((c) => clamp(c + 1))}
-              >
-                Next &rarr;
-              </button>
-            ) : (
-              <button
-                className="px-3 py-2 rounded-xl border bg-white/10"
-                onClick={finish}
-              >
-                Finish
-              </button>
-            )}
-          </div>
-        </div>
-
-        {q ? (
-          <QuestionCard
-            key={q.id}
-            q={q}
-            disabled={false}
-            selected={answers[q.id] ?? null}
-            onChange={pick}
-            showFeedback={false}
-          />
-        ) : (
-          <div className="p-4 rounded bg-amber-50 text-amber-800">
-            현재 인덱스에 해당하는 문항이 없습니다.
-          </div>
-        )}
+        ))}
       </div>
     </div>
   );

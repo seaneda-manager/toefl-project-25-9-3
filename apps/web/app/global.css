@@ -1,0 +1,15 @@
+/* apps/web/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base UI defaults */
+html, body { font-family: theme(fontFamily.ui); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Focus ring */
+:focus-visible { outline: 3px solid #4a87ff55; outline-offset: 2px; }
