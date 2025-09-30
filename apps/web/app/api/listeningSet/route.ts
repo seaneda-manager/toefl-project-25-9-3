@@ -1,5 +1,8 @@
+// apps/web/app/api/listeningSet/route.ts
 import { NextResponse } from 'next/server';
+import { getSupabaseServer } from '@/lib/supabaseServer';
 import type { ListeningTrack, LQuestion } from '@/app/types/types-listening';
+import { ListeningSetZ } from '@/app/types/types-listening-extended';
 
 type LoadedSet = {
   setId: string;
@@ -7,10 +10,7 @@ type LoadedSet = {
   lecture: (ListeningTrack & { title?: string; imageUrl?: string });
 };
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id') || 'demo-set';
-
+function buildDemoSet(id: string): LoadedSet {
   // 질문 2번은 “문제 먼저 → 스니펫 재생 → 보기 노출”을 테스트하기 위해 meta를 섞음.
   // LQuestion 타입엔 meta가 없으므로 any 캐스팅으로 넘겨서 UI에서 안전 접근.
   const q1: LQuestion = {
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     ],
   };
 
-  const payload: LoadedSet = {
+  return {
     setId: id,
     conversation: {
       id: 'conv-1',
@@ -73,6 +73,44 @@ export async function GET(req: Request) {
       questions: [lq1],
     },
   };
+}
 
-  return NextResponse.json(payload);
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id') || 'demo-set';
+
+  // 1) demo-set 바로 리턴
+  if (id === 'demo-set') {
+    const payload = buildDemoSet(id);
+    return NextResponse.json(payload);
+  }
+
+  // 2) DB에서 로드 + Zod 검증
+  try {
+    const supabase = await getSupabaseServer();
+    const { data, error } = await supabase
+      .from('listening_sets')
+      .select('spec')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      // 없으면 데모로 폴백 (원하면 404로 바꿔도 됨)
+      const payload = buildDemoSet('demo-set');
+      return NextResponse.json(payload, { status: 200 });
+    }
+
+    const parsed = ListeningSetZ.safeParse(data.spec);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'invalid spec', issues: parsed.error.flatten() },
+        { status: 422 }
+      );
+    }
+
+    return NextResponse.json(parsed.data);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: 'server error' }, { status: 500 });
+  }
 }

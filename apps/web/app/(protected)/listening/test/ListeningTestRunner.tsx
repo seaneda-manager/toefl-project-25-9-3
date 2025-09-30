@@ -16,42 +16,63 @@ type LoadedSet = {
 
 type Screen = 'idle' | 'conv_play' | 'conv_qna' | 'lect_play' | 'lect_qna' | 'done';
 
-export default function ListeningTestRunner() {
+export default function ListeningTestRunner({
+  initialSetId = 'demo-set',
+  debug = false,
+  autoStart = false,
+}: {
+  initialSetId?: string;
+  debug?: boolean;
+  autoStart?: boolean;
+} = {}) {
   const router = useRouter();
 
-  const [trackSetId, setTrackSetId] = useState('demo-set');
+  const [trackSetId, setTrackSetId] = useState(initialSetId);
   const [mode, setMode] = useState<Mode>('t'); // 'p' | 't' | 'r' | 'test' | 'study'
   const [sessionId, setSessionId] = useState<string>('');
-  const [loadedSet, setLoadedSet] = useState<LoadedSet | null>(null); // ✅ rename
+  const [loadedSet, setLoadedSet] = useState<LoadedSet | null>(null);
   const [screen, setScreen] = useState<Screen>('idle');
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | undefined>>({});
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [loadingSet, setLoadingSet] = useState(false);
+
+  // initialSetId가 바뀌면 state 동기화
+  useEffect(() => { setTrackSetId(initialSetId); }, [initialSetId]);
 
   // 세트 로드
   const loadSet = useCallback(async () => {
-    setLoading(true); setErr(null);
+    setLoadingSet(true); setErr(null);
     try {
       const res = await fetch(`/api/listeningSet?id=${encodeURIComponent(trackSetId)}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Failed to load set (${res.status})`);
       const data = (await res.json()) as LoadedSet;
-      setLoadedSet(data);                     // ✅ rename
+      setLoadedSet(data);
       setQIndex(0);
       setAnswers({});
       setScreen('idle');
     } catch (e: any) {
       setErr(e?.message ?? String(e));
+      setLoadedSet(null);
     } finally {
-      setLoading(false);
+      setLoadingSet(false);
     }
   }, [trackSetId]);
 
   useEffect(() => { void loadSet(); }, [loadSet]);
 
+  // 세트 로드되면 자동 시작 (옵션)
+  useEffect(() => {
+    if (autoStart && loadedSet && !sessionId && !loading) {
+      void (async () => { await startSession(); })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, loadedSet, sessionId, loading]);
+
   // 현재 섹션 문항
-  const convQs = useMemo(() => loadedSet?.conversation.questions ?? [], [loadedSet]); // ✅
-  const lectQs = useMemo(() => loadedSet?.lecture.questions ?? [], [loadedSet]);       // ✅
+  const convQs = useMemo(() => loadedSet?.conversation.questions ?? [], [loadedSet]);
+  const lectQs = useMemo(() => loadedSet?.lecture.questions ?? [], [loadedSet]);
   const isConvQna = screen === 'conv_qna';
   const isLectQna = screen === 'lect_qna';
   const activeQs: LQuestion[] = isConvQna ? convQs : isLectQna ? lectQs : [];
@@ -59,23 +80,22 @@ export default function ListeningTestRunner() {
 
   // 세션 시작 (기존 세션 있으면 종료 후 새로 생성)
   const startSession = useCallback(async () => {
-    if (!loadedSet) return;                   // ✅
+    if (!loadedSet) return;
     setLoading(true); setErr(null);
     try {
       if (sessionId) await finishListeningSession({ sessionId });
       const m = (mode === 'test' ? 't' : mode === 'study' ? 'p' : mode) as 'p' | 't' | 'r';
-      const { sessionId: sid } = await startListeningSession({ setId: loadedSet.setId, mode: m }); // ✅
+      const { sessionId: sid } = await startListeningSession({ setId: loadedSet.setId, mode: m });
       setSessionId(sid);
       setQIndex(0);
       setAnswers({});
-      if (convQs.length === 0) setScreen('lect_play');
-      else setScreen('conv_play');
+      setScreen(convQs.length === 0 ? 'lect_play' : 'conv_play');
     } catch (e: any) {
       setErr(e?.message ?? String(e));
     } finally {
       setLoading(false);
     }
-  }, [loadedSet, mode, sessionId, convQs.length]); // ✅
+  }, [loadedSet, mode, sessionId, convQs.length]);
 
   // 선택 저장 + 서버 전송
   const onChoose = useCallback(async (qid: string, cid?: string) => {
@@ -123,72 +143,99 @@ export default function ListeningTestRunner() {
     try {
       await finishListeningSession({ sessionId });
     } finally {
-      router.push(`/(protected)/listening/review?sessionId=${sessionId}`);
+      router.push(`/listening/review?sessionId=${sessionId}`); // ✅ 괄호 없는 경로
     }
   }, [sessionId, router]);
 
   // 타이틀/이미지
-  const convTitle = loadedSet?.conversation.title ?? 'Conversation'; // ✅
+  const convTitle = loadedSet?.conversation.title ?? 'Conversation';
   const convImage = loadedSet?.conversation.imageUrl;
   const lectTitle = loadedSet?.lecture.title ?? 'Lecture';
   const lectImage = loadedSet?.lecture.imageUrl;
 
-  const canStart = !!loadedSet && !loading;                                  // ✅
+  const canStart = !!loadedSet && !loading;
 
   return (
     <div className="mx-auto max-w-4xl p-4 space-y-6">
       <h1 className="text-xl font-semibold">Listening Test Runner</h1>
 
-      {/* 컨트롤 바 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <label className="block md:col-span-2">
-          <span className="text-sm">Track Set ID</span>
-          <input
-            className="w-full border rounded p-2"
-            value={trackSetId}
-            onChange={(e) => setTrackSetId(e.target.value)}
-            placeholder="e.g. demo-set"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm">Mode</span>
-          <select
-            className="w-full border rounded p-2"
-            value={mode}
-            onChange={(e) => setMode(e.target.value as Mode)}
-          >
-            <option value="p">p (practice)</option>
-            <option value="t">t (test)</option>
-            <option value="r">r (review)</option>
-            <option value="test">test (alias=t)</option>
-            <option value="study">study (alias=p)</option>
-          </select>
-        </label>
-        <div className="flex items-end gap-2">
-          <button
-            className="px-4 py-2 rounded border"
-            onClick={loadSet}
-            disabled={loading}
-          >
-            Reload Set
-          </button>
-          <button
-            className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-            onClick={startSession}
-            disabled={!canStart}
-            title="Create session & start Conversation"
-          >
-            {loading ? 'Starting…' : 'Start'}
-          </button>
+      {/* 컨트롤 바 (debug일 때만 노출) */}
+      {debug ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <label className="block md:col-span-2">
+            <span className="text-sm">Track Set ID</span>
+            <input
+              className="w-full border rounded p-2"
+              value={trackSetId}
+              onChange={(e) => setTrackSetId(e.target.value)}
+              placeholder="e.g. demo-set"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm">Mode</span>
+            <select
+              className="w-full border rounded p-2"
+              value={mode}
+              onChange={(e) => setMode(e.target.value as Mode)}
+            >
+              <option value="p">p (practice)</option>
+              <option value="t">t (test)</option>
+              <option value="r">r (review)</option>
+              <option value="test">test (alias=t)</option>
+              <option value="study">study (alias=p)</option>
+            </select>
+          </label>
+          <div className="flex items-end gap-2">
+            <button className="px-4 py-2 rounded border" onClick={loadSet} disabled={loadingSet || loading}>
+              {loadingSet ? 'Loading…' : 'Reload Set'}
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+              onClick={startSession}
+              disabled={!canStart}
+              title="Create session & start Conversation"
+            >
+              {loading ? 'Starting…' : 'Start'}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center justify-between text-sm text-neutral-700">
+          <div>TPO Set: <b>{trackSetId}</b> {loadingSet ? '(Loading...)' : loadedSet ? '' : '(Not available)'}</div>
+          <div className="flex items-center gap-2">
+            <label className="hidden md:block">
+              <span className="mr-2">Mode</span>
+              <select
+                className="border rounded p-1"
+                value={mode}
+                onChange={(e) => setMode(e.target.value as Mode)}
+              >
+                <option value="t">test</option>
+                <option value="p">practice</option>
+                <option value="r">review</option>
+              </select>
+            </label>
+            {!autoStart && (
+              <button
+                className="px-3 py-1.5 rounded bg-black text-white disabled:opacity-50"
+                onClick={startSession}
+                disabled={!canStart}
+              >
+                {loading ? 'Starting…' : 'Start'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {err && <p className="text-sm text-red-600">Error: {err}</p>}
 
       {/* 안내 */}
       {!sessionId && screen === 'idle' && (
         <div className="rounded-xl border p-6 text-sm text-neutral-600">
-          세트를 불러온 뒤 <b>Start</b>를 누르면 세션이 생성되고 대화(Conversation)부터 시작합니다.
+          {loadedSet
+            ? <>세트를 불러온 뒤 <b>Start</b>를 누르면 세션이 생성되고 대화(Conversation)부터 시작합니다.</>
+            : <>이 세트에 접근할 수 없습니다. (다운로드/권한 확인 필요)</>}
         </div>
       )}
 
@@ -261,6 +308,8 @@ export default function ListeningTestRunner() {
                   Finish & Review
                 </button>
               </div>
+              {/* 세션 표시(디버그에 도움) */}
+              <div className="mt-3 text-xs text-neutral-500">session: {sessionId}</div>
             </div>
           )}
         </>
