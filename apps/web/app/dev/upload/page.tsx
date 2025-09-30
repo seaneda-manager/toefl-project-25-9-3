@@ -4,3 +4,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko"><body style={{background:'#f7f9fc',margin:0}}>{children}</body></html>
   );
 }
+

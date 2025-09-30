@@ -1,11 +1,11 @@
 // apps/web/app/auth/forgot-password/page.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -16,25 +16,26 @@ export default function ForgotPasswordPage() {
     setErr(null);
 
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setErr("?대찓?쇱쓣 ?щ컮瑜닿쾶 ?낅젰?댁＜?몄슂.");
+      setErr('Please enter a valid email address.');
       return;
     }
 
     try {
       setLoading(true);
       const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        (typeof window !== 'undefined' ? window.location.origin : '');
 
-      // ?대찓?쇰줈 鍮꾨?踰덊샇 ?ъ꽕??留곹겕 諛쒖넚
+      // Send reset link email; clicking it will go to /auth/update-password
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${origin}/auth/update-password`,
       });
       if (error) throw error;
 
-      setMsg("?ъ꽕??留곹겕瑜??대찓?쇰줈 蹂대깉?댁슂. 硫붿씪?⑥쓣 ?뺤씤?댁＜?몄슂!");
-      setEmail("");
+      setMsg('Password reset email sent. Please check your inbox.');
+      setEmail('');
     } catch (e: any) {
-      setErr(e?.message ?? "硫붿씪 諛쒖넚 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.");
+      setErr(e?.message ?? 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -42,12 +43,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">비밀번호 재설정</h1>
+      <h1 className="mb-6 text-2xl font-semibold">Reset Password</h1>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm mb-1">
-            ?대찓??          </label>
+          <label htmlFor="email" className="mb-1 block text-sm">
+            Email
+          </label>
           <input
             id="email"
             type="email"
@@ -64,12 +66,14 @@ export default function ForgotPasswordPage() {
           type="submit"
           disabled={loading}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
+          aria-busy={loading}
+          title={loading ? 'Sending…' : 'Send reset link'}
         >
-          {loading ? '전송 중..' : '재설정 링크 보내기'}
+          {loading ? 'Sending…' : 'Send reset link'}
         </button>
 
-        {msg && <p className="text-green-600 text-sm">{msg}</p>}
-        {err && <p className="text-red-600 text-sm">{err}</p>}
+        {msg && <p className="text-sm text-green-600">{msg}</p>}
+        {err && <p className="text-sm text-red-600">{err}</p>}
       </form>
     </main>
   );

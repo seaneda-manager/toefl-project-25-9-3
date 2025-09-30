@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 export function useDeadlineTimer(deadlineAtISO: string) {
   const [now, setNow] = useState(Date.now())
@@ -6,3 +6,4 @@ export function useDeadlineTimer(deadlineAtISO: string) {
   const left = Math.max(0, new Date(deadlineAtISO).getTime() - now)
   return { msLeft: left, expired: left===0 }
 }
+

@@ -9,3 +9,4 @@ export default function PassagePane({ title, content }: { title: string; content
     </aside>
   );
 }
+

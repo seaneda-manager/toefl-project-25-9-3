@@ -45,3 +45,4 @@ export default function AuthCallbackPage() {
 
   return <p className="p-4 text-center">Signing you in…</p>;
 }
+

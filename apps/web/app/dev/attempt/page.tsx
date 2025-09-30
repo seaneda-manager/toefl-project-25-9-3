@@ -3,90 +3,206 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ORG_ID } from '@/lib/constants';
 
-type Section = 'reading'|'listening'|'speaking'|'writing';
+type Section = 'reading' | 'listening' | 'speaking' | 'writing';
 
-export default function Page(){
-  const [attemptId,setAttemptId]=useState<string|null>(null);
-  const [section,setSection]=useState<Section>('reading');
-  const [setId,setSetId]=useState<string>('TPO 1');
-  const [log,setLog]=useState<string[]>([]);
-  const push = (s:string)=>setLog(v=>[s,...v].slice(0,50));
+type AnswerKey = Record<string, number[] | number>;
+type SetRow = { payload_json?: { answer_key?: AnswerKey } | null };
 
-  const startAttempt = async ()=>{
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) { alert('로그인이 필요합니다'); return; }
-    const { data, error } = await supabase.from('attempts').insert({
-      org_id: ORG_ID, user_id: user.id, section, set_id: setId
-    }).select('id').single();
-    if(error){ push('start error: '+error.message); return; }
-    setAttemptId(data!.id); push(`started attempt ${data!.id}`);
-  };
+// 유틸: 배열 정렬 + 중복 제거
+function asSortedUnique(arr: number[]) {
+  return [...new Set(arr)].sort((a, b) => a - b);
+}
+// 유틸: 배열 동치
+function arrEq(a: number[], b: number[] | number) {
+  if (!Array.isArray(b)) return false;
+  const A = asSortedUnique(a);
+  const B = asSortedUnique(b);
+  if (A.length !== B.length) return false;
+  return A.every((v, i) => v === B[i]);
+}
 
-  async function getAnswerKey(){
-    const { data, error } = await supabase
+export default function Page() {
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [section, setSection] = useState<Section>('reading');
+  const [setId, setSetId] = useState<string>('TPO 1');
+
+  // 로그 & 상태
+  const [log, setLog] = useState<string[]>([]);
+  const [savingQ, setSavingQ] = useState<number | null>(null);
+  const [cachedKey, setCachedKey] = useState<AnswerKey | null>(null);
+
+  const push = (s: string) => setLog((v) => [s, ...v].slice(0, 50));
+
+  // Answer key 캐싱
+  async function getAnswerKey(): Promise<AnswerKey> {
+    if (cachedKey) return cachedKey;
+
+    const { data, error } = (await supabase
       .from('sets')
       .select('payload_json,published_at,version')
-      .eq('org_id', ORG_ID).eq('section', section).eq('set_id', setId)
-      .order('published_at', { ascending:false, nullsFirst:false })
-      .order('version', { ascending:false })
-      .limit(1);
-    if(error) throw error;
-    const key = data?.[0]?.payload_json?.answer_key || {};
-    return key as Record<string, number[]|number>;
+      .eq('org_id', ORG_ID)
+      .eq('section', section)
+      .eq('set_id', setId)
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .order('version', { ascending: false })
+      .limit(1)) as unknown as { data: SetRow[]; error: any };
+
+    if (error) throw error;
+    const key: AnswerKey = data?.[0]?.payload_json?.answer_key ?? {};
+    setCachedKey(key);
+    return key;
   }
 
-  const saveAnswer = async (q:number, picks:number[])=>{
-    if(!attemptId){ alert('癒쇱? Start'); return; }
-    try{
+  // Attempt 시작
+  const startAttempt = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    const user = auth?.user;
+    if (!user) {
+      push('Please log in first.');
+      alert('Login required');
+      return;
+    }
+    // 세트/섹션 바뀌었을 수 있으니 캐시 무효화
+    setCachedKey(null);
+
+    const { data, error } = await supabase
+      .from('attempts')
+      .insert({
+        org_id: ORG_ID,
+        user_id: user.id,
+        section,
+        set_id: setId,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      push('start error: ' + error.message);
+      return;
+    }
+    setAttemptId(data!.id);
+    push(`started attempt ${data!.id}`);
+  };
+
+  // 답안 저장
+  const saveAnswer = async (q: number, picks: number[]) => {
+    if (!attemptId) {
+      push('Please click Start first');
+      alert('Please click Start first');
+      return;
+    }
+    try {
+      setSavingQ(q);
+
       const key = await getAnswerKey();
       const correctAns = key[String(q)];
       const isCorrect = Array.isArray(correctAns)
         ? arrEq(picks, correctAns)
-        : picks.length===1 && picks[0]===correctAns;
+        : picks.length === 1 && picks[0] === correctAns;
+
       const { error } = await supabase
         .from('answers')
-        .upsert([{ attempt_id: attemptId, q_number: q, picks, correct: isCorrect, duration_ms: null }],
-                { onConflict: 'attempt_id,q_number' });
-      if(error) throw error;
-      push(`saved q${q}: [${picks.join(',')}] ${isCorrect ? '정답' : '오답'}`);
-    }catch(e:any){ push('save error: '+e.message); }
+        .upsert(
+          [
+            {
+              attempt_id: attemptId,
+              q_number: q,
+              picks, // jsonb 컬럼 권장
+              correct: isCorrect,
+              duration_ms: null,
+            },
+          ],
+          { onConflict: 'attempt_id,q_number' }
+        );
+
+      if (error) throw error;
+
+      push(`saved q${q}: [${asSortedUnique(picks).join(', ')}] ${isCorrect ? 'Correct' : 'Wrong'}`);
+    } catch (e: any) {
+      push('save error: ' + (e?.message ?? String(e)));
+    } finally {
+      setSavingQ(null);
+    }
   };
 
-  const computeScore = async ()=>{
-    if(!attemptId) return;
-    const { data, error } = await supabase.from('answers')
-      .select('correct').eq('attempt_id', attemptId);
-    if(error){ push(error.message); return; }
-    const total = data?.length||0;
-    const ok = (data||[]).filter(r=>r.correct===true).length;
-    push(`SCORE: ${ok} / ${total}`);
+  // 점수 계산 (RPC 사용)
+  const computeScore = async () => {
+    if (!attemptId) return;
+    const { data, error } = await supabase.rpc('attempt_score', { attempt_id: attemptId });
+    if (error) {
+      push(error.message);
+      return;
+    }
+    const row = (data as any)?.[0] ?? { total: 0, correct: 0 };
+    push(`SCORE: ${row.correct} / ${row.total}`);
   };
 
   return (
-    <div style={{maxWidth:800,margin:'24px auto',padding:16,background:'#fff',border:'1px solid #e5e7eb',borderRadius:12}}>
+    <div
+      style={{
+        maxWidth: 800,
+        margin: '24px auto',
+        padding: 16,
+        background: '#fff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 12,
+      }}
+    >
       <h2>Attempt + Scoring Demo</h2>
-      <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
-        <select value={section} onChange={e=>setSection(e.target.value as Section)}>
-          {['reading','listening','speaking','writing'].map(s=><option key={s} value={s}>{s}</option>)}
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <select
+          value={section}
+          onChange={(e) => {
+            setSection(e.target.value as Section);
+            setCachedKey(null); // 섹션 변경 시 캐시 무효
+            setAttemptId(null); // 섹션 바뀌면 기존 attempt 무효화
+          }}
+        >
+          {(['reading', 'listening', 'speaking', 'writing'] as Section[]).map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
         </select>
-        <input value={setId} onChange={e=>setSetId(e.target.value)} />
+
+        <input
+          value={setId}
+          onChange={(e) => {
+            setSetId(e.target.value);
+            setCachedKey(null); // 세트 변경 시 캐시 무효
+            setAttemptId(null); // 세트 바뀌면 기존 attempt 무효화
+          }}
+        />
+
         <button onClick={startAttempt}>Start Attempt</button>
-        <button onClick={computeScore} disabled={!attemptId}>Compute Score</button>
+        <button onClick={computeScore} disabled={!attemptId}>
+          Compute Score
+        </button>
       </div>
-      <div style={{display:'flex',gap:8}}>
-        <button onClick={()=>saveAnswer(1,[2])}>Q1 pick 2</button>
-        <button onClick={()=>saveAnswer(2,[1,3])}>Q2 picks 1,3</button>
-        <button onClick={()=>saveAnswer(3,[])}>Q3 clear</button>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={() => saveAnswer(1, [2])} disabled={!attemptId || savingQ === 1}>
+          {savingQ === 1 ? 'Saving…' : 'Q1 pick 2'}
+        </button>
+        <button onClick={() => saveAnswer(2, [1, 3])} disabled={!attemptId || savingQ === 2}>
+          {savingQ === 2 ? 'Saving…' : 'Q2 picks 1,3'}
+        </button>
+        <button onClick={() => saveAnswer(3, [])} disabled={!attemptId || savingQ === 3}>
+          {savingQ === 3 ? 'Saving…' : 'Q3 clear'}
+        </button>
       </div>
-      <pre style={{marginTop:12,whiteSpace:'pre-wrap'}}>{log.join('\n')}</pre>
-      <div style={{marginTop:8,fontSize:12,color:'#6b7280'}}>??answer_key ?? {"{\"1\":2,\"2\":[1,3]}"}</div>
+
+      {/* 최근 로그가 에러면 한 줄 강조 */}
+      {log[0]?.startsWith('save error:') && (
+        <div style={{ marginTop: 8, color: '#b91c1c', fontSize: 12 }}>{log[0]}</div>
+      )}
+
+      <pre style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{log.join('\n')}</pre>
+
+      <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
+        example answer_key → {`{"1":2,"2":[1,3]}`}
+      </div>
     </div>
   );
-}
-
-function arrEq(a:number[], b:number[]|number){
-  if(!Array.isArray(b)) return false;
-  if(a.length!==b.length) return false;
-  const A=[...a].sort(), B=[...b].sort();
-  return A.every((v,i)=>v===B[i]);
 }

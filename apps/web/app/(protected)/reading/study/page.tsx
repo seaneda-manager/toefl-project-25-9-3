@@ -48,3 +48,4 @@ export default async function Page() {
 
   return <StudyRunner passage={passage} />
 }
+

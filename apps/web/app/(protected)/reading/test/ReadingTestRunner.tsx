@@ -2,13 +2,11 @@
 'use client';
 
 import { useMemo, useState, useCallback, useRef } from 'react';
-import type { Passage, Question } from '@/app/types/types-reading';
+// 경로 통일: '@/types/types-reading' 로 사용하는 게 안전
+import type { Passage, Question } from '@/types/types-reading';
 import { submitReadingAnswer, finishReadingSession } from '@/actions/reading';
 
-/** ─────────────────────────────────────────────────────────────
- *  Safe extractors (런타임 헬퍼)
- *  - 타입 정의에 없는 필드를 직접 접근하지 않고 여기서만 느슨하게 처리
- *  ───────────────────────────────────────────────────────────── */
+/** Safe extractors */
 function getPrompt(q: unknown): string {
   if (q && typeof q === 'object') {
     const o = q as Record<string, any>;
@@ -35,11 +33,10 @@ function normalizeKey(v: unknown): string {
   return typeof v === 'string' ? v : String(v);
 }
 
-// Passage에 text, title이 없을 수도 있으니 안전 추출
+// Passage 텍스트/타이틀 추출
 function getPassageText(p: unknown): string {
   if (p && typeof p === 'object') {
     const o = p as Record<string, any>;
-    // 프로젝트별 실제 키명에 맞춰 우선순위를 정해둠
     return o.text ?? o.content ?? o.body ?? o.passage ?? o.html ?? '';
   }
   return '';
@@ -60,9 +57,9 @@ type Props = {
 };
 
 export default function ReadingTestRunner({ sessionId, passage }: Props) {
-  // 답안 상태: question.id → choice.id
+  // 로컬 상태: question.id -> choice.id
   const [answers, setAnswers] = useState<Record<number | string, string>>({});
-  // 각 문항 시작 시각 (elapsedMs 계산용)
+  // 각 문항 최초 포커스 시점
   const startedAtRef = useRef<Record<number | string, number>>({});
 
   const questions = useMemo(() => (passage?.questions ?? []) as Question[], [passage]);
@@ -75,24 +72,21 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
   const passageTitle = useMemo(() => getPassageTitle(passage), [passage]);
   const passageText = useMemo(() => getPassageText(passage), [passage]);
 
-  /** 문항에 처음 포커스될 때 시작 시각 기록 */
+  // 첫 포커스 시간 기록
   const onFocusQuestion = useCallback((qid: number | string) => {
     if (!startedAtRef.current[qid]) {
       startedAtRef.current[qid] = Date.now();
     }
   }, []);
 
-  /** 보기 선택 → 로컬 상태 반영 + 서버 업서트 */
+  // 선택 처리 + 서버 제출
   const onSelect = useCallback(
     async (qid: number | string, cid: string) => {
-      // 로컬 업데이트
       setAnswers((prev) => ({ ...prev, [qid]: cid }));
 
-      // 경과시간 계산
       const started = startedAtRef.current[qid];
       const elapsedMs = started ? Date.now() - started : undefined;
 
-      // questionId 숫자 변환(가능하면)
       const qnum = typeof qid === 'number' ? qid : Number(qid);
 
       try {
@@ -106,14 +100,14 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
         // eslint-disable-next-line no-console
         console.error('submitReadingAnswer failed', e);
       } finally {
-        // 다음 측정을 위해 시작 시각 리셋
+        // 다음 선택을 위해 타이머 리셋
         startedAtRef.current[qid] = Date.now();
       }
     },
     [sessionId]
   );
 
-  /** 세션 종료 */
+  // 세션 종료
   const handleFinish = useCallback(async () => {
     try {
       await finishReadingSession({ sessionId: Number(sessionId) });
@@ -196,7 +190,9 @@ function QuestionCard(props: {
     >
       <div className="mb-3">
         <div className="text-sm font-semibold mb-1">Question {index}</div>
-        <div className="whitespace-pre-wrap">{prompt || <span className="opacity-60">—</span>}</div>
+        <div className="whitespace-pre-wrap">
+          {prompt ? prompt : <span className="opacity-60">—</span>}
+        </div>
       </div>
 
       <div className="space-y-2">

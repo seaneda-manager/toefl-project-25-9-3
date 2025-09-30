@@ -1,6 +1,6 @@
-'use client'
+﻿'use client'
 
-// Reading/Listening 공용 문항 리스트 (단일선택)
+// Reading/Listening 怨듭슜 臾명빆 由ъ뒪??(?⑥씪?좏깮)
 
 type Choice = { id: string; label?: string; text?: string }
 type Question = { id: string; number?: number; stem?: string; choices: Choice[] }

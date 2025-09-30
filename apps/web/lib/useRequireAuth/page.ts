@@ -39,3 +39,4 @@ export function useRequireAuth(redirect = '/auth/login') {
 
   return { loading, session, user: session?.user ?? null }
 }
+

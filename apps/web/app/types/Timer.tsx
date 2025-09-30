@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 
 export default function Timer({
@@ -13,3 +13,4 @@ export default function Timer({
   }, [left, onTimeUp]);
   return <div aria-label="timer">{left}s</div>;
 }
+

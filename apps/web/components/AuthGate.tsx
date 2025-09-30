@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../lib/supabaseClient' // ??寃쎈줈 ?뺤젙
+import { supabase } from '../lib/supabaseClient' // ??野껋럥以??類ㅼ젟
 
 type Props = {
   children: ReactNode
@@ -53,3 +53,4 @@ export default function AuthGate({ children, redirect = '/auth/login' }: Props) 
   if (!authed) return null
   return <>{children}</>
 }
+

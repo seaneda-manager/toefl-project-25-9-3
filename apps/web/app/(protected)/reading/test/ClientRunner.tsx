@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 import TestRunner from './TestRunner';
@@ -14,3 +14,4 @@ export default function ClientRunner({ passage }: { passage: Passage }) {
     />
   );
 }
+

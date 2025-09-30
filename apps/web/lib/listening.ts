@@ -1,4 +1,4 @@
-// apps/web/lib/listening.ts
+﻿// apps/web/lib/listening.ts
 
 export type Mode = 'study' | 'test'
 
@@ -23,14 +23,14 @@ export type StatusRes =
     }
   | { ok: false; error: string; detail?: string }
 
-/** 내부 공통 fetch 유틸 (간단 버전) */
+/** ?대? 怨듯넻 fetch ?좏떥 (媛꾨떒 踰꾩쟾) */
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init)
-  // 서버 라우트는 항상 JSON을 반환하도록 되어 있으므로 그대로 파싱
+  // ?쒕쾭 ?쇱슦?몃뒗 ??긽 JSON??諛섑솚?섎룄濡??섏뼱 ?덉쑝誘濡?洹몃?濡??뚯떛
   return (await res.json()) as T
 }
 
-/** 세션 생성 */
+/** ?몄뀡 ?앹꽦 */
 export async function startSession(trackId: string, mode: Mode): Promise<StartRes> {
   return api<StartRes>('/api/listening/start', {
     method: 'POST',
@@ -39,14 +39,15 @@ export async function startSession(trackId: string, mode: Mode): Promise<StartRe
   })
 }
 
-/** 최초 재생 시 1회 소비 처리 (멱등하게 동작하도록 서버 구현됨) */
+/** 理쒖큹 ?ъ깮 ??1???뚮퉬 泥섎━ (硫깅벑?섍쾶 ?숈옉?섎룄濡??쒕쾭 援ы쁽?? */
 export async function consumeOnce(sessionId: string): Promise<ConsumeRes> {
   const qs = encodeURIComponent(sessionId)
   return api<ConsumeRes>(`/api/listening/consume?sessionId=${qs}`, { method: 'POST' })
 }
 
-/** 상태 조회 */
+/** ?곹깭 議고쉶 */
 export async function getStatus(sessionId: string): Promise<StatusRes> {
   const qs = encodeURIComponent(sessionId)
   return api<StatusRes>(`/api/listening/status?sessionId=${qs}`)
 }
+

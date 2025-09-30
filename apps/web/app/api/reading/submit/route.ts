@@ -1,4 +1,4 @@
-// apps/web/app/api/reading/submit/route.ts
+﻿// apps/web/app/api/reading/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 테이블/컬럼명은 프로젝트 스키마에 맞춰 조정하세요.
-    // 가정: reading_answers(session_id, question_id, choice_id, elapsed_ms, updated_at)
+    // ?뚯씠釉?而щ읆紐낆? ?꾨줈?앺듃 ?ㅽ궎留덉뿉 留욎떠 議곗젙?섏꽭??
+    // 媛?? reading_answers(session_id, question_id, choice_id, elapsed_ms, updated_at)
     const { error } = await supabase
       .from('reading_answers')
       .upsert(
@@ -42,3 +42,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+

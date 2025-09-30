@@ -10,3 +10,4 @@ export default function Page(){
   })();},[]);
   return <pre style={{padding:20,whiteSpace:'pre-wrap'}}>{JSON.stringify(out,null,2)}</pre>;
 }
+

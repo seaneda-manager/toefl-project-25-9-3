@@ -14,3 +14,4 @@ export async function GET(req: Request) {
     : '/auth/update-password'
   return NextResponse.redirect(new URL(next, url))
 }
+

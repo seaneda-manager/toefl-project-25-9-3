@@ -21,3 +21,4 @@ export function useRequireAuth(returnTo: string = "/") {
 
   return ready;
 }
+

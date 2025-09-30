@@ -1,4 +1,4 @@
-export const runtime = 'nodejs';
+﻿export const runtime = 'nodejs';
 
 import { NextResponse, NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ ok:false, error:'DB_ERROR', detail:error.message }, { status:500 });
     if (!data)   return NextResponse.json({ ok:false, error:'NOT_FOUND' }, { status:404 });
 
-    // (선택) 이벤트 로깅 테이블이 있다면
+    // (?좏깮) ?대깽??濡쒓퉭 ?뚯씠釉붿씠 ?덈떎硫?
     // await supabase.from('reading_plays').insert({ session_id: sessionId, passage_id: passageId, mode });
 
     return NextResponse.json({ ok:true, session: data }, { status:200 });
@@ -45,3 +45,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok:false, error:'INTERNAL', detail:String(err?.message ?? err) }, { status:500 });
   }
 }
+

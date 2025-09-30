@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -8,13 +9,32 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["node"],
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/web/*"],
+      "@/app/*": ["apps/web/app/*"],
+      "@/actions/*": ["apps/web/actions/*"],
+      "@/components/*": ["apps/web/components/*"],
+      "@/lib/*": ["apps/web/lib/*"],
+      "@/styles/*": ["apps/web/styles/*"],
+      "@/types/*": ["apps/web/app/types/*"],
+
+      "@pkg/*": ["packages/*"]
+    },
+
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
   },
   "include": [
     "apps/**/*.ts",
     "apps/**/*.tsx",
+    "apps/**/*.d.ts",
     "packages/**/*.ts",
-    "packages/**/*.tsx"
+    "packages/**/*.tsx",
+    "packages/**/*.d.ts"
   ],
   "exclude": ["node_modules", ".next", "dist"]
 }

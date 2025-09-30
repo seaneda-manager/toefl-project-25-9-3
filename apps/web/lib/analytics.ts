@@ -36,3 +36,4 @@ export function setUserProperties(props: Record<string, any>) {
     mixpanel.people.set(props);
   }
 }
+

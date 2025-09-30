@@ -16,3 +16,4 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
 
   return <>{children}</>;
 }
+

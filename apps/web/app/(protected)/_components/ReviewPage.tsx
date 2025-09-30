@@ -30,7 +30,7 @@ export default async function ReviewPage({
   const { data: rows, error } =
     await supabase.rpc(rowsRpc, { session_id: sessionId });
 
-  // 👉 옵션 C: DB 준비 전엔 모킹으로 화면만 먼저
+  // Fallback: DB 연결/데이터가 없으면 목 데이터로 테이블 렌더
   if (error || scoreErr || !rows || !scoreRows) {
     const mock = [
       { q_no: 1, question: 'Mock Q1', user_choice: 'A', correct_choice: 'B', is_correct: false },
@@ -77,10 +77,14 @@ function Table({ rows }: { rows: Row[] }) {
           {rows.map((r) => (
             <tr key={r.q_no} className="[&>td]:px-3 [&>td]:py-2 border-t">
               <td className="font-medium">{r.q_no}</td>
-              <td>{r.question ?? "-"}</td>
+              <td>{r.question ?? "—"}</td>
               <td>{r.user_choice ?? <span className="opacity-60">—</span>}</td>
               <td>{r.correct_choice ?? <span className="opacity-60">—</span>}</td>
-              <td>{r.is_correct ? <span className="text-green-600">✓</span> : <span className="text-red-600">✗</span>}</td>
+              <td>
+                {r.is_correct
+                  ? <span className="text-green-600">Correct</span>
+                  : <span className="text-red-600">Wrong</span>}
+              </td>
             </tr>
           ))}
         </tbody>

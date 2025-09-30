@@ -40,3 +40,4 @@ export function injectLegacyPayload(row: SetRow) {
   // if (row.section === 'reading') (window as any).initReadingStudy?.(row.payload_json);
   // if (row.section === 'listening') (window as any).initListeningStudy?.(row.payload_json);
 }
+

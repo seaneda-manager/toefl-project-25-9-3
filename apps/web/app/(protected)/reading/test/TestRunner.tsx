@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import Progress from '@/components/ui/Progress';
 import QuestionCard from '@/components/QuestionCard';
 
-// 서버 액션 (경로만 맞춰줘)
+// ?쒕쾭 ?≪뀡 (寃쎈줈留?留욎떠以?
 import {
   // startReadingSession,
   submitReadingAnswer,
@@ -19,30 +19,30 @@ type Props = {
   onFinish: (sessionId: string) => void;
 };
 
-// finish 액션 응답 안전타입(세션 ID가 올 수도 있고 없을 수도 있음)
+// finish ?≪뀡 ?묐떟 ?덉쟾????몄뀡 ID媛 ???섎룄 ?덇퀬 ?놁쓣 ?섎룄 ?덉쓬)
 type FinishRes = { ok?: boolean; sessionId?: string; id?: string };
 
 export default function TestRunner({ passage, onFinish }: Props) {
-  // 세션 시작(id는 start 액션이 있으면 서버에서 받아오고, 없으면 임시/서버에서 생성)
+  // ?몄뀡 ?쒖옉(id??start ?≪뀡???덉쑝硫??쒕쾭?먯꽌 諛쏆븘?ㅺ퀬, ?놁쑝硫??꾩떆/?쒕쾭?먯꽌 ?앹꽦)
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // 사용자가 선택한 답안: { [questionId]: choiceId }
+  // ?ъ슜?먭? ?좏깮???듭븞: { [questionId]: choiceId }
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  // 타이머(필요 시 서버에서 내려주는 값으로 대체 가능)
+  // ??대㉧(?꾩슂 ???쒕쾭?먯꽌 ?대젮二쇰뒗 媛믪쑝濡??泥?媛??
   const TOTAL_SEC = 10 * 60;
 
-  // 문항 정렬
+  // 臾명빆 ?뺣젹
   const questions = useMemo(
     () => [...(passage.questions ?? [])].sort((a, b) => (a.number ?? 0) - (b.number ?? 0)),
     [passage.questions]
   );
 
-  // 진행률
+  // 吏꾪뻾瑜?
   const answeredCount = Object.keys(answers).length;
   const progressPct = questions.length ? (answeredCount / questions.length) * 100 : 0;
 
-  // (옵션) 세션 시작 훅
+  // (?듭뀡) ?몄뀡 ?쒖옉 ??
   useEffect(() => {
     let ignore = false;
     (async () => {
@@ -51,7 +51,7 @@ export default function TestRunner({ passage, onFinish }: Props) {
         // if (!ignore) setSessionId(sessionId);
         setSessionId((prev) => prev ?? null);
       } catch {
-        // start 실패해도 진행 가능
+        // start ?ㅽ뙣?대룄 吏꾪뻾 媛??
       }
     })();
     return () => {
@@ -59,12 +59,12 @@ export default function TestRunner({ passage, onFinish }: Props) {
     };
   }, [passage.id]);
 
-  // 답안 선택 시: 로컬 상태 업데이트 + 서버로 즉시 업서트(선택사항)
+  // ?듭븞 ?좏깮 ?? 濡쒖뺄 ?곹깭 ?낅뜲?댄듃 + ?쒕쾭濡?利됱떆 ?낆꽌???좏깮?ы빆)
   const handleAnswer = async (qId: string, choiceId: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: choiceId }));
     try {
       await submitReadingAnswer({
-        sessionId: sessionId ?? undefined, // 아직 없으면 서버에서 생성 허용
+        sessionId: sessionId ?? undefined, // ?꾩쭅 ?놁쑝硫??쒕쾭?먯꽌 ?앹꽦 ?덉슜
         passageId: passage.id,
         questionId: qId,
         choiceId,
@@ -74,7 +74,7 @@ export default function TestRunner({ passage, onFinish }: Props) {
     }
   };
 
-  // 수동 저장(옵션)
+  // ?섎룞 ????듭뀡)
   const handleSave = async () => {
     try {
       await Promise.all(
@@ -92,7 +92,7 @@ export default function TestRunner({ passage, onFinish }: Props) {
     }
   };
 
-  // 종료
+  // 醫낅즺
   const handleFinish = async () => {
     try {
       const res = (await finishReadingSession({
@@ -100,7 +100,7 @@ export default function TestRunner({ passage, onFinish }: Props) {
         passageId: passage.id,
       })) as FinishRes;
 
-      // ⬇️ 안전하게 문자열 보장
+      // 燧뉛툘 ?덉쟾?섍쾶 臾몄옄??蹂댁옣
       const sid: string = res.sessionId ?? res.id ?? sessionId ?? 'latest';
       onFinish(String(sid));
     } catch {
@@ -110,7 +110,7 @@ export default function TestRunner({ passage, onFinish }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* 섹션 헤더: 타이머 / 진행률 / 컨트롤 */}
+      {/* ?뱀뀡 ?ㅻ뜑: ??대㉧ / 吏꾪뻾瑜?/ 而⑦듃濡?*/}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-500">Questions</div>
@@ -133,7 +133,7 @@ export default function TestRunner({ passage, onFinish }: Props) {
         </div>
       </div>
 
-      {/* 문항 카드들 */}
+      {/* 臾명빆 移대뱶??*/}
       <div className="space-y-4">
         {questions.map((q) => (
           <div key={q.id} className="rounded-2xl bg-white shadow-soft border border-gray-100">
@@ -142,11 +142,11 @@ export default function TestRunner({ passage, onFinish }: Props) {
             </div>
             <div className="p-5">
               <QuestionCard
-                prompt={q.stem ?? ''} // ⬅️ string 보장
+                prompt={q.stem ?? ''} // 燧낉툘 string 蹂댁옣
                 choices={(q.choices ?? []).map((c) => ({
                   ...c,
                   label: (c as any).label ?? (c as any).text ?? '',
-                }))} // 필요시 as any 제거하고 Choice 타입에 label 존재 보장
+                }))} // ?꾩슂??as any ?쒓굅?섍퀬 Choice ??낆뿉 label 議댁옱 蹂댁옣
                 selected={answers[q.id] ?? null}
                 onAnswer={(choiceId) => handleAnswer(q.id, choiceId)}
               />
@@ -157,3 +157,4 @@ export default function TestRunner({ passage, onFinish }: Props) {
     </div>
   );
 }
+

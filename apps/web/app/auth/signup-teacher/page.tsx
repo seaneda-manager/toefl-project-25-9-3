@@ -2,9 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-// 경로 alias 정리: app/actions 쪽으로 고정
 import { signUpTeacher } from '@/actions/auth';
-import type { ActionState } from '@/actions/auth';
 
 export default function SignupTeacherPage() {
   const [email, setEmail] = useState('');
@@ -12,23 +10,22 @@ export default function SignupTeacherPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <h1 className="text-2xl font-semibold">교사 회원가입</h1>
+      <h1 className="text-2xl font-semibold">Teacher Sign Up</h1>
 
-      {/* onSubmit으로 pending 처리 */}
+      {/* Use server action; manage pending state locally */}
       <form
         action={async (formData) => {
           setSubmitting(true);
           try {
-            await signUpTeacher(formData); // 서버 액션에서 redirect 처리
+            await signUpTeacher(formData); // server action handles redirect if any
           } finally {
             setSubmitting(false);
           }
         }}
-        onSubmit={() => setSubmitting(true)}
         className="space-y-4"
       >
         <div>
-          <label className="block text-sm mb-1">이메일</label>
+          <label className="block text-sm mb-1">Email</label>
           <input
             name="email"
             type="email"
@@ -41,14 +38,14 @@ export default function SignupTeacherPage() {
         </div>
 
         <div>
-          <label className="block text-sm mb-1">비밀번호</label>
+          <label className="block text-sm mb-1">Password</label>
           <input
             name="password"
             type="password"
             required
             minLength={6}
             className="w-full border rounded-lg px-3 py-2"
-            placeholder="6자 이상"
+            placeholder="At least 6 characters"
           />
         </div>
 
@@ -56,15 +53,16 @@ export default function SignupTeacherPage() {
           type="submit"
           disabled={submitting}
           className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-60"
+          aria-busy={submitting}
         >
-          {submitting ? '설정 저장 중' : '교사 설정 만들기'}
+          {submitting ? 'Creating…' : 'Create teacher account'}
         </button>
       </form>
 
       <p className="text-sm">
-        이미 계정이 있다면{' '}
+        Already have an account?{' '}
         <a className="underline" href={`/auth/login?email=${encodeURIComponent(email)}`}>
-          로그인하기
+          Log in
         </a>
       </p>
     </div>

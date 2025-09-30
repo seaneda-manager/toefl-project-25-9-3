@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import {useEffect, useRef, useState} from 'react';
 
 export default function SkimmingGate({html, onUnlock}:{html:string; onUnlock:()=>void}){
@@ -17,7 +17,7 @@ export default function SkimmingGate({html, onUnlock}:{html:string; onUnlock:()=
       <div dangerouslySetInnerHTML={{__html: html}} />
       <div className="sticky bottom-0 bg-white py-3">
         <button className="btn-primary" disabled={!atBottom} onClick={onUnlock}>Start Questions</button>
-        {!atBottom && <p className="text-xs text-gray-500 mt-1">※ 하단까지 스크롤해야 활성화됩니다.</p>}
+        {!atBottom && <p className="text-xs text-gray-500 mt-1">???섎떒源뚯? ?ㅽ겕濡ㅽ빐???쒖꽦?붾맗?덈떎.</p>}
       </div>
     </div>
   );

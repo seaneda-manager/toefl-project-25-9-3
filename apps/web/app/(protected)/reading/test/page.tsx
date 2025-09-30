@@ -1,4 +1,4 @@
-﻿// app/(protected)/reading/test/page.tsx
+// app/(protected)/reading/test/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import ClientRunner from './ClientRunner';
 import type { Passage, Question, Choice } from '@/types/types-reading';
@@ -72,3 +72,4 @@ export default async function Page() {
     </div>
   );
 }
+

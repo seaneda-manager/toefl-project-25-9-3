@@ -38,3 +38,4 @@ export default function HomeSelector({ onStart, onTeacher }:{ onStart:(v:{tpo:st
     </div>
   );
 }
+

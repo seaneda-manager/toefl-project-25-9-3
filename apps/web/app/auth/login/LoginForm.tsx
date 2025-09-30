@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { signInEmailPassword } from '@/actions/auth';
@@ -58,3 +58,4 @@ export default function LoginForm() {
     </form>
   );
 }
+

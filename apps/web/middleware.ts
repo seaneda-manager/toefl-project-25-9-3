@@ -1,4 +1,4 @@
-// apps/web/middleware.ts
+﻿// apps/web/middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -18,7 +18,7 @@ export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl
   const url = req.nextUrl
 
-  // ✅ dev에서 teacher/legacy는 완전 패스
+  // ??dev?먯꽌 teacher/legacy???꾩쟾 ?⑥뒪
   if (DEV_ALLOW && (pathname.startsWith('/teacher') || pathname.startsWith('/legacy'))) {
     return NextResponse.next()
   }
@@ -53,6 +53,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // ✅ teacher/legacy를 아예 매처에서 빼도 좋음 (둘 중 하나만 해도 됨)
+  // ??teacher/legacy瑜??꾩삁 留ㅼ쿂?먯꽌 鍮쇰룄 醫뗭쓬 (??以??섎굹留??대룄 ??
   matcher: ['/((?!_next/static|_next/image|favicon.ico|assets/|teacher/|legacy/).*)'],
 }
+

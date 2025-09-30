@@ -1,46 +1,54 @@
-// apps/web/actions/listening.ts
-'use client';
+﻿'use server';
 
-export type StartListeningSessionArgs = {
-  trackId: string;                // 텍스트/식별자
-  mode: 'study' | 'test' | 'p' | 't' | 'r';
-};
-export type SubmitListeningAnswerArgs = {
-  sessionId: string;              // UUID
-  questionId: number;             // BIGINT
-  choiceId: string;
-  elapsedMs?: number;
-};
-export type FinishListeningSessionArgs = {
-  sessionId: string;              // UUID
-};
+import { getSupabaseServer } from '@/lib/supabaseServer';
 
-export async function startListeningSession(args: StartListeningSessionArgs) {
-  const res = await fetch('/api/listening/start', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  });
-  if (!res.ok) throw new Error(`startListeningSession failed: ${res.status}`);
-  return res.json() as Promise<{ ok: boolean; sessionId: string }>;
+export type StartListeningSessionArgs = { setId: string; mode: 'p' | 't' | 'r' };
+export async function startListeningSession({ setId, mode }: StartListeningSessionArgs) {
+  const supabase = await getSupabaseServer(); // ✅ 클라이언트 자체
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr) throw authErr;
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('listening_sessions')
+    .insert({ user_id: user.id, set_id: setId, mode })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return { sessionId: data.id as string };
 }
 
-export async function submitListeningAnswer(args: SubmitListeningAnswerArgs) {
-  const res = await fetch('/api/listening/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  });
-  if (!res.ok) throw new Error(`submitListeningAnswer failed: ${res.status}`);
-  return res.json() as Promise<{ ok: boolean }>;
+export type SubmitListeningAnswerArgs = { sessionId: string; questionId: string; choiceId?: string };
+export async function submitListeningAnswer({ sessionId, questionId, choiceId }: SubmitListeningAnswerArgs) {
+  const supabase = await getSupabaseServer(); // ✅
+  if (!choiceId) {
+    const { error } = await supabase
+      .from('listening_answers')
+      .delete()
+      .eq('session_id', sessionId)
+      .eq('question_id', questionId);
+    if (error) throw error;
+    return { ok: true };
+  }
+
+  const { error } = await supabase
+    .from('listening_answers')
+    .upsert(
+      { session_id: sessionId, question_id: questionId, choice_id: choiceId },
+      { onConflict: 'session_id,question_id' }
+    );
+  if (error) throw error;
+  return { ok: true };
 }
 
-export async function finishListeningSession(args: FinishListeningSessionArgs) {
-  const res = await fetch('/api/listening/finish', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  });
-  if (!res.ok) throw new Error(`finishListeningSession failed: ${res.status}`);
-  return res.json() as Promise<{ ok: boolean }>;
+export type FinishListeningSessionArgs = { sessionId: string };
+export async function finishListeningSession({ sessionId }: FinishListeningSessionArgs) {
+  const supabase = await getSupabaseServer(); // ✅
+  const { error } = await supabase
+    .from('listening_sessions')
+    .update({ finished_at: new Date().toISOString() })
+    .eq('id', sessionId);
+  if (error) throw error;
+  return { ok: true };
 }

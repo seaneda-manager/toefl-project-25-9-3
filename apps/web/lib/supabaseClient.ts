@@ -25,3 +25,4 @@ export function getSupabaseBrowser(): SupabaseClient {
 
 // ?깃????대낫?닿린 (?대씪?댁뼵???꾩슜)
 export const supabase = getSupabaseBrowser();
+

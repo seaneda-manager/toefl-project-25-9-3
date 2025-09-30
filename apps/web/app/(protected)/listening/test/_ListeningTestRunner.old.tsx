@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/listening/test/ListeningTestRunner.tsx
+﻿// apps/web/app/(protected)/listening/test/ListeningTestRunner.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
@@ -22,8 +22,8 @@ const getChoices = (q: any): Choice[] =>
 const getPrompt = (q: any) => q?.prompt ?? q?.stem ?? q?.text ?? q?.title ?? '';
 
 type Props = {
-  track: ListeningTrack;     // { id, title, audioUrl, ... } (id: string 권장)
-  questions: LQuestion[];    // [{ id:number, prompt, choices:[] }, ...] (id: number 권장)
+  track: ListeningTrack;     // { id, title, audioUrl, ... } (id: string 沅뚯옣)
+  questions: LQuestion[];    // [{ id:number, prompt, choices:[] }, ...] (id: number 沅뚯옣)
   mode?: 'study' | 'test' | 'p' | 't' | 'r';
 };
 
@@ -34,7 +34,7 @@ export default function ListeningTestRunner({ track, questions, mode = 'study' }
   const total = questions.length;
   const answered = useMemo(() => Object.values(answers).filter(Boolean).length, [answers]);
 
-  // 세션 시작(UUID 반환)
+  // ?몄뀡 ?쒖옉(UUID 諛섑솚)
   useEffect(() => {
     (async () => {
       try {
@@ -96,7 +96,7 @@ export default function ListeningTestRunner({ track, questions, mode = 'study' }
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Listening Test</h1>
         <p className="text-sm opacity-70">
-          Track: {track?.title ?? '-'} · Progress: {answered}/{total}
+          Track: {track?.title ?? '-'} 쨌 Progress: {answered}/{total}
         </p>
       </header>
 
@@ -122,7 +122,7 @@ export default function ListeningTestRunner({ track, questions, mode = 'study' }
             >
               <div className="mb-3">
                 <div className="text-sm font-semibold mb-1">Question {idx + 1}</div>
-                <div className="whitespace-pre-wrap">{prompt || <span className="opacity-60">—</span>}</div>
+                <div className="whitespace-pre-wrap">{prompt || <span className="opacity-60">??/span>}</div>
               </div>
 
               <div className="space-y-2">
@@ -166,3 +166,4 @@ export default function ListeningTestRunner({ track, questions, mode = 'study' }
     </div>
   );
 }
+

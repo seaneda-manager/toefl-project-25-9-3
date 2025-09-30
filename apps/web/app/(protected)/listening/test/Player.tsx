@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRef, useState } from 'react'
 
@@ -16,23 +16,23 @@ export default function Player({ audioSrc, sessionId }: Props) {
     const el = audioRef.current
     if (!el) return
 
-    // ❶ 서버에 소비 마킹 요청
+    // ???쒕쾭???뚮퉬 留덊궧 ?붿껌
     const res = await fetch('/api/listening/consume', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, // 이 헤더 꼭 필요!
+      headers: { 'Content-Type': 'application/json' }, // ???ㅻ뜑 瑗??꾩슂!
       body: JSON.stringify({ sessionId })
     })
 
     if (!res.ok) {
       if (res.status === 409) {
-        alert('이미 재생된 세션입니다. 재생할 수 없어요.')
+        alert('?대? ?ъ깮???몄뀡?낅땲?? ?ъ깮?????놁뼱??')
       } else {
-        alert('재생 준비 중 오류가 발생했습니다.')
+        alert('?ъ깮 以鍮?以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.')
       }
       return
     }
 
-    // ❷ 실제 재생
+    // ???ㅼ젣 ?ъ깮
     try {
       await el.play()
       setHasPlayed(true)
@@ -47,8 +47,9 @@ export default function Player({ audioSrc, sessionId }: Props) {
         disabled={hasPlayed}
         className="rounded-xl px-4 py-2 border"
       >
-        {hasPlayed ? '이미 재생됨' : '재생'}
+        {hasPlayed ? '?대? ?ъ깮?? : '?ъ깮'}
       </button>
     </div>
   )
 }
+

@@ -228,3 +228,4 @@ export async function mountLegacyFromString(html: string, opts?: MountLegacyOpti
 }
 
 export default mountLegacy;
+

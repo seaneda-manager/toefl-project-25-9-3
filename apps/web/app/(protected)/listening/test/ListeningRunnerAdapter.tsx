@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import ListeningTestRunner from './ListeningTestRunner';
 import type { Passage } from '@/types/test';
 import type { ListeningTrack } from '@/types/types-listening';
@@ -10,10 +10,10 @@ export default function ListeningRunnerAdapter({
 }: {
   passage: Passage;
   audioUrl: string;
-  // 부모와의 호환을 위해 string 유지
+  // 遺紐⑥????명솚???꾪빐 string ?좎?
   onFinish?: (sessionId: string) => void;
 }) {
-  // Passage -> ListeningTrack 변환
+  // Passage -> ListeningTrack 蹂??
   const track: ListeningTrack = {
     id: passage.id,
     audioUrl,
@@ -32,8 +32,9 @@ export default function ListeningRunnerAdapter({
   return (
     <ListeningTestRunner
       track={track}
-      // 러너는 number로, 부모는 string으로 받도록 여기서만 변환
+      // ?щ꼫??number濡? 遺紐⑤뒗 string?쇰줈 諛쏅룄濡??ш린?쒕쭔 蹂??
       onFinish={(sid: number) => onFinish?.(String(sid))}
     />
   );
 }
+

@@ -26,3 +26,4 @@ export default function Timer({ seconds, onExpire }: { seconds: number; onExpire
 
   return <div className="text-sm font-mono">??{mm}:{ss}</div>;
 }
+

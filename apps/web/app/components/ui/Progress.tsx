@@ -1,4 +1,4 @@
-/* apps/web/app/components/ui/Progress.tsx */
+﻿/* apps/web/app/components/ui/Progress.tsx */
 type Props = { value: number };
 export default function Progress({ value }: Props) {
   return (
@@ -7,3 +7,4 @@ export default function Progress({ value }: Props) {
     </div>
   );
 }
+

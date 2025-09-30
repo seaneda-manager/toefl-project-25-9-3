@@ -1,4 +1,4 @@
-// apps/web/app/api/listening/finish/route.ts
+﻿// apps/web/app/api/listening/finish/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase
       .from('listening_sessions')
       .update({ finished_at: new Date().toISOString() })
-      .eq('id', String(sessionId)); // uuid 비교
+      .eq('id', String(sessionId)); // uuid 鍮꾧탳
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -24,3 +24,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+

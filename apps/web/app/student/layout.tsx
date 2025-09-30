@@ -1,8 +1,8 @@
-// apps/web/app/student/layout.tsx
+﻿// apps/web/app/student/layout.tsx
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
-// 쿠키/세션 의존이라 동적 처리 표시(권장)
+// 荑좏궎/?몄뀡 ?섏〈?대씪 ?숈쟻 泥섎━ ?쒖떆(沅뚯옣)
 export const dynamic = 'force-dynamic';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
@@ -15,7 +15,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
     redirect('/auth/login');
   }
 
-  // role이 설정된 경우에만 교차-리다이렉트
+  // role???ㅼ젙??寃쎌슦?먮쭔 援먯감-由щ떎?대젆??
   const role = user.user_metadata?.role as string | undefined;
   if (role && role !== 'student') {
     redirect('/teacher/dashboard');
@@ -23,3 +23,4 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   return <>{children}</>;
 }
+

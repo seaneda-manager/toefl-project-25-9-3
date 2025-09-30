@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { startSession, consumeOnce, getStatus } from '@/lib/listening'
@@ -9,9 +9,9 @@ export default function ListeningPlayer({ trackId, mode = 'study' }: Props) {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const consumedRef = useRef(false) // 멱등 가드
+  const consumedRef = useRef(false) // 硫깅벑 媛??
 
-  // 세션 생성 (마운트 또는 trackId 바뀔 때 한 번)
+  // ?몄뀡 ?앹꽦 (留덉슫???먮뒗 trackId 諛붾?????踰?
   useEffect(() => {
     let alive = true
     setError(null)
@@ -26,17 +26,17 @@ export default function ListeningPlayer({ trackId, mode = 'study' }: Props) {
     return () => { alive = false }
   }, [trackId, mode])
 
-  // 실제 오디오 플레이 예시
+  // ?ㅼ젣 ?ㅻ뵒???뚮젅???덉떆
   const onPlay = async () => {
     if (!sessionId) return
     if (!consumedRef.current) {
-      consumedRef.current = true // 중복 호출 가드
+      consumedRef.current = true // 以묐났 ?몄텧 媛??
       const res = await consumeOnce(sessionId)
       if (!('ok' in res) || !res.ok) {
         setError(res.detail ?? res.error ?? 'Failed to consume')
       }
     }
-    // 여기서 audio.play() 같은 실제 재생 로직 호출
+    // ?ш린??audio.play() 媛숈? ?ㅼ젣 ?ъ깮 濡쒖쭅 ?몄텧
   }
 
   const onShowStatus = async () => {
@@ -48,7 +48,7 @@ export default function ListeningPlayer({ trackId, mode = 'study' }: Props) {
 
   return (
     <div className="rounded-2xl border p-4 shadow-sm bg-white flex flex-col gap-3">
-      <div className="text-sm text-gray-600">Track: <b>{trackId}</b> · Mode: <b>{mode}</b></div>
+      <div className="text-sm text-gray-600">Track: <b>{trackId}</b> 쨌 Mode: <b>{mode}</b></div>
 
       {error && <div className="text-red-600 text-sm">{error}</div>}
 
@@ -58,7 +58,7 @@ export default function ListeningPlayer({ trackId, mode = 'study' }: Props) {
           onClick={onPlay}
           disabled={loading || !sessionId}
         >
-          {loading ? 'Preparing…' : 'Play'}
+          {loading ? 'Preparing?? : 'Play'}
         </button>
 
         <button
@@ -71,8 +71,9 @@ export default function ListeningPlayer({ trackId, mode = 'study' }: Props) {
       </div>
 
       <div className="text-xs text-gray-500">
-        sessionId: {sessionId ?? '—'}
+        sessionId: {sessionId ?? '??}
       </div>
     </div>
   )
 }
+

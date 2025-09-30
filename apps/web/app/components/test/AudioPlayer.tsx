@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import {useEffect, useRef, useState} from 'react';
 
 type Props = { src?:string; oneShot?:boolean; disableSeek?:boolean; onStart?:()=>void; onEnd?:()=>void; };

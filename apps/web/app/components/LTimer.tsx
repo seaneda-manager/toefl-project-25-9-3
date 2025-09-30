@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 
 export default function LTimer({
@@ -11,7 +11,7 @@ export default function LTimer({
   const [left, setLeft] = useState(seconds);
 
   useEffect(() => {
-    setLeft(seconds); // src가 바뀔 때 초기화하고 싶다면 이 줄 유지
+    setLeft(seconds); // src媛 諛붾???珥덇린?뷀븯怨??띕떎硫???以??좎?
   }, [seconds]);
 
   useEffect(() => {
@@ -34,3 +34,4 @@ export default function LTimer({
     </span>
   );
 }
+

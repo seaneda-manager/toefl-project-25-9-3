@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
@@ -17,63 +13,35 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
+
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ],
+      "@/*": ["./*"],
+
       // ✅ actions는 app 바깥(실구현)을 최우선으로
-      "@/actions/*": [
-        "./actions/*",
-        "./app/actions/*"
-      ],
-      "@/app/actions/*": [
-        "./actions/*"
-      ],
+      "@/actions/*": ["./actions/*", "./app/actions/*"],
+      "@/app/actions/*": ["./actions/*"],
+
       // 아래는 실제 디렉터리 우선 → app 하위 폴백
-      "@/types/*": [
-        "./types/*",
-        "./app/types/*"
-      ],
-      "@/components/*": [
-        "./components/*",
-        "./app/components/*"
-      ],
-      "@/lib/*": [
-        "./lib/*",
-        "./app/lib/*"
-      ],
-      "@/hooks/*": [
-        "./hooks/*",
-        "./app/hooks/*",
-        "./app/(protected)/_hooks/*"
-      ],
+      "@/types/*": ["./types/*", "./app/types/*"],
+      "@/components/*": ["./components/*", "./app/components/*"],
+      "@/lib/*": ["./lib/*", "./app/lib/*"],
+      "@/hooks/*": ["./hooks/*", "./app/hooks/*", "./app/(protected)/_hooks/*"],
+
       // (선택) app 전체 alias가 필요하면 유지
-      "@/app/*": [
-        "./app/*"
-      ]
+      "@/app/*": ["./app/*"]
     },
-    "types": [
-      "node"
-    ],
+
+    "types": ["node"],
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+
+    "plugins": [{ "name": "next" }]
+
+    // (선택 강화)
+    // "noUncheckedIndexedAccess": true,
+    // "verbatimModuleSyntax": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "dist",
-    "app/(protected)/listening/test/_*.tsx"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist", "app/(protected)/listening/test/_*.tsx"]
 }

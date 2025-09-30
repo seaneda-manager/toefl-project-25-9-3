@@ -55,3 +55,4 @@ const barStyle: React.CSSProperties = {
 const logoStyle: React.CSSProperties = {
   fontWeight:700, textDecoration:'none'
 };
+
