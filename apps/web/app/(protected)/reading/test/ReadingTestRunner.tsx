@@ -2,15 +2,14 @@
 'use client';
 
 import { useMemo, useState, useCallback, useRef } from 'react';
-// 경로 통일: '@/types/types-reading' 로 사용하는 게 안전
-import type { Passage, Question } from '@/types/types-reading';
+import type { RPassage, RQuestion } from '@/types/types-reading';
 import { submitReadingAnswer, finishReadingSession } from '@/actions/reading';
 
-/** Safe extractors */
+/** === Safe helpers === */
 function getPrompt(q: unknown): string {
   if (q && typeof q === 'object') {
     const o = q as Record<string, any>;
-    return o.prompt ?? o.stem ?? o.text ?? o.title ?? '';
+    return o.stem ?? o.prompt ?? o.text ?? o.title ?? '';
   }
   return '';
 }
@@ -33,11 +32,10 @@ function normalizeKey(v: unknown): string {
   return typeof v === 'string' ? v : String(v);
 }
 
-// Passage 텍스트/타이틀 추출
 function getPassageText(p: unknown): string {
   if (p && typeof p === 'object') {
     const o = p as Record<string, any>;
-    return o.text ?? o.content ?? o.body ?? o.passage ?? o.html ?? '';
+    return o.content ?? o.text ?? o.body ?? o.passage ?? o.html ?? '';
   }
   return '';
 }
@@ -53,16 +51,19 @@ function getPassageTitle(p: unknown): string {
 /** Props */
 type Props = {
   sessionId: string;
-  passage: Passage;
+  passage: RPassage;
 };
 
 export default function ReadingTestRunner({ sessionId, passage }: Props) {
   // 로컬 상태: question.id -> choice.id
   const [answers, setAnswers] = useState<Record<number | string, string>>({});
-  // 각 문항 최초 포커스 시점
+  // 각 문항 최초 포커스 시점(ms)
   const startedAtRef = useRef<Record<number | string, number>>({});
 
-  const questions = useMemo(() => (passage?.questions ?? []) as Question[], [passage]);
+  const questions = useMemo<RQuestion[]>(
+    () => [...(passage?.questions ?? [])],
+    [passage]
+  );
   const total = questions.length;
   const answered = useMemo(
     () => Object.keys(answers).filter((k) => answers[k] !== '').length,
@@ -87,13 +88,11 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
       const started = startedAtRef.current[qid];
       const elapsedMs = started ? Date.now() - started : undefined;
 
-      const qnum = typeof qid === 'number' ? qid : Number(qid);
-
       try {
         await submitReadingAnswer({
-          sessionId: Number(sessionId),
-          questionId: Number.isFinite(qnum) ? qnum : String(qid),
-          choiceId: cid,
+          sessionId,                          // 문자열 그대로 전달 OK
+          questionId: String(qid),            // 표준화: string
+          choiceId: String(cid),              // 표준화: string
           elapsedMs,
         });
       } catch (e) {
@@ -110,10 +109,9 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
   // 세션 종료
   const handleFinish = useCallback(async () => {
     try {
-      await finishReadingSession({ sessionId: Number(sessionId) });
+      await finishReadingSession(sessionId); // 문자열 직접 전달 지원
       alert(`Submitted ${answered}/${total} answers. Session finished.`);
-      // 필요시 리뷰 페이지로 이동:
-      // window.location.href = `/app/(protected)/reading/review/${sessionId}`;
+      // 필요시: window.location.href = `/app/(protected)/reading/review/${sessionId}`;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('finishReadingSession failed', e);
@@ -122,7 +120,7 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
   }, [answered, total, sessionId]);
 
   return (
-    <div className="mx-auto max-w-5xl p-6 space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Reading Test</h1>
         <p className="text-sm opacity-70">
@@ -132,7 +130,7 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
       </header>
 
       {passageText ? (
-        <article className="prose max-w-none bg-white rounded-lg border p-4">
+        <article className="prose max-w-none rounded-lg border bg-white p-4">
           <pre className="whitespace-pre-wrap font-sans">{passageText}</pre>
         </article>
       ) : null}
@@ -189,7 +187,7 @@ function QuestionCard(props: {
       onFocus={() => onFocusQuestion(qid)}
     >
       <div className="mb-3">
-        <div className="text-sm font-semibold mb-1">Question {index}</div>
+        <div className="mb-1 text-sm font-semibold">Question {index}</div>
         <div className="whitespace-pre-wrap">
           {prompt ? prompt : <span className="opacity-60">—</span>}
         </div>
@@ -207,7 +205,7 @@ function QuestionCard(props: {
               <label
                 key={cid || i}
                 htmlFor={inputId}
-                className="flex items-start gap-2 cursor-pointer"
+                className="flex cursor-pointer items-start gap-2"
               >
                 <input
                   id={inputId}

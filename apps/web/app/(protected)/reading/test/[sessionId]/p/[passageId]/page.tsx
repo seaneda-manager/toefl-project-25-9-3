@@ -1,25 +1,25 @@
-// apps/web/app/(protected)/reading/test/[sessionId]/p/[passageId]/page.tsx
+﻿// apps/web/app/(protected)/reading/test/[sessionId]/p/[passageId]/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import ReadingTestRunner from '@/app/(protected)/reading/test/ReadingTestRunner';
 
-// 도메인 타입 (Runner가 기대하는 타입)
+// ?꾨찓?????(Runner媛 湲곕??섎뒗 ???
 import type {
   Passage as ReadingPassage,
   Question as ReadingQuestion,
-} from '@/app/types/types-reading';
+} from '@/types/types-reading';
 
-// 소스 타입 (DB/RPC에서 가져오는 테스트 타입)
+// ?뚯뒪 ???(DB/RPC?먯꽌 媛?몄삤???뚯뒪?????
 import type {
   Passage as TestPassage,
   Question as TestQuestion,
 } from '@/app/types/test';
 
-/** ─────────────────────────────────────────────────────────────
- *  어댑터: TestPassage → ReadingPassage
- *  - Question.type 이 없으면 기본값 'detail' 부여 (규칙 필요시 수정)
- *  - prompt 없으면 stem → text → title 순으로 보강
- *  - title/text도 안전하게 보강
- *  ───────────────────────────────────────────────────────────── */
+/** ?????????????????????????????????????????????????????????????
+ *  ?대뙌?? TestPassage ??ReadingPassage
+ *  - Question.type ???놁쑝硫?湲곕낯媛?'detail' 遺??(洹쒖튃 ?꾩슂???섏젙)
+ *  - prompt ?놁쑝硫?stem ??text ??title ?쒖쑝濡?蹂닿컯
+ *  - title/text???덉쟾?섍쾶 蹂닿컯
+ *  ????????????????????????????????????????????????????????????? */
 function adaptQuestion(q: TestQuestion): ReadingQuestion {
   const anyQ = q as any;
 
@@ -58,14 +58,14 @@ export default async function ReadingPlayPage({
   const sessionId = params.sessionId;
   const passageId = Number(params.passageId);
 
-  // 실제 프로젝트의 RPC/쿼리에 맞게 함수명/파라미터 조정
+  // ?ㅼ젣 ?꾨줈?앺듃??RPC/荑쇰━??留욊쾶 ?⑥닔紐??뚮씪誘명꽣 議곗젙
   const { data: testPassage, error } = await supabase
     .rpc('reading_get_test_passage', { passage_id: passageId })
     .returns<unknown>()
     .single();
 
   if (error || !testPassage) {
-    // 폴백(Mock)
+    // ?대갚(Mock)
     const mock: TestPassage = {
       id: passageId,
       title: 'Mock Passage',
@@ -92,7 +92,7 @@ export default async function ReadingPlayPage({
       <ReadingTestRunner
         sessionId={sessionId}
         passage={readingPassage}
-        // ❌ mode prop 제거 (Runner가 받지 않음)
+        // ??mode prop ?쒓굅 (Runner媛 諛쏆? ?딆쓬)
       />
     );
   }
@@ -103,7 +103,8 @@ export default async function ReadingPlayPage({
     <ReadingTestRunner
       sessionId={sessionId}
       passage={readingPassage}
-      // ❌ mode prop 제거
+      // ??mode prop ?쒓굅
     />
   );
 }
+

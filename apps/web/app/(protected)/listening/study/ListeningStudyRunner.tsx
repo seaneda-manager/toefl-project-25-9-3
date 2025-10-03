@@ -10,7 +10,6 @@ import {
 import type { ListeningTrack, LQuestion } from '@/types/types-listening';
 import { isChoiceCorrect } from '@/types/types-listening';
 
-// 새로 추가
 import TopBar from '@/components/test/TopBar';
 import AudioPanel from '@/components/test/AudioPanel';
 
@@ -18,34 +17,32 @@ export default function ListeningStudyRunner({
   track,
   onFinish,
 }: {
-  track: ListeningTrack | undefined; // 런타임 보호
+  track: ListeningTrack | undefined;
   onFinish?: (sessionId: string) => void;
 }) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | null>>({});
-  const [showCorrect, setShowCorrect] = useState(true); // 스터디 모드: 기본 표시
-  const [showTimer, setShowTimer] = useState(true);     // TopBar의 Hide/Show Time 토글용
+  const [showCorrect, setShowCorrect] = useState(true);
+  const [showTimer, setShowTimer] = useState(true);
 
-  // ✅ 안전 배열
   const qs: LQuestion[] = useMemo(() => track?.questions ?? [], [track]);
   const total = qs.length;
   const q: LQuestion | undefined = total > 0 ? qs[current] : undefined;
 
-  // 인덱스 범위 보정
   useEffect(() => {
     if (total === 0) { setCurrent(0); return; }
     if (current >= total) setCurrent(total - 1);
     if (current < 0) setCurrent(0);
   }, [total, current]);
 
-  // 세션 시작
+  // ✅ actions 시그니처에 맞춤: setId + mode: 'p'
   useEffect(() => {
     if (!track?.id) return;
     (async () => {
       const { sessionId: sid } = await startListeningSession({
-        trackId: track.id,
-        mode: 'study',
+        setId: (track as any).setId ?? track.id,
+        mode: 'p',
       });
       setSessionId(sid);
     })();
@@ -60,9 +57,8 @@ export default function ListeningStudyRunner({
 
     await submitListeningAnswer({
       sessionId,
-      questionId: Number(q.id),
+      questionId: String(q.id), // ✅ string 요구
       choiceId,
-      // elapsedMs: 필요시 추가
     });
   }
 
@@ -89,7 +85,6 @@ export default function ListeningStudyRunner({
   );
   const progressPct = Math.round((answeredCount / Math.max(1, total)) * 100);
 
-  // 🔒 로딩/빈/미선택 가드 UI
   if (!track) {
     return <div className="p-6 text-center text-gray-600">트랙을 불러오는 중이거나 선택되지 않았습니다.</div>;
   }
@@ -97,9 +92,7 @@ export default function ListeningStudyRunner({
     return <div className="p-6 text-center text-gray-600">문항이 없습니다.</div>;
   }
 
-  // 라벨이 타입에 없으므로 인덱스로 A/B/C/D 생성
   const choiceLabel = (i: number) => String.fromCharCode(65 + i);
-  // 타임리밋 우선순위: timeLimitSec > durationSec > 기본 600
   const limitSec = track.timeLimitSec ?? track.durationSec ?? 600;
 
   return (
@@ -125,7 +118,7 @@ export default function ListeningStudyRunner({
 
       {/* 메인 2컬럼 */}
       <div className="grid grid-cols-1 lg:grid-cols-[320px,1fr] gap-6">
-        {/* 좌측: 타이머/플레이어/번호 네비 (스티키) */}
+        {/* 좌측 패널 */}
         <div className="space-y-4 lg:sticky lg:top-4 self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-auto">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
@@ -145,8 +138,8 @@ export default function ListeningStudyRunner({
             </div>
           </div>
 
-          {/* 오디오 패널(Exam 모드 제약은 상위에서 prop으로 제어 가능) */}
-          <AudioPanel src={track.audioUrl} allowSeek={true} allowSpeed={true} />
+          {/* 오디오 패널 */}
+          <AudioPanel src={track.audioUrl} allowSeek allowSpeed />
 
           {/* 번호 네비 */}
           <div className="flex items-center justify-between text-xs text-gray-500">
@@ -248,4 +241,3 @@ export default function ListeningStudyRunner({
     </div>
   );
 }
-

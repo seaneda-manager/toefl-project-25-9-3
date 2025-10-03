@@ -1,55 +1,66 @@
-﻿'use client'
+﻿'use client';
 
-import { useRef, useState } from 'react'
+import { useRef, useState } from 'react';
 
 type Props = {
-  audioSrc: string
-  sessionId: string
-}
+  audioSrc: string;
+  sessionId: string;
+};
 
 export default function Player({ audioSrc, sessionId }: Props) {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [hasPlayed, setHasPlayed] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handlePlayClick = async () => {
-    if (hasPlayed || !audioSrc) return
-    const el = audioRef.current
-    if (!el) return
+    if (hasPlayed || !audioSrc || loading) return;
+    const el = audioRef.current;
+    if (!el) return;
 
-    // ???쒕쾭???뚮퉬 留덊궧 ?붿껌
+    setLoading(true);
+
+    // 소비(consume) 기록 남기기
     const res = await fetch('/api/listening/consume', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, // ???ㅻ뜑 瑗??꾩슂!
-      body: JSON.stringify({ sessionId })
-    })
+      headers: { 'Content-Type': 'application/json' }, // 인증 헤더가 필요하면 여기서 추가
+      body: JSON.stringify({ sessionId }),
+    });
 
     if (!res.ok) {
+      setLoading(false);
       if (res.status === 409) {
-        alert('?대? ?ъ깮???몄뀡?낅땲?? ?ъ깮?????놁뼱??')
+        alert('이미 재생된 세션입니다. 다시 재생할 수 없어요.');
       } else {
-        alert('?ъ깮 以鍮?以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.')
+        alert('재생 준비 중 오류가 발생했습니다.');
       }
-      return
+      return;
     }
 
-    // ???ㅼ젣 ?ъ깮
+    // 실제 재생 (브라우저 자동재생 정책 대응)
     try {
-      await el.play()
-      setHasPlayed(true)
-    } catch {}
-  }
+      // 사용자 제스처 내에서 호출됨
+      el.muted = false;
+      await el.play();
+      setHasPlayed(true);
+    } catch (err) {
+      // 자동재생 정책 등에 의해 실패할 수 있음
+      console.error(err);
+      alert('재생이 차단되었어요. 한 번 더 눌러주세요.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
       <audio ref={audioRef} src={audioSrc} preload="none" />
       <button
         onClick={handlePlayClick}
-        disabled={hasPlayed}
+        disabled={hasPlayed || loading}
         className="rounded-xl px-4 py-2 border"
       >
-        {hasPlayed ? '?대? ?ъ깮?? : '?ъ깮'}
+        {loading ? '준비 중…' : hasPlayed ? '재생됨' : '재생'}
       </button>
     </div>
-  )
+  );
 }
-

@@ -19,8 +19,7 @@
       "@/components/*": ["apps/web/components/*"],
       "@/lib/*": ["apps/web/lib/*"],
       "@/styles/*": ["apps/web/styles/*"],
-      "@/types/*": ["apps/web/app/types/*"],
-
+      "@/types/*": ["apps/web/types/*", "apps/web/app/types/*"],  // ← 순서 중요!
       "@pkg/*": ["packages/*"]
     },
 
@@ -36,5 +35,11 @@
     "packages/**/*.tsx",
     "packages/**/*.d.ts"
   ],
-  "exclude": ["node_modules", ".next", "dist"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist",
+    "_archive/**",
+    "apps/web/_archive/**"
+  ]
 }

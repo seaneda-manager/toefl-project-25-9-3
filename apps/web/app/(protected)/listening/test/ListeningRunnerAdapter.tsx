@@ -1,40 +1,25 @@
 ﻿'use client';
+
 import ListeningTestRunner from './ListeningTestRunner';
 import type { Passage } from '@/types/test';
-import type { ListeningTrack } from '@/types/types-listening';
 
 export default function ListeningRunnerAdapter({
   passage,
-  audioUrl,
-  onFinish,
+  audioUrl,            // 현재 Runner에서는 사용하지 않지만, 향후 AudioPanel 등에 쓸 수 있어 남겨둠
+  onFinish,            // Runner 시그니처에 없어서 전달하지 않음 (필요시 Runner 측에 prop 추가)
 }: {
   passage: Passage;
   audioUrl: string;
-  // 遺紐⑥????명솚???꾪빐 string ?좎?
   onFinish?: (sessionId: string) => void;
 }) {
-  // Passage -> ListeningTrack 蹂??
-  const track: ListeningTrack = {
-    id: passage.id,
-    audioUrl,
-    timeLimitSec: 600,
-    questions: passage.questions.map((q, i) => ({
-      id: q.id,
-      prompt: q.prompt,
-      number: i + 1,
-      choices: q.choices.map((c) => ({
-        id: (c as any).id ?? String(c),
-        text: (c as any).label ?? String(c),
-      })),
-    })),
-  };
+  // Passage -> initialSetId 매핑 (setId가 있으면 우선, 없으면 id 사용)
+  const initialSetId = (passage as any).setId ?? passage.id;
 
   return (
     <ListeningTestRunner
-      track={track}
-      // ?щ꼫??number濡? 遺紐⑤뒗 string?쇰줈 諛쏅룄濡??ш린?쒕쭔 蹂??
-      onFinish={(sid: number) => onFinish?.(String(sid))}
+      initialSetId={initialSetId}
+      autoStart
+      debug={false}
     />
   );
 }
-

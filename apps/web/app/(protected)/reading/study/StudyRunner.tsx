@@ -5,107 +5,73 @@ import { startReadingSession, submitReadingAnswer, finishReadingSession } from '
 
 type RChoice = { id: string; label?: string; text?: string; is_correct?: boolean }
 type RQuestion = { id: string; number?: number; stem?: string; choices?: RChoice[] }
-type Passage = { id: string; title?: string; content?: string; questions: RQuestion[] }
+type Passage = { id: string; title?: string; content?: string; questions?: RQuestion[] }
 
 export default function StudyRunner({ passage }: { passage: Passage }) {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
 
-  const questions = useMemo(() => passage.questions ?? [], [passage.questions])
+  const questions = useMemo<RQuestion[]>(
+    () => [...(passage.questions ?? [])],
+    [passage.questions]
+  )
   const total = questions.length
   const q = questions[current]
 
-  // 세션 시작
   useEffect(() => {
     let active = true
     ;(async () => {
-      const { sessionId } = await startReadingSession({ passageId: passage.id, mode: 'study' })
-      if (active) setSessionId(String(sessionId)) // ✅ string으로 보정
+      const res = await startReadingSession({ passageId: passage.id, mode: 'study' })
+      if (active) setSessionId(String(res?.sessionId ?? `local-${Date.now()}`))
     })()
     return () => { active = false }
   }, [passage.id])
 
   const pick = useCallback(async (questionId: string, choiceId: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: choiceId }))
-    if (sessionId) {
-      await submitReadingAnswer({
-        sessionId: String(sessionId), // ✅ 객체 인자 + 문자열 보정
-        questionId,
-        choiceId,
-      })
-    }
+    await submitReadingAnswer({
+      sessionId: sessionId ?? undefined,
+      questionId: String(questionId),
+      choiceId: String(choiceId),
+    })
   }, [sessionId])
 
   const onFinish = useCallback(async () => {
     if (sessionId) await finishReadingSession(sessionId)
-    setSessionId(null)
+    // 후처리(리다이렉트 등) 필요시 여기에
   }, [sessionId])
 
-  if (!q) {
-    return (
-      <div className="space-y-3">
-        <h2 className="text-xl font-semibold">{passage.title ?? 'Passage'}</h2>
-        <div className="prose whitespace-pre-wrap">{passage.content}</div>
-        <p className="text-sm text-gray-500">질문이 없습니다.</p>
-      </div>
-    )
-  }
+  if (!q) return <div className="p-4 text-sm text-gray-500">질문이 없습니다.</div>
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* 좌측: 지문 */}
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">{passage.title ?? 'Passage'}</h2>
-        <div className="prose whitespace-pre-wrap">{passage.content}</div>
+        <div className="prose whitespace-pre-wrap">{passage.content ?? ''}</div>
       </div>
-
-      {/* 우측: 문제/네비 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500">{current + 1} / {total}</div>
+          <div className="text-sm text-gray-500">{Math.min(current + 1, total)} / {total}</div>
           <div className="space-x-2">
-            <button
-              className="px-3 py-2 rounded-xl border"
-              onClick={() => setCurrent(c => Math.max(0, c - 1))}
-              disabled={current === 0}
-            >
-              &larr; Prev
-            </button>
-            <button
-              className="px-3 py-2 rounded-xl border"
-              onClick={() => setCurrent(c => Math.min(total - 1, c + 1))}
-              disabled={current >= total - 1}
-            >
-              Next &rarr;
-            </button>
+            <button className="rounded-xl border px-3 py-2" onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current <= 0}>&larr; Prev</button>
+            <button className="rounded-xl border px-3 py-2" onClick={() => setCurrent(c => Math.min(total - 1, c + 1))} disabled={current >= total - 1}>Next &rarr;</button>
           </div>
         </div>
-
-        <div className="border rounded-xl p-4">
-          <div className="font-medium mb-2">
-            {q.number ? `${q.number}. ` : ''}{q.stem ?? '문항'}
-          </div>
+        <div className="rounded-xl border p-4">
+          <div className="mb-2 font-medium">{q.number ? `${q.number}. ` : ''}{q.stem ?? '문항'}</div>
           <div className="grid grid-cols-1 gap-2">
-            {(q.choices ?? []).map(c => (
-              <button
-                key={c.id}
-                className={`text-left border rounded-md px-3 py-2 ${answers[q.id] === c.id ? 'bg-black text-white' : 'bg-white'}`}
-                onClick={() => pick(q.id, c.id)}
-              >
+            {(q.choices ?? []).map((c) => (
+              <button key={c.id} className={`rounded-md border px-3 py-2 text-left ${answers[q.id] === c.id ? 'bg-black text-white' : 'bg-white'}`} onClick={() => pick(q.id, c.id)}>
                 {c.label ? `${c.label}. ` : ''}{c.text ?? ''}
               </button>
             ))}
           </div>
         </div>
-
         <div className="flex justify-end">
-          <button className="px-4 py-2 rounded-xl border" onClick={onFinish} disabled={!sessionId}>
-            Finish
-          </button>
+          <button className="rounded-xl border px-4 py-2" onClick={onFinish} disabled={!sessionId}>Finish</button>
         </div>
       </div>
     </div>
   )
 }
-

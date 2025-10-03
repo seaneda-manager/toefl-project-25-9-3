@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-// ?㏓돍??疫꿸퀣??"@/lib/supabase/browser" 筌띾Þ?? ??쇱젫 ???뵬 ??已??筌띿쉸???
+// NOTE: 브라우저 클라이언트에서 사용할 Supabase 인스턴스
 import { supabase } from "@/lib/supabaseClient";
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
@@ -34,11 +34,11 @@ export default function UpdatePasswordClient() {
     setErr(null);
 
     if (!PASSWORD_RULE.test(password)) {
-      setErr("8????곴맒, ?怨론???ъ쁽 ??釉??곻폒?紐꾩뒄.");
+      setErr("8자 이상, 영문자와 숫자를 모두 포함해야 합니다.");
       return;
     }
     if (password !== confirm) {
-      setErr("??쑬?甕곕뜇???類ㅼ뵥????깊뒄??? ??녿뮸??덈뼄.");
+      setErr("새 비밀번호와 확인 비밀번호가 일치하지 않습니다.");
       return;
     }
 
@@ -47,13 +47,15 @@ export default function UpdatePasswordClient() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
-      setMsg("??쑬?甕곕뜇?뉐첎? 癰궰野껋럥由??곸뒄. ?醫롫뻻 ????猷??몃빍??");
+      setMsg("비밀번호가 변경되었습니다. 잠시 후 홈으로 이동합니다.");
       setPassword("");
       setConfirm("");
 
-      setTimeout(() => (window.location.href = "/"), 1200);
+      setTimeout(() => {
+        if (typeof window !== "undefined") window.location.href = "/";
+      }, 1200);
     } catch (e: any) {
-      setErr(e?.message ?? "??쑬?甕곕뜇??癰궰野?餓???살첒揶쎛 獄쏆뮇源??됰뮸??덈뼄.");
+      setErr(e?.message ?? "비밀번호 변경 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -61,10 +63,13 @@ export default function UpdatePasswordClient() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">鍮꾨?踰덊샇 蹂寃?/h1>
+      <h1 className="text-2xl font-semibold mb-6">비밀번호 변경</h1>
+
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label htmlFor="pw" className="block text-sm mb-1">????쑬?甕곕뜇??/label>
+          <label htmlFor="pw" className="block text-sm mb-1">
+            새 비밀번호
+          </label>
           <input
             id="pw"
             type="password"
@@ -72,13 +77,15 @@ export default function UpdatePasswordClient() {
             className="w-full rounded-md border px-3 py-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="8????곴맒, ?怨론???ъ쁽 ??釉?
+            placeholder="8자 이상, 영문+숫자 포함"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="pw2" className="block text-sm mb-1">????쑬?甕곕뜇???類ㅼ뵥</label>
+          <label htmlFor="pw2" className="block text-sm mb-1">
+            새 비밀번호 확인
+          </label>
           <input
             id="pw2"
             type="password"
@@ -86,7 +93,7 @@ export default function UpdatePasswordClient() {
             className="w-full rounded-md border px-3 py-2"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            placeholder="??쇰뻻 ??낆젾"
+            placeholder="다시 한 번 입력"
             required
           />
         </div>
@@ -96,13 +103,20 @@ export default function UpdatePasswordClient() {
           disabled={!canSubmit}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
         >
-          {loading ? '蹂寃?以?.' : '鍮꾨?踰덊샇 蹂寃?}
+          {loading ? "변경 중…" : "비밀번호 변경"}
         </button>
 
-        {msg && <p role="status" className="text-green-600 text-sm">{msg}</p>}
-        {err && <p role="alert" className="text-red-600 text-sm">{err}</p>}
+        {msg && (
+          <p role="status" className="text-green-600 text-sm">
+            {msg}
+          </p>
+        )}
+        {err && (
+          <p role="alert" className="text-red-600 text-sm">
+            {err}
+          </p>
+        )}
       </form>
     </main>
   );
 }
-
