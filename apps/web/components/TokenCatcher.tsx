@@ -1,4 +1,4 @@
-﻿// apps/web/app/components/TokenCatcher.tsx
+// apps/web/app/components/TokenCatcher.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -9,14 +9,14 @@ export default function TokenCatcher() {
 
     const loc = window.location;
     const path = loc.pathname;
-    // ?대? 泥섎━ ?섏씠吏硫??⑥뒪
+    // ?��? 처리 ?�이지�??�스
     if (path === '/auth/reset-finish' || path === '/auth/callback') return;
 
     const search = loc.search ?? '';
     const hash = loc.hash ?? '';
     const qs = new URLSearchParams(search);
 
-    // ???ㅼ쭅 "鍮꾨?踰덊샇 ?ъ꽕??recovery)"留?罹먯튂
+    // ???�직 "비�?번호 ?�설??recovery)"�?캐치
     const hasHashRecovery =
       hash.includes('type=recovery') &&
       (hash.includes('access_token=') || hash.includes('refresh_token='));
@@ -25,8 +25,8 @@ export default function TokenCatcher() {
 
     if (hasHashRecovery || hasQsRecovery) {
       const target = new URL('/auth/reset-finish', loc.origin);
-      if (hasHashRecovery) target.hash = hash;              // ?댁떆 ?꾨떖
-      if (hasQsRecovery) target.search = qs.toString();     // 荑쇰━ ?꾨떖
+      if (hasHashRecovery) target.hash = hash;              // ?�시 ?�달
+      if (hasQsRecovery) target.search = qs.toString();     // 쿼리 ?�달
       window.location.replace(target.toString());
     }
   }, []);

@@ -1,75 +1,92 @@
-﻿// apps/web/app/(protected)/reading/study/page.tsx
-import { getSupabaseServer } from '@/lib/supabaseServer'
-import StudyRunner from './StudyRunner'
-import type { RPassage, RQType } from '@/types/types-reading'
+// apps/web/app/(protected)/reading/study/page.tsx
+import { getSupabaseServer } from '@/lib/supabaseServer';
+import StudyRunner from './StudyRunner';
+import type { RPassage, RQuestion } from '@/types/types-reading';
+
+type RQType = RQuestion['type'];
+
+/** 안전한 JSON 파서: 이미 객체면 그대로, 문자열이면 try-parse, 아니면 fallback */
+function safeJson<T>(val: unknown, fallback: T): T {
+  if (val == null) return fallback;
+  if (typeof val === 'object') return val as T;
+  if (typeof val === 'string') {
+    try { return JSON.parse(val) as T; } catch { return fallback; }
+  }
+  return fallback;
+}
+
+/** 질문 타입 정규화 */
+function normalizeType(t: unknown): RQType {
+  const allowed: RQType[] = [
+    'vocab',
+    'detail',
+    'negative_detail',
+    'paraphrasing',
+    'inference',
+    'purpose',
+    'pronoun_ref',
+    'insertion',
+    'summary',
+    'organization',
+  ];
+  if (t === 'single') return 'detail'; // 예전 데이터 호환
+  return (allowed as string[]).includes(String(t)) ? (t as RQType) : 'detail';
+}
 
 export default async function Page() {
-  const supabase = await getSupabaseServer()
+  const supabase = await getSupabaseServer();
 
+  // 최신 passage 1개
   const { data: p, error: pErr } = await supabase
     .from('reading_passages')
     .select('*')
-    .order('ord', { ascending: false }) // created_at 컬럼 없음 → ord로 최신 추정
+    .order('ord', { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle();
 
-  if (pErr) {
-    return <div>에러: {pErr.message}</div>
-  }
-  if (!p) {
-    return <div>Passage가 없습니다.</div>
-  }
+  if (pErr) return <div>오류: {pErr.message}</div>;
+  if (!p) return <div>Passage가 없습니다.</div>;
 
-  const { data: qs } = await supabase
+  // 관련 질문 + 보기
+  const { data: qs, error: qErr } = await supabase
     .from('reading_questions')
     .select('*, choices:reading_choices(*)')
     .eq('passage_id', p.id)
-    .order('number', { ascending: true })
+    .order('number', { ascending: true });
 
-  // RQType 정규화: 레거시 'single' → 'detail' 등
-  const normalizeType = (t: any): RQType => {
-    const allowed: RQType[] = [
-      'vocab',
-      'detail',
-      'negative_detail',
-      'paraphrasing',
-      'inference',
-      'purpose',
-      'pronoun_ref',
-      'insertion',
-      'summary',
-      'organization',
-    ]
-    if (t === 'single') return 'detail'
-    return allowed.includes(t) ? (t as RQType) : 'detail'
-  }
+  if (qErr) return <div>질문 로드 오류: {qErr.message}</div>;
 
+  // RPassage 스펙에 존재하는 필드로만 구성 (ui / set_id 제거)
   const passage: RPassage = {
     id: p.id,
     title: p.title ?? '',
     content: p.content ?? '',
-    questions: (qs ?? []).map((q: any) => ({
-      id: q.id,
-      number: q.number ?? 0,
-      stem: q.stem ?? '',
-      type: normalizeType(q.type),
-      // meta/explanation은 있으면 그대로, clue_quote는 explanation 안으로 흡수
-      meta: q.meta ?? undefined,
-      explanation: q.explanation
-        ? q.explanation
-        : q.clue_quote
-        ? { clue_quote: q.clue_quote }
-        : undefined,
-      // RChoice 규격: id/text/(is_correct|explain)
-      choices: (q.choices ?? []).map((c: any) => ({
-        id: c.id,
-        text: c.text ?? c.label ?? '', // 레거시 label 대비
-        is_correct: !!c.is_correct,
-        explain: c.explain ?? undefined,
-      })),
-    })),
-    ui: p.ui ?? { paragraphSplit: 'auto' },
-  }
+    questions: (qs ?? []).map((q: any) => {
+      // meta / explanation은 보통 선택 필드. 프로젝트 스펙에 맞게 가벼운 보정만.
+      const meta = safeJson<NonNullable<RQuestion['meta']>>(q.meta, undefined as any);
+      const explanation =
+        q.explanation
+          ? q.explanation
+          : q.clue_quote
+          ? { clue_quote: q.clue_quote }
+          : undefined;
 
-  return <StudyRunner passage={passage} />
+      return {
+        id: q.id,
+        number: q.number ?? 0,
+        type: normalizeType(q.type),
+        stem: q.stem ?? '',
+        meta,
+        explanation,
+        choices: (q.choices ?? []).map((c: any) => ({
+          id: c.id,
+          text: c.text ?? c.label ?? '',
+          is_correct: !!c.is_correct,
+          explain: c.explain ?? undefined,
+        })),
+      } satisfies RQuestion; // ❗ RQuestion에 없는 키가 있으면 여기서 컴파일 에러로 잡힘
+    }),
+  };
+
+  return <StudyRunner passage={passage} />;
 }

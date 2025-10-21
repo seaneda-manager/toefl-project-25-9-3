@@ -5,10 +5,10 @@ export default function Page() {
         Users & Roles
       </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        예: 계정 생성/비활성화, 역할 부여·변경, 권한 필드(
+        ?? 계정 ?�성/비활?�화, ??�� 부??��?�? 권한 ?�드(
         <code className="px-1 rounded bg-gray-100 dark:bg-neutral-800">is_admin</code>,{" "}
         <code className="px-1 rounded bg-gray-100 dark:bg-neutral-800">can_produce</code>
-        ) 관리.
+        ) 관�?
       </p>
     </div>
   );

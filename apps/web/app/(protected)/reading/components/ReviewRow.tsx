@@ -1,77 +1,107 @@
-﻿// apps/web/app/(protected)/reading/components/ReviewRow.tsx
 'use client';
 
-import type { Question, Choice } from '@/types/types-reading';
+import React from 'react';
+import type { RQuestion, RChoice } from '@/types/types-reading';
 
-export default function ReviewRow({ q, picked }: { q: Question; picked: string | null }) {
-  const correct = q.choices.find((c: Choice) => c.is_correct)?.id ?? null;
-  const ok = !!picked && !!correct && picked === correct;
+type Props = {
+  q: RQuestion;
+  selected?: string | null;
+  index?: number;
+};
+
+// explanation ?�전 ?�??
+type Explanation = {
+  clue_quote?: string;
+  why_correct?: string;
+  why_others?: Record<string, unknown>;
+};
+
+function asExplanation(e: unknown): Explanation {
+  const obj = (e && typeof e === 'object') ? (e as Record<string, unknown>) : {};
+  const clue_quote = typeof obj['clue_quote'] === 'string' ? (obj['clue_quote'] as string) : undefined;
+  const why_correct = typeof obj['why_correct'] === 'string' ? (obj['why_correct'] as string) : undefined;
+  const why_others =
+    obj['why_others'] && typeof obj['why_others'] === 'object'
+      ? (obj['why_others'] as Record<string, unknown>)
+      : undefined;
+  return { clue_quote, why_correct, why_others };
+}
+
+export default function ReviewRow({ q, selected }: Props) {
+  const choices = (q.choices ?? []) as RChoice[];
+  const correct = choices.find((c) => c.is_correct)?.id ?? null;
+
+  const exp = asExplanation(q.explanation);
 
   return (
-    <div className="p-4 border rounded-2xl">
-      {/* 헤더: 번호/정오 */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-400">Q{q.number}</div>
-        <div className={`text-sm ${ok ? 'text-green-600' : 'text-red-500'}`}>
-          {ok ? 'Correct' : 'Wrong'}
-        </div>
+    <div className="rounded-xl border border-gray-200 p-4 space-y-3 bg-white dark:bg-neutral-900 dark:border-neutral-800">
+      <div className="font-medium text-gray-900 dark:text-gray-100">
+        Q{q.number ?? ''}. {/* 문제 본문???�로 ?�으�??�기??출력 */}
       </div>
 
-      {/* 문항 지문 */}
-      <div className="mt-1 font-medium">{q.stem}</div>
-
-      {/* 선택지 목록 */}
-      <ul className="mt-2 space-y-1 text-sm">
-        {q.choices.map((c: Choice, i: number) => {
-          const label = i < 26 ? String.fromCharCode(65 + i) : String(i + 1); // A, B, C...
-          const isPicked = picked === c.id;
-          const isCorrect = !!c.is_correct;
+      <ul className="space-y-2">
+        {choices.map((c, i) => {
+          const isSelected = (selected ?? null) === c.id;
+          const isCorrect = correct === c.id;
+          const letter = String.fromCharCode(65 + i); // A, B, C, ...
 
           return (
             <li
-              key={c.id}
+              key={c.id || i}
               className={[
-                isCorrect ? 'font-semibold' : '',
-                isPicked && !isCorrect ? 'text-red-600' : '',
+                'rounded-lg border px-3 py-2',
+                isCorrect
+                  ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                  : isSelected
+                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'
+                  : 'border-gray-200 dark:border-neutral-700',
               ].join(' ')}
             >
-              {label}. {c.text}
-              {isPicked && <span className="ml-2 text-xs text-blue-600">← you</span>}
-              {isCorrect && <span className="ml-2 text-xs text-green-600">✓ correct</span>}
+              <div className="flex items-start gap-2">
+                <span className="font-semibold">{letter}.</span>
+                <span className="flex-1">{c.text}</span>
+                {isCorrect && <span className="text-xs text-green-700 dark:text-green-300">?�답</span>}
+                {isSelected && !isCorrect && (
+                  <span className="text-xs text-amber-700 dark:text-amber-300">???�택</span>
+                )}
+              </div>
             </li>
           );
         })}
       </ul>
 
-      {/* 근거 문장 */}
-      {q.explanation?.clue_quote && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-sm text-gray-500">근거 문장 (clue)</summary>
-          <blockquote className="mt-2 p-3 bg-white/5 rounded-xl whitespace-pre-wrap">
-            {q.explanation.clue_quote}
+      {/* ?�트/?�명 */}
+      {exp.clue_quote && (
+        <div className="text-sm">
+          <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">근거 문장</div>
+          <blockquote className="rounded-md border-l-4 border-gray-300 bg-gray-50 p-2 dark:bg-neutral-800 dark:border-neutral-700">
+            {exp.clue_quote}
           </blockquote>
-        </details>
+        </div>
       )}
 
-      {/* 해설 */}
-      {(q.explanation?.why_correct || q.explanation?.why_others) && (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-sm text-gray-500">해설</summary>
-          <div className="mt-2 text-sm space-y-2">
-            {q.explanation?.why_correct && (
-              <div className="whitespace-pre-wrap">{q.explanation.why_correct}</div>
-            )}
-            {q.explanation?.why_others && (
-              <ul className="list-disc pl-5 space-y-1">
-                {Object.entries(q.explanation.why_others).map(([k, v]) => (
-                  <li key={k}>
-                    <strong>{k}</strong>: {v}
-                  </li>
+      {(exp.why_correct || exp.why_others) && (
+        <div className="space-y-2 text-sm">
+          {exp.why_correct && (
+            <div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">???�답?��??</div>
+              <div className="whitespace-pre-wrap">{exp.why_correct}</div>
+            </div>
+          )}
+
+          {exp.why_others && (
+            <div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">?�른 ?�택지가 ?��??�유</div>
+              <div className="space-y-1">
+                {Object.entries(exp.why_others).map(([k, v]) => (
+                  <div key={k} className="text-gray-800 dark:text-gray-200">
+                    <strong>{k}</strong>: {String(v)}
+                  </div>
                 ))}
-              </ul>
-            )}
-          </div>
-        </details>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

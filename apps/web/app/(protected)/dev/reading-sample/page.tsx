@@ -1,9 +1,10 @@
+// apps/web/app/(protected)/reading/test/page.tsx
 'use client';
 
-import ReadingRunnerBridge from '@/components/test/ReadingRunnerBridge';
+import ReadingRunnerBridge from '@/components/reading/runner/ReadingRunnerBridge';
 
 /**
- * 레거시 예시 데이터 (import 대체 가능)
+ * 데모용 레거시 데이터 (import 없이 이 파일에서 직접 정의)
  */
 const oldData = {
   title: 'The Dawn of Public Libraries',
@@ -23,24 +24,25 @@ const oldData = {
       ],
       paragraphIndex: 0,
     },
-    // ... 추가 문항
+    // ... 더 많은 문항 가능
   ],
 };
 
 /**
- * 레거시 -> 러너 스키마 어댑터
+ * 레거시 → 러너 포맷 매핑
  * - passage -> content
  * - prompt -> stem
  * - options[] -> choices[]
- * - id/number/type 등은 그대로 사용(문자열 보정)
+ * - id/number/type 문자열 보정
  */
 function toRunnerData(legacy: typeof oldData) {
   return {
+    id: 'demo-reading-set',
     title: legacy.title ?? '',
     content: legacy.passage ?? '',
     questions: (legacy.questions ?? []).map((q) => ({
       id: String(q.id ?? ''),
-      number: q.number ?? 0,
+      number: Number.isFinite(q.number) ? q.number : 0,
       type:
         (q.type as
           | 'vocab'
@@ -58,9 +60,9 @@ function toRunnerData(legacy: typeof oldData) {
         id: String(o.id ?? ''),
         text: o.text ?? '',
       })),
-      // 필요하면 레거시의 추가 메타도 보존
       meta: {
-        paragraphIndex: q.paragraphIndex ?? null,
+        paragraphIndex:
+          typeof q.paragraphIndex === 'number' ? q.paragraphIndex : null,
       },
     })),
   };
@@ -71,7 +73,7 @@ export default function Page() {
 
   return (
     <ReadingRunnerBridge
-      data={runnerData} // 레거시 포맷을 새 포맷으로 변환한 결과
+      data={runnerData}
       mode="study"
       onFinish={(sid: string) => console.log('Reading finished:', sid)}
     />

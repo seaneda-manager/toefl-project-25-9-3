@@ -1,6 +1,5 @@
 ﻿// app/(protected)/reading/review/[sessionId]/page.tsx
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 
 type Row = {
   q_no: number;
@@ -11,16 +10,18 @@ type Row = {
 };
 
 export default async function ReadingReviewPage({ params }: { params: { sessionId: string } }) {
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const supabase = await getSupabaseServer(); // ✅ await 추가
 
-  // 점수
-  const { data: scoreRows, error: scoreErr } = await supabase
-    .rpc("reading_review_score", { session_id: params.sessionId });
+  // 점수 + 문항별 동시 호출
+  const [scoreRes, rowsRes] = await Promise.all([
+    supabase.rpc("reading_review_score", { session_id: params.sessionId }),
+    supabase.rpc("reading_review_rows", { session_id: params.sessionId }),
+  ]);
 
-  // 문항별
-  const { data: rows, error } = await supabase
-    .rpc("reading_review_rows", { session_id: params.sessionId });
+  const scoreErr = scoreRes.error;
+  const error = rowsRes.error;
+  const scoreRows = scoreRes.data as Array<{ total: number; correct: number }> | null;
+  const rows = rowsRes.data as Row[] | null;
 
   // ---- 옵션 C: 실패/부재 시 모킹 데이터로 표시 ----
   if (error || scoreErr || !rows || !scoreRows) {
@@ -55,7 +56,7 @@ export default async function ReadingReviewPage({ params }: { params: { sessionI
           sessionId: {params.sessionId} · Score: {score.correct}/{score.total}
         </p>
       </header>
-      <Table rows={(rows as Row[]) ?? []} />
+      <Table rows={rows ?? []} />
     </div>
   );
 }

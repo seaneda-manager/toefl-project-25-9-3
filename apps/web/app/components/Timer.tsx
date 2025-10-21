@@ -1,4 +1,4 @@
-﻿/* apps/web/app/components/Timer.tsx */
+/* apps/web/app/components/Timer.tsx */
 'use client';
 import { useEffect, useState } from 'react';
 

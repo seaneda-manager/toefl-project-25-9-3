@@ -1,27 +1,34 @@
-﻿// apps/web/app/api/listening/finish/route.ts
+// apps/web/app/api/listening/finish/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseServer } from '@/lib/supabaseServer';
+import { getSupabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseServer();
-    const { sessionId } = await req.json();
+    const supabase = await getSupabaseServer();
 
-    if (!sessionId) {
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
+    if (!user)  return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+
+    const { sessionId } = (await req.json()) as { sessionId?: string };
+    if (!sessionId?.trim()) {
       return NextResponse.json({ ok: false, error: 'sessionId required' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('listening_sessions')
       .update({ finished_at: new Date().toISOString() })
-      .eq('id', String(sessionId)); // uuid 鍮꾧탳
+      .eq('id', sessionId)
+      .eq('user_id', user.id)
+      .select('id'); // ????번째 ?�자 ?�거
 
-    if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ ok: false, error: 'not found or forbidden' }, { status: 404 });
     }
-    return NextResponse.json({ ok: true });
+
+    return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
-

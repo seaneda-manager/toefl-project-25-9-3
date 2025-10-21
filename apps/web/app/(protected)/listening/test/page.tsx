@@ -1,14 +1,13 @@
-﻿// 최소 호환 트랙 타입(필요 필드만)
-type ListeningTrack = {
-id: string | number;
-title?: string;
-name?: string;
-label?: string;
+// 최소 트랙 타입 — id는 문자열로 정규화 추천
+export type ListeningTrack = {
+  id: string;            // string | number 대신 string 권장 (URL/키로 자주 씀)
+  title?: string;
+  name?: string;
+  label?: string;
 };
 
-// ListeningTestRunner props 예시
-type Props = {
+// Client entry 파일에서 쓸 Props
+export type Props = Readonly<{
   track: ListeningTrack;
-  onFinish: (sessionId: string) => void;
-};
-
+  onFinishAction?: (sessionId: string) => void; // ← *Action 네이밍으로 경고 제거
+}>;

@@ -8,7 +8,7 @@ export default function SmokeLaunchReading() {
       onClick={() => window.open(href, "_blank", "width=1200,height=800")}
       className="px-3 py-2 rounded-xl border"
     >
-      리딩 스모크 테스트 새창 실행
+      리딩 ?�모???�스???�창 ?�행
     </button>
   );
 }

@@ -1,159 +1,153 @@
+// apps/web/app/login/LoginForm.tsx  ← 경로는 실제 위치에 맞춰 주세요
 'use client';
 
-import { useState } from 'react';
-
-type Role = 'student' | 'teacher' | 'admin';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function LoginForm() {
-  const [role, setRole] = useState<Role>('student');
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
   const [rememberId, setRememberId] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
 
-  const titleByRole: Record<Role, string> = {
-    student: 'Student Login',
-    teacher: 'Teacher Login',
-    admin: 'Admin Login',
-  };
+  // 로컬에 저장된 아이디 로드
+  useEffect(() => {
+    const saved = localStorage.getItem('kp.rememberId');
+    const savedId = localStorage.getItem('kp.savedId');
+    if (saved === '1' && savedId) {
+      setRememberId(true);
+      setId(savedId);
+    }
+  }, []);
 
-  async function onSubmit(e: React.FormEvent) {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setMsg(null);
+    if (loading) return;
+
     setLoading(true);
     try {
-      // TODO: 실제 로그인 로직 연결 (Supabase/NextAuth 등)
-      console.log('LOGIN', { role, id, pw, rememberId });
-      setMsg('✅ 로그인 시도 (mock). 인증 로직 연결하세요.');
-    } catch (err: any) {
-      setMsg(err?.message ?? '로그인 실패');
+      // 아이디 저장 옵션 처리
+      if (rememberId) {
+        localStorage.setItem('kp.rememberId', '1');
+        localStorage.setItem('kp.savedId', id);
+      } else {
+        localStorage.removeItem('kp.rememberId');
+        localStorage.removeItem('kp.savedId');
+      }
+
+      // TODO: 실제 로그인 처리 (예: supabase.auth.signInWithPassword)
+      await new Promise((r) => setTimeout(r, 600));
+      alert(`로그인 시도\nID: ${id}\nPW: ${'*'.repeat(pw.length)}`);
+    } catch (err) {
+      console.error(err);
+      alert('로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/5 p-6">
-      {/* 상단: 좌측 상단 큰 한글 "로그인" */}
-      <div className="mb-6 flex items-end justify-between">
-        <div className="text-3xl font-bold">로그인</div>
-
-        {/* 역할 전환 스위치 (작은 버튼) */}
-        <div className="flex gap-2 text-sm">
-          <button
-            type="button"
-            onClick={() => setRole('student')}
-            className={`rounded border px-3 py-1 ${role === 'student' ? 'bg-white/10' : ''}`}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole('teacher')}
-            className={`rounded border px-3 py-1 ${role === 'teacher' ? 'bg-white/10' : ''}`}
-          >
-            Teacher
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole('admin')}
-            className={`rounded border px-3 py-1 ${role === 'admin' ? 'bg-white/10' : ''}`}
-          >
-            Admin
-          </button>
-        </div>
-      </div>
-
-      {/* 중앙 타이틀 */}
-      <h2 className="mb-4 text-center text-2xl font-semibold">{titleByRole[role]}</h2>
-
-      {/* 폼 */}
-      <form onSubmit={onSubmit} className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-        <div className="space-y-2">
-          <label className="block text-sm opacity-80">
+    <form onSubmit={onSubmit} className="inline-block">
+      {/* 
+        그리드 2열
+        - 1열: 입력란(고정 폭 320px)
+        - 2열: 버튼(세로로 두 칸 차지)
+      */}
+      <div className="grid grid-cols-[320px_minmax(140px,1fr)] items-stretch gap-3">
+        {/* 아이디 */}
+        <div className="col-start-1">
+          <label className="sr-only" htmlFor="login-id">
             아이디
-            <input
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/20 px-3 py-2 outline-none focus:border-white/30"
-              placeholder="your-id@example.com"
-              autoComplete="username"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              required
-            />
           </label>
-
-          <label className="block text-sm opacity-80">
-            비밀번호
-            <input
-              type="password"
-              className="mt-1 w-full rounded-xl border border-white/15 bg-black/20 px-3 py-2 outline-none focus:border-white/30"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              required
-            />
-          </label>
+          <input
+            id="login-id"
+            type="text"
+            inputMode="email"
+            autoComplete="username"
+            placeholder="아이디 또는 이메일"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            className="h-12 w-[320px] rounded-xl border px-4 text-[15px]
+                       placeholder:text-neutral-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
         </div>
 
-        <div className="flex items-end md:items-center">
+        {/* 로그인 버튼 (세로로 2칸 차지) */}
+        <div className="col-start-2 row-span-2">
           <button
             type="submit"
             disabled={loading}
-            className="h-[42px] w-full rounded-xl border border-white/20 bg-white/10 px-4 font-semibold hover:bg-white/20 disabled:opacity-50 md:h-[74px]"
+            className="h-full min-h-[102px] w-full rounded-xl border
+                       bg-blue-600 text-white font-semibold
+                       hover:bg-blue-600/90 active:scale-[0.99]
+                       disabled:opacity-60 disabled:cursor-not-allowed
+                       transition"
+            aria-busy={loading}
+            title={loading ? '로그인 중…' : '로그인'}
           >
-            {loading ? '확인 중…' : '확인'}
+            {loading ? '로그인 중…' : '로그인'}
           </button>
         </div>
 
-        {/* 아래 줄: Teacher/Admin 빠른 전환, 아이디 고정 + 분실 링크 */}
-        <div className="col-span-full mt-2 flex flex-wrap items-center justify-between gap-3 text-sm">
-          <div className="flex items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={rememberId}
-                onChange={(e) => setRememberId(e.target.checked)}
-              />
-              아이디 고정
-            </label>
+        {/* 비밀번호 */}
+        <div className="col-start-1">
+          <label className="sr-only" htmlFor="login-pw">
+            비밀번호
+          </label>
+          <input
+            id="login-pw"
+            type="password"
+            autoComplete="current-password"
+            placeholder="비밀번호"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            className="h-12 w-[320px] rounded-xl border px-4 text-[15px]
+                       placeholder:text-neutral-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          />
+        </div>
 
-            <a href="/help/forgot-id" className="opacity-80 hover:underline">
-              아이디 분실
-            </a>
-            <span className="opacity-30">|</span>
-            <a href="/help/forgot-password" className="opacity-80 hover:underline">
-              암호 분실
-            </a>
-          </div>
+        {/* 옵션/링크: 입력란과 버튼 사이에 한 줄로 배치 + 줄바꿈 방지 */}
+        <div
+          className="col-start-1 col-span-2 row-start-3 mt-1
+                     flex flex-nowrap items-center gap-4
+                     text-sm text-neutral-600 whitespace-nowrap"
+        >
+          <label className="inline-flex items-center gap-2 shrink-0 select-none">
+            <input
+              type="checkbox"
+              checked={rememberId}
+              onChange={(e) => setRememberId(e.target.checked)}
+              className="accent-blue-600"
+            />
+            아이디 저장
+          </label>
 
-          <div className="flex items-center gap-2">
-            <span className="opacity-60">다른 역할로 로그인:</span>
-            <button
-              type="button"
-              onClick={() => setRole('teacher')}
-              className="rounded border px-2 py-1 text-xs hover:bg-white/10"
+          <div className="flex flex-nowrap items-center gap-4 shrink-0">
+            <Link
+              href="#"
+              className="underline-offset-2 hover:underline whitespace-nowrap"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('아이디 찾기 페이지 연결 예정');
+              }}
             >
-              Teacher
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('admin')}
-              className="rounded border px-2 py-1 text-xs hover:bg-white/10"
+              아이디 찾기
+            </Link>
+            <Link
+              href="#"
+              className="underline-offset-2 hover:underline whitespace-nowrap"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('비밀번호 찾기 페이지 연결 예정');
+              }}
             >
-              Admin
-            </button>
+              비밀번호 찾기
+            </Link>
           </div>
         </div>
-      </form>
-
-      {/* 메시지 */}
-      {msg && (
-        <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3 text-sm">
-          {msg}
-        </div>
-      )}
-    </div>
+      </div>
+    </form>
   );
 }

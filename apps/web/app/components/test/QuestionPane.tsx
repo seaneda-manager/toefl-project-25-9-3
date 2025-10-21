@@ -17,7 +17,7 @@ export default function QuestionPane({
   return (
     <div className="rounded-2xl border p-4 space-y-4">
       <p className="text-sm text-gray-500">
-        QuestionPane placeholder — component under construction
+        QuestionPane placeholder ??component under construction
       </p>
 
       {questions.length === 0 ? (

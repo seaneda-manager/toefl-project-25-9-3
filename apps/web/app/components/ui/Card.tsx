@@ -1,4 +1,4 @@
-﻿/* apps/web/app/components/ui/Card.tsx */
+/* apps/web/app/components/ui/Card.tsx */
 import clsx from 'clsx';
 
 export function Card({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {

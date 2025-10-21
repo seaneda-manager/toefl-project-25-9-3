@@ -1,4 +1,4 @@
-﻿// apps/web/app/components/SiteHeader.tsx
+// apps/web/app/components/SiteHeader.tsx
 'use client';
 
 import Link from 'next/link';

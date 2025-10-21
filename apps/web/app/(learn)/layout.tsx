@@ -1,10 +1,10 @@
-ï»¿// apps/web/app/(learn)/layout.tsx
+// apps/web/app/(learn)/layout.tsx
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 export default async function LearnRoot({ children }: { children: ReactNode }) {
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseServer(); // ? await
   const { data: { session } } = await supabase.auth.getSession();
 
   return (
@@ -12,15 +12,15 @@ export default async function LearnRoot({ children }: { children: ReactNode }) {
       <body className="bg-gray-50 text-gray-800 antialiased">
         <div className="border-b bg-white">
           <div className="mx-auto max-w-6xl h-14 px-4 flex items-center justify-between">
-            {/* é‡‰ëš®ì˜–??æ¿¡ì’“í€¬: Home ?Â€??Programsæ¿¡??ê³Œê» */}
+            {/* À¯Àú Èå¸§: Home ¡ê Programs·Î ÀÌµ¿ */}
             <Link href="/programs" className="font-semibold">Pier Learn</Link>
 
             <nav className="text-sm flex gap-3">
-              {/* æ¿¡ì’“ë ‡???? Programs, Contactï§?*/}
+              {/* ºñ·Î±×ÀÎ ½Ã: Programs, Contact¸¸ */}
               <Link href="/programs">Programs</Link>
               <Link href="/contact">Contact</Link>
 
-              {/* æ¿¡ì’“ë ‡???? ?ìˆˆë’¿ ??ç•°ë¶½? ?ëª„í…§ */}
+              {/* ·Î±×ÀÎ ½Ã: ÇĞ½À ³×ºñ Ãß°¡ ³ëÃâ */}
               {session && (
                 <>
                   <span className="text-gray-300">|</span>
@@ -39,4 +39,3 @@ export default async function LearnRoot({ children }: { children: ReactNode }) {
     </html>
   );
 }
-

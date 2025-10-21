@@ -1,8 +1,8 @@
-﻿'use client'
+'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../lib/supabaseClient' // ??野껋럥以??類ㅼ젟
+import { supabase } from '../lib/supabaseClient' // ??寃쎈�??뺤젙
 
 type Props = {
   children: ReactNode

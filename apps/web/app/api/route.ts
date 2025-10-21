@@ -1,22 +1,24 @@
-import { NextResponse } from 'next/server';
+// apps/web/app/api/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
-export async function POST(req: Request) {
-  const supabase = getSupabaseServer();
-  const { data: { user }, error: uerr } = await supabase.auth.getUser();
-  if (uerr || !user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const supabase = await getSupabaseServer(); // ??await
 
-  const { section, mode } = await req.json();
-  if (!['reading','listening'].includes(section) || !['study','exam','review'].includes(mode)) {
-    return NextResponse.json({ error: 'bad_request' }, { status: 400 });
-  }
+  const { data: { user }, error: uerr } = await supabase.auth.getUser();
+  if (uerr) return NextResponse.json({ ok: false, error: uerr.message }, { status: 500 });
+  if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const limit = Number(searchParams.get('limit') ?? '20');
 
   const { data, error } = await supabase
-    .from('study_sessions')
-    .insert({ user_id: user.id, section, mode })
-    .select('id, started_at')
-    .single();
+    .from('study_sessions') // ?§ÌÇ§ÎßàÏóê ÎßûÍ≤å ?†Ï?
+    .select('id, started_at, finished_at, set_id')
+    .eq('user_id', user.id)
+    .order('started_at', { ascending: false })
+    .limit(Number.isFinite(limit) ? limit : 20);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ sessionId: data.id, startedAt: data.started_at });
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+  return NextResponse.json({ ok: true, items: data ?? [] }, { status: 200 });
 }

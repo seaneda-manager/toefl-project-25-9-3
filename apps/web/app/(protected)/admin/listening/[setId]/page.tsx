@@ -2,13 +2,69 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm, useFieldArray, type UseFormRegister } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  useForm,
+  useFieldArray,
+  type UseFormRegister,
+  type Resolver,
+  type FieldValues, // ✅ 추가
+} from 'react-hook-form';
 import { ListeningSetZ, type ListeningSet } from '@/app/types/types-listening-extended';
 
+/** ---------- RHF 전용: questions를 "반드시 배열"로 강제한 폼 타입 ---------- */
+type Conv = NonNullable<ListeningSet['conversation']>;
+type Lect = NonNullable<ListeningSet['lecture']>;
+type QElem<T> = T extends Array<infer E> ? E : never;
+
+// ✅ 핵심: FieldValues를 확장해서 RHF가 경로 타입을 추론하게 만든다
+interface ListeningSetForm extends FieldValues
+  , Omit<ListeningSet, 'conversation' | 'lecture'> {
+  conversation: Conv & { questions: QElem<Conv['questions']>[] };
+  lecture: Lect & { questions: QElem<Lect['questions']>[] };
+}
+/** ----------------------------------------------------------------------- */
+
+/** ✅ 커스텀 resolver */
+const listeningFormResolver: Resolver<ListeningSetForm> = async (rawValues) => {
+  const parsed = ListeningSetZ.safeParse(rawValues as unknown);
+  const base: ListeningSet =
+    parsed.success ? parsed.data : ((rawValues ?? {}) as ListeningSet);
+
+  const conv = (base.conversation ?? {
+    id: 'conv-1',
+    audioUrl: '',
+    imageUrl: '',
+    questions: [],
+  }) as Conv;
+
+  const lect = (base.lecture ?? {
+    id: 'lect-1',
+    audioUrl: '',
+    imageUrl: '',
+    questions: [],
+  }) as Lect;
+
+  const out: ListeningSetForm = {
+    ...base,
+    conversation: {
+      ...conv,
+      questions: Array.isArray(conv.questions) ? conv.questions : [],
+    },
+    lecture: {
+      ...lect,
+      questions: Array.isArray(lect.questions) ? lect.questions : [],
+    },
+  };
+
+  return {
+    values: out,
+    errors: parsed.success ? {} : (parsed.error?.format?.() as any),
+  };
+};
+
 export default function AdminListeningEditor({ params }: { params: { setId: string } }) {
-  const { control, register, handleSubmit, reset, watch } = useForm<ListeningSet>({
-    resolver: zodResolver(ListeningSetZ),
+  const { control, register, handleSubmit, reset, watch } = useForm<ListeningSetForm>({
+    resolver: listeningFormResolver,
     defaultValues: {
       setId: params.setId,
       title: '',
@@ -19,7 +75,6 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
     mode: 'onChange',
   });
 
-  // 초기 로드 (DB→폼)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -28,22 +83,26 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
         if (!alive) return;
         if (res.ok) {
           const json = (await res.json()) as ListeningSet;
-          reset(json);
+          reset(json as unknown as ListeningSetForm);
         }
-      } catch {
-        // 네트워크 실패는 무시(폼에서 새로 입력 가능)
-      }
+      } catch {}
     })();
     return () => {
       alive = false;
     };
   }, [params.setId, reset]);
 
-  // 질문 배열 컨트롤 (대화/강의 각각)
-  const convQs = useFieldArray({ control, name: 'conversation.questions' });
-  const lectQs = useFieldArray({ control, name: 'lecture.questions' });
+  // ✅ 두 번째 제네릭은 문자열 리터럴 경로
+  const convQs = useFieldArray<ListeningSetForm, 'conversation.questions'>({
+    control,
+    name: 'conversation.questions',
+  });
+  const lectQs = useFieldArray<ListeningSetForm, 'lecture.questions'>({
+    control,
+    name: 'lecture.questions',
+  });
 
-  const onSubmit = async (values: ListeningSet) => {
+  const onSubmit = async (values: ListeningSetForm) => {
     const res = await fetch('/api/admin/listening/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,22 +111,17 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
     alert(res.ok ? 'Saved!' : 'Save failed');
   };
 
-  // JSON 붙여넣기 → 폼 채우기
   const importJSON = async () => {
     const text = prompt('Paste JSON');
     if (!text) return;
     try {
       const obj = JSON.parse(text) as ListeningSet;
-      // 누락 필드 기본값 보정
-      obj.conversation ||= { id: 'conv-1', audioUrl: '', imageUrl: '', questions: [] };
-      obj.lecture ||= { id: 'lect-1', audioUrl: '', imageUrl: '', questions: [] };
-      reset(obj);
-    } catch (e) {
+      reset(obj as unknown as ListeningSetForm);
+    } catch {
       alert('Invalid JSON');
     }
   };
 
-  // 폼 → JSON 내보내기
   const exportJSON = () => {
     const data = watch();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -79,9 +133,7 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
     URL.revokeObjectURL(url);
   };
 
-  // 질문 기본 4지선다 생성기
-  const mk4 = () =>
-    ['A', 'B', 'C', 'D'].map((id) => ({ id, text: '', correct: false }));
+  const mk4 = () => ['A', 'B', 'C', 'D'].map((id) => ({ id, text: '', correct: false }));
 
   return (
     <div className="mx-auto max-w-4xl p-6 space-y-6">
@@ -150,9 +202,9 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
               convQs.append({
                 id: `c${convQs.fields.length + 1}`,
                 prompt: '',
-                qtype: undefined, // ✅ 빈 문자열 대신 undefined
+                qtype: undefined,
                 choices: mk4(),
-              })
+              } as any)
             }
           >
             + Add
@@ -164,14 +216,16 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
             <div className="flex gap-2 items-end">
               <label className="block flex-1">
                 Prompt
-                <textarea className="input" {...register(`conversation.questions.${i}.prompt` as const)} />
+                <textarea
+                  className="input"
+                  {...register(`conversation.questions.${i}.prompt` as const)}
+                />
               </label>
               <label className="block w-32">
                 Type
                 <select
                   className="input"
                   {...register(`conversation.questions.${i}.qtype` as const, {
-                    // ✅ "" → undefined 매핑
                     setValueAs: (v) => (v === '' ? undefined : v),
                   })}
                 >
@@ -232,9 +286,9 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
               lectQs.append({
                 id: `l${lectQs.fields.length + 1}`,
                 prompt: '',
-                qtype: undefined, // ✅
+                qtype: undefined,
                 choices: mk4(),
-              })
+              } as any)
             }
           >
             + Add
@@ -246,7 +300,10 @@ export default function AdminListeningEditor({ params }: { params: { setId: stri
             <div className="flex gap-2 items-end">
               <label className="block flex-1">
                 Prompt
-                <textarea className="input" {...register(`lecture.questions.${i}.prompt` as const)} />
+                <textarea
+                  className="input"
+                  {...register(`lecture.questions.${i}.prompt` as const)}
+                />
               </label>
               <label className="block w-32">
                 Type
@@ -294,7 +351,7 @@ function ChoicesEditor<
   register,
 }: {
   base: B;
-  register: UseFormRegister<ListeningSet>;
+  register: UseFormRegister<ListeningSetForm>;
 }) {
   return (
     <div className="grid grid-cols-2 gap-2">

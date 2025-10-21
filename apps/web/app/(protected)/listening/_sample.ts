@@ -1,4 +1,4 @@
-﻿// Sample data & loader for Listening pilot
+// Sample data & loader for Listening pilot
 import type { ListeningTrack as ListeningTrackSample, ListeningQuestion, ListeningChoice } from '@/types/types-listening'
 
 export const SAMPLE_TRACK: ListeningTrackSample = {

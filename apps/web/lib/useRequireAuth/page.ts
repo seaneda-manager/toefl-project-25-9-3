@@ -1,8 +1,8 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../supabaseClient' // <-- 寃쎈줈 ?섏젙: ???④퀎 ?꾨줈 ?щ씪媛??supabaseClient
+import { supabase } from '../supabaseClient' // <-- 경로 ?�정: ???�계 ?�로 ?�라가??supabaseClient
 import type { Session, AuthChangeEvent } from '@supabase/supabase-js'
 
 export function useRequireAuth(redirect = '/auth/login') {

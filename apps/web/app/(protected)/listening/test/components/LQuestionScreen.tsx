@@ -1,140 +1,132 @@
+﻿// apps/web/app/(protected)/listening/test/components/LQuestionScreen.tsx
 'use client';
-import { useEffect, useRef, useState, useMemo } from 'react';
-import type { LQuestion } from '@/app/types/types-listening';
-import type { Mode } from '@/types/listening';
-import { consumePlay } from '@/lib/consumePlay';
+
+import { useMemo } from 'react';
+
+type Choice = { id: string; text: string };
+type Question = {
+  id: string | number;
+  prompt?: string;
+  qtype?: string;
+  choices?: Choice[];
+};
+
+type Props = {
+  question: Question;
+  index: number;                 // 현재 문항(0-based)
+  total: number;                 // 총 문항 수
+  selectedChoiceId?: string;     // 단일 선택형일 때
+  selectedChoiceIds?: string[];  // 다중 선택형(있다면)
+  disabled?: boolean;
+
+  /** Next 13+ 규칙 준수: 함수 prop은 *Action 네이밍 */
+  onChooseAction?: (qid: string, cid?: string) => void;
+  onNextAction?: () => void;
+  onPrevAction?: () => void;
+
+  // 상위에서 추가 속성을 넘겨도 타입 에러 방지
+  [key: string]: any;
+};
 
 export default function LQuestionScreen({
-  mode, question, chosen, onChoose, onNext, onPrev,
-  sessionId, trackId,
-}: {
-  mode: Mode;
-  question: LQuestion;
-  chosen?: string;
-  onChoose: (qid: string, cid: string | undefined) => void;
-  onNext: () => void;
-  onPrev: () => void;
-  sessionId: string;
-  trackId?: string; // 같은 트랙 기준으로 소비
-}) {
-  const meta = (question as any)?.meta as
-    | { autoPlaySnippetUrl?: string; revealChoicesAfterAudio?: boolean; tag?: string; allowReplayInPractice?: boolean }
-    | undefined;
-
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [ended, setEnded] = useState(!meta?.autoPlaySnippetUrl);
-  const [remaining, setRemaining] = useState<number | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  const gated = !!meta?.autoPlaySnippetUrl && !!meta?.revealChoicesAfterAudio;
-  const canReplay = mode === 'p' && !!meta?.autoPlaySnippetUrl && (meta?.allowReplayInPractice ?? true);
-
-  // 자동 재생: 진입 시 consume → 성공하면 play
-  useEffect(() => {
-    setEnded(!meta?.autoPlaySnippetUrl);
-    setPlaying(false);
-    setRemaining(null);
-    setErr(null);
-
-    const el = audioRef.current;
-    if (!el || !meta?.autoPlaySnippetUrl) return;
-
-    (async () => {
-      try {
-        const row = await consumePlay({ sessionId, trackId, mode });
-        setRemaining(row.remaining);
-        el.currentTime = 0;
-        await el.play();
-        setPlaying(true);
-      } catch (e: any) {
-        setErr(e?.message ?? String(e));
-        // 소비 실패 시 보기 즉시 노출
-        setEnded(true);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [question.id, meta?.autoPlaySnippetUrl]);
-
-  useEffect(() => {
-    const el = audioRef.current; if (!el) return;
-    const onEnd = () => { setPlaying(false); setEnded(true); };
-    el.addEventListener('ended', onEnd);
-    return () => el.removeEventListener('ended', onEnd);
-  }, []);
-
-  const replay = async () => {
-    const el = audioRef.current; if (!el || !meta?.autoPlaySnippetUrl) return;
-    setErr(null);
-    try {
-      const row = await consumePlay({ sessionId, trackId, mode }); // 리플레이마다 소비
-      setRemaining(row.remaining);
-      el.currentTime = 0;
-      await el.play();
-      setPlaying(true);
-      setEnded(false);
-    } catch (e: any) {
-      setErr(e?.message ?? String(e));
-    }
-  };
-
-  const badge = useMemo(
-    () => (meta?.tag === 'why-say-this' ? 'Why does the man say this?' : undefined),
-    [meta?.tag]
+  question,
+  index,
+  total,
+  selectedChoiceId,
+  selectedChoiceIds = [],
+  disabled = false,
+  onChooseAction,
+  onNextAction,
+  onPrevAction,
+}: Props) {
+  const choices = useMemo<Choice[]>(
+    () => (Array.isArray(question?.choices) ? (question.choices as Choice[]) : []),
+    [question?.choices]
   );
 
+  const isChecked = (cid: string) => {
+    if (Array.isArray(selectedChoiceIds) && selectedChoiceIds.length > 0) {
+      return selectedChoiceIds.includes(cid);
+    }
+    return selectedChoiceId === cid;
+  };
+
   return (
-    <div className="mx-auto max-w-3xl w-full p-6">
-      <div className="text-sm text-neutral-500 mb-2">
-        {`Question ${question.number ?? ''}${badge ? ` · ${badge}` : ''}`}
+    <div className="space-y-4">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between text-sm text-neutral-500">
+        <div>
+          Question {index + 1} / {total}
+          <span className="ml-2 rounded bg-emerald-600/15 px-2 py-0.5 text-[11px] text-emerald-400">
+            Listening
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="rounded border px-3 py-1 disabled:opacity-50"
+            onClick={onPrevAction}
+            disabled={disabled || index === 0}
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            className="rounded border px-3 py-1 disabled:opacity-50"
+            onClick={onNextAction}
+            disabled={disabled}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
-      <div className="text-base font-medium mb-4">{question.prompt}</div>
+      {/* 질문 본문 */}
+      <h2 className="text-lg font-semibold whitespace-pre-wrap">{question?.prompt ?? ''}</h2>
 
-      {meta?.autoPlaySnippetUrl && (
-        <div className="rounded-xl border bg-white p-4 mb-4">
-          <audio ref={audioRef} src={meta.autoPlaySnippetUrl} controls className="w-full mb-2" preload="auto" />
-          <div className="flex items-center justify-between text-xs text-neutral-500">
-            <span>
-              {playing ? 'Playing…' : ended ? 'Playback finished.' : 'Ready.'}
-              {remaining !== null ? ` · Remaining: ${remaining}` : ''}
-            </span>
-            {canReplay && (
-              <button className="rounded-md border px-3 py-1 hover:bg-neutral-50" onClick={replay}>
-                Replay (consumes 1)
-              </button>
-            )}
-          </div>
-          {err && <div className="mt-2 text-xs text-red-600">Consume error: {err}</div>}
-        </div>
-      )}
+      {/* 보기 목록 */}
+      <ul className="mt-2 space-y-2">
+        {choices.map((c, i) => {
+          const checked = isChecked(c.id);
+          return (
+            <li key={c.id}>
+              <label
+                className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 hover:bg-white/5 ${
+                  checked ? 'ring-2 ring-blue-400/50' : ''
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`q-${String(question?.id ?? 'none')}`}
+                  className="mt-1"
+                  checked={checked}
+                  disabled={disabled}
+                  // qid, cid 함께 전달 (JSX prop 안에 주석 X)
+                  onChange={() => onChooseAction?.(String(question.id), c.id)}
+                  aria-label={`Choice ${i + 1}`}
+                />
+                <span className="leading-7">{c.text}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
 
-      {(!gated || ended) ? (
-        <ul className="space-y-2">
-          {question.choices.map((c) => {
-            const active = chosen === c.id;
-            return (
-              <li key={c.id}>
-                <button
-                  onClick={() => onChoose(question.id, active ? undefined : c.id)}
-                  className={`w-full text-left rounded-xl border px-4 py-3 hover:bg-neutral-50 ${active ? 'border-yellow-400 ring-2 ring-yellow-300' : ''}`}
-                >
-                  {c.text}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div className="text-sm text-neutral-400">Choices will appear after the audio.</div>
-      )}
-
-      <div className="mt-6 flex justify-between">
-        <button className="rounded-xl px-4 py-2 border hover:bg-neutral-50" onClick={onPrev}>Prev</button>
+      {/* 하단 네비게이션 (모바일 편의) */}
+      <div className="mt-3 flex justify-between">
         <button
-          className={`rounded-2xl px-6 py-2 shadow ${chosen ? 'bg-yellow-400 hover:brightness-95' : 'bg-neutral-200 cursor-not-allowed'}`}
-          onClick={onNext}
-          disabled={!chosen}
+          type="button"
+          className="rounded border px-4 py-2 disabled:opacity-50"
+          onClick={onPrevAction}
+          disabled={disabled || index === 0}
+        >
+          Prev
+        </button>
+        <button
+          type="button"
+          className="rounded border px-4 py-2 disabled:opacity-50"
+          onClick={onNextAction}
+          disabled={disabled}
         >
           Next
         </button>

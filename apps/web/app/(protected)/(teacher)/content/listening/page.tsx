@@ -7,7 +7,7 @@ export default function ListeningEditorPage() {
         Listening Editor
       </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        오디오 업로드 + 지문/선택지 생성 UI (이후 연결 예정).
+        ?�디???�로??+ 지�??�택지 ?�성 UI (?�후 ?�결 ?�정).
       </p>
     </div>
   );

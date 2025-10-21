@@ -1,11 +1,12 @@
-﻿// apps/web/lib/supabaseClient.ts
-"use client";
+// apps/web/lib/supabaseClient.ts
+'use client';
 
-import { createBrowserClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 let _client: SupabaseClient | null = null;
 
+/** 브라우저 전용 Supabase 클라이언트 (싱글톤) */
 export function getSupabaseBrowser(): SupabaseClient {
   if (_client) return _client;
 
@@ -23,6 +24,5 @@ export function getSupabaseBrowser(): SupabaseClient {
   return _client;
 }
 
-// ?깃????대낫?닿린 (?대씪?댁뼵???꾩슜)
+/** 편의용 기본 인스턴스 */
 export const supabase = getSupabaseBrowser();
-

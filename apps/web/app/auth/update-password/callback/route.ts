@@ -1,17 +1,64 @@
-﻿import { NextResponse } from 'next/server'
-import { getSupabaseServer } from '@/lib/supabaseServer'
+// apps/web/app/auth/update-password/callback/route.ts
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
-export async function GET(req: Request) {
-  const url = new URL(req.url)
-  const code = url.searchParams.get('code')
-  if (!code) {
-    return NextResponse.redirect(new URL('/auth/login?m=missing-code', url))
-  }
-  const supabase = getSupabaseServer()
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
-  const next = error
-    ? `/auth/login?m=reset-error&err=${encodeURIComponent(error.message)}`
-    : '/auth/update-password'
-  return NextResponse.redirect(new URL(next, url))
+export const dynamic = 'force-dynamic';
+
+function safePath(p?: string | null, fallback = '/auth/update-password') {
+  if (!p) return fallback;
+  try {
+    const u = new URL(p, 'http://local');
+    if (u.origin !== 'http://local') return fallback;
+  } catch {}
+  return p.startsWith('/') ? p : fallback;
 }
 
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const code = url.searchParams.get('code');
+  const nextParam = url.searchParams.get('next') ?? url.searchParams.get('redirect_to');
+  const fallbackAfter = '/auth/update-password';
+
+  if (!code) {
+    return NextResponse.redirect(new URL('/auth/login?m=missing-code', url));
+  }
+
+  // 🔧 중요: 네 타입셋업에선 cookies()가 Promise임 → await 필요
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        // 일부 런타임/타입에서 set 오버로드 충돌을 피하려고 object 시그니처 + any 사용
+        set(name: string, value: string, options?: any) {
+          try {
+            cookieStore.set({ name, value, ...(options || {}) });
+          } catch {
+            /* ignore */
+          }
+        },
+        remove(name: string, options?: any) {
+          try {
+            cookieStore.set({ name, value: '', ...(options || {}), maxAge: 0 });
+          } catch {
+            /* ignore */
+          }
+        },
+      },
+    }
+  );
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  const dest = error
+    ? `/auth/login?m=exchange-failed&err=${encodeURIComponent(error.message)}`
+    : safePath(nextParam, fallbackAfter);
+
+  return NextResponse.redirect(new URL(dest, url));
+}

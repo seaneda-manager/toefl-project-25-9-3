@@ -1,110 +1,75 @@
-﻿// apps/web/app/(protected)/reading/test/[sessionId]/p/[passageId]/page.tsx
+// apps/web/app/(protected)/reading/test/[sessionId]/p/[passageId]/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
-import ReadingTestRunner from '@/app/(protected)/reading/test/ReadingTestRunner';
+import ReadingTestRunner from '@/components/reading/ReadingTestRunner';
+import type { RPassage, RQuestion } from '@/types/types-reading';
 
-// ?꾨찓?????(Runner媛 湲곕??섎뒗 ???
-import type {
-  Passage as ReadingPassage,
-  Question as ReadingQuestion,
-} from '@/types/types-reading';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-// ?뚯뒪 ???(DB/RPC?먯꽌 媛?몄삤???뚯뒪?????
-import type {
-  Passage as TestPassage,
-  Question as TestQuestion,
-} from '@/app/types/test';
+type RQType = RQuestion['type'];
+const normalizeType = (t: unknown): RQType => {
+  const ok: RQType[] = [
+    'vocab','detail','negative_detail','paraphrasing','inference',
+    'purpose','pronoun_ref','insertion','summary','organization'
+  ];
+  if (t === 'single') return 'detail'; // 구버전 호환
+  return (ok as unknown as string[]).includes(String(t)) ? (t as RQType) : 'detail';
+};
 
-/** ?????????????????????????????????????????????????????????????
- *  ?대뙌?? TestPassage ??ReadingPassage
- *  - Question.type ???놁쑝硫?湲곕낯媛?'detail' 遺??(洹쒖튃 ?꾩슂???섏젙)
- *  - prompt ?놁쑝硫?stem ??text ??title ?쒖쑝濡?蹂닿컯
- *  - title/text???덉쟾?섍쾶 蹂닿컯
- *  ????????????????????????????????????????????????????????????? */
-function adaptQuestion(q: TestQuestion): ReadingQuestion {
-  const anyQ = q as any;
-
-  const prompt: string =
-    anyQ.prompt ??
-    anyQ.stem ??
-    anyQ.text ??
-    anyQ.title ??
-    '';
-
-  return {
-    ...anyQ,
-    type: anyQ.type ?? anyQ.qtype ?? 'detail',
-    prompt,
-  } as ReadingQuestion;
-}
-
-function adaptPassage(p: TestPassage): ReadingPassage {
-  const anyP = p as any;
-
-  return {
-    ...anyP,
-    questions: (anyP.questions ?? []).map((q: TestQuestion) => adaptQuestion(q)),
-    title: anyP.title ?? anyP.name ?? anyP.passage_title ?? '',
-    text: anyP.text ?? anyP.content ?? anyP.body ?? '',
-  } as ReadingPassage;
-}
-
-export default async function ReadingPlayPage({
+export default async function Page({
   params,
-}: {
-  params: { sessionId: string; passageId: string };
-}) {
-  const supabase = getSupabaseServer();
+}: { params: { sessionId: string; passageId: string } }) {
+  const supabase = await getSupabaseServer();
 
-  const sessionId = params.sessionId;
-  const passageId = Number(params.passageId);
+  // passage 로드
+  const { data: p, error: pErr } = await supabase
+    .from('reading_passages')
+    .select('*')
+    .eq('id', params.passageId)
+    .maybeSingle();
 
-  // ?ㅼ젣 ?꾨줈?앺듃??RPC/荑쇰━??留욊쾶 ?⑥닔紐??뚮씪誘명꽣 議곗젙
-  const { data: testPassage, error } = await supabase
-    .rpc('reading_get_test_passage', { passage_id: passageId })
-    .returns<unknown>()
-    .single();
+  if (pErr) return <div className="p-6 text-red-600">Passage load error: {pErr.message}</div>;
+  if (!p) return <div className="p-6">Passage not found.</div>;
 
-  if (error || !testPassage) {
-    // ?대갚(Mock)
-    const mock: TestPassage = {
-      id: passageId,
-      title: 'Mock Passage',
-      text:
-        'This is a mock passage used as a fallback when the RPC returns nothing.',
-      questions: [
-        {
-          id: 1,
-          stem: 'According to paragraph 1, what is the main reason ...?',
-          choices: [
-            { id: 'A', text: 'Reason A' },
-            { id: 'B', text: 'Reason B' },
-            { id: 'C', text: 'Reason C' },
-            { id: 'D', text: 'Reason D' },
-          ],
-          answer: 'B',
-        } as unknown as TestQuestion,
-      ],
-    } as unknown as TestPassage;
+  // 질문/보기 로드
+  const { data: qs, error: qErr } = await supabase
+    .from('reading_questions')
+    .select('*, choices:reading_choices(*)')
+    .eq('passage_id', p.id)
+    .order('number', { ascending: true });
 
-    const readingPassage = adaptPassage(mock);
-
-    return (
-      <ReadingTestRunner
-        sessionId={sessionId}
-        passage={readingPassage}
-        // ??mode prop ?쒓굅 (Runner媛 諛쏆? ?딆쓬)
-      />
-    );
+  if (qErr) {
+    return <div className="p-6 text-red-600">Questions load error: {qErr.message}</div>;
   }
 
-  const readingPassage = adaptPassage(testPassage as TestPassage);
+  // ✅ RPassage/RQuestion 타입에 존재하는 필드만 구성 (set_id/ui/passag e_id 제거)
+  const passage: RPassage = {
+    id: p.id,
+    title: p.title ?? '',
+    content: p.content ?? '',
+    questions: (qs ?? []).map((q: any) => ({
+      id: q.id,
+      number: q.number ?? 0,
+      stem: q.stem ?? '',
+      type: normalizeType(q.type),
+      meta: q.meta ?? undefined,
+      explanation: q.explanation ?? (q.clue_quote ? { clue_quote: q.clue_quote } : undefined),
+      choices: (q.choices ?? []).map((c: any) => ({
+        id: c.id,
+        text: c.text ?? '',
+        is_correct: !!c.is_correct,
+        explain: c.explain ?? undefined,
+      })),
+    })) as RQuestion[],
+  };
 
+  // Runner 시그니처는 프로젝트 정의에 맞춰 전달
   return (
     <ReadingTestRunner
-      sessionId={sessionId}
-      passage={readingPassage}
-      // ??mode prop ?쒓굅
+      passage={passage}
+      sessionId={params.sessionId}
+      onAnswer={async () => ({ ok: true })}
+      onFinish={async () => ({ ok: true })}
     />
   );
 }
-

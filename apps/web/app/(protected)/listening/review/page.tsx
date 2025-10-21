@@ -25,7 +25,7 @@ export default async function Page({
 
   const supabase = await getSupabaseServer();
 
-  // ✅ 제네릭 제거 + .single() 후 타입 단언
+  // ???�네�??�거 + .single() ???�???�언
   const { data, error } = await supabase
     .rpc('listening_review_score', { p_session_id: sessionId })
     .single();

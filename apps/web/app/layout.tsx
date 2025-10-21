@@ -1,6 +1,6 @@
-﻿// apps/web/app/layout.tsx
+// apps/web/app/layout.tsx
 import type { Metadata } from 'next';
-import './globals.css'; // ?덉쑝硫??좎?
+import './globals.css';
 import SiteHeader from '@/components/SiteHeader';
 
 export const metadata: Metadata = {
@@ -17,4 +17,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

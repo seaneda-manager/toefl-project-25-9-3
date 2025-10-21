@@ -10,7 +10,7 @@ const cards = [
 return (
 <div className="space-y-3">
 <h2 className="text-lg font-semibold">Contents Production</h2>
-<p className="text-sm text-gray-600">R / L / S / W / Vocab / Grammar 臾몄젣????쒖옉 諛?諛고룷.</p>
+<p className="text-sm text-gray-600">R / L / S / W / Vocab / Grammar ?�몄???????�옉 �?諛고�?</p>
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
 {cards.map(c => (
 <a key={c.href} href={c.href} className="rounded-xl border p-4 hover:shadow">

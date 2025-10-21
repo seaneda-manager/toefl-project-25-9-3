@@ -1,4 +1,4 @@
-﻿export function toDisplayLabel(key: string) {
+export function toDisplayLabel(key: string) {
   // "study_sessions" -> "Study Sessions", "userId" -> "User Id"
   return key
     .replace(/_/g, ' ')

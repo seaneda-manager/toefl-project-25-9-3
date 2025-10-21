@@ -13,33 +13,14 @@
 
     "baseUrl": ".",
     "paths": {
+      "@pkg/*": ["packages/*"],
       "@/*": ["apps/web/*"],
-      "@/app/*": ["apps/web/app/*"],
-      "@/actions/*": ["apps/web/actions/*"],
-      "@/components/*": ["apps/web/components/*"],
-      "@/lib/*": ["apps/web/lib/*"],
-      "@/styles/*": ["apps/web/styles/*"],
-      "@/types/*": ["apps/web/types/*", "apps/web/app/types/*"],  // ← 순서 중요!
-      "@pkg/*": ["packages/*"]
+      "@/models/*": ["apps/web/models/*"]
     },
 
     "isolatedModules": true,
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
-  "include": [
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
-    "apps/**/*.d.ts",
-    "packages/**/*.ts",
-    "packages/**/*.tsx",
-    "packages/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "dist",
-    "_archive/**",
-    "apps/web/_archive/**"
-  ]
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"]
 }

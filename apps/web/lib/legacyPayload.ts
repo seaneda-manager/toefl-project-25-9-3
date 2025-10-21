@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { supabase } from './supabaseClient';
 import { ORG_ID } from './constants';
 
@@ -13,7 +13,7 @@ type SetRow = {
 };
 
 export async function fetchBestSet(section: 'reading'|'listening'): Promise<SetRow | null> {
-  // published ?곗꽑, ?놁쑝硫?理쒖떊 version
+  // published ?�선, ?�으�?최신 version
   const { data, error } = await supabase
     .from('sets')
     .select('id, section, set_id, title, version, payload_json, published_at')
@@ -26,9 +26,9 @@ export async function fetchBestSet(section: 'reading'|'listening'): Promise<SetR
   return (data && data[0]) ?? null;
 }
 
-/** ?덇굅??UI??payload 二쇱엯(踰붿슜). ?덇굅?쒖뿉???대깽?몃? ?ㅼ쑝硫?諛붾줈 諛쏆쓣 ???덉쓬.
+/** ?�거??UI??payload 주입(범용). ?�거?�에???�벤?��? ?�으�?바로 받을 ???�음.
  *  window.addEventListener('toefl:payload', (e) => { const {section, set_id, payload} = (e as CustomEvent).detail; ... });
- *  ?꾩슂?섎㈃ window.YourInitFn?.(payload) 媛숈씠 ?뱀젙 吏꾩엯?먮룄 ?ш린???몄텧 媛??
+ *  ?�요?�면 window.YourInitFn?.(payload) 같이 ?�정 진입?�도 ?�기???�출 가??
  */
 export function injectLegacyPayload(row: SetRow) {
   (window as any).__LEGACY_SET__ = row;
@@ -36,7 +36,7 @@ export function injectLegacyPayload(row: SetRow) {
     detail: { section: row.section, set_id: row.set_id, version: row.version, payload: row.payload_json }
   }));
 
-  // ?덇굅??珥덇린??吏꾩엯?먯씠 ?덈떎硫?二쇱꽍 ?댁젣?댁꽌 ?몄텧?섏꽭??
+  // ?�거??초기??진입?�이 ?�다�?주석 ?�제?�서 ?�출?�세??
   // if (row.section === 'reading') (window as any).initReadingStudy?.(row.payload_json);
   // if (row.section === 'listening') (window as any).initListeningStudy?.(row.payload_json);
 }

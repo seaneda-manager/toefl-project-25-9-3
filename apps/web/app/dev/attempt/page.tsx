@@ -1,3 +1,4 @@
+// apps/web/app/(protected)/attempt-demo/page.tsx  ← 경로는 원본에 맞춰 수정하세요
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -12,7 +13,7 @@ type SetRow = { payload_json?: { answer_key?: AnswerKey } | null };
 function asSortedUnique(arr: number[]) {
   return [...new Set(arr)].sort((a, b) => a - b);
 }
-// 유틸: 배열 동치
+// 유틸: 배열 일치
 function arrEq(a: number[], b: number[] | number) {
   if (!Array.isArray(b)) return false;
   const A = asSortedUnique(a);
@@ -62,7 +63,7 @@ export default function Page() {
       alert('Login required');
       return;
     }
-    // 세트/섹션 바뀌었을 수 있으니 캐시 무효화
+    // 세트/섹션 바뀌었을 수 있으니 캐시 무효
     setCachedKey(null);
 
     const { data, error } = await supabase
@@ -125,7 +126,7 @@ export default function Page() {
     }
   };
 
-  // 점수 계산 (RPC 사용)
+  // 점수 계산 (RPC)
   const computeScore = async () => {
     if (!attemptId) return;
     const { data, error } = await supabase.rpc('attempt_score', { attempt_id: attemptId });
@@ -133,7 +134,8 @@ export default function Page() {
       push(error.message);
       return;
     }
-    const row = (data as any)?.[0] ?? { total: 0, correct: 0 };
+    // RPC가 단일 row 또는 배열 반환할 수 있음 → 유연 처리
+    const row = (Array.isArray(data) ? data[0] : data) ?? { total: 0, correct: 0 };
     push(`SCORE: ${row.correct} / ${row.total}`);
   };
 
@@ -156,7 +158,7 @@ export default function Page() {
           onChange={(e) => {
             setSection(e.target.value as Section);
             setCachedKey(null); // 섹션 변경 시 캐시 무효
-            setAttemptId(null); // 섹션 바뀌면 기존 attempt 무효화
+            setAttemptId(null); // 섹션 바뀌면 기존 attempt 무효
           }}
         >
           {(['reading', 'listening', 'speaking', 'writing'] as Section[]).map((s) => (
@@ -171,7 +173,7 @@ export default function Page() {
           onChange={(e) => {
             setSetId(e.target.value);
             setCachedKey(null); // 세트 변경 시 캐시 무효
-            setAttemptId(null); // 세트 바뀌면 기존 attempt 무효화
+            setAttemptId(null); // 세트 바뀌면 기존 attempt 무효
           }}
         />
 
@@ -193,7 +195,7 @@ export default function Page() {
         </button>
       </div>
 
-      {/* 최근 로그가 에러면 한 줄 강조 */}
+      {/* 최근 로그가 에러면 진하게 강조 */}
       {log[0]?.startsWith('save error:') && (
         <div style={{ marginTop: 8, color: '#b91c1c', fontSize: 12 }}>{log[0]}</div>
       )}
@@ -201,7 +203,7 @@ export default function Page() {
       <pre style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{log.join('\n')}</pre>
 
       <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
-        example answer_key → {`{"1":2,"2":[1,3]}`}
+        example answer_key {' '}{`{"1":2,"2":[1,3]}`}
       </div>
     </div>
   );

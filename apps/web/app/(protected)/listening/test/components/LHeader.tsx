@@ -36,10 +36,10 @@ export default function LHeader({
             <button className="rounded-md bg-white/10 px-3 py-1 hover:bg-white/20 disabled:opacity-40" onClick={onNext} disabled={!canNext}>Next</button>
           </div>
 
-          {/* 중앙 제목 */}
+          {/* 중앙 ?�목 */}
           <div className="text-base font-semibold">{titleCenter}</div>
 
-          {/* 우측 컨트롤 */}
+          {/* ?�측 컨트�?*/}
           <div className="flex items-center gap-3">
             <button className="rounded-full bg-white/10 px-3 py-1 text-sm hover:bg-white/20">VOLUME</button>
             <button className="rounded-full bg-white/10 px-3 py-1 text-sm hover:bg-white/20">report</button>

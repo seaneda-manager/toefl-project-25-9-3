@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function StudentDashboardPage() {
-  // --- mock 데이터 (나중에 Supabase에서 가져오세요) ---
+  // --- mock 데이터(추후 Supabase에서 가져올 예정) ---
   const now = new Date();
   const dateLabel = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(
     now.getDate()
@@ -15,7 +15,7 @@ export default async function StudentDashboardPage() {
 
   const student = {
     name: "홍길동",
-    status: "고2",
+    status: "재학",
     level: "Upper-Intermediate",
     target: 105,
   };
@@ -27,20 +27,20 @@ export default async function StudentDashboardPage() {
   ];
 
   const teacherMemo =
-    "최근 2주간 RC는 안정적. LC는 dictation 과제 꾸준히 진행 필요. Speaking은 템플릿 정교화.";
+    "최근 2주간 RC 정답률 안정적. LC는 dictation 과제 꾸준히 진행 중. Speaking은 샘플 답변 교정 완료.";
 
   const tasksToday = [
     "RC: Passage 1~3 오답노트",
     "LC: Short lecture 2회 반복",
     "Vocab: Day 12 테스트",
   ];
-  const tasksPrev = ["RC: Insertion 유형 6문제", "Essay: Integrated 한 편", "Grammar Set #4"];
+  const tasksPrev = ["RC: Insertion 유형 6문제", "Essay: Integrated 작성", "Grammar Set #4"];
 
   return (
     <div className="min-h-screen bg-[rgb(15,15,18)] text-white">
       <div className="mx-auto grid max-w-7xl grid-cols-[260px_1fr] gap-6 p-6">
         {/* 좌측 사이드바 */}
-        <aside className="h-[calc(100vh-3rem)] sticky top-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <aside className="sticky top-6 h-[calc(100vh-3rem)] rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="mb-4 text-sm font-semibold opacity-60">TOEFL Menu</div>
           <nav className="space-y-1">
             <DashLink href="/student" active>
@@ -67,11 +67,11 @@ export default async function StudentDashboardPage() {
             </div>
           </section>
 
-          {/* 지난 3회 시험 기록 (5x4 테이블) */}
+          {/* 최근 3회 시험 기록 */}
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <h2 className="mb-3 text-lg font-semibold">시험 기록 (지난 3회)</h2>
+            <h2 className="mb-3 text-lg font-semibold">시험 기록 (최근 3회)</h2>
             <div className="overflow-x-auto">
-              <table className="min-w-[560px] w-full border-collapse text-sm">
+              <table className="w-full min-w-[560px] border-collapse text-sm">
                 <thead>
                   <tr>
                     <Th className="w-28"> </Th>
@@ -98,7 +98,7 @@ export default async function StudentDashboardPage() {
             </div>
           </section>
 
-          {/* 숙제/스케줄 (2x3) */}
+          {/* 일정/숙제 (2x3) */}
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <table className="w-full border-collapse text-sm">
               <thead>

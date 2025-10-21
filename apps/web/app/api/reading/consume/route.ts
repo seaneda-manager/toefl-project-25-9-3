@@ -1,25 +1,32 @@
-ï»¿export const runtime = 'nodejs';
+// apps/web/app/api/reading/consume/route.ts
+export const runtime = 'nodejs';
 
 import { NextResponse, NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 const BodySchema = z.object({
-  sessionId: z.coerce.number(),
-  passageId: z.string().min(1),
-  mode: z.enum(['p','t','r','test','study']).default('t'),
+  // ? reading_sessions.id°¡ uuidÀÎ ½ºÅ°¸¶ ±âÁØ
+  sessionId: z.string().uuid(),
+  passageId: z.string().min(1), // ÇÊ¿äÇÏ´Ù¸é .uuid()·Î ¹Ù²Ù¼¼¿ä
+  mode: z.enum(['p', 't', 'r', 'test', 'study']).default('t'),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ ok:false, error:'UNAUTHORIZED' }, { status: 401 });
+    const supabase = await getSupabaseServer(); // ? await
 
+    // 0) ÀÎÁõ
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
+    if (!user)   return NextResponse.json({ ok: false, error: 'UNAUTHORIZED' }, { status: 401 });
+
+    // 1) ¹Ùµğ ÆÄ½Ì(JSON ¿ì¼±, x-www-form-urlencoded Æú¹é)
     const ct = req.headers.get('content-type') ?? '';
     let payload: unknown;
-    if (ct.includes('application/json')) payload = await req.json();
-    else {
+    if (ct.includes('application/json')) {
+      payload = await req.json();
+    } else {
       const raw = await req.text();
       try { payload = JSON.parse(raw); }
       catch { payload = Object.fromEntries(new URLSearchParams(raw).entries()); }
@@ -27,22 +34,24 @@ export async function POST(req: NextRequest) {
 
     const { sessionId, passageId, mode } = BodySchema.parse(payload);
 
+    // 2) ³» ¼¼¼Ç¸¸ ¼Òºñ Ã³¸® (¼ÒÀ¯ÀÚ °¡µå)
     const { data, error } = await supabase
       .from('reading_sessions')
       .update({ consumed_at: new Date().toISOString() })
       .eq('id', sessionId)
+      .eq('user_id', user.id)              // ? owner check
+      // .is('consumed_at', null)           // (¼±ÅÃ) ÀÌ¹Ì ¼ÒºñµÈ °Ç ¸·°í ½ÍÀ¸¸é ÁÖ¼® ÇØÁ¦
       .select('id, consumed_at')
       .single();
 
-    if (error) return NextResponse.json({ ok:false, error:'DB_ERROR', detail:error.message }, { status:500 });
-    if (!data)   return NextResponse.json({ ok:false, error:'NOT_FOUND' }, { status:404 });
+    if (error) return NextResponse.json({ ok: false, error: 'DB_ERROR', detail: error.message }, { status: 500 });
+    if (!data) return NextResponse.json({ ok: false, error: 'NOT_FOUND' }, { status: 404 });
 
-    // (?ì¢ê¹®) ?ëŒ€ê¹½??æ¿¡ì’“í‰­ ?ëš¯ì” é‡‰ë¶¿ì”  ?ëˆë–ï§?
+    // 3) (¼±ÅÃ) ¼Òºñ ·Î±× ³²±â±â
     // await supabase.from('reading_plays').insert({ session_id: sessionId, passage_id: passageId, mode });
 
-    return NextResponse.json({ ok:true, session: data }, { status:200 });
+    return NextResponse.json({ ok: true, session: data }, { status: 200 });
   } catch (err: any) {
-    return NextResponse.json({ ok:false, error:'INTERNAL', detail:String(err?.message ?? err) }, { status:500 });
+    return NextResponse.json({ ok: false, error: 'INTERNAL', detail: String(err?.message ?? err) }, { status: 500 });
   }
 }
-

@@ -1,7 +1,7 @@
-ï»¿// apps/web/app/(protected)/reading/components/QuestionCard.tsx
+// apps/web/app/(protected)/reading/components/QuestionCard.tsx
 'use client';
 
-import type { Question, Choice } from '@/types/types-reading';
+import type { RQuestion as Question, RChoice as Choice } from '@/types/types-reading';
 
 export default function QuestionCard({
   q,
@@ -24,12 +24,12 @@ export default function QuestionCard({
   return (
     <ul className="space-y-2">
       {q.choices.map((c: Choice, i: number) => {
-        // A, B, C... (i>=26ë©´ ìˆ«ìží‘œì‹œë¡œ í´ë°±)
+        // A, B, C... (i>=26¸é ¼ýÀÚÇ¥½Ã·Î Æú¹é)
         const label = i < 26 ? String.fromCharCode(65 + i) : String(i + 1);
         const isPicked = selected === c.id;
         const isCorrect = !!c.is_correct;
 
-        // í”¼ë“œë°± í‘œì‹œ ëª¨ë“œì¼ ë•Œ ìŠ¤íƒ€ì¼
+        // ÇÇµå¹é Ç¥½Ã ¸ðµåÀÏ ¶§ ½ºÅ¸ÀÏ
         const feedbackCls = showFeedback
           ? (isCorrect
               ? 'border-green-500 ring-1 ring-green-500/70 bg-green-50/60 dark:bg-green-900/20'

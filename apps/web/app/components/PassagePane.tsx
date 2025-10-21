@@ -1,4 +1,4 @@
-﻿/* apps/web/app/components/PassagePane.tsx */
+/* apps/web/app/components/PassagePane.tsx */
 export default function PassagePane({ paragraphs = [] as string[] }) {
   const data = paragraphs.length
     ? paragraphs

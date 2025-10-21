@@ -1,67 +1,129 @@
 // apps/web/components/reading/SkimGate.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-export default function SkimGate({
-  content,
-  onUnlock,
-  height = 520,
-}: {
+type Props = {
   content: string;
-  onUnlock: () => void;
+  /** 시작 트리거 (Enter 또는 버튼 클릭) */
+  onUnlockAction: () => void;   // ← 이름 변경
+  /** 스크롤 박스 높이(px) */
   height?: number;
-}) {
+};
+
+export default function SkimGate({ content, onUnlockAction, height = 520 }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(false);
+  const [progress, setProgress] = useState(0); // 0~100
+  const rafRef = useRef<number | null>(null);
+
+  const isHTML = useMemo(() => /<[a-z][\s\S]*>/i.test(content), [content]);
+  const paragraphs = useMemo(
+    () =>
+      isHTML
+        ? []
+        : content
+            .split(/\n{2,}/g)
+            .map((s) => s.trim())
+            .filter(Boolean),
+    [content, isHTML]
+  );
 
   useEffect(() => {
     const el = boxRef.current;
     if (!el) return;
-    const onScroll = () => {
-      const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-      setAtBottom(nearBottom);
+
+    const calc = () => {
+      const total = el.scrollHeight;
+      const view = el.clientHeight;
+      const top = el.scrollTop;
+      const pct = Math.min(100, Math.max(0, Math.round(((top + view) / Math.max(1, total)) * 100)));
+      setProgress(pct);
+      setAtBottom(top + view >= total - 4 || total <= view + 1);
     };
-    onScroll();
-    el.addEventListener('scroll', onScroll);
-    return () => el.removeEventListener('scroll', onScroll);
+
+    const onScroll = () => {
+      if (rafRef.current != null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        calc();
+      });
+    };
+
+    calc();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    const onResize = () => calc();
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  const paragraphs = content.split(/\n\n+/);
+  // Enter 키로 시작 (하단까지 스크롤 완료 시에만)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!atBottom) return;
+      if (e.key === 'Enter') onUnlockAction();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [atBottom, onUnlockAction]);
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-3">Skim the passage</h2>
-      <p className="text-sm text-neutral-500 mb-3">
-        아래 사이드 영역을 끝까지 스크롤하면 시작 버튼이 활성화됩니다.
+      <h2 className="mb-3 text-xl font-semibold">Skim the passage</h2>
+      <p id="skim-instruction" className="mb-3 text-sm text-neutral-500">
+        아래 영역의 끝까지 스크롤하면 시작 버튼이 활성화됩니다.
       </p>
-      <div className="grid grid-cols-[420px_1fr] gap-6">
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(300px,420px)_1fr]">
+        {/* 본문 스크롤 박스 */}
         <div
           ref={boxRef}
-          className="border rounded-2xl p-4 overflow-y-auto"
+          className="overflow-y-auto rounded-2xl border p-4"
           style={{ height }}
+          aria-labelledby="skim-instruction"
+          role="region"
         >
-          <div className="prose max-w-none">
-            {paragraphs.map((p, i) => (
-              <p key={i} className="mb-4">
-                {p}
-              </p>
-            ))}
+          {/* 진행 막대 */}
+          <div className="mb-3 h-1 w-full overflow-hidden rounded bg-neutral-200/60">
+            <div
+              className="h-full bg-neutral-900 transition-[width]"
+              style={{ width: `${progress}%` }}
+              aria-hidden
+            />
           </div>
+
+          {isHTML ? (
+            <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+          ) : (
+            <div className="prose max-w-none">
+              {paragraphs.map((p, i) => (
+                <p key={i} className="mb-4">
+                  {p}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* 우측 패널 */}
         <div className="flex items-start">
           <button
             type="button"
-            onClick={onUnlock}
+            onClick={onUnlockAction}
             disabled={!atBottom}
             className={[
-              'px-4 py-2 rounded-xl border',
-              atBottom ? 'bg-black text-white' : 'opacity-50 cursor-not-allowed',
+              'rounded-xl border px-4 py-2',
+              atBottom ? 'bg-black text-white hover:opacity-90' : 'cursor-not-allowed opacity-50',
             ].join(' ')}
             aria-disabled={!atBottom}
+            aria-describedby="skim-instruction"
           >
-            Start Questions
+            {atBottom ? 'Start Questions (Enter)' : `Scroll to Continue · ${progress}%`}
           </button>
         </div>
       </div>

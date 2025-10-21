@@ -1,15 +1,24 @@
 'use client';
 import { useCallback, useId } from 'react';
-import type { Choice } from '@/types/test';
+
+type AnyChoice = {
+  id: string | number;
+  text?: string;
+  label?: string;
+  explain?: string | null;   // ??null ?�용
+  is_correct?: boolean;
+  ord?: number;
+  meta?: unknown;
+};
 
 type Props = {
   prompt: string;
-  choices: Choice[];
+  choices: AnyChoice[];       // ???�연???�력
   selected?: string | null;
   onAnswer: (choiceId: string) => void;
 };
 
-function normalizeChoice(c: Choice): { id: string; label: string } {
+function normalizeChoice(c: AnyChoice): { id: string; label: string } {
   const id = String((c as any)?.id ?? '');
   const label =
     typeof (c as any)?.label === 'string'
@@ -23,13 +32,9 @@ function normalizeChoice(c: Choice): { id: string; label: string } {
 export default function QuestionCard({ prompt, choices, selected, onAnswer }: Props) {
   const groupId = useId();
 
-  // 숫자키(1~9) 또는 넘패드(NumPad1~9)로 선택
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      // 숫자열(1~9)
       let idx = ['1','2','3','4','5','6','7','8','9'].indexOf(e.key);
-
-      // 넘패드(NumPad1~9)
       if (idx < 0) {
         const map: Record<string, number> = {
           Numpad1: 0, Numpad2: 1, Numpad3: 2, Numpad4: 3, Numpad5: 4,
@@ -37,13 +42,11 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
         };
         if (e.code in map) idx = map[e.code];
       }
-
       if (idx >= 0 && idx < choices.length) {
         e.preventDefault();
         const { id } = normalizeChoice(choices[idx]);
         onAnswer(id);
       }
-      // (옵션) 스페이스/엔터로 현재 선택 확정 같은 추가 핸들링을 원하면 여기서 처리 가능
     },
     [choices, onAnswer]
   );
@@ -62,7 +65,6 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
         {prompt}
       </div>
 
-      {/* 보기 목록 */}
       <div role="radiogroup" aria-labelledby={`${groupId}-label`} className="space-y-2">
         {choices.map((c, i) => {
           const { id, label } = normalizeChoice(c);
@@ -87,7 +89,6 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
               ].join(' ')}
             >
               <span className="inline-flex items-center gap-2">
-                {/* 라디오 점 */}
                 <span
                   className={[
                     'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
@@ -103,10 +104,7 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
                   />
                 </span>
 
-                {/* A/B/C/D 레터 */}
                 <span className="font-medium text-gray-900 dark:text-gray-100">{letter}.</span>
-
-                {/* 보기 텍스트 */}
                 <span className="text-gray-800 dark:text-gray-200">{label}</span>
               </span>
             </button>
@@ -114,9 +112,8 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
         })}
       </div>
 
-      {/* 힌트 */}
       <div className="text-xs text-gray-500 dark:text-gray-400">
-        Tip: 문제 영역에 포커스가 있을 때 키보드 <span className="tabular-nums">1~{shortcutMax}</span> 로 빠르게 선택할 수 있어요.
+        Tip: 문제 ?�역???�커?��? ?�을 ???�보??<span className="tabular-nums">1~{shortcutMax}</span> �?빠르�??�택?????�어??
       </div>
     </div>
   );

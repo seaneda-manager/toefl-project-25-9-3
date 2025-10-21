@@ -1,30 +1,36 @@
-ï»¿// apps/web/app/api/reading/finish/route.ts
+// apps/web/app/api/reading/finish/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseServer();
-    const body = await req.json();
+    const supabase = await getSupabaseServer(); // ? await
 
-    const sessionId = Number(body.sessionId);
-    if (!sessionId) {
-      return NextResponse.json({ ok: false, error: 'Missing sessionId' }, { status: 400 });
-    }
+    // ÀÎÁõ
+    const { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
+    if (!user)   return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 
-    // åª›Â€?? reading_sessions(id, finished_at)
-    const { error } = await supabase
+    // ¹Ùµð ÆÄ½Ì
+    const { sessionId } = (await req.json()) as { sessionId?: string };
+    const sid = (sessionId ?? '').trim(); // ? reading_sessions.id´Â uuid
+    if (!sid) return NextResponse.json({ ok: false, error: 'Missing sessionId' }, { status: 400 });
+
+    // ³» ¼¼¼Ç¸¸ Á¾·á
+    const { data, error } = await supabase
       .from('reading_sessions')
       .update({ finished_at: new Date().toISOString() })
-      .eq('id', sessionId);
+      .eq('id', sid)
+      .eq('user_id', user.id)     // ? owner check
+      .select('id');              // supabase-js v2: µÎ ¹øÂ° ÀÎÀÚ ¾øÀÌ
 
-    if (error) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ ok: false, error: 'not found or forbidden' }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
-

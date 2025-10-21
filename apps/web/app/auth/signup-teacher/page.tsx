@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { signUpTeacher } from '@/actions/auth';
 
 export default function SignupTeacherPage() {
@@ -9,7 +10,7 @@ export default function SignupTeacherPage() {
   const [submitting, setSubmitting] = useState(false);
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
+    <div className="mx-auto max-w-md space-y-6 px-6 py-10">
       <h1 className="text-2xl font-semibold">Teacher Sign Up</h1>
 
       {/* Use server action; manage pending state locally */}
@@ -23,10 +24,14 @@ export default function SignupTeacherPage() {
           }
         }}
         className="space-y-4"
+        noValidate
       >
         <div>
-          <label className="block text-sm mb-1">Email</label>
+          <label htmlFor="email" className="block text-sm mb-1">
+            Email
+          </label>
           <input
+            id="email"
             name="email"
             type="email"
             required
@@ -34,18 +39,23 @@ export default function SignupTeacherPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full border rounded-lg px-3 py-2"
             placeholder="you@example.com"
+            autoComplete="email"
           />
         </div>
 
         <div>
-          <label className="block text-sm mb-1">Password</label>
+          <label htmlFor="password" className="block text-sm mb-1">
+            Password
+          </label>
           <input
+            id="password"
             name="password"
             type="password"
             required
             minLength={6}
             className="w-full border rounded-lg px-3 py-2"
             placeholder="At least 6 characters"
+            autoComplete="new-password"
           />
         </div>
 
@@ -54,6 +64,7 @@ export default function SignupTeacherPage() {
           disabled={submitting}
           className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-60"
           aria-busy={submitting}
+          title={submitting ? 'Creating…' : 'Create teacher account'}
         >
           {submitting ? 'Creating…' : 'Create teacher account'}
         </button>
@@ -61,9 +72,9 @@ export default function SignupTeacherPage() {
 
       <p className="text-sm">
         Already have an account?{' '}
-        <a className="underline" href={`/auth/login?email=${encodeURIComponent(email)}`}>
+        <Link className="underline" href={`/auth/login?email=${encodeURIComponent(email)}`}>
           Log in
-        </a>
+        </Link>
       </p>
     </div>
   );

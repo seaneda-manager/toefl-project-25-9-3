@@ -1,7 +1,9 @@
+// apps/web/components/reading/runner/TestRunnerV2.tsx
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { RPassage, RQuestion } from '@/types/types-reading';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import type { RPassage, RQuestion } from '@/lib/readingSchemas';
 import PassagePane from '@/components/reading/PassagePane';
 import SkimGate from '@/components/reading/SkimGate';
 import { submitReadingAnswer, finishReadingSession } from '@/actions/readingSession';
@@ -11,44 +13,87 @@ type Props = {
   sessionId: string;
   mode?: 'study' | 'exam' | 'review' | 'test';
   gateFirst?: boolean;
+  /** 완료 시 상위로 세션ID 전달 (라우팅 등은 상위에서 처리) */
+  onFinishAction?: (sessionId: string | number) => void;
 };
 
-// ───────────────── Shell: 게이트만 담당 ─────────────────
-export default function TestRunnerV2({ passage, sessionId, gateFirst = true }: Props) {
-  const [gateDone, setGateDone] = useState(!gateFirst);
-  if (!gateDone) {
-    return <SkimGate content={passage.content} onUnlock={() => setGateDone(true)} />;
-  }
-  return <RunnerCore passage={passage} sessionId={sessionId} />;
+// 메타 요약 뷰어
+function viewMeta(q?: RQuestion) {
+  const summary = (q?.meta?.summary ?? {}) as {
+    candidates?: string[];
+    correct?: number[];
+    selectionCount?: number;
+  };
+  const insertion = (q?.meta?.insertion ?? {}) as {
+    anchors?: Array<string | number>;
+    correctIndex?: number;
+  };
+  const pronoun = (q?.meta?.pronoun_ref ?? {}) as {
+    pronoun?: string;
+    referents?: string[];
+    correctIndex?: number;
+  };
+  return { summary, insertion, pronoun };
 }
 
-// ───────────────── Core: 실제 런너 ─────────────────
-function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: string }) {
+export default function TestRunnerV2({
+  passage,
+  sessionId,
+  gateFirst = true,
+  onFinishAction,
+}: Props) {
+  const [gateDone, setGateDone] = useState(!gateFirst);
+  if (!gateDone) {
+    return (
+      <SkimGate
+        content={passage.content}
+        onUnlockAction={() => setGateDone(true)}  // ✅ 이름 변경
+      />
+    );
+  }
+  return (
+    <RunnerCore
+      passage={passage}
+      sessionId={sessionId}
+      onFinishAction={onFinishAction}
+    />
+  );
+}
+
+// Core: 실제 러너
+function RunnerCore({
+  passage,
+  sessionId,
+  onFinishAction,
+}: {
+  passage: RPassage;
+  sessionId: string;
+  onFinishAction?: (sessionId: string | number) => void;
+}) {
   const qs = (passage?.questions ?? []) as RQuestion[];
   const total = qs.length;
 
-  // ✅ 훅은 항상 최상단 고정
-  // View Text 페이지 전환 플래그(모달 제거)
   const [showText, setShowText] = useState(false);
 
-  // 진행/선택 상태
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (total === 0) setIdx(0);
     else if (idx >= total) setIdx(total - 1);
+    else if (idx < 0) setIdx(0);
   }, [total, idx]);
 
   const [picked, setPicked] = useState<Record<string, string | string[]>>({});
   const q = total > 0 ? qs[idx] : undefined;
+  const qKey = q ? String(q.id) : '';
 
   const isSummary = q?.type === 'summary';
-  const selectionCount = Math.max(1, Number(q?.meta?.summary?.selectionCount ?? 2));
+  const selectionCount = Math.max(1, Number(viewMeta(q).summary.selectionCount ?? 2) || 2);
 
-  const getSelArray = () => {
-    if (!q) return [] as string[];
-    const v = picked[q.id];
+  const getSelArray = useCallback((): string[] => {
+    if (!qKey) return [];
+    const v = picked[qKey];
     return Array.isArray(v) ? v : (typeof v === 'string' && v ? [v] : []);
-  };
+  }, [qKey, picked]);
 
   const toggle = useCallback(
     (qid: string, cid: string) => {
@@ -71,28 +116,50 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
   );
 
   const canNext = useMemo(() => {
-    if (!q) return false;
-    return isSummary ? getSelArray().length === selectionCount : !!picked[q.id];
-  }, [q, isSummary, selectionCount, picked]);
+    if (!qKey) return false;
+    return isSummary ? getSelArray().length === selectionCount : !!picked[qKey];
+  }, [qKey, isSummary, selectionCount, picked, getSelArray]);
+
+  const lastTickRef = useRef<number>(Date.now());
+  const tick = () => {
+    const now = Date.now();
+    const elapsed = now - lastTickRef.current;
+    lastTickRef.current = now;
+    return Math.max(0, elapsed);
+  };
 
   const submitOne = useCallback(async () => {
-    if (!q) return;
+    if (!qKey) return;
+
     if (isSummary) {
       const arr = getSelArray();
-      if (!arr.length) return;
-      await submitReadingAnswer({ sessionId, questionId: q.id, choiceId: arr[0] });
+      if (arr.length === 0) return;
+      const serialized = arr.join('|');
+      await submitReadingAnswer({
+        sessionId,
+        questionId: qKey,
+        choiceId: serialized,
+        elapsedMs: tick(),
+      });
       return;
     }
-    const cid = picked[q.id] as string | undefined;
+
+    const cid = picked[qKey] as string | undefined;
     if (!cid) return;
-    await submitReadingAnswer({ sessionId, questionId: q.id, choiceId: cid });
-  }, [q, picked, isSummary, sessionId]);
+
+    await submitReadingAnswer({
+      sessionId,
+      questionId: qKey,
+      choiceId: cid,
+      elapsedMs: tick(),
+    });
+  }, [qKey, picked, sessionId, isSummary, getSelArray]);
 
   const goPrev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
   const next = useCallback(async () => {
-    if (!q) return;
+    if (!qKey) return;
     if (!canNext) {
-      alert(isSummary ? `정확히 ${selectionCount}개를 선택하세요.` : '답을 선택하세요.');
+      alert(isSummary ? `정확히 ${selectionCount}개를 선택해 주세요.` : '답안을 선택해 주세요.');
       return;
     }
     await submitOne();
@@ -100,28 +167,27 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
     if (idx < total - 1) setIdx((i) => i + 1);
     else {
       await finishReadingSession({ sessionId });
-      alert('제출 완료');
+      onFinishAction?.(sessionId);
     }
-  }, [q, canNext, submitOne, idx, total, sessionId, isSummary, selectionCount]);
+  }, [qKey, canNext, submitOne, idx, total, sessionId, isSummary, selectionCount, onFinishAction]);
 
-  // 키보드 UX (Text 뷰에서는 비활성)
   useEffect(() => {
-    if (showText) return; // 전체 본문 보기 중엔 단축키 끔
+    if (showText) return;
     const handler = (e: KeyboardEvent) => {
-      if (!q) return;
+      if (!qKey || !q) return;
       if (e.key >= '1' && e.key <= '9') {
         const n = Number(e.key) - 1;
-        const target = q.choices?.[n];
-        if (target) toggle(q.id, target.id);
+        const target = (q.choices ?? [])[n];
+        if (target) toggle(qKey, target.id);
       } else if (e.key === 'Enter') {
-        next();
+        void next();
       } else if (e.key === 'Backspace') {
         goPrev();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [q, toggle, next, goPrev, showText]);
+  }, [q, qKey, toggle, next, goPrev, showText]);
 
   const badge = useMemo(
     () => (
@@ -143,20 +209,13 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
   const selArr = getSelArray();
   const remaining = isSummary ? selectionCount - selArr.length : 0;
 
-  // ── View Text: 전체 본문 전용 페이지(겹침 없음) ─────────────────────
   if (isSummary && showText) {
     const looksLikeHTML = /<[a-z][\s\S]*>/i.test(passage.content);
     return (
       <div className="p-6">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm text-neutral-500">
-            Summary question • Full Text View
-          </div>
-          <button
-            type="button"
-            className="rounded border px-3 py-1"
-            onClick={() => setShowText(false)}
-          >
+          <div className="text-sm text-neutral-500">Summary question · Full Text View</div>
+          <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(false)}>
             View Questions
           </button>
         </div>
@@ -173,7 +232,6 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
     );
   }
 
-  // ── 기본: 좌문우지 문제 진행 화면 ───────────────────────────────────
   return (
     <div
       style={{
@@ -183,33 +241,28 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
         alignItems: 'start',
       }}
     >
-      {/* 좌: 문제/보기 */}
       <div style={{ order: 1, minWidth: 0 }}>
         <div className="flex items-center justify-between text-sm text-neutral-500">
           <div>
-            Question {q!.number} / {total} {badge}
+            Question {q?.number ?? 0} / {total} {badge}
           </div>
           {isSummary && (
-            <button
-              type="button"
-              className="rounded border px-3 py-1"
-              onClick={() => setShowText(true)}
-            >
+            <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(true)}>
               View Text
             </button>
           )}
         </div>
 
-        <h2 className="mt-2 text-lg font-semibold">{q!.stem}</h2>
+        <h2 className="mt-2 text-lg font-semibold">{q?.stem ?? ''}</h2>
         {isSummary && (
           <div className="mt-1 text-xs text-neutral-500">
-            Select <b>{selectionCount}</b> choices. (남은 개수: {remaining})
+            Select <b>{selectionCount}</b> choices. (남은 선택: {remaining})
           </div>
         )}
 
         <ul className="mt-3 space-y-2">
-          {(q!.choices ?? []).map((c, i) => {
-            const checked = isSummary ? selArr.includes(c.id) : picked[q!.id] === c.id;
+          {(q?.choices ?? []).map((c: any, i: number) => {
+            const checked = isSummary ? selArr.includes(c.id) : picked[qKey] === c.id;
             return (
               <li key={c.id}>
                 <label
@@ -219,10 +272,10 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
                 >
                   <input
                     type={isSummary ? 'checkbox' : 'radio'}
-                    name={`q-${q!.id}`}
+                    name={`q-${qKey || 'none'}`}
                     className="mt-1"
                     checked={checked}
-                    onChange={() => toggle(q!.id, c.id)}
+                    onChange={() => qKey && toggle(qKey, c.id)}
                     aria-label={`Choice ${i + 1}`}
                   />
                   <span className="leading-7">{c.text}</span>
@@ -233,10 +286,11 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
         </ul>
 
         <div className="mt-4 flex justify-between">
-          <button className="rounded border px-4 py-2" disabled={idx === 0} onClick={goPrev}>
+          <button type="button" className="rounded border px-4 py-2" disabled={idx === 0} onClick={goPrev}>
             Prev
           </button>
           <button
+            type="button"
             className={`rounded border px-4 py-2 ${canNext ? '' : 'cursor-not-allowed opacity-50'}`}
             onClick={next}
             disabled={!canNext}
@@ -246,7 +300,6 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
         </div>
       </div>
 
-      {/* 우: 지문 - sticky 고정 + 독립 스크롤 */}
       <div
         style={{
           order: 2,
@@ -257,7 +310,7 @@ function RunnerCore({ passage, sessionId }: { passage: RPassage; sessionId: stri
         }}
       >
         <div className="rounded-2xl border p-4">
-          <PassagePane content={passage.content} q={q!} />
+          {q ? <PassagePane content={passage.content} q={q} /> : null}
         </div>
       </div>
     </div>

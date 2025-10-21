@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
     <main className="mx-auto max-w-md px-6 py-12">
       <h1 className="mb-6 text-2xl font-semibold">Reset Password</h1>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <div>
           <label htmlFor="email" className="mb-1 block text-sm">
             Email
@@ -72,8 +72,16 @@ export default function ForgotPasswordPage() {
           {loading ? 'Sending…' : 'Send reset link'}
         </button>
 
-        {msg && <p className="text-sm text-green-600">{msg}</p>}
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {msg && (
+          <p className="text-sm text-green-600" role="status" aria-live="polite">
+            {msg}
+          </p>
+        )}
+        {err && (
+          <p className="text-sm text-red-600" role="alert" aria-live="assertive">
+            {err}
+          </p>
+        )}
       </form>
     </main>
   );

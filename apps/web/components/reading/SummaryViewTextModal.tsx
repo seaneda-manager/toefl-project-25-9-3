@@ -1,32 +1,87 @@
 'use client';
-import { useEffect } from 'react';
+
+import { useEffect, useRef } from 'react';
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  content: string;
+  title?: string;
+};
 
 export default function SummaryViewTextModal({
   open,
   onClose,
   content,
-}: {
-  open: boolean;
-  onClose: () => void;
-  content: string;
-}) {
+  title = 'View Text',
+}: Props) {
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const prevFocusRef = useRef<HTMLElement | null>(null);
+
+  // ESC 닫기 + 스크롤 잠금 + 포커스 이동/복귀
+  useEffect(() => {
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+
+    // 포커스 관리
+    prevFocusRef.current = (document.activeElement as HTMLElement) ?? null;
+    // 다음 프레임에 포커스(버튼이 렌더된 후)
+    const t = requestAnimationFrame(() => closeBtnRef.current?.focus());
+
+    // 스크롤 잠금
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      cancelAnimationFrame(t);
+      document.body.style.overflow = prevOverflow;
+      // 포커스 복귀
+      prevFocusRef.current?.focus?.();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
+
   const looksLikeHTML = /<[a-z][\s\S]*>/i.test(content);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] max-h-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white text-neutral-900 shadow-xl">
+    <div
+      className="fixed inset-0 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="svtm-title"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
+      {/* Dialog */}
+      <div
+        className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] max-h-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white text-neutral-900 shadow-xl"
+        role="document"
+        // 내부 클릭은 닫히지 않도록
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="font-semibold">View Text</div>
-          <button className="rounded border px-3 py-1" onClick={onClose}>Close (Esc)</button>
+          <h2 id="svtm-title" className="font-semibold">
+            {title}
+          </h2>
+          <button
+            ref={closeBtnRef}
+            className="rounded border px-3 py-1"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            Close (Esc)
+          </button>
         </div>
+
         <div className="p-4 overflow-auto" style={{ maxHeight: 'calc(80vh - 56px)' }}>
           {looksLikeHTML ? (
             <div dangerouslySetInnerHTML={{ __html: content }} />

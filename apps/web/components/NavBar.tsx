@@ -1,4 +1,4 @@
-﻿/* 풀: apps/web/components/NavBar.tsx */
+/* Ǯ: apps/web/components/NavBar.tsx */
 import Link from 'next/link';
 import { getSession, signOut } from '@/actions/auth';
 

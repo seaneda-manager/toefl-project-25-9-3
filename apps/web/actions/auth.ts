@@ -1,43 +1,123 @@
-ï»¿/* í’€: apps/web/actions/auth.ts */
+/* apps/web/actions/auth.ts */
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getSupabaseServer } from '@/lib/supabaseServer';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
 export type ActionState = {
   ok: boolean;
   error: string | null;
   redirectTo?: string;
 };
-
-// Supabase Session íƒ€ì… ì¬ë…¸ì¶œ(í•„ìš” ì‹œ import ì—†ì´ ì‚¬ìš© ê°€ëŠ¥)
 export type Session = import('@supabase/supabase-js').Session;
 
-function getSiteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
+/* ?€?€?€?€?€?€?€?€?€ Env & URL helpers ?€?€?€?€?€?€?€?€?€ */
+
+function assertEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing environment variable: ${name}`);
+  return v;
 }
 
-/** í˜„ì¬ ì„¸ì…˜ ì¡°íšŒ (ì„œë²„ ì»´í¬ë„ŒíŠ¸/ì„œë²„ ì•¡ì…˜ì—ì„œ ì‚¬ìš©) */
+/** ë°°í¬ ?˜ê²½??ë§ëŠ” public site URL???°ì¶œ (https ê¸°ë³¸) */
+function getSiteUrl() {
+  const fromEnv =
+    process.env.NEXT_PUBLIC_SUPABASE_SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+  const base = (fromEnv || 'http://localhost:3000').replace(/\/$/, '');
+  try {
+    // ? íš¨??URLë§??ˆìš©
+    const u = new URL(base);
+    return u.origin;
+  } catch {
+    return 'http://localhost:3000';
+  }
+}
+
+/** ?¼ìš°??ê·¸ë£¹ ?œê±° + ?¸ë? URL ì°¨ë‹¨ + ?ˆì „ ê²½ë¡œ ë³´ì • */
+function normalizePublicPath(raw?: string | null) {
+  let s = (typeof raw === 'string' ? raw : '') || '';
+  try { s = decodeURIComponent(s); } catch {}
+  s = s.trim();
+
+  // ?¸ë? URL/?¤í‚´ ì°¨ë‹¨
+  if (!s || /^[a-z]+:\/\//i.test(s)) return '/home';
+
+  // ë°˜ë“œ???¬ë˜???œì‘
+  if (!s.startsWith('/')) s = `/${s}`;
+
+  // /(group) ?‘ë‘ ë°˜ë³µ ?œê±°
+  const groupHead = /^\/\([^/]+\)(?=\/|$)/;
+  while (groupHead.test(s)) {
+    s = s.replace(groupHead, '') || '/';
+  }
+
+  // auth ë£¨í”„ë¡??¤ì–´ê°€ë©??ˆìœ¼ë¡?
+  if (s === '/' || s.startsWith('/auth')) return '/home';
+  return s;
+}
+
+/* ?€?€?€?€?€?€?€?€?€ Supabase server client (server actions/route handlers) ?€?€?€?€?€?€?€?€?€ */
+
+export async function getSupabaseActionClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    assertEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    assertEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          try { cookieStore.set({ name, value, ...options }); } catch {}
+        },
+        remove(name: string, options: any) {
+          try { cookieStore.set({ name, value: '', ...options, maxAge: 0 }); } catch {}
+        },
+      },
+    }
+  );
+}
+
+/* ?€?€?€?€?€?€?€?€?€ Actions ?€?€?€?€?€?€?€?€?€ */
+
 export async function getSession(): Promise<Session | null> {
-  const supabase = getSupabaseServer();
-  const { data } = await supabase.auth.getSession();
+  const supabase = await getSupabaseActionClient();
+  const { data, error } = await supabase.auth.getSession();
+  if (error) return null;
   return data.session ?? null;
 }
 
-/** Email/Password ë¡œê·¸ì¸ */
-export async function signInEmailPassword(formData: FormData): Promise<ActionState> {
-  const email = String(formData.get('email') ?? '').trim();
-  const password = String(formData.get('password') ?? '');
+/** Email/Password ë¡œê·¸??(?±ê³µ ??ì¦‰ì‹œ redirect) */
+export async function signInWithPassword(
+  formDataOrCreds: FormData | { email: string; password: string }
+): Promise<ActionState> {
+  const email =
+    typeof formDataOrCreds === 'object' && 'email' in formDataOrCreds
+      ? formDataOrCreds.email
+      : String((formDataOrCreds as FormData).get('email') ?? '').trim();
+
+  const password =
+    typeof formDataOrCreds === 'object' && 'password' in formDataOrCreds
+      ? formDataOrCreds.password
+      : String((formDataOrCreds as FormData).get('password') ?? '');
+
   if (!email || !password) return { ok: false, error: 'Email and password are required.' };
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseActionClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: sanitizeAuthError(error.message) };
 
-  return { ok: true, error: null };
+  const nextRaw =
+    (formDataOrCreds instanceof FormData ? (formDataOrCreds.get('next') as string | null) : null) ?? '/home';
+  const next = normalizePublicPath(nextRaw);
+  redirect(next); // ??ë°˜í™˜?˜ì? ?ŠìŒ
 }
 
-/** ë¹„ë°€ë²ˆí˜¸ ì¬ì„¤ì • ë©”ì¼ ì „ì†¡ */
+/** ë¹„ë?ë²ˆí˜¸ ?¬ì„¤??ë©”ì¼ ?„ì†¡ */
 export async function sendReset(formDataOrEmail: FormData | string): Promise<ActionState> {
   const email =
     typeof formDataOrEmail === 'string'
@@ -46,11 +126,11 @@ export async function sendReset(formDataOrEmail: FormData | string): Promise<Act
 
   if (!email) return { ok: false, error: 'Email is required.' };
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseActionClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${getSiteUrl()}/auth/reset-finish`,
+    redirectTo: `${getSiteUrl()}/auth/update-password/callback`,
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: sanitizeAuthError(error.message) };
 
   return {
     ok: true,
@@ -59,28 +139,28 @@ export async function sendReset(formDataOrEmail: FormData | string): Promise<Act
   };
 }
 
-/** ìƒˆ ë¹„ë°€ë²ˆí˜¸ ì„¤ì • */
+/** ??ë¹„ë?ë²ˆí˜¸ ?¤ì • */
 export async function updatePassword(formData: FormData): Promise<ActionState> {
   const password = String(formData.get('password') ?? '');
   if (!password || password.length < 6) {
     return { ok: false, error: 'Password must be at least 6 characters.' };
   }
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseActionClient();
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) return { ok: false, error: error.message };
-  return { ok: true, error: null, redirectTo: '/auth/reset-finish' };
+  if (error) return { ok: false, error: sanitizeAuthError(error.message) };
+  return { ok: true, error: null, redirectTo: '/auth/login?m=password-updated' };
 }
 
-/** /auth/callback: ì½”ë“œë¡œ ì„¸ì…˜ êµí™˜ */
+/** /auth/callback: ì½”ë“œë¡??¸ì…˜ êµí™˜ */
 export async function exchangeCodeForSession(authCode: string): Promise<ActionState> {
   if (!authCode) return { ok: false, error: 'Missing auth code.' };
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseActionClient();
   const { error } = await supabase.auth.exchangeCodeForSession(authCode);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: sanitizeAuthError(error.message) };
   return { ok: true, error: null };
 }
 
-/** íšŒì›ê°€ì…(ê³µí†µ) â€” í˜ì´ì§€ì—ì„œ í•„ìš” ì‹œ redirect ì²˜ë¦¬ */
+/** ?Œì›ê°€??ê³µí†µ) */
 export async function signUp(
   formData: FormData | { email: string; password: string; role?: string }
 ): Promise<ActionState> {
@@ -96,45 +176,56 @@ export async function signUp(
 
   const role =
     typeof formData === 'object' && 'role' in formData
-      ? (formData as any).role as string | undefined
+      ? (formData as any).role
       : (String((formData as FormData).get('role') ?? '') || undefined);
 
   if (!email || !password) return { ok: false, error: 'Email and password are required.' };
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseActionClient();
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: role ? { role } : undefined },
   });
-
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: sanitizeAuthError(error.message) };
   return { ok: true, error: null };
 }
 
-/** êµì‚¬ íšŒì›ê°€ì… (role=teacher ê³ ì •) â€” redirectëŠ” í˜ì´ì§€ì—ì„œ */
+/** êµì‚¬ ?Œì›ê°€??(role=teacher ê³ ì •) */
 export async function signUpTeacher(formData: FormData): Promise<ActionState> {
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
   if (!email || !password) return { ok: false, error: 'Email and password are required.' };
-
   return await signUp({ email, password, role: 'teacher' });
 }
 
-/** ë¡œê·¸ì•„ì›ƒ */
+/** ë¡œê·¸?„ì›ƒ */
 export async function signOut(): Promise<ActionState> {
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseActionClient();
   const { error } = await supabase.auth.signOut();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: sanitizeAuthError(error.message) };
   return { ok: true, error: null, redirectTo: '/auth/login' };
 }
 
-/** ì„œë²„ ì•¡ì…˜ìš© ì¦‰ì‹œ ë¦¬ë‹¤ì´ë ‰íŠ¸ í•¸ë“¤ëŸ¬ (ì„ íƒ) */
+/** ???¡ì…˜??ì¦‰ì‹œ ë¦¬ë‹¤?´ë ‰??*/
 export async function signOutAction(_: FormData) {
   const res = await signOut();
   redirect(res.redirectTo ?? '/auth/login');
 }
 
-// (í˜¸í™˜ í•„ìš”í•˜ë©´ ì•„ë˜ë„ ê°€ëŠ¥)
-// export { signOut as signOutAction };
+/* ---- ?¸í™˜ ë³„ì¹­ (ê¸°ì¡´ ì½”ë“œ ë³´í˜¸) ---- */
+export async function signInEmailPassword(formData: FormData) {
+  return signInWithPassword(formData);
+}
+export const signInWithPasswordAction = signInWithPassword;
 
+/* ?€?€?€?€?€?€?€?€?€ misc ?€?€?€?€?€?€?€?€?€ */
+
+function sanitizeAuthError(msg?: string | null) {
+  const s = (msg || '').toLowerCase();
+  if (!s) return 'Authentication failed.';
+  // ?ˆë¬´ ?´ë??ì¸ ë©”ì‹œì§€???„í™”
+  if (s.includes('invalid login credentials')) return 'Invalid email or password.';
+  if (s.includes('email not confirmed')) return 'Please confirm your email.';
+  return msg || 'Authentication failed.';
+}

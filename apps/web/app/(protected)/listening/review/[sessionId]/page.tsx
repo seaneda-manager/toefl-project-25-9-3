@@ -14,18 +14,18 @@ type Score = { total: number; correct: number };
 export default async function ListeningReviewPage({
   params,
 }: { params: { sessionId: string } }) {
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseServer(); // ✅ await 추가
 
   // 세션ID는 bigint 기준 number로 사용
   const sid = Number(params.sessionId);
 
-  // 점수 한 줄 (반환 타입을 .returns<Score>()로 고정)
+  // 점수 한 줄
   const { data: scoreRow, error: scoreErr } = await supabase
     .rpc('listening_review_score', { session_id: sid })
     .returns<Score>()
     .single();
 
-  // 문항별 (상황에 따라 단일/배열/에러 객체가 올 수 있어 unknown으로 받고 정규화)
+  // 문항별
   const { data: rowsRaw, error } = await supabase
     .rpc('listening_review_rows', { session_id: sid })
     .returns<unknown>();
@@ -60,7 +60,6 @@ export default async function ListeningReviewPage({
     ? (rowsRaw as Row[])
     : (isRow(rowsRaw) ? [rowsRaw as Row] : []);
 
-  // score 확정
   const score: Score = scoreRow ?? { total: 0, correct: 0 };
 
   return (

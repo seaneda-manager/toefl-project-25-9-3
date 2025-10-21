@@ -1,4 +1,4 @@
-﻿import { ReactNode } from 'react'
+import { ReactNode } from 'react'
 import { TeacherSideNav } from '@/components/teacher/TeacherSideNav'
 
 

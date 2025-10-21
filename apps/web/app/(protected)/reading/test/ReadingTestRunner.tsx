@@ -65,22 +65,24 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
     [passage]
   );
   const total = questions.length;
+
+  // Object.entries로 계산하여 인덱싱 타입 경고 회피
   const answered = useMemo(
-    () => Object.keys(answers).filter((k) => answers[k] !== '').length,
+    () => Object.entries(answers).filter(([, v]) => v !== '').length,
     [answers]
   );
 
   const passageTitle = useMemo(() => getPassageTitle(passage), [passage]);
   const passageText = useMemo(() => getPassageText(passage), [passage]);
 
-  // 첫 포커스 시간 기록
+  // 포커스 시간 기록
   const onFocusQuestion = useCallback((qid: number | string) => {
     if (!startedAtRef.current[qid]) {
       startedAtRef.current[qid] = Date.now();
     }
   }, []);
 
-  // 선택 처리 + 서버 제출
+  // 선택 처리 + 서버 전송
   const onSelect = useCallback(
     async (qid: number | string, cid: string) => {
       setAnswers((prev) => ({ ...prev, [qid]: cid }));
@@ -90,9 +92,9 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
 
       try {
         await submitReadingAnswer({
-          sessionId,                          // 문자열 그대로 전달 OK
-          questionId: String(qid),            // 표준화: string
-          choiceId: String(cid),              // 표준화: string
+          sessionId,                 // 문자열 그대로 전달
+          questionId: String(qid),   // 서버는 string 기대
+          choiceId: String(cid),     // 서버는 string 기대
           elapsedMs,
         });
       } catch (e) {
@@ -109,9 +111,9 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
   // 세션 종료
   const handleFinish = useCallback(async () => {
     try {
-      await finishReadingSession(sessionId); // 문자열 직접 전달 지원
+      await finishReadingSession(sessionId); // 문자열 직접 전달
       alert(`Submitted ${answered}/${total} answers. Session finished.`);
-      // 필요시: window.location.href = `/app/(protected)/reading/review/${sessionId}`;
+      // 필요 시: window.location.href = `/app/(protected)/reading/review/${sessionId}`;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('finishReadingSession failed', e);
@@ -143,7 +145,7 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
           const selected = answers[qid] ?? '';
           return (
             <QuestionCard
-              key={qid}
+              key={String(qid)}
               index={idx + 1}
               qid={qid}
               prompt={prompt}
@@ -185,11 +187,16 @@ function QuestionCard(props: {
       className="rounded-lg border p-4"
       onMouseEnter={() => onFocusQuestion(qid)}
       onFocus={() => onFocusQuestion(qid)}
+      tabIndex={0}
     >
       <div className="mb-3">
         <div className="mb-1 text-sm font-semibold">Question {index}</div>
         <div className="whitespace-pre-wrap">
-          {prompt ? prompt : <span className="opacity-60">—</span>}
+          {prompt ? (
+            prompt
+          ) : (
+            <span className="opacity-60">No prompt provided.</span>
+          )}
         </div>
       </div>
 
@@ -200,7 +207,7 @@ function QuestionCard(props: {
           choices.map((c, i) => {
             const cid = normalizeKey(c.id);
             const label = c.text ?? c.label ?? cid;
-            const inputId = `q-${qid}-c-${cid}`;
+            const inputId = `q-${qid}-c-${cid || i}`;
             return (
               <label
                 key={cid || i}

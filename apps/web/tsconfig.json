@@ -1,50 +1,32 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": false,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
+      "@/app/*": ["./app/*"],
+      "@/components/*": ["./components/*"],
+      "@ui/*": ["./components/ui/*"],
+      "@test/*": ["./components/test/*"],
+      "@reading/*": ["./components/reading/*"],
+      "@listening/*": ["./components/listening/*"],
+      "@dashboard/*": ["./components/dashboard/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/styles/*": ["./styles/*"],
+      // ✅ 타입(웹 전용 + 공용)
+      "@/types/*": ["./app/types/*"],
+      "@types/*": ["../../packages/types/src/*"],
 
-      // ✅ actions는 app 바깥(실구현)을 최우선으로
-      "@/actions/*": ["./actions/*", "./app/actions/*"],
-      "@/app/actions/*": ["./actions/*"],
-
-      // ✅ 단일 타입 소스 고정
-      "@/types/*": ["./types/*"],
-      // ✅ 컴포넌트/라이브러리 공용 경로
-      "@/components/*": ["./components/*", "./app/components/*"],
-      "@/lib/*": ["./lib/*", "./app/lib/*"],
-      "@/hooks/*": ["./hooks/*", "./app/hooks/*", "./app/(protected)/_hooks/*"],
-
-      // (필요 시) app 전체 별칭
-      "@/app/*": ["./app/*"]
+      // ✅ 추가: 앱 내부 SSOT 모델 경로
+      "@/models/*": ["./models/*"],
+      // ✅ 추가: Reading은 반드시 여기서만 import
+      "@/models/reading": ["./models/reading/index.ts"]
     },
-
-    "types": ["node"],
+    "allowJs": true,
     "incremental": true,
-    "forceConsistentCasingInFileNames": true,
-
+    "jsx": "preserve",
     "plugins": [{ "name": "next" }]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "dist",
-    "_archive/**",
-    "app/(protected)/listening/test/_*.tsx"
-  ]
+  "include": ["./**/*.ts", "./**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

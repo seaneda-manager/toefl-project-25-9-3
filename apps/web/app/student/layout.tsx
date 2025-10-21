@@ -1,26 +1,29 @@
-﻿// apps/web/app/student/layout.tsx
+// apps/web/app/student/layout.tsx
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
-// 荑좏궎/?몄뀡 ?섏〈?대씪 ?숈쟻 泥섎━ ?쒖떆(沅뚯옣)
 export const dynamic = 'force-dynamic';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-  const supabase = getSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const supabase = await getSupabaseServer(); // ??await
 
-  if (!user) {
-    redirect('/auth/login');
-  }
+  const { data: { user }, error: uerr } = await supabase.auth.getUser();
+  if (uerr) redirect('/auth/login');
+  if (!user) redirect('/auth/login');
 
-  // role???ㅼ젙??寃쎌슦?먮쭔 援먯감-由щ떎?대젆??
-  const role = user.user_metadata?.role as string | undefined;
-  if (role && role !== 'student') {
-    redirect('/teacher/dashboard');
+  // ?�로?�에??role ?�선, ?�으�?user_metadata.role ?�용
+  const { data: prof } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle<{ role: 'student' | 'teacher' | 'admin' }>();
+
+  const role = (prof?.role ?? (user.user_metadata?.role as string | undefined)) || 'student';
+
+  // ?�생 ?�용 ?�이?�웃: 교사/관리자???�른 ?�?�보?�로 보냄
+  if (role === 'teacher' || role === 'admin') {
+    redirect('/teacher/dashboard'); // ?�요?�면 admin?� '/admin'?�로 분기
   }
 
   return <>{children}</>;
 }
-
