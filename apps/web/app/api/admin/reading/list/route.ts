@@ -1,10 +1,11 @@
+// normalized utf8
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 export async function GET(req: NextRequest) {
   const supabase = await getSupabaseServer();
 
-  // ?�증 + admin 가??
+  // ?�증 + admin 가??
   const { data: { user }, error: uerr } = await supabase.auth.getUser();
   if (uerr) return NextResponse.json({ error: uerr.message }, { status: 500 });
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -28,14 +29,14 @@ export async function GET(req: NextRequest) {
     .limit(50);
 
   if (q) {
-    // title ?�는 set_id 검??
+    // title ?�는 set_id 검??
     pquery = pquery.or(`title.ilike.%${q}%,set_id.ilike.%${q}%`);
   }
 
   const { data: passages, error: pErr } = await pquery;
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
 
-  // questions/choices 묶어??가?�오�?
+  // questions/choices 묶어??가?�오�?
   const ids = (passages ?? []).map((p) => p.id);
   let questions: any[] = [];
   let choices: any[] = [];
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // answers 카운????�� 가?�용) ??뷰�? ?�한 집계�??�용
+  // answers 카운????�� 가?�용) ??뷰�? ?�한 집계�??�용
   const answersCount: Record<string, number> = {};
   if (ids.length) {
     const { data: ac, error: acErr } = await supabase
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
       .in('passage_id', ids);
 
     if (acErr) {
-      // 뷰�? ?�다�?친절???�러 반환
+      // 뷰�? ?�다�?친절???�러 반환
       return NextResponse.json(
         { error: `answers_count_by_passage view is missing: ${acErr.message}` },
         { status: 500 }

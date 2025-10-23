@@ -1,10 +1,11 @@
+// normalized utf8
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 type Props = {
   src?: string;
-  oneShot?: boolean;          // ³¡³­ µÚ Àç»ý ±ÝÁö
-  disableSeek?: boolean;      // Å½»ö(µå·¡±×) ¹æÁö
+  oneShot?: boolean;          // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+  disableSeek?: boolean;      // Å½ï¿½ï¿½(ï¿½å·¡ï¿½ï¿½) ï¿½ï¿½ï¿½ï¿½
   onStart?: () => void;
   onEnd?: () => void;
 };
@@ -22,7 +23,7 @@ export default function AudioPlayer({
   const lastTimeRef = useRef(0);
   const [started, setStarted] = useState(false);
 
-  // src º¯°æ ½Ã ÃÊ±âÈ­
+  // src ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ê±ï¿½È­
   useEffect(() => {
     startedOnceRef.current = false;
     endedRef.current = false;
@@ -30,7 +31,7 @@ export default function AudioPlayer({
     setStarted(false);
   }, [src]);
 
-  // ÀÌº¥Æ® ¹ÙÀÎµù (ref.current ½º³À¼¦ »ç¿ë)
+  // ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½Îµï¿½ (ref.current ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -53,7 +54,7 @@ export default function AudioPlayer({
     };
     const onSeeking = () => {
       if (disableSeek) {
-        // seekingÀº Ãë¼Ò ºÒ°¡ ¡æ ½Ã°£À» ¿øÀ§Ä¡
+        // seekingï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ò°ï¿½ ï¿½ï¿½ ï¿½Ã°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡
         el.currentTime = lastTimeRef.current;
       }
     };
@@ -78,7 +79,7 @@ export default function AudioPlayer({
     if (!el) return;
     if (!src || (oneShot && endedRef.current)) return;
     el.play().catch(() => {
-      /* ÀÚµ¿Àç»ý Á¤Ã¥ µîÀ¸·Î ½ÇÆÐ °¡´É: ¹«½Ã */
+      /* ï¿½Úµï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¥ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ */
     });
   }, [src, oneShot]);
 

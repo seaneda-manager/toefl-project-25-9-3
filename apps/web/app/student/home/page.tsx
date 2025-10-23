@@ -1,3 +1,4 @@
+// normalized utf8
 // apps/web/app/student/home/page.tsx
 'use client';
 import Link from 'next/link';
@@ -6,10 +7,10 @@ export default function StudentHome() {
   return (
     <main style={{ maxWidth: 960, margin: '24px auto', padding: 16 }}>
       <h1>Student Home</h1>
-      <p>?™ìƒ ?€?œë³´??(ì¤€ë¹?ì¤? ?š§</p>
+      <p>?ï¿½ìƒ ?ï¿½?ï¿½ë³´??(ì¤€ï¿½?ï¿½? ?ï¿½ï¿½</p>
       <ul style={{ listStyle: 'inside' }}>
-        <li><Link href="/">ë©”ì¸?¼ë¡œ</Link></li>
-        <li><Link href="/teacher/reading">Reading (?ŒìŠ¤??UI)</Link></li>
+        <li><Link href="/">ë©”ì¸?ï¿½ë¡œ</Link></li>
+        <li><Link href="/teacher/reading">Reading (?ï¿½ìŠ¤??UI)</Link></li>
       </ul>
     </main>
   );

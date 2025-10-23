@@ -1,9 +1,10 @@
+// normalized utf8
 // app/api/<<your-endpoint>>/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
-  // ??await ?�수
+  // ??await ?�수
   const supabase = await getSupabaseServer();
 
   const {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'setId required' }, { status: 400 });
   }
 
-  // 권한/?�유 가??
+  // 권한/?�유 가??
   const { data: allow, error: allowErr } = await supabase
     .from('v_user_listening_sets')
     .select('id, downloaded')
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  // ?�션 ?�성
+  // ?�션 ?�성
   const { data, error } = await supabase
     .from('listening_sessions')
     .insert({

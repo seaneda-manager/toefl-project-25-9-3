@@ -4,3 +4,8 @@ node_modules/
 *.tsbuildinfo
 
 *.tsbuildinfo
+# local backups & temp
+*.bak-ts1490
+*.bak-wipe
+apps/web/.tsc-files.txt
+apps/web/tsconfig.tmp.json

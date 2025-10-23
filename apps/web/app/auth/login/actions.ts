@@ -1,3 +1,4 @@
+// normalized utf8
 // apps/web/app/auth/login/actions.ts
 'use server';
 
@@ -7,7 +8,7 @@ import { cookies } from 'next/headers';
 type SignInArgs = { email: string; password: string };
 
 function getSupabaseForAction() {
-  // ?�버 ?�션?�서??cookies()가 ?�기 가?�해????
+  // ?�버 ?�션?�서??cookies()가 ?�기 가?�해????
   return cookies().then((cookieStore) =>
     createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

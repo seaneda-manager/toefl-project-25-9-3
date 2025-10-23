@@ -1,3 +1,4 @@
+// normalized utf8
 import type { Config } from 'tailwindcss';
 
 export default {
@@ -5,7 +6,7 @@ export default {
     './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './pages/**/*.{ts,tsx}',
-    // 모노?�포�??�키지 경로??추�?
+    // 모노?�포�??�키지 경로??추�?
     '../../packages/**/*.{ts,tsx}',
   ],
   theme: { extend: {} },

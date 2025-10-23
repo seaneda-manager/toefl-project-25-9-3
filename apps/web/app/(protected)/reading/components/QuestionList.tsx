@@ -1,7 +1,8 @@
+// normalized utf8
 'use client'
 
 
-// Reading/Listening 공용 문항 리스??(?�일?�택)
+// Reading/Listening 공용 문항 리스??(?�일?�택)
 
 
 type Choice = { id: string; label?: string; text?: string }
