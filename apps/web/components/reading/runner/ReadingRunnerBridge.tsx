@@ -1,4 +1,4 @@
-// apps/web/components/reading/runner/ReadingRunnerBridge.tsx
+﻿// apps/web/components/reading/runner/ReadingRunnerBridge.tsx
 'use client';
 
 import { useMemo } from 'react';
@@ -34,16 +34,16 @@ export type RPassage = {
 type Props = {
   data: RPassage;
   mode?: 'study' | 'test';
-  /** 브리지 외부에서 마무리 후크를 쓰고 싶을 때(내부 이벤트에 매핑 예정) */
+  /** 釉뚮━吏 ?몃??먯꽌 留덈Т由??꾪겕瑜??곌퀬 ?띠쓣 ???대? ?대깽?몄뿉 留ㅽ븨 ?덉젙) */
   onFinish?: (sessionId: string) => void;
 };
 
 /**
- * TestRunnerV2에 맞춰 데이터/필수 필드만 보정해서 연결하는 어댑터.
- * - TestRunnerV2 Props에는 onFinish가 없으므로 전달하지 않음.
+ * TestRunnerV2??留욎떠 ?곗씠???꾩닔 ?꾨뱶留?蹂댁젙?댁꽌 ?곌껐?섎뒗 ?대뙌??
+ * - TestRunnerV2 Props?먮뒗 onFinish媛 ?놁쑝誘濡??꾨떖?섏? ?딆쓬.
  */
 export default function ReadingRunnerBridge({ data, mode = 'study', onFinish }: Props) {
-  // id가 없으면 안전한 임시 id 생성
+  // id媛 ?놁쑝硫??덉쟾???꾩떆 id ?앹꽦
   const passage = useMemo(() => {
     const fallbackId =
       (data.title?.trim()?.toLowerCase().replace(/\s+/g, '-').slice(0, 50) || 'passage') +
@@ -65,9 +65,11 @@ export default function ReadingRunnerBridge({ data, mode = 'study', onFinish }: 
     };
   }, [data]);
 
-  // TODO: 나중에 TestRunnerV2가 종료 이벤트를 제공하면 여기서 onFinish?.(sessionId)로 연결
+  // TODO: ?섏쨷??TestRunnerV2媛 醫낅즺 ?대깽?몃? ?쒓났?섎㈃ ?ш린??onFinish?.(sessionId)濡??곌껐
   // Generate a sessionId if needed; you can customize this logic as appropriate
   const sessionId = passage.id + '-' + Math.random().toString(36).slice(2, 10);
 
   return <TestRunnerV2 passage={passage} sessionId={sessionId} mode={mode} />;
 }
+
+

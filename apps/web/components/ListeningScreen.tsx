@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import ListeningPlayer from '@/components/ListeningPlayer'
@@ -6,7 +6,7 @@ import type { Mode } from '@/lib/listening'
 
 export default function ListeningScreen() {
   const [mode, setMode] = useState<Mode>('study')
-  const trackId = 'tpo54-L1' // ?�요?�면 props??URL ?�라미터�?바꿔????
+  const trackId = 'tpo54-L1' // ?꾩슂?섎㈃ props??URL ?뚮씪誘명꽣濡?諛붽퓭????
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -28,9 +28,11 @@ export default function ListeningScreen() {
         </button>
       </div>
 
-      {/* 모드 바뀌면 ListeningPlayer가 ???�션???�성?�도�??�계?�어 ?�음 */}
+      {/* 紐⑤뱶 諛붾뚮㈃ ListeningPlayer媛 ???몄뀡???앹꽦?섎룄濡??ㅺ퀎?섏뼱 ?덉쓬 */}
       <ListeningPlayer trackId={trackId} mode={mode} />
     </div>
   )
 }
+
+
 

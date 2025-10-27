@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef } from 'react';
 
@@ -18,7 +18,7 @@ export default function SummaryViewTextModal({
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
-  // ESC 닫기 + 스크롤 잠금 + 포커스 이동/복귀
+  // ESC ?リ린 + ?ㅽ겕濡??좉툑 + ?ъ빱???대룞/蹂듦?
   useEffect(() => {
     if (!open) return;
 
@@ -27,12 +27,12 @@ export default function SummaryViewTextModal({
     };
     window.addEventListener('keydown', onKey);
 
-    // 포커스 관리
+    // ?ъ빱??愿由?
     prevFocusRef.current = (document.activeElement as HTMLElement) ?? null;
-    // 다음 프레임에 포커스(버튼이 렌더된 후)
+    // ?ㅼ쓬 ?꾨젅?꾩뿉 ?ъ빱??踰꾪듉???뚮뜑????
     const t = requestAnimationFrame(() => closeBtnRef.current?.focus());
 
-    // 스크롤 잠금
+    // ?ㅽ겕濡??좉툑
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -40,7 +40,7 @@ export default function SummaryViewTextModal({
       window.removeEventListener('keydown', onKey);
       cancelAnimationFrame(t);
       document.body.style.overflow = prevOverflow;
-      // 포커스 복귀
+      // ?ъ빱??蹂듦?
       prevFocusRef.current?.focus?.();
     };
   }, [open, onClose]);
@@ -65,7 +65,7 @@ export default function SummaryViewTextModal({
       <div
         className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] max-h-[80vh] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white text-neutral-900 shadow-xl"
         role="document"
-        // 내부 클릭은 닫히지 않도록
+        // ?대? ?대┃? ?ロ엳吏 ?딅룄濡?
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b px-4 py-3">
@@ -93,3 +93,5 @@ export default function SummaryViewTextModal({
     </div>
   );
 }
+
+

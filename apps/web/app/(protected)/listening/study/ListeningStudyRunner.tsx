@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/listening/study/ListeningStudyRunner.tsx
+﻿// apps/web/app/(protected)/listening/study/ListeningStudyRunner.tsx
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,7 +19,7 @@ type Props = {
   onFinish?: (sessionId: string) => void;
 };
 
-// ✅ LChoice 별칭: LQuestion의 choices 원소 타입을 안전하게 추출
+// ??LChoice 蹂꾩묶: LQuestion??choices ?먯냼 ??낆쓣 ?덉쟾?섍쾶 異붿텧
 type LChoice = NonNullable<LQuestion['choices']>[number];
 
 export default function ListeningStudyRunner({ track, onFinish }: Props) {
@@ -30,19 +30,19 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
   const [showTimer, setShowTimer] = useState<boolean>(true);
   const [startErr, setStartErr] = useState<string | null>(null);
 
-  // 문제 배열
+  // 臾몄젣 諛곗뿴
   const qs: LQuestion[] = useMemo(() => track?.questions ?? [], [track]);
   const total: number = qs.length;
   const q: LQuestion | undefined = total > 0 ? qs[current] : undefined;
   const qKey: string = q ? String(q.id) : '';
 
-  // 인덱스 보정
+  // ?몃뜳??蹂댁젙
   const clamp = useCallback(
     (i: number) => Math.min(Math.max(0, i), Math.max(0, total - 1)),
     [total]
   );
 
-  // 총문항 변동 시 현재 인덱스 보정
+  // 珥앸Ц??蹂?????꾩옱 ?몃뜳??蹂댁젙
   useEffect(() => {
     if (total === 0) {
       setCurrent(0);
@@ -52,14 +52,14 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
     if (current < 0) setCurrent(0);
   }, [total, current]);
 
-  // 트랙 변경 시 상태 초기화
+  // ?몃옓 蹂寃????곹깭 珥덇린??
   useEffect(() => {
     setCurrent(0);
     setAnswers({});
     setShowTimer(true);
   }, [track]);
 
-  // 중복 시작 방지
+  // 以묐났 ?쒖옉 諛⑹?
   const startedForIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!track?.id) return;
@@ -94,7 +94,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
           choiceId,
         });
       } catch {
-        // 실패해도 UI는 낙관적으로 유지 (필요 시 상위에서 재동기화)
+        // ?ㅽ뙣?대룄 UI???숆??곸쑝濡??좎? (?꾩슂 ???곸쐞?먯꽌 ?щ룞湲고솕)
       }
     },
     [q, sessionId]
@@ -134,12 +134,12 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
   if (!track) {
     return (
       <div className="p-6 text-center text-gray-600">
-        트랙을 불러오지 못했거나 선택되지 않았습니다.
+        ?몃옓??遺덈윭?ㅼ? 紐삵뻽嫄곕굹 ?좏깮?섏? ?딆븯?듬땲??
       </div>
     );
   }
   if (total === 0) {
-    return <div className="p-6 text-center text-gray-600">문항이 없습니다.</div>;
+    return <div className="p-6 text-center text-gray-600">臾명빆???놁뒿?덈떎.</div>;
   }
 
   const choiceLabel = (i: number) => String.fromCharCode(65 + i);
@@ -147,12 +147,12 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* 진행도 바 */}
+      {/* 吏꾪뻾??諛?*/}
       <div className="h-1 overflow-hidden rounded bg-gray-200" aria-hidden>
         <div className="h-1 bg-black" style={{ width: `${progressPct}%` }} />
       </div>
 
-      {/* 상단 바 */}
+      {/* ?곷떒 諛?*/}
       <TopBar
         mode="study"
         section="listening"
@@ -166,16 +166,16 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
         showTime={showTimer}
       />
 
-      {/* 세션 시작 에러 */}
+      {/* ?몄뀡 ?쒖옉 ?먮윭 */}
       {startErr && (
         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          세션 시작 실패: {startErr}
+          ?몄뀡 ?쒖옉 ?ㅽ뙣: {startErr}
         </div>
       )}
 
-      {/* 2열 레이아웃 */}
+      {/* 2???덉씠?꾩썐 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px,1fr]">
-        {/* 좌측 패널 */}
+        {/* 醫뚯륫 ?⑤꼸 */}
         <div className="lg:sticky lg:top-4 lg:max-h=[calc(100vh-5rem)] lg:overflow-auto">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
@@ -188,9 +188,9 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
                 className="rounded border px-3 py-1.5 text-sm"
                 onClick={() => setShowCorrect((v) => !v)}
                 aria-pressed={showCorrect}
-                title="정답 표기 토글"
+                title="?뺣떟 ?쒓린 ?좉?"
               >
-                {showCorrect ? '정답 숨기기' : '정답 보이기'}
+                {showCorrect ? '?뺣떟 ?④린湲? : '?뺣떟 蹂댁씠湲?}
               </button>
               {showTimer && (
                 <LTimer key={track.id} seconds={limitSec} onExpire={finish} />
@@ -198,19 +198,19 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
             </div>
           </div>
 
-          {/* 오디오 패널 */}
+          {/* ?ㅻ뵒???⑤꼸 */}
           <div className="mt-4">
             <AudioPanel key={track.id} src={track.audioUrl} allowSeek allowSpeed />
           </div>
 
-          {/* 답안 개수 */}
+          {/* ?듭븞 媛쒖닔 */}
           <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
             <span>
               {answeredCount}/{total} answered
             </span>
           </div>
 
-          {/* 넘버 패드 */}
+          {/* ?섎쾭 ?⑤뱶 */}
           <div className="mt-2 flex flex-wrap gap-2">
             {Array.from({ length: total }).map((_, i) => (
               <button
@@ -232,12 +232,12 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
           </div>
         </div>
 
-        {/* 우측: 문제/선지 */}
+        {/* ?곗륫: 臾몄젣/?좎? */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
               {(q?.number ?? current + 1)} / {total}{' '}
-              {answers[qKey] ? '' : '미응답'}
+              {answers[qKey] ? '' : '誘몄쓳??}
             </div>
             <div className="space-x-2">
               <button
@@ -246,7 +246,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
                 onClick={() => guardedGo(current - 1)}
                 disabled={current <= 0}
               >
-                ◀ Prev
+                ? Prev
               </button>
               {current < total - 1 ? (
                 <button
@@ -254,7 +254,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
                   className="rounded border px-3 py-2"
                   onClick={() => guardedGo(current + 1)}
                 >
-                  Next ▶
+                  Next ??
                 </button>
               ) : (
                 <button
@@ -262,7 +262,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
                   className="rounded border bg-white/10 px-3 py-2"
                   onClick={finish}
                   disabled={!sessionId}
-                  title={sessionId ? undefined : '세션 시작 대기 중'}
+                  title={sessionId ? undefined : '?몄뀡 ?쒖옉 ?湲?以?}
                 >
                   Finish
                 </button>
@@ -291,10 +291,10 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
                         {showCorrect && correct ? (
                           <span
                             className="inline-flex items-center rounded border px-2 py-0.5 text-xs"
-                            aria-label="정답"
-                            title="정답"
+                            aria-label="?뺣떟"
+                            title="?뺣떟"
                           >
-                            ✓
+                            ??
                           </span>
                         ) : null}
                       </span>
@@ -305,7 +305,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
             </div>
           ) : (
             <div className="rounded bg-amber-50 p-4 text-amber-800">
-              현재 표시할 문제가 없습니다.
+              ?꾩옱 ?쒖떆??臾몄젣媛 ?놁뒿?덈떎.
             </div>
           )}
         </div>
@@ -313,3 +313,5 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
     </div>
   );
 }
+
+

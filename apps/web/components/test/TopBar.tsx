@@ -1,4 +1,4 @@
-// apps/web/components/test/TopBar.tsx
+﻿// apps/web/components/test/TopBar.tsx
 'use client';
 
 import Link from 'next/link';
@@ -16,7 +16,7 @@ type Props = {
   onToggleTime?: () => void;
   showTime?: boolean;
 
-  /** 선택: 헤더에 브랜드/링크 노출 여부 (기본 true) */
+  /** ?좏깮: ?ㅻ뜑??釉뚮옖??留곹겕 ?몄텧 ?щ? (湲곕낯 true) */
   showBrand?: boolean;
 };
 
@@ -35,7 +35,7 @@ export default function TopBar({
   showTime,
   showBrand = true,
 }: Props) {
-  // ←/→ 키로 Prev/Next
+  // ?????ㅻ줈 Prev/Next
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') onBack?.();
@@ -46,7 +46,7 @@ export default function TopBar({
   }, [onBack, onNext]);
 
   const title = useMemo(
-    () => `${section.toUpperCase()} · ${mode.toUpperCase()}`,
+    () => `${section.toUpperCase()} 쨌 ${mode.toUpperCase()}`,
     [section, mode]
   );
 
@@ -59,7 +59,7 @@ export default function TopBar({
   return (
     <header className="sticky top-0 z-40 border-b bg-neutral-100 text-neutral-900 backdrop-blur supports-[backdrop-filter]:bg-neutral-100/80">
       <div className="container mx-auto flex h-12 items-center justify-between px-4">
-        {/* 좌측: 브랜드 + 러너 타이틀 */}
+        {/* 醫뚯륫: 釉뚮옖??+ ?щ꼫 ??댄? */}
         <div className="flex min-w-0 items-center gap-4">
           {showBrand && (
             <>
@@ -70,11 +70,11 @@ export default function TopBar({
             </>
           )}
           <div className="truncate text-sm font-medium" title={title}>
-            {title} • {qIndex + 1} / {total}
+            {title} ??{qIndex + 1} / {total}
           </div>
         </div>
 
-        {/* 우측: 러너 컨트롤 */}
+        {/* ?곗륫: ?щ꼫 而⑦듃濡?*/}
         <div className="flex items-center gap-2 text-sm">
           <button
             type="button"
@@ -84,7 +84,7 @@ export default function TopBar({
             aria-label="Previous question"
             title="Previous"
           >
-            ◀ Prev
+            ? Prev
           </button>
           <button
             type="button"
@@ -94,7 +94,7 @@ export default function TopBar({
             aria-label="Next question"
             title="Next"
           >
-            Next ▶
+            Next ??
           </button>
           <button
             type="button"
@@ -132,3 +132,5 @@ export default function TopBar({
     </header>
   );
 }
+
+

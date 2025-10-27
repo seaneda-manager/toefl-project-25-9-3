@@ -1,4 +1,4 @@
-/* apps/web/app/components/ui/Card.tsx */
+﻿/* apps/web/app/components/ui/Card.tsx */
 import clsx from 'clsx';
 
 export function Card({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -10,4 +10,6 @@ export function CardHeader({ className = '', ...props }: React.HTMLAttributes<HT
 export function CardContent({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={clsx('p-5', className)} {...props} />;
 }
+
+
 

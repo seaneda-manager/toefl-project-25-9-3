@@ -1,11 +1,11 @@
-// apps/web/app/api/listening/answer/route.ts
+﻿// apps/web/app/api/listening/answer/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 export async function POST(req: NextRequest) {
   const supabase = await getSupabaseServer();
 
-  // 1) ?�증
+  // 1) ?몄쬆
   const {
     data: { user },
     error: userErr,
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (userErr) return NextResponse.json({ error: userErr.message }, { status: 500 });
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  // 2) 바디 검�?
+  // 2) 諛붾뵒 寃利?
   const { sessionId, questionId, choiceId } = (await req.json()) as {
     sessionId?: string;
     questionId?: string;
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'sessionId & questionId required' }, { status: 400 });
   }
 
-  // 3) ?�유??가?? ???�션?��? ?�인
+  // 3) ?뚯쑀??媛?? ???몄뀡?몄? ?뺤씤
   const { data: own, error: ownErr } = await supabase
     .from('listening_sessions')
     .select('id')
@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
   if (ownErr) return NextResponse.json({ error: ownErr.message }, { status: 400 });
   if (!own) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  // 4) upsert (충돌??지?? + updated_at 기록
-  //    user_id??DB ?�리�?fill_answer_user_id)가 ?�동 채�?
+  // 4) upsert (異⑸룎??吏?? + updated_at 湲곕줉
+  //    user_id??DB ?몃━嫄?fill_answer_user_id)媛 ?먮룞 梨꾩?
   const { error } = await supabase
     .from('listening_answers')
     .upsert(
@@ -51,3 +51,5 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true }, { status: 200 });
 }
+
+

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 async function guardAdmin() {
@@ -37,14 +37,14 @@ export async function DELETE(req: NextRequest) {
   const { id } = body as { id?: string };
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  // ?�안 존재 ?��? 체크
+  // ?듭븞 議댁옱 ?щ? 泥댄겕
   const { count } = await g.supabase
     .from('answers')
     .select('*', { count: 'exact', head: true })
     .eq('passage_id', id);
 
   if ((count ?? 0) > 0) {
-    // ?�드 ??�� ?�???�카?�브
+    // ?섎뱶 ??젣 ????꾩뭅?대툕
     const { error } = await g.supabase
       .from('reading_passages')
       .update({ set_id: `archived:${Date.now()}` })
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: true, archived: true });
   }
 
-  // ?�드 ??��(?�식부??
+  // ?섎뱶 ??젣(?먯떇遺??
   const { data: qs } = await g.supabase
     .from('reading_questions')
     .select('id')
@@ -67,3 +67,5 @@ export async function DELETE(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
+
+

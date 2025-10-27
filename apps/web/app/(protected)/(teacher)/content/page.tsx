@@ -1,4 +1,4 @@
-export default function Page() {
+﻿export default function Page() {
 const cards = [
 { href: '/(protected)/(teacher)/content/reading/editor', title: 'Reading', desc: 'Passage + Questions' },
 { href: '/(protected)/(teacher)/content/listening/editor', title: 'Listening', desc: 'Audio + Questions' },
@@ -10,7 +10,7 @@ const cards = [
 return (
 <div className="space-y-3">
 <h2 className="text-lg font-semibold">Contents Production</h2>
-<p className="text-sm text-gray-600">R / L / S / W / Vocab / Grammar ?�몄???????�옉 �?諛고�?</p>
+<p className="text-sm text-gray-600">R / L / S / W / Vocab / Grammar ?얜챷???????뽰삂 獄?獄쏄퀬猷?</p>
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
 {cards.map(c => (
 <a key={c.href} href={c.href} className="rounded-xl border p-4 hover:shadow">
@@ -22,3 +22,5 @@ return (
 </div>
 )
 }
+
+

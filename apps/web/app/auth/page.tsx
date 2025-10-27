@@ -1,19 +1,21 @@
-import Link from 'next/link';
+ï»¿import Link from 'next/link';
 
 export default function AuthIndexPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6 text-center">
-        <h1 className="text-3xl font-semibold">°èÁ¤</h1>
-        <p className="text-sm text-gray-600">·Î±×ÀÎ ¶Ç´Â È¸¿ø°¡ÀÔÀ» ¼±ÅÃÇÏ¼¼¿ä.</p>
+        <h1 className="text-3xl font-semibold">ê³„ì •</h1>
+        <p className="text-sm text-gray-600">ë¡œê·¸ì¸ ë˜ëŠ” íšŒì›ê°€ì…ì„ ì„ íƒí•˜ì„¸ìš”.</p>
         <div className="grid grid-cols-2 gap-3">
-          <Link className="block border rounded-xl px-4 py-3 text-center" href="/auth/login">·Î±×ÀÎ</Link>
-          <Link className="block border rounded-xl px-4 py-3 text-center" href="/auth/signup">È¸¿ø°¡ÀÔ</Link>
+          <Link className="block border rounded-xl px-4 py-3 text-center" href="/auth/login">ë¡œê·¸ì¸</Link>
+          <Link className="block border rounded-xl px-4 py-3 text-center" href="/auth/signup">íšŒì›ê°€ì…</Link>
         </div>
         <div>
-          <Link className="underline text-sm" href="/auth/forgot-password">ºñ¹Ğ¹øÈ£ Àç¼³Á¤</Link>
+          <Link className="underline text-sm" href="/auth/forgot-password">ë¹„ë°€ë²ˆí˜¸ ì¬ì„¤ì •</Link>
         </div>
       </div>
     </div>
   );
 }
+
+

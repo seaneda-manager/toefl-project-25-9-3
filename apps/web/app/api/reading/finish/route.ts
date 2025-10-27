@@ -1,4 +1,4 @@
-// apps/web/app/api/reading/finish/route.ts
+ï»¿// apps/web/app/api/reading/finish/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -6,23 +6,23 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await getSupabaseServer(); // ? await
 
-    // ÀÎÁõ
+    // ì¸ì¦
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
     if (!user)   return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 
-    // ¹Ùµğ ÆÄ½Ì
+    // ë°”ë”” íŒŒì‹±
     const { sessionId } = (await req.json()) as { sessionId?: string };
-    const sid = (sessionId ?? '').trim(); // ? reading_sessions.id´Â uuid
+    const sid = (sessionId ?? '').trim(); // ? reading_sessions.idëŠ” uuid
     if (!sid) return NextResponse.json({ ok: false, error: 'Missing sessionId' }, { status: 400 });
 
-    // ³» ¼¼¼Ç¸¸ Á¾·á
+    // ë‚´ ì„¸ì…˜ë§Œ ì¢…ë£Œ
     const { data, error } = await supabase
       .from('reading_sessions')
       .update({ finished_at: new Date().toISOString() })
       .eq('id', sid)
       .eq('user_id', user.id)     // ? owner check
-      .select('id');              // supabase-js v2: µÎ ¹øÂ° ÀÎÀÚ ¾øÀÌ
+      .select('id');              // supabase-js v2: ë‘ ë²ˆì§¸ ì¸ì ì—†ì´
 
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
     if (!data || data.length === 0) {
@@ -34,3 +34,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+

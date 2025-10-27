@@ -1,11 +1,11 @@
-// normalized utf8
+﻿// normalized utf8
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 export async function GET(req: NextRequest) {
   const supabase = await getSupabaseServer();
 
-  // ?�증 + admin 가??
+  // ?占쎌쬆 + admin 媛??
   const { data: { user }, error: uerr } = await supabase.auth.getUser();
   if (uerr) return NextResponse.json({ error: uerr.message }, { status: 500 });
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -29,14 +29,14 @@ export async function GET(req: NextRequest) {
     .limit(50);
 
   if (q) {
-    // title ?�는 set_id 검??
+    // title ?占쎈뒗 set_id 寃??
     pquery = pquery.or(`title.ilike.%${q}%,set_id.ilike.%${q}%`);
   }
 
   const { data: passages, error: pErr } = await pquery;
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
 
-  // questions/choices 묶어??가?�오�?
+  // questions/choices 臾띠뼱??媛?占쎌삤占?
   const ids = (passages ?? []).map((p) => p.id);
   let questions: any[] = [];
   let choices: any[] = [];
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // answers 카운????�� 가?�용) ??뷰�? ?�한 집계�??�용
+  // answers 移댁슫????占쏙옙 媛?占쎌슜) ??酉곤옙? ?占쏀븳 吏묎퀎占??占쎌슜
   const answersCount: Record<string, number> = {};
   if (ids.length) {
     const { data: ac, error: acErr } = await supabase
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       .in('passage_id', ids);
 
     if (acErr) {
-      // 뷰�? ?�다�?친절???�러 반환
+      // 酉곤옙? ?占쎈떎占?移쒖젅???占쎈윭 諛섑솚
       return NextResponse.json(
         { error: `answers_count_by_passage view is missing: ${acErr.message}` },
         { status: 500 }
@@ -99,3 +99,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ items });
 }
+
+

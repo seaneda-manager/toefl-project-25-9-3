@@ -1,4 +1,4 @@
-/* eslint-disable */
+ï»¿/* eslint-disable */
 import fs from 'fs-extra';
 import path from 'path';
 import * as cheerio from 'cheerio';
@@ -21,10 +21,10 @@ function getArg(name: string, fallback: string) {
 
 (async () => {
   const inFile = getArg('--in', '');
-  const outDir = getArg('--out', '.'); // ±âº»°ª º¸Àå
+  const outDir = getArg('--out', '.'); // ê¸°ë³¸ê°’ ë³´ìž¥
 
   if (!inFile) {
-    console.error('Usage: ts-node scripts/convert-html-to-next.ts --in ./raw/Layout-¿ÏÀüÇÕº».html --out .');
+    console.error('Usage: ts-node scripts/convert-html-to-next.ts --in ./raw/Layout-ì™„ì „í•©ë³¸.html --out .');
     process.exit(1);
   }
 
@@ -39,7 +39,7 @@ function getArg(name: string, fallback: string) {
   await fs.ensureDir(appDir);
 
   const html = await fs.readFile(inputPath, 'utf8');
-  // cheerio ¿É¼Ç Å¸ÀÔ ¹®Á¦ È¸ÇÇ: ±âº» ·Îµå »ç¿ë
+  // cheerio ì˜µì…˜ íƒ€ìž… ë¬¸ì œ íšŒí”¼: ê¸°ë³¸ ë¡œë“œ ì‚¬ìš©
   const $ = cheerio.load(html);
 
   // Collect inline styles
@@ -97,4 +97,6 @@ export default function Page(){
   }
   if (!foundAny) console.warn('No target IDs were found in the source HTML.');
 })().catch(e => { console.error(e); process.exit(1); });
+
+
 

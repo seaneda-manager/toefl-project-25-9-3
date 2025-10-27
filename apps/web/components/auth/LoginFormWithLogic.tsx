@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import PlasmicLoginForm from "@/components/plasmic/PlasmicLoginForm";
@@ -14,7 +14,7 @@ export default function LoginFormWithLogic() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // rememberId ?�리??
+  // rememberId ?꾨━??
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("rememberId") : null;
     if (saved) {
@@ -28,7 +28,7 @@ export default function LoginFormWithLogic() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email, // ?�이?��? ?�메?�로 ?�는 경우
+        email, // ?꾩씠?붾? ?대찓?쇰줈 ?곕뒗 寃쎌슦
         password,
       });
       if (error) {
@@ -38,7 +38,7 @@ export default function LoginFormWithLogic() {
       if (remember) localStorage.setItem("rememberId", email);
       else localStorage.removeItem("rememberId");
 
-      // ?�공 ???�동 경로 ?�유 변�?
+      // ?깃났 ???대룞 寃쎈줈 ?먯쑀 蹂寃?
       router.push("/student");
     } finally {
       setLoading(false);
@@ -61,3 +61,5 @@ export default function LoginFormWithLogic() {
     />
   );
 }
+
+

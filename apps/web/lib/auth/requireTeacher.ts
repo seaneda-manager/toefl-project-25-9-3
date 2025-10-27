@@ -1,4 +1,4 @@
-// apps/web/lib/auth/requireTeacher.ts
+﻿// apps/web/lib/auth/requireTeacher.ts
 'use server';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -6,7 +6,7 @@ import { getSupabaseServer } from '@/lib/supabaseServer';
 export type RoleFlags = {
   isTeacher: boolean;
   isAdmin: boolean;
-  /** 콘텐츠 제작 권한(없으면 기본 true로 처리) */
+  /** 肄섑뀗痢??쒖옉 沅뚰븳(?놁쑝硫?湲곕낯 true濡?泥섎━) */
   canProduce: boolean;
 };
 
@@ -17,9 +17,9 @@ type ProfileRow = {
 };
 
 export async function requireTeacher(): Promise<RoleFlags> {
-  const supabase = await getSupabaseServer(); // ✅ await
+  const supabase = await getSupabaseServer(); // ??await
 
-  // 1) 인증 확인
+  // 1) ?몄쬆 ?뺤씤
   const {
     data: { user },
     error: userErr,
@@ -28,7 +28,7 @@ export async function requireTeacher(): Promise<RoleFlags> {
   if (userErr) throw userErr;
   if (!user) throw new Error('Unauthorized: not signed in');
 
-  // 2) 프로필 조회
+  // 2) ?꾨줈??議고쉶
   const { data, error } = await supabase
     .from('profiles')
     .select('role, is_admin, can_produce')
@@ -49,3 +49,5 @@ export async function requireTeacher(): Promise<RoleFlags> {
     canProduce: row?.can_produce ?? true,
   };
 }
+
+

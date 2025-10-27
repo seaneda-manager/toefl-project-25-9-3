@@ -1,10 +1,10 @@
-// apps/web/app/(protected)/reading/test/page.tsx
+﻿// apps/web/app/(protected)/reading/test/page.tsx
 'use client';
 
 import ReadingRunnerBridge from '@/components/reading/runner/ReadingRunnerBridge';
 
 /**
- * 데모용 레거시 데이터 (import 없이 이 파일에서 직접 정의)
+ * ?곕え???덇굅???곗씠??(import ?놁씠 ???뚯씪?먯꽌 吏곸젒 ?뺤쓽)
  */
 const oldData = {
   title: 'The Dawn of Public Libraries',
@@ -24,16 +24,16 @@ const oldData = {
       ],
       paragraphIndex: 0,
     },
-    // ... 더 많은 문항 가능
+    // ... ??留롮? 臾명빆 媛??
   ],
 };
 
 /**
- * 레거시 → 러너 포맷 매핑
+ * ?덇굅?????щ꼫 ?щ㎎ 留ㅽ븨
  * - passage -> content
  * - prompt -> stem
  * - options[] -> choices[]
- * - id/number/type 문자열 보정
+ * - id/number/type 臾몄옄??蹂댁젙
  */
 function toRunnerData(legacy: typeof oldData) {
   return {
@@ -79,3 +79,5 @@ export default function Page() {
     />
   );
 }
+
+

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 
 
@@ -32,3 +32,5 @@ onChange={(e)=> setModel(m=>({ ...m, prompt: e.target.value }))}
 </div>
 )
 }
+
+

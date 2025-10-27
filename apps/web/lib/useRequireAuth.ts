@@ -1,9 +1,9 @@
-// normalized utf8
+﻿// normalized utf8
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabaseClient";
 
-/** ������ ������ /auth/login ���� ������, �غ�Ǹ� true ��ȯ */
+/** 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙 /auth/login 占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙, 占쌔븝옙퓔占?true 占쏙옙환 */
 export function useRequireAuth(returnTo: string = "/") {
   const [ready, setReady] = useState(false);
 
@@ -22,4 +22,6 @@ export function useRequireAuth(returnTo: string = "/") {
 
   return ready;
 }
+
+
 

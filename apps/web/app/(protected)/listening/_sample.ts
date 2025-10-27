@@ -1,4 +1,4 @@
-// Sample data & loader for Listening pilot
+﻿// Sample data & loader for Listening pilot
 import type { ListeningTrack as ListeningTrackSample, ListeningQuestion, ListeningChoice } from '@/types/types-listening'
 
 export const SAMPLE_TRACK: ListeningTrackSample = {
@@ -26,4 +26,6 @@ export async function loadSampleTrackFromPublic(path = '/data/demo-listening.jso
 export function isChoiceCorrectLocal(q: ListeningQuestion, choiceId: string): boolean {
   return !!q.choices.find((c) => c.id === choiceId && c.correct)
 }
+
+
 

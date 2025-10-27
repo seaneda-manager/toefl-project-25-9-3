@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 type Choice = { id: string; label?: string; text?: string };
 type Question = { id: string; number?: number; stem?: string; choices: Choice[] };
@@ -65,3 +65,5 @@ export default function QuestionPane({
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-// apps/web/app/api/listening/start/route.ts
+ï»¿// apps/web/app/api/listening/start/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -6,20 +6,20 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await getSupabaseServer(); // ? await
 
-    // ¹Ùµğ ÆÄ½Ì/°ËÁõ
+    // ë°”ë”” íŒŒì‹±/ê²€ì¦
     const body = (await req.json()) as { trackId?: string; mode?: string };
     const trackId = String(body?.trackId ?? '').trim();
-    const mode = String(body?.mode ?? 'study'); // ±âº»°ª: study
+    const mode = String(body?.mode ?? 'study'); // ê¸°ë³¸ê°’: study
     if (!trackId) {
       return NextResponse.json({ ok: false, error: 'trackId required' }, { status: 400 });
     }
 
-    // ÀÎÁõ ÇÊ¼ö (RLS: user_id = auth.uid() »ğÀÔ Á¤Ã¥ ´ëºñ)
+    // ì¸ì¦ í•„ìˆ˜ (RLS: user_id = auth.uid() ì‚½ì… ì •ì±… ëŒ€ë¹„)
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
     if (!user)   return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 
-    // ¼¼¼Ç »ı¼º
+    // ì„¸ì…˜ ìƒì„±
     const { data, error } = await supabase
       .from('listening_sessions')
       .insert({
@@ -39,3 +39,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+

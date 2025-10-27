@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/admin/reports/page.tsx
+﻿// apps/web/app/(protected)/admin/reports/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -31,7 +31,7 @@ export default function ReportsPage(){
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Reading Reports</h1>
-        <p className="text-sm text-muted-foreground">지문별 ?�답???�답�??�균?�간</p>
+        <p className="text-sm text-muted-foreground">吏臾몃퀎 ?묐떟???뺣떟瑜??됯퇏?쒓컙</p>
       </div>
 
       {data && (
@@ -66,7 +66,7 @@ export default function ReportsPage(){
               </tr>
             ))}
             {(data?.list?.length??0)===0 && (
-              <tr><td className="px-3 py-6" colSpan={5}>?�이???�음</td></tr>
+              <tr><td className="px-3 py-6" colSpan={5}>?곗씠???놁쓬</td></tr>
             )}
           </tbody>
         </table>
@@ -83,3 +83,5 @@ function KPI({label, value}:{label:string; value:any}){
     </div>
   );
 }
+
+

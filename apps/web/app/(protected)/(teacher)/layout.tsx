@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/(teacher)/layout.tsx
+﻿// apps/web/app/(protected)/(teacher)/layout.tsx
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import TeacherTopTabs from '@/components/teacher/TeacherTopTabs';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function TeacherLayout({ children }: { children: ReactNode }) {
-  // 서버에서 권한 확인 (미인증/권한없음은 리다이렉트)
+  // ?쒕쾭?먯꽌 沅뚰븳 ?뺤씤 (誘몄씤利?沅뚰븳?놁쓬? 由щ떎?대젆??
   try {
     await requireTeacher();
   } catch (e) {
@@ -29,3 +29,5 @@ export default async function TeacherLayout({ children }: { children: ReactNode 
     </div>
   );
 }
+
+

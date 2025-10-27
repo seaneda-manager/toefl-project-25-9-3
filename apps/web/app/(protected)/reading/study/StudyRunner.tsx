@@ -1,4 +1,4 @@
-// apps/web/components/reading/StudyRunner.tsx (예시 경로, 실제 위치 유지)
+﻿// apps/web/components/reading/StudyRunner.tsx (?덉떆 寃쎈줈, ?ㅼ젣 ?꾩튂 ?좎?)
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -21,12 +21,12 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
   const total = questions.length;
   const q = questions[current];
 
-  // 세션 시작 (study 모드)
+  // ?몄뀡 ?쒖옉 (study 紐⑤뱶)
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        // 서버 액션 시그니처에 맞춰 필요 시 setId도 같이 넘기세요.
+        // ?쒕쾭 ?≪뀡 ?쒓렇?덉쿂??留욎떠 ?꾩슂 ??setId??媛숈씠 ?섍린?몄슂.
         const res = await startReadingSession({ passageId: String(passage.id), mode: 'study' as const });
         if (active) {
           const sid = (res && 'sessionId' in res) ? String(res.sessionId) : null;
@@ -39,11 +39,11 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
     return () => { active = false; };
   }, [passage.id]);
 
-  // 선택 & 제출
+  // ?좏깮 & ?쒖텧
   const pick = useCallback(
     async (questionId: string, choiceId: string) => {
       setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
-      // 세션이 아직 없으면 제출은 스킵(로컬 상태만 반영)
+      // ?몄뀡???꾩쭅 ?놁쑝硫??쒖텧? ?ㅽ궢(濡쒖뺄 ?곹깭留?諛섏쁺)
       if (!sessionId) return;
       await submitReadingAnswer({
         sessionId,
@@ -56,14 +56,14 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
 
   const onFinish = useCallback(async () => {
     if (sessionId) {
-      // ✅ finishReadingSession은 객체 인자를 받도록 수정
+      // ??finishReadingSession? 媛앹껜 ?몄옄瑜?諛쏅룄濡??섏젙
       await finishReadingSession({ sessionId });
     }
-    // TODO: 종료 후 라우팅/리뷰 페이지 이동 등 필요 시 추가
+    // TODO: 醫낅즺 ???쇱슦??由щ럭 ?섏씠吏 ?대룞 ???꾩슂 ??異붽?
   }, [sessionId]);
 
   if (!q) {
-    return <div className="p-4 text-sm text-gray-500">문항이 없습니다.</div>;
+    return <div className="p-4 text-sm text-gray-500">臾명빆???놁뒿?덈떎.</div>;
   }
 
   return (
@@ -98,7 +98,7 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
 
         <div className="rounded-xl border p-4">
           <div className="mb-2 font-medium">
-            {q.number ? `${q.number}. ` : ''}{q.stem ?? '문항'}
+            {q.number ? `${q.number}. ` : ''}{q.stem ?? '臾명빆'}
           </div>
 
           <div className="grid grid-cols-1 gap-2">
@@ -122,7 +122,7 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
             className="rounded-xl border px-4 py-2"
             onClick={onFinish}
             disabled={!sessionId}
-            title={sessionId ? 'Finish session' : '세션 생성 중…'}
+            title={sessionId ? 'Finish session' : '?몄뀡 ?앹꽦 以묅?}
           >
             Finish
           </button>
@@ -131,3 +131,5 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-/* apps/web/app/components/ui/Button.tsx */
+﻿/* apps/web/app/components/ui/Button.tsx */
 'use client';
 import { cva, type VariantProps } from 'class-variance-authority';
 import clsx from 'clsx';
@@ -27,4 +27,6 @@ type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof
 export default function Button({ className, variant, size, ...rest }: Props) {
   return <button className={clsx(btn({ variant, size }), className)} {...rest} />;
 }
+
+
 

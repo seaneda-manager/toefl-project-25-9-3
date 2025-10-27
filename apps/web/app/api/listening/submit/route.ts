@@ -1,4 +1,4 @@
-// apps/web/app/api/listening/submit/route.ts
+ï»¿// apps/web/app/api/listening/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await getSupabaseServer(); // ? await
 
-    // ¹Ùµğ ÆÄ½Ì/°ËÁõ
+    // ë°”ë”” íŒŒì‹±/ê²€ì¦
     const body = (await req.json()) as {
       sessionId?: string;       // uuid
       questionId?: number;      // bigint
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Missing or invalid fields' }, { status: 400 });
     }
 
-    // ÀÎÁõ + ¼ÒÀ¯ÀÚ °¡µå: ³» ¼¼¼Ç¿¡¸¸ ´äº¯ °¡´É
+    // ì¸ì¦ + ì†Œìœ ì ê°€ë“œ: ë‚´ ì„¸ì…˜ì—ë§Œ ë‹µë³€ ê°€ëŠ¥
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
     if (!user)   return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (sessErr) return NextResponse.json({ ok: false, error: sessErr.message }, { status: 400 });
     if (!sess)   return NextResponse.json({ ok: false, error: 'not found or forbidden' }, { status: 404 });
 
-    // ÀúÀå (session_id + question_id ±âÁØ upsert)
+    // ì €ì¥ (session_id + question_id ê¸°ì¤€ upsert)
     const { error } = await supabase
       .from('listening_answers')
       .upsert(
@@ -60,3 +60,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+

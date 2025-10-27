@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 export default function HomeSelector({ onStart, onTeacher }:{ onStart:(v:{tpo:string,section:string,mode:string})=>void; onTeacher:(v:{section:string})=>void }){
   const [tpo,setTpo]=useState('TPO 1');
@@ -38,4 +38,6 @@ export default function HomeSelector({ onStart, onTeacher }:{ onStart:(v:{tpo:st
     </div>
   );
 }
+
+
 

@@ -1,10 +1,10 @@
-// apps/web/components/ui/Button.tsx
+﻿// apps/web/components/ui/Button.tsx
 'use client';
 
 import * as React from 'react';
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  asChild?: boolean; // 나중에 필요하면 쓰려고 남겨둔 옵션
+  asChild?: boolean; // ?섏쨷???꾩슂?섎㈃ ?곕젮怨??④꺼???듭뀡
 };
 
 export default function Button({ className = '', ...props }: Props) {
@@ -21,3 +21,5 @@ export default function Button({ className = '', ...props }: Props) {
     />
   );
 }
+
+

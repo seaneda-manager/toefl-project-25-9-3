@@ -1,7 +1,7 @@
 // apps/web/app/(protected)/reading/test/[sessionId]/p/[passageId]/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import ReadingTestRunner from '@/components/reading/ReadingTestRunner';
-import type { RPassage, RQuestion } from '@/types/types-reading';
+import type { RPassage, RQuestion } from '@/models/reading';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

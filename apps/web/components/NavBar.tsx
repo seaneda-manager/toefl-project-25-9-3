@@ -1,4 +1,4 @@
-/* Ǯ: apps/web/components/NavBar.tsx */
+﻿/* 풀: apps/web/components/NavBar.tsx */
 import Link from 'next/link';
 import { getSession, signOut } from '@/actions/auth';
 
@@ -40,4 +40,6 @@ export default async function NavBar() {
     </nav>
   );
 }
+
+
 

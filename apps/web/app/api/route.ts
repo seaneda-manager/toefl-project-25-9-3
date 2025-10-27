@@ -1,4 +1,4 @@
-// apps/web/app/api/route.ts
+﻿// apps/web/app/api/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const limit = Number(searchParams.get('limit') ?? '20');
 
   const { data, error } = await supabase
-    .from('study_sessions') // ?�키마에 맞게 ?��?
+    .from('study_sessions') // ?ㅽ궎留덉뿉 留욊쾶 ?좎?
     .select('id, started_at, finished_at, set_id')
     .eq('user_id', user.id)
     .order('started_at', { ascending: false })
@@ -22,3 +22,5 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true, items: data ?? [] }, { status: 200 });
 }
+
+

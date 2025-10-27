@@ -1,4 +1,4 @@
-// apps/web/components/reading/PassagePane.tsx
+﻿// apps/web/components/reading/PassagePane.tsx
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
@@ -51,7 +51,7 @@ export default function PassagePane({ content, q }: Props) {
           <div className="mb-3 flex flex-wrap gap-2">
             {target.anchors.map((a) => (
               <span key={String(a)} className="inline-block rounded border px-2 py-1 text-xs">
-                ■ {String(a)}
+                ??{String(a)}
               </span>
             ))}
           </div>
@@ -80,7 +80,7 @@ export default function PassagePane({ content, q }: Props) {
             className="relative my-4"
           >
             {isTarget && target?.arrow && (
-              <div className="absolute -left-6 top-1 select-none">➤</div>
+              <div className="absolute -left-6 top-1 select-none">??/div>
             )}
 
             <span className={isTarget ? 'bg-yellow-200/60 dark:bg-sky-900/50' : ''}>
@@ -94,7 +94,7 @@ export default function PassagePane({ content, q }: Props) {
                     key={String(a)}
                     className="inline-block rounded border px-2 py-1 text-xs"
                   >
-                    ■ {String(a)}
+                    ??{String(a)}
                   </span>
                 ))}
               </div>
@@ -118,3 +118,5 @@ function safeTarget(t: any): TargetShape | undefined {
   const arrow = !!t.arrow;
   return { mode, paragraph_index, anchors, arrow };
 }
+
+

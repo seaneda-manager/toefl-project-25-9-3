@@ -1,4 +1,4 @@
-// components/teacher/TeacherTopTabs.tsx
+﻿// components/teacher/TeacherTopTabs.tsx
 'use client';
 
 import Link from 'next/link';
@@ -46,3 +46,5 @@ export default function TeacherTopTabs() {
     </nav>
   );
 }
+
+

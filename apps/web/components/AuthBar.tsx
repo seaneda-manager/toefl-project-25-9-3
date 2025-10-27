@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -27,8 +27,8 @@ export default function AuthBar() {
     <div style={barStyle}>
       <div style={{display:'flex',gap:12,alignItems:'center'}}>
         <Link href="/" style={logoStyle}>TOEFL</Link>
-        <Link href="/teacher/reading">Teacher·Reading</Link>
-        <Link href="/teacher/listening">Teacher·Listening</Link>
+        <Link href="/teacher/reading">Teacher쨌Reading</Link>
+        <Link href="/teacher/listening">Teacher쨌Listening</Link>
         <Link href="/dev/sets">Sets</Link>
       </div>
       <div>
@@ -55,4 +55,6 @@ const barStyle: React.CSSProperties = {
 const logoStyle: React.CSSProperties = {
   fontWeight:700, textDecoration:'none'
 };
+
+
 

@@ -1,12 +1,14 @@
-export default function Page() {
+ï»¿export default function Page() {
   return (
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
         Logs
       </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        ÀÛ¾÷/½Ã½ºÅÛ ·Î±×¸¦ Ç¥½ÃÇÕ´Ï´Ù(°Ë»ö ¹× ±â°£ ÇÊÅÍ Áö¿ø).
+        ì‘ì—…/ì‹œìŠ¤í…œ ë¡œê·¸ë¥¼ í‘œì‹œí•©ë‹ˆë‹¤(ê²€ìƒ‰ ë° ê¸°ê°„ í•„í„° ì§€ì›).
       </p>
     </div>
   );
 }
+
+

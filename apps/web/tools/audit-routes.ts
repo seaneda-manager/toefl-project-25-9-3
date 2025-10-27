@@ -1,4 +1,4 @@
-// tools/audit-routes.ts
+﻿// tools/audit-routes.ts
 // Usage: pnpm tsx tools/audit-routes.ts
 import fs from 'fs';
 import path from 'path';
@@ -18,7 +18,7 @@ const items: RouteItem[] = [];
 
 function toRoute(p: string) {
   const rel = path.relative(ROOT, path.dirname(p)).replace(/\\/g,'/');
-  // Next.js route groups () 제거
+  // Next.js route groups () ?쒓굅
   return '/' + rel
     .replace(/\(.*?\)\//g, '')
     .replace(/^\/?$/, '')
@@ -42,14 +42,14 @@ function walk(dir: string) {
 }
 walk(ROOT);
 
-// 그룹화
+// 洹몃９??
 const byRoute = items.reduce<Record<string, RouteItem[]>>((acc, it) => {
   (acc[it.routePath] ||= []).push(it);
   return acc;
 }, {});
 
-// 유사/중복 라우트 후보 감지
-// 규칙: routePath 끝 segment가 동일하거나, study/test/review 모드만 다른 경우
+// ?좎궗/以묐났 ?쇱슦???꾨낫 媛먯?
+// 洹쒖튃: routePath ??segment媛 ?숈씪?섍굅?? study/test/review 紐⑤뱶留??ㅻⅨ 寃쎌슦
 function lastSeg(p: string) {
   const segs = p.split('/').filter(Boolean);
   return segs[segs.length - 1] || '';
@@ -65,7 +65,7 @@ const dupesFiltered = Object.fromEntries(
   Object.entries(dupes).filter(([, arr]) => arr.length > 1)
 );
 
-// 컴포넌트/타입 사용처 역색인 (reading/listening 중요 파일)
+// 而댄룷?뚰듃/????ъ슜泥???깋??(reading/listening 以묒슂 ?뚯씪)
 const componentHints = [
   'TestRunner', 'TestRunnerV2', 'PassagePane', 'SkimGate',
   'LAudioScreen', 'LQuestionScreen'
@@ -93,9 +93,11 @@ function walkSrc(dir: string) {
 }
 walkSrc(srcRoot);
 
-// 출력
+// 異쒕젰
 fs.writeFileSync(path.join(OUT, 'routes.json'), JSON.stringify(byRoute, null, 2));
 fs.writeFileSync(path.join(OUT, 'dupes.json'), JSON.stringify(dupesFiltered, null, 2));
 fs.writeFileSync(path.join(OUT, 'components.json'), JSON.stringify(compIndex, null, 2));
 
-console.log('✅ Wrote audit/routes.json, audit/dupes.json, audit/components.json');
+console.log('??Wrote audit/routes.json, audit/dupes.json, audit/components.json');
+
+

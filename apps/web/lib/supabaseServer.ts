@@ -1,4 +1,4 @@
-// apps/web/lib/supabaseServer.ts
+﻿// apps/web/lib/supabaseServer.ts
 'use server';
 
 import { cookies } from 'next/headers';
@@ -6,8 +6,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * SSR / Route Handler / Server Component 공용 Supabase 클라이언트
- * - 일부 버전/컨텍스트에선 cookies()가 Promise를 반환하므로 await 필요
+ * SSR / Route Handler / Server Component 怨듭슜 Supabase ?대씪?댁뼵??
+ * - ?쇰? 踰꾩쟾/而⑦뀓?ㅽ듃?먯꽑 cookies()媛 Promise瑜?諛섑솚?섎?濡?await ?꾩슂
  */
 export async function getSupabaseServer(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,7 +18,7 @@ export async function getSupabaseServer(): Promise<SupabaseClient> {
     );
   }
 
-  // ✅ 현재 타입 정의에 맞춰 await
+  // ???꾩옱 ????뺤쓽??留욎떠 await
   const cookieStore = await cookies();
 
   const supabase = createServerClient(url, anon, {
@@ -28,7 +28,7 @@ export async function getSupabaseServer(): Promise<SupabaseClient> {
       },
       set(name: string, value: string, options: CookieOptions) {
         try {
-          // Route Handler에선 mutable, RSC에선 무시
+          // Route Handler?먯꽑 mutable, RSC?먯꽑 臾댁떆
          
           cookieStore.set({ name, value, ...options });
         } catch {
@@ -48,3 +48,5 @@ export async function getSupabaseServer(): Promise<SupabaseClient> {
 
   return supabase;
 }
+
+

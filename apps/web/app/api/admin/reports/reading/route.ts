@@ -1,11 +1,11 @@
-// apps/web/app/api/admin/reports/reading/route.ts
+﻿// apps/web/app/api/admin/reports/reading/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 export async function GET(req: NextRequest) {
   const supabase = await getSupabaseServer();
 
-  // ?�증 + admin 가??
+  // ?몄쬆 + admin 媛??
   const { data: { user }, error: uerr } = await supabase.auth.getUser();
   if (uerr) return NextResponse.json({ error: uerr.message }, { status: 500 });
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -15,13 +15,13 @@ export async function GET(req: NextRequest) {
   if (perr) return NextResponse.json({ error: perr.message }, { status: 500 });
   if (me?.role !== 'admin') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  // 지문별 집계
+  // 吏臾몃퀎 吏묎퀎
   const { data: rows, error: rerr } = await supabase
     .from('v_reading_attempts_enriched')
     .select('passage_id, is_correct, elapsed_ms, session_id, user_id');
   if (rerr) return NextResponse.json({ error: rerr.message }, { status: 500 });
 
-  // 메모�?집계
+  // 硫붾え由?吏묎퀎
   const byPassage: Record<string, any> = {};
   const sessions = new Set<string>();
   const users    = new Set<string>();
@@ -79,3 +79,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ summary, list });
 }
+
+

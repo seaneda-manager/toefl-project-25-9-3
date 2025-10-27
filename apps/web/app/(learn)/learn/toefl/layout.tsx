@@ -1,4 +1,4 @@
-// apps/web/app/(learn)/learn/toefl/layout.tsx
+﻿// apps/web/app/(learn)/learn/toefl/layout.tsx
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -11,10 +11,10 @@ export default async function TOEFLLayout({ children }: { children: ReactNode })
     <div className="grid gap-6">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-bold">TOEFL</h1>
-        <Link href="/programs/toefl" className="text-sm underline">���α׷� Ȩ</Link>
+        <Link href="/programs/toefl" className="text-sm underline">占쏙옙占싸그뤄옙 홈</Link>
       </header>
 
-      {/* �α��� ���¿����� ���� */}
+      {/* 占싸깍옙占쏙옙 占쏙옙占승울옙占쏙옙占쏙옙 占쏙옙占쏙옙 */}
       {session && (
         <nav className="flex flex-wrap gap-2 text-sm">
           <Link href="/learn/toefl/dashboard" className="rounded-lg border px-3 py-1.5 hover:bg-gray-100">Dashboard</Link>
@@ -28,3 +28,5 @@ export default async function TOEFLLayout({ children }: { children: ReactNode })
     </div>
   );
 }
+
+

@@ -1,21 +1,21 @@
-// apps/web/app/(protected)/reading/test/ClientPage.tsx
+﻿// apps/web/app/(protected)/reading/test/ClientPage.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { RPassage } from '@/types/types-reading';
+import type { RPassage } from '@/models/reading';
 import SkimGate from '@/components/reading/SkimGate';
 import ClientRunner from './ClientRunner';
 
 export default function ClientPage({ passage }: { passage: RPassage }) {
   const [gateDone, setGateDone] = useState(false);
 
-  // 세션 ID: 쿼리에서 우선, 없으면 생성
+  // ?몄뀡 ID: 荑쇰━?먯꽌 ?곗꽑, ?놁쑝硫??앹꽦
   const [sessionId] = useState<string>(() => {
     const usp = new URLSearchParams(location.search);
     return usp.get('sessionId') || usp.get('sid') || crypto.randomUUID();
   });
 
-  // 디버그: ?skipGate=1 이면 게이트 스킵
+  // ?붾쾭洹? ?skipGate=1 ?대㈃ 寃뚯씠???ㅽ궢
   useEffect(() => {
     const usp = new URLSearchParams(location.search);
     if (usp.get('skipGate') === '1') setGateDone(true);
@@ -25,12 +25,12 @@ export default function ClientPage({ passage }: { passage: RPassage }) {
     return (
       <SkimGate
         content={passage.content ?? ''}
-        onUnlockAction={() => setGateDone(true)}  // ✅ 이름 변경
+        onUnlockAction={() => setGateDone(true)}  // ???대쫫 蹂寃?
       />
     );
   }
 
-  // ClientRunner가 요구하는 엄격한 형태로 보정
+  // ClientRunner媛 ?붽뎄?섎뒗 ?꾧꺽???뺥깭濡?蹂댁젙
   type StrictPassage = {
     id: string;
     title: string;
@@ -47,3 +47,5 @@ export default function ClientPage({ passage }: { passage: RPassage }) {
 
   return <ClientRunner passage={passageStrict} sessionId={sessionId} />;
 }
+
+

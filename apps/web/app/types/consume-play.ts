@@ -1,4 +1,4 @@
-// apps/web/types/consume-play.ts
+﻿// apps/web/types/consume-play.ts
 
 export type ModeShort = 'p' | 't' | 'r';
 export type ModeLong  = 'study' | 'test' | 'review';
@@ -42,3 +42,5 @@ export function remainingPlays(row: ConsumePlayRow): number {
 export function canPlay(row: ConsumePlayRow): boolean {
   return remainingPlays(row) > 0;
 }
+
+

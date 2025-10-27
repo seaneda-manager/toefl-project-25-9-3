@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React from 'react';
 
 type Col<T> = { header: string; render: (row: T) => React.ReactNode; className?: string };
@@ -12,7 +12,7 @@ export default function DataTable<T>({
   columns: Col<T>[];
   empty?: string;
 }) {
-  if (!rows.length) return <div className="text-sm text-gray-500">{empty ?? '?�이?��? ?�습?�다.'}</div>;
+  if (!rows.length) return <div className="text-sm text-gray-500">{empty ?? '?곗씠?곌? ?놁뒿?덈떎.'}</div>;
 
   return (
     <div className="overflow-x-auto border rounded-xl">
@@ -41,3 +41,5 @@ export default function DataTable<T>({
     </div>
   );
 }
+
+

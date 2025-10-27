@@ -1,6 +1,6 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 
-// 최소 구성 — 실제 필드는 점진 추가
+// 理쒖냼 援ъ꽦 ???ㅼ젣 ?꾨뱶???먯쭊 異붽?
 export const listeningTrackSchema = z.object({
   id: z.string(),
   title: z.string().optional(),
@@ -9,7 +9,7 @@ export const listeningTrackSchema = z.object({
   audio_url: z.string().optional(),
   imageUrl: z.string().optional(),
   image_url: z.string().optional(),
-  // ...필요시 추가
+  // ...?꾩슂??異붽?
 });
 
 export const lQuestionSchema = z.object({
@@ -24,7 +24,7 @@ export const lQuestionSchema = z.object({
       correct: z.boolean().optional(),
     })
   ).optional(),
-  // ...필요시 추가
+  // ...?꾩슂??異붽?
 });
 
 export const listeningSetSchema = z.object({
@@ -32,10 +32,12 @@ export const listeningSetSchema = z.object({
   label: z.string().optional(),
   conversation: listeningTrackSchema.optional(),
   lecture: listeningTrackSchema.optional(),
-  // ...필요시 추가
+  // ...?꾩슂??異붽?
 });
 
-// 타입
+// ???
 export type ListeningTrack = z.infer<typeof listeningTrackSchema>;
 export type LQuestion = z.infer<typeof lQuestionSchema>;
 export type ListeningSet = z.infer<typeof listeningSetSchema>;
+
+

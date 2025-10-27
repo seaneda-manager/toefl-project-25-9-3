@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -32,7 +32,7 @@ export default function ContentListPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null); // entity id
 
-  // 목록 불러오기 (쿼리 인자 반영)
+  // 紐⑸줉 遺덈윭?ㅺ린 (荑쇰━ ?몄옄 諛섏쁺)
   const load = useCallback(async (query?: string) => {
     setLoading(true);
     setError(null);
@@ -50,7 +50,7 @@ export default function ContentListPage() {
     }
   }, []);
 
-  // 마운트 시 1회 로드
+  // 留덉슫????1??濡쒕뱶
   useEffect(() => {
     void load();
   }, [load]);
@@ -66,7 +66,7 @@ export default function ContentListPage() {
         body: JSON.stringify({ id: p.id, title: p.title, content: p.content, set_id: p.set_id }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('지문이 저장되었습니다.');
+      setToast('吏臾몄씠 ??λ릺?덉뒿?덈떎.');
       await load(q);
     } catch (e: any) {
       setError(e?.message ?? 'save failed');
@@ -76,7 +76,7 @@ export default function ContentListPage() {
   };
 
   const deletePassage = async (id: string) => {
-    if (!confirm('정말 삭제할까요? (안전하지 않은 경우 삭제가 차단되며, 아카이브로 전환될 수 있습니다)')) return;
+    if (!confirm('?뺣쭚 ??젣?좉퉴?? (?덉쟾?섏? ?딆? 寃쎌슦 ??젣媛 李⑤떒?섎ŉ, ?꾩뭅?대툕濡??꾪솚?????덉뒿?덈떎)')) return;
     setBusy(id);
     setToast(null);
     setError(null);
@@ -87,7 +87,7 @@ export default function ContentListPage() {
         body: JSON.stringify({ id }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('지문이 삭제(또는 아카이브)되었습니다.');
+      setToast('吏臾몄씠 ??젣(?먮뒗 ?꾩뭅?대툕)?섏뿀?듬땲??');
       await load(q);
     } catch (e: any) {
       setError(e?.message ?? 'delete failed');
@@ -107,7 +107,7 @@ export default function ContentListPage() {
         body: JSON.stringify(qitem),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast(`Q${qitem.number} 저장 완료`);
+      setToast(`Q${qitem.number} ????꾨즺`);
       await load(q);
     } catch (e: any) {
       setError(e?.message ?? 'save failed');
@@ -117,7 +117,7 @@ export default function ContentListPage() {
   };
 
   const deleteQuestion = async (qid: string) => {
-    if (!confirm('해당 문항을 삭제할까요? (안전 장치가 있으면 차단될 수 있습니다)')) return;
+    if (!confirm('?대떦 臾명빆????젣?좉퉴?? (?덉쟾 ?μ튂媛 ?덉쑝硫?李⑤떒?????덉뒿?덈떎)')) return;
     setBusy(qid);
     setToast(null);
     setError(null);
@@ -128,7 +128,7 @@ export default function ContentListPage() {
         body: JSON.stringify({ id: qid }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('문항 삭제 완료');
+      setToast('臾명빆 ??젣 ?꾨즺');
       await load(q);
     } catch (e: any) {
       setError(e?.message ?? 'delete failed');
@@ -148,7 +148,7 @@ export default function ContentListPage() {
         body: JSON.stringify({ ...c, question_id: qid }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('선지 저장 완료');
+      setToast('?좎? ????꾨즺');
       await load(q);
     } catch (e: any) {
       setError(e?.message ?? 'save failed');
@@ -158,7 +158,7 @@ export default function ContentListPage() {
   };
 
   const deleteChoice = async (cid: string) => {
-    if (!confirm('이 선지를 삭제할까요?')) return;
+    if (!confirm('???좎?瑜???젣?좉퉴??')) return;
     setBusy(cid);
     setToast(null);
     setError(null);
@@ -169,7 +169,7 @@ export default function ContentListPage() {
         body: JSON.stringify({ id: cid }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('선지 삭제 완료');
+      setToast('?좎? ??젣 ?꾨즺');
       await load(q);
     } catch (e: any) {
       setError(e?.message ?? 'delete failed');
@@ -183,7 +183,7 @@ export default function ContentListPage() {
       <div className="flex gap-2">
         <input
           className="border rounded px-3 py-2 flex-1"
-          placeholder="제목/세트 검색"
+          placeholder="?쒕ぉ/?명듃 寃??
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
@@ -194,7 +194,7 @@ export default function ContentListPage() {
           className="border rounded px-4 py-2"
           onClick={() => void load(q)}
         >
-          검색
+          寃??
         </button>
       </div>
 
@@ -204,14 +204,14 @@ export default function ContentListPage() {
       {loading ? (
         <div>Loading...</div>
       ) : items.length === 0 ? (
-        <div>콘텐츠가 없습니다</div>
+        <div>肄섑뀗痢좉? ?놁뒿?덈떎</div>
       ) : (
         <div className="space-y-6">
           {items.map((p) => (
             <div key={p.id} className="border rounded p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-neutral-500">
-                  set: <b>{p.set_id}</b> · passageId: {p.id} · answers: {p.stats?.answers ?? 0}
+                  set: <b>{p.set_id}</b> 쨌 passageId: {p.id} 쨌 answers: {p.stats?.answers ?? 0}
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -254,7 +254,7 @@ export default function ContentListPage() {
                   <div key={qn.id} className="rounded border p-3">
                     <div className="flex items-center justify-between">
                       <div className="font-medium">
-                        Q{qn.number} · {qn.type}
+                        Q{qn.number} 쨌 {qn.type}
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -474,3 +474,5 @@ export default function ContentListPage() {
     </div>
   );
 }
+
+

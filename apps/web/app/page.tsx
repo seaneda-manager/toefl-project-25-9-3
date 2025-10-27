@@ -1,4 +1,4 @@
-// apps/web/app/page.tsx  (또는 해당 위치의 페이지 파일)
+﻿// apps/web/app/page.tsx  (?먮뒗 ?대떦 ?꾩튂???섏씠吏 ?뚯씪)
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -11,22 +11,24 @@ export default function Page() {
   return (
     <HomeSelector
       onStart={({ tpo, section, mode }: { tpo: string; section: string; mode: string }) => {
-        // tpo가 넘어오면 필요 시 라우팅에 활용 (예: /reading/test?tpo=xx)
+        // tpo媛 ?섏뼱?ㅻ㈃ ?꾩슂 ???쇱슦?낆뿉 ?쒖슜 (?? /reading/test?tpo=xx)
         if (mode === 'study') {
           if (section === 'reading') go('/reading/study');
           else if (section === 'listening') go('/listening/study');
-          else alert('Study UI 준비 중입니다.');
+          else alert('Study UI 以鍮?以묒엯?덈떎.');
         } else {
           if (section === 'reading') go('/reading/test');
           else if (section === 'listening') go('/listening/test');
-          else alert('Test UI 준비 중입니다.');
+          else alert('Test UI 以鍮?以묒엯?덈떎.');
         }
       }}
       onTeacher={({ section }: { section: string }) => {
         if (section === 'reading') go('/teacher/reading');
         else if (section === 'listening') go('/teacher/listening');
-        else alert('Teacher UI 준비 중입니다.');
+        else alert('Teacher UI 以鍮?以묒엯?덈떎.');
       }}
     />
   );
 }
+
+

@@ -1,4 +1,4 @@
-// normalized utf8
+﻿// normalized utf8
 'use client';
 import { useCallback, useId } from 'react';
 
@@ -6,7 +6,7 @@ type AnyChoice = {
   id: string | number;
   text?: string;
   label?: string;
-  explain?: string | null;   // ??null ?�용
+  explain?: string | null;   // ??null ?占쎌슜
   is_correct?: boolean;
   ord?: number;
   meta?: unknown;
@@ -14,7 +14,7 @@ type AnyChoice = {
 
 type Props = {
   prompt: string;
-  choices: AnyChoice[];       // ???�연???�력
+  choices: AnyChoice[];       // ???占쎌뿰???占쎈젰
   selected?: string | null;
   onAnswer: (choiceId: string) => void;
 };
@@ -114,8 +114,10 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
       </div>
 
       <div className="text-xs text-gray-500 dark:text-gray-400">
-        Tip: 문제 ?�역???�커?��? ?�을 ???�보??<span className="tabular-nums">1~{shortcutMax}</span> �?빠르�??�택?????�어??
+        Tip: 臾몄젣 ?占쎌뿭???占쎌빱?占쏙옙? ?占쎌쓣 ???占쎈낫??<span className="tabular-nums">1~{shortcutMax}</span> 占?鍮좊Ⅴ占??占쏀깮?????占쎌뼱??
       </div>
     </div>
   );
 }
+
+

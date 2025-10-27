@@ -1,4 +1,4 @@
-// apps/web/app/auth/signup-teacher/page.tsx
+﻿// apps/web/app/auth/signup-teacher/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -64,9 +64,9 @@ export default function SignupTeacherPage() {
           disabled={submitting}
           className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-60"
           aria-busy={submitting}
-          title={submitting ? 'Creating…' : 'Create teacher account'}
+          title={submitting ? 'Creating?? : 'Create teacher account'}
         >
-          {submitting ? 'Creating…' : 'Create teacher account'}
+          {submitting ? 'Creating?? : 'Create teacher account'}
         </button>
       </form>
 
@@ -79,3 +79,5 @@ export default function SignupTeacherPage() {
     </div>
   );
 }
+
+

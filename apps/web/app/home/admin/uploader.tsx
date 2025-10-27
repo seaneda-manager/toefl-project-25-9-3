@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef, useState } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabaseBrowser';
@@ -21,7 +21,7 @@ export default function AdminUploader() {
       const pad = (n:number)=>String(n).padStart(2,'0');
       const key = `reading/${stamp.getFullYear()}${pad(stamp.getMonth()+1)}${pad(stamp.getDate())}_${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}_${Math.random().toString(36).slice(2,8)}.json`;
 
-      // 버킷: content (?�으�?Supabase ?�?�보?�에???�성?�두?�요)
+      // 踰꾪궥: content (?놁쑝硫?Supabase ??쒕낫?쒖뿉???앹꽦?대몢?몄슂)
       const { error } = await supabase.storage.from('content').upload(key, f, {
         cacheControl: '3600',
         upsert: false,
@@ -52,3 +52,5 @@ export default function AdminUploader() {
     </div>
   );
 }
+
+

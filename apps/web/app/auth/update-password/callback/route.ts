@@ -1,4 +1,4 @@
-// apps/web/app/auth/update-password/callback/route.ts
+﻿// apps/web/app/auth/update-password/callback/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL('/auth/login?m=missing-code', url));
   }
 
-  // 🔧 중요: 네 타입셋업에선 cookies()가 Promise임 → await 필요
+  // ?뵩 以묒슂: ????낆뀑?낆뿉??cookies()媛 Promise????await ?꾩슂
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        // 일부 런타임/타입에서 set 오버로드 충돌을 피하려고 object 시그니처 + any 사용
+        // ?쇰? ?고?????낆뿉??set ?ㅻ쾭濡쒕뱶 異⑸룎???쇳븯?ㅺ퀬 object ?쒓렇?덉쿂 + any ?ъ슜
         set(name: string, value: string, options?: any) {
           try {
             cookieStore.set({ name, value, ...(options || {}) });
@@ -62,3 +62,5 @@ export async function GET(req: Request) {
 
   return NextResponse.redirect(new URL(dest, url));
 }
+
+

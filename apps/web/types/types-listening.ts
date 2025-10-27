@@ -1,91 +1,91 @@
 // apps/web/types/types-listening.ts
-import type { RSet, RQuestion, RChoice, RPassage } from '@/lib/readingSchemas';
-// 실행 모드
+import type { RSet, RQuestion, RChoice, RPassage } from '@/models/reading/zod';
+// ?ㅽ뻾 紐⑤뱶
 export type Mode = 'study' | 'test';
 
-/** Choice (과거/현재 필드 호환) */
+/** Choice (怨쇨굅/?꾩옱 ?꾨뱶 ?명솚) */
 export interface ListeningChoice {
   id: string;
   text: string;
-  /** 과거/현재 혼용된 정답 표기 */
+  /** 怨쇨굅/?꾩옱 ?쇱슜???뺣떟 ?쒓린 */
   correct?: boolean;
   is_correct?: boolean;
 }
-/** 러너 코드에서 기대하는 이름도 함께 제공 */
+/** ?щ꼫 肄붾뱶?먯꽌 湲곕??섎뒗 ?대쫫???④퍡 ?쒓났 */
 export type LChoice = ListeningChoice;
 
-/** Question (과거/현재 필드 호환) */
+/** Question (怨쇨굅/?꾩옱 ?꾨뱶 ?명솚) */
 export interface ListeningQuestion {
   id: string;
   number?: number;
 
-  /** 과거 코드에선 prompt/stem 혼용 */
+  /** 怨쇨굅 肄붾뱶?먯꽑 prompt/stem ?쇱슜 */
   prompt?: string;
   stem?: string;
 
   choices: ListeningChoice[];
   meta?: Record<string, unknown>;
 }
-/** 러너에서 쓰는 별칭 */
+/** ?щ꼫?먯꽌 ?곕뒗 蹂꾩묶 */
 export type LQuestion = ListeningQuestion;
 
-/** Track (과거/현재 필드 호환) */
+/** Track (怨쇨굅/?꾩옱 ?꾨뱶 ?명솚) */
 export interface ListeningTrack {
   id: string;
   title?: string;
 
-  /** 오디오 URL: 과거 audio_url, 현재 audioUrl */
-  audioUrl: string;     // 현재 표준
-  audio_url?: string;   // 과거 호환
+  /** ?ㅻ뵒??URL: 怨쇨굅 audio_url, ?꾩옱 audioUrl */
+  audioUrl: string;     // ?꾩옱 ?쒖?
+  audio_url?: string;   // 怨쇨굅 ?명솚
 
-  /** 시간 관련 옵션 */
+  /** ?쒓컙 愿???듭뀡 */
   timeLimitSec?: number;
   durationSec?: number;
 
   questions: ListeningQuestion[];
 }
 
-/* ===================== Helpers (호환/편의 유틸) ===================== */
+/* ===================== Helpers (?명솚/?몄쓽 ?좏떥) ===================== */
 
-/** 질문 텍스트 일괄 추출 (공백 처리 포함) */
+/** 吏덈Ц ?띿뒪???쇨큵 異붿텧 (怨듬갚 泥섎━ ?ы븿) */
 export function getQuestionText(q: ListeningQuestion): string {
   const txt = q.prompt ?? q.stem ?? '';
   return typeof txt === 'string' ? txt.trim() : '';
 }
 
-/** 오디오 URL 일괄 추출 (audio_url → audioUrl 매핑 포함) */
+/** ?ㅻ뵒??URL ?쇨큵 異붿텧 (audio_url ??audioUrl 留ㅽ븨 ?ы븿) */
 export function getAudioUrl(t: ListeningTrack): string {
   return (t.audioUrl ?? t.audio_url ?? '').trim();
 }
 
-/** 해당 선택지가 정답인지 검사 */
+/** ?대떦 ?좏깮吏媛 ?뺣떟?몄? 寃??*/
 export function isChoiceCorrect(q: ListeningQuestion, choiceId: string): boolean {
   const c = q.choices.find((x) => x.id === choiceId);
   return !!(c && (c.is_correct === true || c.correct === true));
 }
 
-/** 하나라도 정답이 있는지(데이터 검증용) */
+/** ?섎굹?쇰룄 ?뺣떟???덈뒗吏(?곗씠??寃利앹슜) */
 export function hasAnyCorrectChoice(q: ListeningQuestion): boolean {
   return q.choices.some((c) => c.is_correct === true || c.correct === true);
 }
 
-/* ===================== Normalizers (정규화) ===================== */
+/* ===================== Normalizers (?뺢퇋?? ===================== */
 /**
- * 들어오는 데이터의 들쑥날쑥함을 흡수하고,
- * UI/로직에서 쓰기 쉬운 "필수 필드 보장" 형태로 바꿉니다.
+ * ?ㅼ뼱?ㅻ뒗 ?곗씠?곗쓽 ?ㅼ뫁?좎뫁?⑥쓣 ?≪닔?섍퀬,
+ * UI/濡쒖쭅?먯꽌 ?곌린 ?ъ슫 "?꾩닔 ?꾨뱶 蹂댁옣" ?뺥깭濡?諛붽퓠?덈떎.
  */
 
 export type NormalizedListeningChoice = Readonly<{
   id: string;
   text: string;
-  /** 정규화된 정답 플래그(기본값 false) */
+  /** ?뺢퇋?붾맂 ?뺣떟 ?뚮옒洹?湲곕낯媛?false) */
   is_correct: boolean;
 }>;
 
 export type NormalizedListeningQuestion = Readonly<{
   id: string;
-  number: number;          // 보장
-  text: string;            // prompt/stem 통합
+  number: number;          // 蹂댁옣
+  text: string;            // prompt/stem ?듯빀
   choices: NormalizedListeningChoice[];
   meta?: Record<string, unknown>;
 }>;
@@ -93,13 +93,13 @@ export type NormalizedListeningQuestion = Readonly<{
 export type NormalizedListeningTrack = Readonly<{
   id: string;
   title?: string;
-  audioUrl: string;        // audio_url 호환 처리 + 공백 제거
+  audioUrl: string;        // audio_url ?명솚 泥섎━ + 怨듬갚 ?쒓굅
   timeLimitSec?: number;
   durationSec?: number;
   questions: NormalizedListeningQuestion[];
 }>;
 
-/** 선택지 정규화 */
+/** ?좏깮吏 ?뺢퇋??*/
 export function normalizeChoice(c: ListeningChoice): NormalizedListeningChoice {
   return {
     id: String(c.id),
@@ -108,7 +108,7 @@ export function normalizeChoice(c: ListeningChoice): NormalizedListeningChoice {
   };
 }
 
-/** 질문 정규화: number 보장, text 통합 */
+/** 吏덈Ц ?뺢퇋?? number 蹂댁옣, text ?듯빀 */
 export function normalizeQuestion(
   q: ListeningQuestion,
   fallbackNumber?: number
@@ -129,7 +129,7 @@ export function normalizeQuestion(
   };
 }
 
-/** 트랙 정규화: audioUrl 보장(+audio_url), 질문 넘버 자동 보정 */
+/** ?몃옓 ?뺢퇋?? audioUrl 蹂댁옣(+audio_url), 吏덈Ц ?섎쾭 ?먮룞 蹂댁젙 */
 export function normalizeTrack(t: ListeningTrack): NormalizedListeningTrack {
   const audio = getAudioUrl(t);
   const qs = (t.questions ?? []).map((qq, i) =>
@@ -146,14 +146,14 @@ export function normalizeTrack(t: ListeningTrack): NormalizedListeningTrack {
   };
 }
 
-/** 여러 트랙 한 번에 정규화 */
+/** ?щ윭 ?몃옓 ??踰덉뿉 ?뺢퇋??*/
 export function normalizeTracks(ts: ListeningTrack[]): NormalizedListeningTrack[] {
   return (ts ?? []).map(normalizeTrack);
 }
 
 /* ============================================================
-   ✅ Play Consume API 타입 및 정규화 함수
-   (listening-sample/page.tsx에서 import하는 항목들)
+   ??Play Consume API ???諛??뺢퇋???⑥닔
+   (listening-sample/page.tsx?먯꽌 import?섎뒗 ??ぉ??
 ============================================================ */
 
 export type ConsumePlayRow = Readonly<{
@@ -168,7 +168,7 @@ export type ConsumePlayResponse =
   | { ok: true; data: ConsumePlayRow }
   | { ok: false; error: string };
 
-/** 서버 응답(snake_case 포함)을 camelCase로 통일 */
+/** ?쒕쾭 ?묐떟(snake_case ?ы븿)??camelCase濡??듭씪 */
 export function normalizeConsumePlayRow(input: any): ConsumePlayRow {
   if (!input) {
     return { sessionId: '', playsAllowed: 0, playsUsed: 0, remaining: 0 };
@@ -189,3 +189,5 @@ export function normalizeConsumePlayRow(input: any): ConsumePlayRow {
     remaining: Number(remaining),
   };
 }
+
+

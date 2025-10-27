@@ -1,6 +1,6 @@
 // apps/web/app/(protected)/reading/admin/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
-import { readingSetSchema } from '@/lib/readingSchema';
+import { readingSetSchema } from '@/models/reading/zod';
 import { loadReadingSet, upsertReadingSet } from '@/actions/reading';
 import AdminReadingEditor from '@/components/reading/admin/AdminReadingEditor';
 
@@ -12,7 +12,7 @@ type Search = { setId?: string };
 export default async function Page({ searchParams }: { searchParams?: Search }) {
   const setId = searchParams?.setId || 'demo-set';
 
-  // 초기 로드 (?�으�?�?골격)
+  // 珥덇린 濡쒕뱶 (?놁쑝硫?鍮?怨④꺽)
   const initial = await loadReadingSet(setId);
   const initialJson = initial
     ? JSON.stringify(initial, null, 2)
@@ -36,7 +36,7 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
         2
       );
 
-  // ?�버 ?�션: ???�출�??�??(?�라?�서 직접 import 금�? ??prop?�로 ?�달)
+  // ?쒕쾭 ?≪뀡: ???쒖텧濡????(?대씪?먯꽌 吏곸젒 import 湲덉? ??prop?쇰줈 ?꾨떖)
   async function saveAction(formData: FormData) {
     'use server';
     const raw = String(formData.get('json') || '');
@@ -56,3 +56,5 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
     </div>
   );
 }
+
+

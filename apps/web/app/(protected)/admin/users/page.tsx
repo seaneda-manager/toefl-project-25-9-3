@@ -1,7 +1,7 @@
-// apps/web/app/(protected)/admin/users/page.tsx
+﻿// apps/web/app/(protected)/admin/users/page.tsx
 import UsersManager from "@/app/(protected)/admin/users/UsersManager";
 
-export const dynamic = "force-dynamic"; // 목록 최신 반영
+export const dynamic = "force-dynamic"; // 紐⑸줉 理쒖떊 諛섏쁺
 
 export default async function AdminUsersPage() {
   return (
@@ -9,10 +9,12 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="text-2xl font-semibold">User Management</h1>
         <p className="text-sm text-muted-foreground">
-          검?? ??�� 변�? ?�이지?�이?�을 지?�합?�다.
+          寃?? ??븷 蹂寃? ?섏씠吏?ㅼ씠?섏쓣 吏?먰빀?덈떎.
         </p>
       </div>
       <UsersManager />
     </div>
   );
 }
+
+

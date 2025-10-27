@@ -1,4 +1,4 @@
-export function toDisplayLabel(key: string): string {
+﻿export function toDisplayLabel(key: string): string {
   const map: Record<string, string> = {
     vocab: 'Vocabulary',
     detail: 'Detail',
@@ -13,3 +13,5 @@ export function toDisplayLabel(key: string): string {
   };
   return map[key] ?? key;
 }
+
+

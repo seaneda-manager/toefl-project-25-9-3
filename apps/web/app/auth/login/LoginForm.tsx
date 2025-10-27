@@ -1,16 +1,16 @@
-// apps/web/app/auth/login/LoginForm.tsx
+﻿// apps/web/app/auth/login/LoginForm.tsx
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { signInWithPassword } from '@/actions/auth';
 import Button from '@/components/ui/Button';
 
-// useFormState가 기대하는 상태: error는 optional string
+// useFormState媛 湲곕??섎뒗 ?곹깭: error??optional string
 type FormState = { ok: boolean; error?: string };
 
 const initialState: FormState = { ok: false };
 
-// 서버 액션 래핑: null/undefined에 대해 규격화
+// ?쒕쾭 ?≪뀡 ?섑븨: null/undefined?????洹쒓꺽??
 async function signInAdapter(_: FormState, formData: FormData): Promise<FormState> {
   const r = await signInWithPassword(formData);
   return r.ok ? { ok: true } : { ok: false, error: r.error ?? 'Unknown error' };
@@ -23,9 +23,9 @@ function SubmitButton() {
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      title={pending ? 'Signing in…' : 'Sign in'}
+      title={pending ? 'Signing in?? : 'Sign in'}
     >
-      {pending ? 'Signing in…' : 'Sign in'}
+      {pending ? 'Signing in?? : 'Sign in'}
     </Button>
   );
 }
@@ -65,3 +65,5 @@ export default function LoginForm() {
     </form>
   );
 }
+
+

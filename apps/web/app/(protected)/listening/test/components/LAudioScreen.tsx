@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/listening/test/components/LAudioScreen.tsx
+﻿// apps/web/app/(protected)/listening/test/components/LAudioScreen.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -21,7 +21,7 @@ export default function LAudioScreen({
   audioUrl: string;
   onEnded?: () => void;
   onNext?: () => void;
-  /** 재생 카운트를 소비(consume)할 때 필요한 정보 */
+  /** ?ъ깮 移댁슫?몃? ?뚮퉬(consume)?????꾩슂???뺣낫 */
   sessionId: string;
   trackId?: string;
   mode: Mode;
@@ -35,12 +35,12 @@ export default function LAudioScreen({
   const [rate, setRate] = useState(1);
   const [playing, setPlaying] = useState(false);
 
-  // consume 상태
+  // consume ?곹깭
   const [consumed, setConsumed] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // 트랙 변경 시 초기화
+  // ?몃옓 蹂寃???珥덇린??
   useEffect(() => {
     setConsumed(false);
     setRemaining(null);
@@ -48,14 +48,14 @@ export default function LAudioScreen({
     autoStartedRef.current = false;
   }, [sessionId, trackId, audioUrl]);
 
-  // 오디오 이벤트 바인딩
+  // ?ㅻ뵒???대깽??諛붿씤??
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
 
     const onLoadedMeta = () => {
       setDur(el.duration || 0);
-      // 초기 로드 시 재생 속도 반영 (브라우저별 메타 로드 타이밍 차이 고려)
+      // 珥덇린 濡쒕뱶 ???ъ깮 ?띾룄 諛섏쁺 (釉뚮씪?곗?蹂?硫뷀? 濡쒕뱶 ??대컢 李⑥씠 怨좊젮)
       el.playbackRate = rate;
     };
     const onTime = () => {
@@ -86,14 +86,14 @@ export default function LAudioScreen({
     };
   }, [onEnded, rate]);
 
-  // 재생 속도 변경 시 오디오에 반영
+  // ?ъ깮 ?띾룄 蹂寃????ㅻ뵒?ㅼ뿉 諛섏쁺
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = rate;
     }
   }, [rate]);
 
-  // 소비 + 재생 (최초 재생 시 1회 consume)
+  // ?뚮퉬 + ?ъ깮 (理쒖큹 ?ъ깮 ??1??consume)
   const tryPlay = async () => {
     const el = audioRef.current;
     if (!el) return;
@@ -106,16 +106,16 @@ export default function LAudioScreen({
         setConsumed(true);
       } catch (e: any) {
         setErr(e?.message ?? String(e));
-        return; // consume 실패 시 재생하지 않음
+        return; // consume ?ㅽ뙣 ???ъ깮?섏? ?딆쓬
       }
     }
 
     el.play().catch(() => {
-      // 자동재생 차단 등으로 실패할 수 있음(무시)
+      // ?먮룞?ъ깮 李⑤떒 ?깆쑝濡??ㅽ뙣?????덉쓬(臾댁떆)
     });
   };
 
-  // 진입 시 자동 소비/재생 (StrictMode 중복 방지)
+  // 吏꾩엯 ???먮룞 ?뚮퉬/?ъ깮 (StrictMode 以묐났 諛⑹?)
   useEffect(() => {
     if (autoStartedRef.current) return;
     autoStartedRef.current = true;
@@ -148,14 +148,14 @@ export default function LAudioScreen({
     const pct = Number(e.target.value);
     const d = el.duration || 0;
     el.currentTime = (pct / 100) * d;
-    setProgress(pct); // 슬라이더 즉시 반영
+    setProgress(pct); // ?щ씪?대뜑 利됱떆 諛섏쁺
   };
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6">
       <h3 className="mb-4 text-lg font-semibold">{title}</h3>
 
-      {/* 중앙 이미지 (next/image 사용) */}
+      {/* 以묒븰 ?대?吏 (next/image ?ъ슜) */}
       <div className="mb-6 flex min-h-[360px] items-center justify-center rounded-2xl border bg-white p-4">
         {imageUrl ? (
           <div className="relative h-[320px] w-full max-w-[720px]">
@@ -173,7 +173,7 @@ export default function LAudioScreen({
         )}
       </div>
 
-      {/* 커스텀 컨트롤러 */}
+      {/* 而ㅼ뒪? 而⑦듃濡ㅻ윭 */}
       <div className="rounded-2xl border bg-white p-4">
         <div className="mb-3 flex items-center gap-3">
           <button
@@ -211,7 +211,7 @@ export default function LAudioScreen({
               ? `Remaining plays: ${remaining}`
               : consumed
                 ? 'Consumed'
-                : 'Preparing…'}
+                : 'Preparing??}
           </span>
           {err && <span className="text-red-600">Consume error: {err}</span>}
         </div>
@@ -226,8 +226,10 @@ export default function LAudioScreen({
         </div>
       </div>
 
-      {/* 실제 오디오는 보조(접근성 고려 시 화면에서 숨김) */}
+      {/* ?ㅼ젣 ?ㅻ뵒?ㅻ뒗 蹂댁“(?묎렐??怨좊젮 ???붾㈃?먯꽌 ?④?) */}
       <audio ref={audioRef} src={audioUrl} className="sr-only" preload="auto" />
     </div>
   );
 }
+
+

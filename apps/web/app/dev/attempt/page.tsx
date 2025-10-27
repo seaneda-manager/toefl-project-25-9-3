@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/attempt-demo/page.tsx  ← 경로는 원본에 맞춰 수정하세요
+﻿// apps/web/app/(protected)/attempt-demo/page.tsx  ??寃쎈줈???먮낯??留욎떠 ?섏젙?섏꽭??
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -9,11 +9,11 @@ type Section = 'reading' | 'listening' | 'speaking' | 'writing';
 type AnswerKey = Record<string, number[] | number>;
 type SetRow = { payload_json?: { answer_key?: AnswerKey } | null };
 
-// 유틸: 배열 정렬 + 중복 제거
+// ?좏떥: 諛곗뿴 ?뺣젹 + 以묐났 ?쒓굅
 function asSortedUnique(arr: number[]) {
   return [...new Set(arr)].sort((a, b) => a - b);
 }
-// 유틸: 배열 일치
+// ?좏떥: 諛곗뿴 ?쇱튂
 function arrEq(a: number[], b: number[] | number) {
   if (!Array.isArray(b)) return false;
   const A = asSortedUnique(a);
@@ -27,14 +27,14 @@ export default function Page() {
   const [section, setSection] = useState<Section>('reading');
   const [setId, setSetId] = useState<string>('TPO 1');
 
-  // 로그 & 상태
+  // 濡쒓렇 & ?곹깭
   const [log, setLog] = useState<string[]>([]);
   const [savingQ, setSavingQ] = useState<number | null>(null);
   const [cachedKey, setCachedKey] = useState<AnswerKey | null>(null);
 
   const push = (s: string) => setLog((v) => [s, ...v].slice(0, 50));
 
-  // Answer key 캐싱
+  // Answer key 罹먯떛
   async function getAnswerKey(): Promise<AnswerKey> {
     if (cachedKey) return cachedKey;
 
@@ -54,7 +54,7 @@ export default function Page() {
     return key;
   }
 
-  // Attempt 시작
+  // Attempt ?쒖옉
   const startAttempt = async () => {
     const { data: auth } = await supabase.auth.getUser();
     const user = auth?.user;
@@ -63,7 +63,7 @@ export default function Page() {
       alert('Login required');
       return;
     }
-    // 세트/섹션 바뀌었을 수 있으니 캐시 무효
+    // ?명듃/?뱀뀡 諛붾뚯뿀?????덉쑝??罹먯떆 臾댄슚
     setCachedKey(null);
 
     const { data, error } = await supabase
@@ -85,7 +85,7 @@ export default function Page() {
     push(`started attempt ${data!.id}`);
   };
 
-  // 답안 저장
+  // ?듭븞 ???
   const saveAnswer = async (q: number, picks: number[]) => {
     if (!attemptId) {
       push('Please click Start first');
@@ -108,7 +108,7 @@ export default function Page() {
             {
               attempt_id: attemptId,
               q_number: q,
-              picks, // jsonb 컬럼 권장
+              picks, // jsonb 而щ읆 沅뚯옣
               correct: isCorrect,
               duration_ms: null,
             },
@@ -126,7 +126,7 @@ export default function Page() {
     }
   };
 
-  // 점수 계산 (RPC)
+  // ?먯닔 怨꾩궛 (RPC)
   const computeScore = async () => {
     if (!attemptId) return;
     const { data, error } = await supabase.rpc('attempt_score', { attempt_id: attemptId });
@@ -134,7 +134,7 @@ export default function Page() {
       push(error.message);
       return;
     }
-    // RPC가 단일 row 또는 배열 반환할 수 있음 → 유연 처리
+    // RPC媛 ?⑥씪 row ?먮뒗 諛곗뿴 諛섑솚?????덉쓬 ???좎뿰 泥섎━
     const row = (Array.isArray(data) ? data[0] : data) ?? { total: 0, correct: 0 };
     push(`SCORE: ${row.correct} / ${row.total}`);
   };
@@ -157,8 +157,8 @@ export default function Page() {
           value={section}
           onChange={(e) => {
             setSection(e.target.value as Section);
-            setCachedKey(null); // 섹션 변경 시 캐시 무효
-            setAttemptId(null); // 섹션 바뀌면 기존 attempt 무효
+            setCachedKey(null); // ?뱀뀡 蹂寃???罹먯떆 臾댄슚
+            setAttemptId(null); // ?뱀뀡 諛붾뚮㈃ 湲곗〈 attempt 臾댄슚
           }}
         >
           {(['reading', 'listening', 'speaking', 'writing'] as Section[]).map((s) => (
@@ -172,8 +172,8 @@ export default function Page() {
           value={setId}
           onChange={(e) => {
             setSetId(e.target.value);
-            setCachedKey(null); // 세트 변경 시 캐시 무효
-            setAttemptId(null); // 세트 바뀌면 기존 attempt 무효
+            setCachedKey(null); // ?명듃 蹂寃???罹먯떆 臾댄슚
+            setAttemptId(null); // ?명듃 諛붾뚮㈃ 湲곗〈 attempt 臾댄슚
           }}
         />
 
@@ -185,17 +185,17 @@ export default function Page() {
 
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => saveAnswer(1, [2])} disabled={!attemptId || savingQ === 1}>
-          {savingQ === 1 ? 'Saving…' : 'Q1 pick 2'}
+          {savingQ === 1 ? 'Saving?? : 'Q1 pick 2'}
         </button>
         <button onClick={() => saveAnswer(2, [1, 3])} disabled={!attemptId || savingQ === 2}>
-          {savingQ === 2 ? 'Saving…' : 'Q2 picks 1,3'}
+          {savingQ === 2 ? 'Saving?? : 'Q2 picks 1,3'}
         </button>
         <button onClick={() => saveAnswer(3, [])} disabled={!attemptId || savingQ === 3}>
-          {savingQ === 3 ? 'Saving…' : 'Q3 clear'}
+          {savingQ === 3 ? 'Saving?? : 'Q3 clear'}
         </button>
       </div>
 
-      {/* 최근 로그가 에러면 진하게 강조 */}
+      {/* 理쒓렐 濡쒓렇媛 ?먮윭硫?吏꾪븯寃?媛뺤“ */}
       {log[0]?.startsWith('save error:') && (
         <div style={{ marginTop: 8, color: '#b91c1c', fontSize: 12 }}>{log[0]}</div>
       )}
@@ -208,3 +208,5 @@ export default function Page() {
     </div>
   );
 }
+
+

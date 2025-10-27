@@ -1,7 +1,7 @@
-// apps/web/types/types-listening-extended.ts
+﻿// apps/web/types/types-listening-extended.ts
 import { z } from 'zod';
 
-/** 매우 관대한 스키마: 과거/현재 필드명 혼용을 모두 허용 */
+/** 留ㅼ슦 愿????ㅽ궎留? 怨쇨굅/?꾩옱 ?꾨뱶紐??쇱슜??紐⑤몢 ?덉슜 */
 const ChoiceZ = z
   .object({
     id: z.union([z.string(), z.number()]).optional(),
@@ -16,12 +16,12 @@ const QuestionZ = z
   .object({
     id: z.union([z.string(), z.number()]).optional(),
     number: z.number().int().positive().optional(),
-    // 본문 필드 혼용
+    // 蹂몃Ц ?꾨뱶 ?쇱슜
     prompt: z.string().optional(),
     stem: z.string().optional(),
     text: z.string().optional(),
     body: z.string().optional(),
-    // 선택지 필드 혼용
+    // ?좏깮吏 ?꾨뱶 ?쇱슜
     choices: z.array(ChoiceZ).optional(),
     options: z.array(ChoiceZ).optional(),
     meta: z.any().optional(),
@@ -33,7 +33,7 @@ const TrackZ = z
     id: z.union([z.string(), z.number()]),
     title: z.string().optional(),
     name: z.string().optional(),
-    // 오디오/이미지 필드 혼용
+    // ?ㅻ뵒???대?吏 ?꾨뱶 ?쇱슜
     audioUrl: z.string().optional(),
     audio_url: z.string().optional(),
     audio: z.string().optional(),
@@ -43,7 +43,7 @@ const TrackZ = z
   })
   .passthrough();
 
-/** 최상위 리스닝 세트 */
+/** 理쒖긽??由ъ뒪???명듃 */
 export const ListeningSetZ = z
   .object({
     setId: z.string().optional(),
@@ -53,3 +53,5 @@ export const ListeningSetZ = z
   .passthrough();
 
 export type ListeningSet = z.infer<typeof ListeningSetZ>;
+
+

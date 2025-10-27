@@ -3,32 +3,70 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@/app/*": ["./app/*"],
-      "@/components/*": ["./components/*"],
-      "@ui/*": ["./components/ui/*"],
-      "@test/*": ["./components/test/*"],
-      "@reading/*": ["./components/reading/*"],
-      "@listening/*": ["./components/listening/*"],
-      "@dashboard/*": ["./components/dashboard/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/styles/*": ["./styles/*"],
-      "@/types/*": ["./app/types/*"],
-      "@internal-types/*": ["../../packages/types/src/*"],
-      "@/models/*": ["./models/*"],
-      "@/models/reading": ["./models/reading/index.ts"]
+      "@/*": [
+        "./*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@ui/*": [
+        "./components/ui/*"
+      ],
+      "@test/*": [
+        "./components/test/*"
+      ],
+      "@reading/*": [
+        "./components/reading/*"
+      ],
+      "@listening/*": [
+        "./components/listening/*"
+      ],
+      "@dashboard/*": [
+        "./components/dashboard/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/styles/*": [
+        "./styles/*"
+      ],
+      "@/types/*": [
+        "./app/types/*"
+      ],
+      "@internal-types/*": [
+        "../../packages/types/src/*"
+      ],
+      "@/models/*": [
+        "./models/*"
+      ],
+      "@/models/reading": [
+        "./models/reading/index.ts"
+      ]
     },
-
     // ⬇️ 보강 포인트
-    "plugins": [{ "name": "next" }],
-    "jsx": "react-jsx",
-    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "jsx": "preserve",
+    "lib": [
+      "ES2021",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "moduleResolution": "bundler",
-    "types": ["node", "react", "react-dom"],
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
     "allowJs": true,
     "incremental": true,
     "skipLibCheck": true,
@@ -36,6 +74,12 @@
     // "strict": true,           // 장기적으로 추천
     // "noImplicitAny": false    // 급하면 임시 완화용
   },
-  "include": ["./**/*.ts", "./**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

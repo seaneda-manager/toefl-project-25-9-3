@@ -1,6 +1,6 @@
-// apps/web/app/(protected)/reading/test-v2/page.tsx
+﻿// apps/web/app/(protected)/reading/test-v2/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
-import type { RPassage, RQuestion } from '@/types/types-reading';
+import type { RPassage, RQuestion } from '@/models/reading';
 import ClientPage from '../test/ClientPage';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 type RQType = RQuestion['type'];
 
-/** 안전한 JSON 파서: 이미 객체면 그대로, 문자열이면 try-parse, 아니면 fallback */
+/** ?덉쟾??JSON ?뚯꽌: ?대? 媛앹껜硫?洹몃?濡? 臾몄옄?댁씠硫?try-parse, ?꾨땲硫?fallback */
 function safeJson<T>(val: unknown, fallback: T): T {
   if (val == null) return fallback;
   if (typeof val === 'object') return val as T;
@@ -18,7 +18,7 @@ function safeJson<T>(val: unknown, fallback: T): T {
   return fallback;
 }
 
-/** 질문 타입 정규화 */
+/** 吏덈Ц ????뺢퇋??*/
 function normalizeType(t: unknown): RQType {
   const allowed: RQType[] = [
     'vocab',
@@ -32,7 +32,7 @@ function normalizeType(t: unknown): RQType {
     'summary',
     'organization',
   ];
-  if (t === 'single') return 'detail'; // 구버전 호환
+  if (t === 'single') return 'detail'; // 援щ쾭???명솚
   return (allowed as unknown as string[]).includes(String(t)) ? (t as RQType) : 'detail';
 }
 
@@ -44,7 +44,7 @@ export default async function Page({
   const setId = searchParams?.setId ?? 'demo-set';
   const supabase = await getSupabaseServer();
 
-  // 최신 passage (해당 setId)
+  // 理쒖떊 passage (?대떦 setId)
   const { data: p, error: pErr } = await supabase
     .from('reading_passages')
     .select('*')
@@ -53,8 +53,8 @@ export default async function Page({
     .limit(1)
     .maybeSingle();
 
-  if (pErr) return <div className="p-6 text-red-600">패시지 로드 오류: {pErr.message}</div>;
-  if (!p) return <div className="p-6">Passage 없음 (setId={setId}).</div>;
+  if (pErr) return <div className="p-6 text-red-600">?⑥떆吏 濡쒕뱶 ?ㅻ쪟: {pErr.message}</div>;
+  if (!p) return <div className="p-6">Passage ?놁쓬 (setId={setId}).</div>;
 
   const { data: qs, error: qErr } = await supabase
     .from('reading_questions')
@@ -63,10 +63,10 @@ export default async function Page({
     .order('number', { ascending: true });
 
   if (qErr) {
-    return <div className="p-6 text-red-600">문항 로드 오류: {qErr.message}</div>;
+    return <div className="p-6 text-red-600">臾명빆 濡쒕뱶 ?ㅻ쪟: {qErr.message}</div>;
   }
 
-  // ⚠️ RPassage/RQuestion 타입에 존재하는 필드만 구성 (set_id/ui/passag e_id 제거)
+  // ?좑툘 RPassage/RQuestion ??낆뿉 議댁옱?섎뒗 ?꾨뱶留?援ъ꽦 (set_id/ui/passag e_id ?쒓굅)
   const passage: RPassage = {
     id: p.id,
     title: p.title ?? '',
@@ -99,3 +99,5 @@ export default async function Page({
     </div>
   );
 }
+
+

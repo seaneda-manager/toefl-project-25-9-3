@@ -1,1 +1,3 @@
-export { default } from '../../sets/page';
+﻿export { default } from '../../sets/page';
+
+

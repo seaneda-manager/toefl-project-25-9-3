@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
@@ -43,27 +43,27 @@ export default function PlasmicLoginForm({
   }
 
   function onPwKey(evt: React.KeyboardEvent<HTMLInputElement>) {
-    // CapsLock 감지
+    // CapsLock 媛먯?
     if (evt.getModifierState && typeof evt.getModifierState === "function") {
       setCapsOn(evt.getModifierState("CapsLock"));
     }
-    // Enter로 제출
+    // Enter濡??쒖텧
     if (evt.key === "Enter" && !loading) {
       onSubmit?.();
     }
   }
 
-  // 폼 전체에서 Enter로 제출(텍스트 입력 중일 때 동작)
+  // ???꾩껜?먯꽌 Enter濡??쒖텧(?띿뒪???낅젰 以묒씪 ???숈옉)
   function onFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
     if (e.key === "Enter" && !loading) {
-      // textarea가 아닌 경우만 (있다면)
+      // textarea媛 ?꾨땶 寃쎌슦留?(?덈떎硫?
       const target = e.target as HTMLElement;
       const isTextArea = target?.tagName?.toLowerCase() === "textarea";
       if (!isTextArea) onSubmit?.();
     }
   }
 
-  // 로딩 시작 시 버튼에 포커스 고정(중복 제출 방지 UX)
+  // 濡쒕뵫 ?쒖옉 ??踰꾪듉???ъ빱??怨좎젙(以묐났 ?쒖텧 諛⑹? UX)
   useEffect(() => {
     if (!loading) return;
     const btn = formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -75,8 +75,8 @@ export default function PlasmicLoginForm({
       <div className="grid w-full max-w-[960px] gap-6 md:grid-cols-[420px_1fr]">
         {/* Left: Login card */}
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow">
-          <h1 className="mb-1 text-xl font-semibold">로그인</h1>
-          <p className="mb-4 text-sm text-neutral-400">아이디(이메일)와 비밀번호를 입력하세요.</p>
+          <h1 className="mb-1 text-xl font-semibold">濡쒓렇??/h1>
+          <p className="mb-4 text-sm text-neutral-400">?꾩씠???대찓??? 鍮꾨?踰덊샇瑜??낅젰?섏꽭??</p>
 
           <form
             ref={formRef}
@@ -87,7 +87,7 @@ export default function PlasmicLoginForm({
             aria-describedby={error ? errId : undefined}
           >
             <label className="block" htmlFor={emailId}>
-              <span className="mb-1 block text-sm text-neutral-300">아이디(이메일)</span>
+              <span className="mb-1 block text-sm text-neutral-300">?꾩씠???대찓??</span>
               <input
                 id={emailId}
                 name="email"
@@ -106,7 +106,7 @@ export default function PlasmicLoginForm({
             </label>
 
             <label className="block" htmlFor={pwId}>
-              <span className="mb-1 block text-sm text-neutral-300">비밀번호</span>
+              <span className="mb-1 block text-sm text-neutral-300">鍮꾨?踰덊샇</span>
               <div className="relative">
                 <input
                   id={pwId}
@@ -117,7 +117,7 @@ export default function PlasmicLoginForm({
                   onChange={(e) => onChangePassword?.(e.target.value)}
                   onKeyUp={onPwKey}
                   onKeyDown={onPwKey}
-                  placeholder="••••••••"
+                  placeholder="?™™™™™™™?
                   className="w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 pr-20 focus:outline-none focus:ring-2 focus:ring-neutral-500"
                   autoComplete="current-password"
                   aria-invalid={!!error || undefined}
@@ -131,12 +131,12 @@ export default function PlasmicLoginForm({
                   onClick={() => setShowPw((s) => !s)}
                   aria-pressed={showPw}
                 >
-                  {showPw ? "숨기기" : "표시"}
+                  {showPw ? "?④린湲? : "?쒖떆"}
                 </button>
               </div>
               {capsOn && (
                 <div id={`${pwId}-caps`} className="mt-1 text-xs text-amber-400">
-                  Caps Lock이 켜져 있습니다.
+                  Caps Lock??耳쒖졇 ?덉뒿?덈떎.
                 </div>
               )}
             </label>
@@ -151,7 +151,7 @@ export default function PlasmicLoginForm({
                   checked={remember}
                   onChange={(e) => onToggleRemember?.(e.target.checked)}
                 />
-                아이디 저장
+                ?꾩씠?????
               </label>
               <span className="opacity-40">|</span>
               <button
@@ -159,7 +159,7 @@ export default function PlasmicLoginForm({
                 className="underline underline-offset-4 hover:opacity-80"
                 onClick={() => onFindId?.()}
               >
-                아이디 찾기
+                ?꾩씠??李얘린
               </button>
               <span className="opacity-40">|</span>
               <button
@@ -167,7 +167,7 @@ export default function PlasmicLoginForm({
                 className="underline underline-offset-4 hover:opacity-80"
                 onClick={() => onForgotPw?.()}
               >
-                비밀번호 찾기
+                鍮꾨?踰덊샇 李얘린
               </button>
             </div>
 
@@ -185,10 +185,10 @@ export default function PlasmicLoginForm({
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
-                  <Spinner /> 로그인 중…
+                  <Spinner /> 濡쒓렇??以묅?
                 </span>
               ) : (
-                "확인"
+                "?뺤씤"
               )}
             </button>
           </form>
@@ -201,18 +201,18 @@ export default function PlasmicLoginForm({
               <div className="relative mx-auto mb-4 h-56 w-56 opacity-90">
                 <Image
                   src="/images/login-hero.png"
-                  alt="학습 히어로 이미지"
+                  alt="?숈뒿 ?덉뼱濡??대?吏"
                   fill
                   sizes="224px"
                   className="object-contain"
                   priority
-                  // 이미지가 외부 CDN 등으로 이동하더라도 크래시 방지
+                  // ?대?吏媛 ?몃? CDN ?깆쑝濡??대룞?섎뜑?쇰룄 ?щ옒??諛⑹?
                   unoptimized
                 />
               </div>
               <h2 className="text-lg font-semibold">Klai Prime English</h2>
               <p className="mt-1 text-sm text-neutral-400">
-                레이아웃/이미지는 Plasmic에서 바꾸고, 코드는 이 파일만 교체하면 됩니다.
+                ?덉씠?꾩썐/?대?吏??Plasmic?먯꽌 諛붽씀怨? 肄붾뱶?????뚯씪留?援먯껜?섎㈃ ?⑸땲??
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function PlasmicLoginForm({
   );
 }
 
-/* ────────── small ui ────────── */
+/* ?????????? small ui ?????????? */
 function Spinner() {
   return (
     <svg
@@ -242,3 +242,5 @@ function Spinner() {
     </svg>
   );
 }
+
+

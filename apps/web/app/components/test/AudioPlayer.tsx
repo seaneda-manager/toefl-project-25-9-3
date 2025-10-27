@@ -1,11 +1,11 @@
-// normalized utf8
+﻿// normalized utf8
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 type Props = {
   src?: string;
-  oneShot?: boolean;          // ���� �� ��� ����
-  disableSeek?: boolean;      // Ž��(�巡��) ����
+  oneShot?: boolean;          // 占쏙옙占쏙옙 占쏙옙 占쏙옙占?占쏙옙占쏙옙
+  disableSeek?: boolean;      // 탐占쏙옙(占썲래占쏙옙) 占쏙옙占쏙옙
   onStart?: () => void;
   onEnd?: () => void;
 };
@@ -23,7 +23,7 @@ export default function AudioPlayer({
   const lastTimeRef = useRef(0);
   const [started, setStarted] = useState(false);
 
-  // src ���� �� �ʱ�ȭ
+  // src 占쏙옙占쏙옙 占쏙옙 占십깍옙화
   useEffect(() => {
     startedOnceRef.current = false;
     endedRef.current = false;
@@ -31,7 +31,7 @@ export default function AudioPlayer({
     setStarted(false);
   }, [src]);
 
-  // �̺�Ʈ ���ε� (ref.current ������ ���)
+  // 占싱븝옙트 占쏙옙占싸듸옙 (ref.current 占쏙옙占쏙옙占쏙옙 占쏙옙占?
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -54,7 +54,7 @@ export default function AudioPlayer({
     };
     const onSeeking = () => {
       if (disableSeek) {
-        // seeking�� ��� �Ұ� �� �ð��� ����ġ
+        // seeking占쏙옙 占쏙옙占?占쌀곤옙 占쏙옙 占시곤옙占쏙옙 占쏙옙占쏙옙치
         el.currentTime = lastTimeRef.current;
       }
     };
@@ -79,7 +79,7 @@ export default function AudioPlayer({
     if (!el) return;
     if (!src || (oneShot && endedRef.current)) return;
     el.play().catch(() => {
-      /* �ڵ���� ��å ������ ���� ����: ���� */
+      /* 占쌘듸옙占쏙옙占?占쏙옙책 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙: 占쏙옙占쏙옙 */
     });
   }, [src, oneShot]);
 
@@ -105,3 +105,5 @@ export default function AudioPlayer({
     </div>
   );
 }
+
+

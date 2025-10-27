@@ -1,21 +1,21 @@
-// apps/web/app/api/listeningSet/route.ts
+﻿// apps/web/app/api/listeningSet/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
-// ✅ 타입/스키마는 웹앱 전용 types 위치로 고정
+// ??????ㅽ궎留덈뒗 ?뱀빋 ?꾩슜 types ?꾩튂濡?怨좎젙
 import type { ListeningTrack, LQuestion } from '@/types/types-listening';
 import { ListeningSetZ } from '@/types/types-listening-extended';
 
-// 러너가 기대하는 최종 형태
+// ?щ꼫媛 湲곕??섎뒗 理쒖쥌 ?뺥깭
 type LoadedSet = {
   setId: string;
   conversation: ListeningTrack & { title?: string; imageUrl?: string };
   lecture: ListeningTrack & { title?: string; imageUrl?: string };
 };
 
-// ────────────────────────────────────────────────────────────
-// 데모 세트(데이터가 없거나 id=demo-set일 때 반환)
-// ────────────────────────────────────────────────────────────
+// ????????????????????????????????????????????????????????????
+// ?곕え ?명듃(?곗씠?곌? ?녾굅??id=demo-set????諛섑솚)
+// ????????????????????????????????????????????????????????????
 function buildDemoSet(id: string): LoadedSet {
   const q1: LQuestion = {
     id: 'cq1',
@@ -63,14 +63,14 @@ function buildDemoSet(id: string): LoadedSet {
     setId: id,
     conversation: {
       id: 'conv-1',
-      title: 'Conversation · Office Hours',
+      title: 'Conversation 쨌 Office Hours',
       imageUrl: '/images/conv-office-hours.jpg',
       audioUrl: '/audio/conv1-full.mp3',
       questions: [q1, q2],
     },
     lecture: {
       id: 'lec-1',
-      title: 'Lecture · Paleontology',
+      title: 'Lecture 쨌 Paleontology',
       imageUrl: '/images/lecture-fossils.jpg',
       audioUrl: '/audio/lec1-full.mp3',
       questions: [lq1],
@@ -78,7 +78,7 @@ function buildDemoSet(id: string): LoadedSet {
   };
 }
 
-// ListeningSetZ 스펙을 LoadedSet으로 정규화
+// ListeningSetZ ?ㅽ럺??LoadedSet?쇰줈 ?뺢퇋??
 function normalizeToLoadedSet(id: string, spec: any): LoadedSet {
   const looksLoaded =
     spec &&
@@ -143,7 +143,7 @@ export async function GET(req: Request) {
   try {
     const supabase = await getSupabaseServer();
 
-    // 0) 인증
+    // 0) ?몄쬆
     const {
       data: { user },
       error: userErr,
@@ -152,16 +152,16 @@ export async function GET(req: Request) {
     if (userErr) return NextResponse.json({ error: userErr.message }, { status: 500 });
     if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // 1) 파라미터
+    // 1) ?뚮씪誘명꽣
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id') || 'demo-set';
 
-    // 2) 데모 세트 즉시 반환
+    // 2) ?곕え ?명듃 利됱떆 諛섑솚
     if (id === 'demo-set') {
       return NextResponse.json(buildDemoSet(id));
     }
 
-    // 3) 접근 권한 확인
+    // 3) ?묎렐 沅뚰븳 ?뺤씤
     const { data: allow, error: allowErr } = await supabase
       .from('v_user_listening_sets')
       .select('id, downloaded')
@@ -174,7 +174,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
-    // 4) listening_sets.spec 로드
+    // 4) listening_sets.spec 濡쒕뱶
     const { data, error } = await supabase
       .from('listening_sets')
       .select('spec')
@@ -183,12 +183,12 @@ export async function GET(req: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    // 4-1) 스펙 없으면 데모로 대체(200)
+    // 4-1) ?ㅽ럺 ?놁쑝硫??곕え濡??泥?200)
     if (!data?.spec) {
       return NextResponse.json(buildDemoSet('demo-set'), { status: 200 });
     }
 
-    // 5) Zod 검증 → 정규화 → 응답
+    // 5) Zod 寃利????뺢퇋?????묐떟
     const parsed = ListeningSetZ.safeParse(data.spec);
     if (!parsed.success) {
       return NextResponse.json(
@@ -204,3 +204,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+

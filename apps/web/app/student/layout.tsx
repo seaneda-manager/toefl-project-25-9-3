@@ -1,4 +1,4 @@
-// apps/web/app/student/layout.tsx
+﻿// apps/web/app/student/layout.tsx
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -11,7 +11,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   if (uerr) redirect('/auth/login');
   if (!user) redirect('/auth/login');
 
-  // ?�로?�에??role ?�선, ?�으�?user_metadata.role ?�용
+  // ?꾨줈?꾩뿉??role ?곗꽑, ?놁쑝硫?user_metadata.role ?ъ슜
   const { data: prof } = await supabase
     .from('profiles')
     .select('role')
@@ -20,10 +20,12 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   const role = (prof?.role ?? (user.user_metadata?.role as string | undefined)) || 'student';
 
-  // ?�생 ?�용 ?�이?�웃: 교사/관리자???�른 ?�?�보?�로 보냄
+  // ?숈깮 ?꾩슜 ?덉씠?꾩썐: 援먯궗/愿由ъ옄???ㅻⅨ ??쒕낫?쒕줈 蹂대깂
   if (role === 'teacher' || role === 'admin') {
-    redirect('/teacher/dashboard'); // ?�요?�면 admin?� '/admin'?�로 분기
+    redirect('/teacher/dashboard'); // ?꾩슂?섎㈃ admin? '/admin'?쇰줈 遺꾧린
   }
 
   return <>{children}</>;
 }
+
+

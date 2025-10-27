@@ -1,13 +1,15 @@
-// normalized utf8
+﻿// normalized utf8
 export default function AdminDashboard(){
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Dashboard</h1>
-      <p className="text-sm text-gray-500">콘텐�??�트(Reading/Listening)�??�성?�고 관리하?�요.</p>
+      <p className="text-sm text-gray-500">肄섑뀗占??占쏀듃(Reading/Listening)占??占쎌꽦?占쎄퀬 愿由ы븯?占쎌슂.</p>
       <ul className="list-disc ml-5 text-sm">
-        <li>?�쪽 ?�비게이?�의 <b>Sets</b>?�서 ?�트�??�성</li>
-        <li>?�트 ?��???지�??�랙, 문제, 보기�?차�??��??�결</li>
+        <li>?占쎌そ ?占쎈퉬寃뚯씠?占쎌쓽 <b>Sets</b>?占쎌꽌 ?占쏀듃占??占쎌꽦</li>
+        <li>?占쏀듃 ?占쏙옙???吏占??占쎈옓, 臾몄젣, 蹂닿린占?李⑨옙??占쏙옙??占쎄껐</li>
       </ul>
     </div>
   );
 }
+
+

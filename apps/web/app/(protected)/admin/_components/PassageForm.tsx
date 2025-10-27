@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState } from 'react';
 import type { Passage } from '@/app/types/types-cms';
 
@@ -43,3 +43,5 @@ export default function PassageForm({ setId, initial, onSaved }:{
     </form>
   );
 }
+
+

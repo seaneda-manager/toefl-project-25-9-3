@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { RPassage, RQuestion } from '@/lib/readingSchemas';
+import type { RPassage, RQuestion } from '@/models/reading/zod';
 import PassagePane from '@/components/reading/PassagePane';
 import SkimGate from '@/components/reading/SkimGate';
 import { submitReadingAnswer, finishReadingSession } from '@/actions/readingSession';
@@ -13,11 +13,11 @@ type Props = {
   sessionId: string;
   mode?: 'study' | 'exam' | 'review' | 'test';
   gateFirst?: boolean;
-  /** 완료 시 상위로 세션ID 전달 (라우팅 등은 상위에서 처리) */
+  /** ?꾨즺 ???곸쐞濡??몄뀡ID ?꾨떖 (?쇱슦???깆? ?곸쐞?먯꽌 泥섎━) */
   onFinishAction?: (sessionId: string | number) => void;
 };
 
-// 메타 요약 뷰어
+// 硫뷀? ?붿빟 酉곗뼱
 function viewMeta(q?: RQuestion) {
   const summary = (q?.meta?.summary ?? {}) as {
     candidates?: string[];
@@ -47,7 +47,7 @@ export default function TestRunnerV2({
     return (
       <SkimGate
         content={passage.content}
-        onUnlockAction={() => setGateDone(true)}  // ✅ 이름 변경
+        onUnlockAction={() => setGateDone(true)}  // ???대쫫 蹂寃?
       />
     );
   }
@@ -60,7 +60,7 @@ export default function TestRunnerV2({
   );
 }
 
-// Core: 실제 러너
+// Core: ?ㅼ젣 ?щ꼫
 function RunnerCore({
   passage,
   sessionId,
@@ -159,7 +159,7 @@ function RunnerCore({
   const next = useCallback(async () => {
     if (!qKey) return;
     if (!canNext) {
-      alert(isSummary ? `정확히 ${selectionCount}개를 선택해 주세요.` : '답안을 선택해 주세요.');
+      alert(isSummary ? `?뺥솗??${selectionCount}媛쒕? ?좏깮??二쇱꽭??` : '?듭븞???좏깮??二쇱꽭??');
       return;
     }
     await submitOne();
@@ -201,7 +201,7 @@ function RunnerCore({
   if (total === 0) {
     return (
       <div className="rounded-xl border p-4 text-sm">
-        로드된 문항이 없습니다. (passage: <b>{passage?.title ?? 'untitled'}</b>)
+        濡쒕뱶??臾명빆???놁뒿?덈떎. (passage: <b>{passage?.title ?? 'untitled'}</b>)
       </div>
     );
   }
@@ -214,7 +214,7 @@ function RunnerCore({
     return (
       <div className="p-6">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm text-neutral-500">Summary question · Full Text View</div>
+          <div className="text-sm text-neutral-500">Summary question 쨌 Full Text View</div>
           <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(false)}>
             View Questions
           </button>
@@ -256,7 +256,7 @@ function RunnerCore({
         <h2 className="mt-2 text-lg font-semibold">{q?.stem ?? ''}</h2>
         {isSummary && (
           <div className="mt-1 text-xs text-neutral-500">
-            Select <b>{selectionCount}</b> choices. (남은 선택: {remaining})
+            Select <b>{selectionCount}</b> choices. (?⑥? ?좏깮: {remaining})
           </div>
         )}
 
@@ -316,3 +316,5 @@ function RunnerCore({
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import type { Question, Choice } from '../../../types/types-cms';
@@ -210,7 +210,7 @@ export function ChoiceList({ questionId }: { questionId: string }) {
   };
 
   const remove = async (id: string) => {
-    if (!confirm('삭제할까요?')) return;
+    if (!confirm('??젣?좉퉴??')) return;
     const res = await fetch(`/api/admin/choices/${id}`, { method: 'DELETE' });
     if (res.ok) void load();
   };
@@ -260,3 +260,5 @@ export function ChoiceList({ questionId }: { questionId: string }) {
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import DataTable from '../_components/DataTable';
 import type { DbContentSet as ContentSet } from '@/app/types/types-cms';
 
@@ -26,7 +26,7 @@ export default async function SetsPage() {
 
       <DataTable<ContentSet>
         rows={rows}
-        empty="?�직 ?�트가 ?�습?�다. New Set???�러 ?�성?�세??"
+        empty="?占쎌쭅 ?占쏀듃媛 ?占쎌뒿?占쎈떎. New Set???占쎈윭 ?占쎌꽦?占쎌꽭??"
         columns={[
           {
             header: 'Title',
@@ -46,3 +46,5 @@ export default async function SetsPage() {
     </div>
   );
 }
+
+

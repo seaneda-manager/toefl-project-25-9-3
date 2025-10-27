@@ -1,8 +1,8 @@
-// normalized utf8
+﻿// normalized utf8
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-// NOTE: ������ Ŭ���̾�Ʈ���� ����� Supabase �ν��Ͻ�
+// NOTE: 占쏙옙占쏙옙占쏙옙 클占쏙옙占싱억옙트占쏙옙占쏙옙 占쏙옙占쏙옙占?Supabase 占싸쏙옙占싹쏙옙
 import { supabase } from "@/lib/supabaseClient";
 
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
@@ -35,11 +35,11 @@ export default function UpdatePasswordClient() {
     setErr(null);
 
     if (!PASSWORD_RULE.test(password)) {
-      setErr("8�� �̻�, �����ڿ� ���ڸ� ��� �����ؾ� �մϴ�.");
+      setErr("8占쏙옙 占싱삼옙, 占쏙옙占쏙옙占쌘울옙 占쏙옙占쌘몌옙 占쏙옙占?占쏙옙占쏙옙占쌔억옙 占쌌니댐옙.");
       return;
     }
     if (password !== confirm) {
-      setErr("�� ��й�ȣ�� Ȯ�� ��й�ȣ�� ��ġ���� �ʽ��ϴ�.");
+      setErr("占쏙옙 占쏙옙橘占싫ｏ옙占?확占쏙옙 占쏙옙橘占싫ｏ옙占?占쏙옙치占쏙옙占쏙옙 占십쏙옙占싹댐옙.");
       return;
     }
 
@@ -48,7 +48,7 @@ export default function UpdatePasswordClient() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
-      setMsg("��й�ȣ�� ����Ǿ����ϴ�. ��� �� Ȩ���� �̵��մϴ�.");
+      setMsg("占쏙옙橘占싫ｏ옙占?占쏙옙占쏙옙퓸占쏙옙占쏙옙求占? 占쏙옙占?占쏙옙 홈占쏙옙占쏙옙 占싱듸옙占쌌니댐옙.");
       setPassword("");
       setConfirm("");
 
@@ -56,7 +56,7 @@ export default function UpdatePasswordClient() {
         if (typeof window !== "undefined") window.location.href = "/";
       }, 1200);
     } catch (e: any) {
-      setErr(e?.message ?? "��й�ȣ ���� �� ������ �߻��߽��ϴ�.");
+      setErr(e?.message ?? "占쏙옙橘占싫?占쏙옙占쏙옙 占쏙옙 占쏙옙占쏙옙占쏙옙 占쌩삼옙占쌩쏙옙占싹댐옙.");
     } finally {
       setLoading(false);
     }
@@ -64,12 +64,12 @@ export default function UpdatePasswordClient() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">��й�ȣ ����</h1>
+      <h1 className="text-2xl font-semibold mb-6">占쏙옙橘占싫?占쏙옙占쏙옙</h1>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="pw" className="block text-sm mb-1">
-            �� ��й�ȣ
+            占쏙옙 占쏙옙橘占싫?
           </label>
           <input
             id="pw"
@@ -78,14 +78,14 @@ export default function UpdatePasswordClient() {
             className="w-full rounded-md border px-3 py-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="8�� �̻�, ����+���� ����"
+            placeholder="8占쏙옙 占싱삼옙, 占쏙옙占쏙옙+占쏙옙占쏙옙 占쏙옙占쏙옙"
             required
           />
         </div>
 
         <div>
           <label htmlFor="pw2" className="block text-sm mb-1">
-            �� ��й�ȣ Ȯ��
+            占쏙옙 占쏙옙橘占싫?확占쏙옙
           </label>
           <input
             id="pw2"
@@ -94,7 +94,7 @@ export default function UpdatePasswordClient() {
             className="w-full rounded-md border px-3 py-2"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            placeholder="�ٽ� �� �� �Է�"
+            placeholder="占쌕쏙옙 占쏙옙 占쏙옙 占쌉뤄옙"
             required
           />
         </div>
@@ -104,7 +104,7 @@ export default function UpdatePasswordClient() {
           disabled={!canSubmit}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
         >
-          {loading ? "���� �ߡ�" : "��й�ȣ ����"}
+          {loading ? "占쏙옙占쏙옙 占쌩∽옙" : "占쏙옙橘占싫?占쏙옙占쏙옙"}
         </button>
 
         {msg && (
@@ -121,3 +121,5 @@ export default function UpdatePasswordClient() {
     </main>
   );
 }
+
+

@@ -1,13 +1,13 @@
-// apps/web/app/api/listening/consume/route.ts
+﻿// apps/web/app/api/listening/consume/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import type { ConsumePlayRow, ConsumePlayResponse, Mode, CanonicalMode } from '@/app/types/listening';
 import { normalizeMode } from '@/app/types/listening';
 
-/** NULL-키 문제 방지를 위한 센티넬. DB에는 문자열로 저장, 응답에서는 null로 복원 */
+/** NULL-??臾몄젣 諛⑹?瑜??꾪븳 ?쇳떚?? DB?먮뒗 臾몄옄?대줈 ??? ?묐떟?먯꽌??null濡?蹂듭썝 */
 const TRACK_ALL = '__ALL__' as const;
 
-/** 정규형 모드 기준 기본 허용 회수 */
+/** ?뺢퇋??紐⑤뱶 湲곗? 湲곕낯 ?덉슜 ?뚯닔 */
 const DEFAULT_ALLOWED: Record<CanonicalMode, number> = {
   test: 1,
   study: 3,
@@ -27,9 +27,9 @@ export async function POST(req: Request) {
       return NextResponse.json(body, { status: 400 });
     }
 
-    const canon = normalizeMode(mode); // ← 정규형으로 고정
+    const canon = normalizeMode(mode); // ???뺢퇋?뺤쑝濡?怨좎젙
 
-    // 🔐 인증
+    // ?뵍 ?몄쬆
     const supabase = await getSupabaseServer();
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr) throw authErr;
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json(body, { status: 401 });
     }
 
-    // 1) 세션 소유자 확인
+    // 1) ?몄뀡 ?뚯쑀???뺤씤
     const { data: session, error: sErr } = await supabase
       .from('listening_sessions')
       .select('id, user_id')
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json(body, { status: 403 });
     }
 
-    // 2) 플레이 카운터 조회 (센티넬 키 사용)
+    // 2) ?뚮젅??移댁슫??議고쉶 (?쇳떚?????ъ슜)
     const trackKey = trackId ?? TRACK_ALL;
 
     const { data: existing, error: qErr } = await supabase
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const allowed = existing?.plays_allowed ?? DEFAULT_ALLOWED[canon];
     let used = existing?.plays_used ?? 0;
 
-    // 3) 1회 차감 (한도 내에서만)
+    // 3) 1??李④컧 (?쒕룄 ?댁뿉?쒕쭔)
     if (used < allowed) {
       used += 1;
       const { error: upErr } = await supabase
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         .upsert(
           {
             session_id: sessionId,
-            track_id: trackKey,   // DB에는 센티넬로 저장
+            track_id: trackKey,   // DB?먮뒗 ?쇳떚?щ줈 ???
             mode: canon,
             plays_allowed: allowed,
             plays_used: used,
@@ -83,10 +83,10 @@ export async function POST(req: Request) {
       if (upErr) throw upErr;
     }
 
-    // 응답용 행 (트랙 전체는 null로 복원)
+    // ?묐떟????(?몃옓 ?꾩껜??null濡?蹂듭썝)
     const row: ConsumePlayRow = {
       session_id: sessionId,
-      track_id: trackKey === TRACK_ALL ? null : trackKey, // ← types가 string|null 이므로 OK
+      track_id: trackKey === TRACK_ALL ? null : trackKey, // ??types媛 string|null ?대?濡?OK
       mode: canon,
       plays_allowed: allowed,
       plays_used: used,
@@ -100,3 +100,5 @@ export async function POST(req: Request) {
     return NextResponse.json(body, { status: 500 });
   }
 }
+
+

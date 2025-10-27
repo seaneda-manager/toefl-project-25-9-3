@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/listening/page.tsx
+﻿// apps/web/app/(protected)/listening/page.tsx
 export const dynamic = 'force-dynamic';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -12,16 +12,16 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // (protected) 아래지만 혹시 비로그인 접근 시 안내
+  // (protected) ?꾨옒吏留??뱀떆 鍮꾨줈洹몄씤 ?묎렐 ???덈궡
   if (!user) {
     return <div className="p-6">Please sign in.</div>;
   }
 
-  // NOTE: 실제 운영에서는 RPC가 더 권장됨 (예: listening_available_sets)
+  // NOTE: ?ㅼ젣 ?댁쁺?먯꽌??RPC媛 ??沅뚯옣??(?? listening_available_sets)
   // const { data: sets, error } = await supabase
   //   .rpc<AvailSet[]>('listening_available_sets', { p_user_id: user.id });
 
-  // 현재 로직 유지: 뷰에서 직접 조회
+  // ?꾩옱 濡쒖쭅 ?좎?: 酉곗뿉??吏곸젒 議고쉶
   const { data: sets, error } = await supabase
     .from('v_user_listening_sets')
     .select('id, tpo, title')
@@ -41,7 +41,7 @@ export default async function Page() {
       {!sets || sets.length === 0 ? (
         <>
           <p className="text-sm text-neutral-600">
-            다운로드된 TPO 세트가 없습니다. 먼저 자료를 다운로드해 주세요.
+            ?ㅼ슫濡쒕뱶??TPO ?명듃媛 ?놁뒿?덈떎. 癒쇱? ?먮즺瑜??ㅼ슫濡쒕뱶??二쇱꽭??
           </p>
         </>
       ) : (
@@ -49,8 +49,10 @@ export default async function Page() {
       )}
 
       <p className="text-xs text-neutral-500">
-        목록은 다운로드된 자료만 표시됩니다.
+        紐⑸줉? ?ㅼ슫濡쒕뱶???먮즺留??쒖떆?⑸땲??
       </p>
     </div>
   );
 }
+
+

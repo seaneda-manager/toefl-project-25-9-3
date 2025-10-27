@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/dev/listening-sample/page.tsx
+﻿// apps/web/app/(protected)/dev/listening-sample/page.tsx
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
@@ -16,13 +16,13 @@ import {
 } from '@/types/types-listening';
 
 /**
- * ✅ 이 페이지가 해결하는 문제
- * - setMode('t') ➜ setMode('test')로 수정 (TS2345 해결)
- * - ConsumePlayResponse에 error/data 안전 접근 (TS2339 해결)
- * - snake_case(session_id 등) 접근 제거, camelCase만 사용 (TS2339 해결)
+ * ?????섏씠吏媛 ?닿껐?섎뒗 臾몄젣
+ * - setMode('t') ??setMode('test')濡??섏젙 (TS2345 ?닿껐)
+ * - ConsumePlayResponse??error/data ?덉쟾 ?묎렐 (TS2339 ?닿껐)
+ * - snake_case(session_id ?? ?묎렐 ?쒓굅, camelCase留??ъ슜 (TS2339 ?닿껐)
  *
- * ⚠️ 전제
- * - types-listening.ts에 아래가 이미 존재해야 함:
+ * ?좑툘 ?꾩젣
+ * - types-listening.ts???꾨옒媛 ?대? 議댁옱?댁빞 ??
  *   export type ConsumePlayResponse =
  *     | { ok: true; data: ConsumePlayRow }
  *     | { ok: false; error: string };
@@ -30,7 +30,7 @@ import {
  *   export function normalizeConsumePlayRow(input: any): ConsumePlayRow { ... }
  */
 
-/* ----------------------- 데모용 트랙 샘플 ----------------------- */
+/* ----------------------- ?곕え???몃옓 ?섑뵆 ----------------------- */
 const demoTrack: ListeningTrack = {
   id: 't-demo-1',
   title: 'Campus Conversation',
@@ -65,11 +65,11 @@ const demoTrack: ListeningTrack = {
   ],
 };
 
-/* ----------------------- API 헬퍼 ----------------------- */
+/* ----------------------- API ?ы띁 ----------------------- */
 /**
- * 실제 프로젝트에 맞게 엔드포인트 경로만 바꾸면 됩니다.
- * 백엔드가 { ok, data } | { ok, error }를 주면 그대로 매핑하고,
- * row만 주는 경우도 normalize해서 흡수합니다.
+ * ?ㅼ젣 ?꾨줈?앺듃??留욊쾶 ?붾뱶?ъ씤??寃쎈줈留?諛붽씀硫??⑸땲??
+ * 諛깆뿏?쒓? { ok, data } | { ok, error }瑜?二쇰㈃ 洹몃?濡?留ㅽ븨?섍퀬,
+ * row留?二쇰뒗 寃쎌슦??normalize?댁꽌 ?≪닔?⑸땲??
  */
 async function consumePlay(params: {
   sessionId: string;
@@ -87,16 +87,16 @@ async function consumePlay(params: {
 
     const json = await res.json();
 
-    // 백엔드가 이미 구분형 응답을 줄 때
+    // 諛깆뿏?쒓? ?대? 援щ텇???묐떟??以???
     if (json && typeof json.ok === 'boolean') {
       if (json.ok) {
-        // data가 snake_case라도 페이지에서는 항상 camelCase로 쓰도록 normalize
+        // data媛 snake_case?쇰룄 ?섏씠吏?먯꽌????긽 camelCase濡??곕룄濡?normalize
         return { ok: true, data: normalizeConsumePlayRow(json.data) };
       }
       return { ok: false, error: String(json.error ?? 'Unknown error') };
     }
 
-    // row만 떨어지는 경우
+    // row留??⑥뼱吏??寃쎌슦
     const row = normalizeConsumePlayRow(json);
     return { ok: true, data: row };
   } catch (e: any) {
@@ -104,15 +104,15 @@ async function consumePlay(params: {
   }
 }
 
-/* ----------------------- 페이지 컴포넌트 ----------------------- */
+/* ----------------------- ?섏씠吏 而댄룷?뚰듃 ----------------------- */
 export default function ListeningSamplePage() {
-  // ✅ Mode 타입을 정확히 사용
+  // ??Mode ??낆쓣 ?뺥솗???ъ슜
   const [mode, setMode] = useState<Mode>('study');
   const [err, setErr] = useState<string | null>(null);
   const [row, setRow] = useState<ConsumePlayRow | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // 질문/오디오 정규화
+  // 吏덈Ц/?ㅻ뵒???뺢퇋??
   const track: NormalizedListeningTrack = useMemo(
     () => normalizeTrack(demoTrack),
     []
@@ -121,7 +121,7 @@ export default function ListeningSamplePage() {
   const audioUrl = useMemo(() => getAudioUrl(track), [track]);
 
   const switchToTest = useCallback(() => {
-    // ❌ setMode('t')  ➜  ✅ setMode('test')
+    // ??setMode('t')  ?? ??setMode('test')
     setMode('test');
   }, []);
 
@@ -132,14 +132,14 @@ export default function ListeningSamplePage() {
 
     const res = await consumePlay({ sessionId: 'dev-session-1' });
 
-    // ✅ 구분형 응답 안전 처리 (TS2339 방지)
+    // ??援щ텇???묐떟 ?덉쟾 泥섎━ (TS2339 諛⑹?)
     if (!res.ok) {
       setErr(res.error);
       setBusy(false);
       return;
     }
 
-    // ✅ camelCase만 사용
+    // ??camelCase留??ъ슜
     const normalized = normalizeConsumePlayRow(res.data);
     setRow(normalized);
     setBusy(false);
@@ -164,7 +164,7 @@ export default function ListeningSamplePage() {
         </div>
       </header>
 
-      {/* 오디오 영역 */}
+      {/* ?ㅻ뵒???곸뿭 */}
       <section className="space-y-2">
         <div className="text-sm font-medium">{track.title ?? 'Untitled'}</div>
         <audio controls src={audioUrl} className="w-full">
@@ -172,7 +172,7 @@ export default function ListeningSamplePage() {
         </audio>
       </section>
 
-      {/* 질문 프리뷰 */}
+      {/* 吏덈Ц ?꾨━酉?*/}
       <section className="rounded-lg border p-4">
         <h2 className="mb-2 text-sm font-semibold">Questions</h2>
         <ol className="space-y-3">
@@ -197,7 +197,7 @@ export default function ListeningSamplePage() {
         </ol>
       </section>
 
-      {/* Consume Play (플레이 차감) */}
+      {/* Consume Play (?뚮젅??李④컧) */}
       <section className="rounded-lg border p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Play Counter</h2>
@@ -219,7 +219,7 @@ export default function ListeningSamplePage() {
 
         {row && (
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            {/* ✅ 모두 camelCase 접근 (session_id 등 금지) */}
+            {/* ??紐⑤몢 camelCase ?묎렐 (session_id ??湲덉?) */}
             <div className="rounded border p-3">
               <div className="opacity-60">Session</div>
               <div className="font-semibold break-all">{row.sessionId}</div>
@@ -246,3 +246,5 @@ export default function ListeningSamplePage() {
     </main>
   );
 }
+
+

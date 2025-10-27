@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/listening/review/page.tsx
+﻿// apps/web/app/(protected)/listening/review/page.tsx
 export const dynamic = 'force-dynamic';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -25,7 +25,7 @@ export default async function Page({
 
   const supabase = await getSupabaseServer();
 
-  // ???�네�??�거 + .single() ???�???�언
+  // ???쒕꽕由??쒓굅 + .single() ??????⑥뼵
   const { data, error } = await supabase
     .rpc('listening_review_score', { p_session_id: sessionId })
     .single();
@@ -61,3 +61,5 @@ export default async function Page({
     </div>
   );
 }
+
+

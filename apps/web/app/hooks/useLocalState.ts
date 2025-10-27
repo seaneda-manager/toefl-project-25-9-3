@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 
 export function useLocalState<T>(key: string, initial: T) {
@@ -20,4 +20,6 @@ export function useLocalState<T>(key: string, initial: T) {
 
   return [state, setState] as const;
 }
+
+
 

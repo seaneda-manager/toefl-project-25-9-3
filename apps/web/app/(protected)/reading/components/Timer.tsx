@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useRef, useState } from 'react';
 
 export default function Timer({ seconds, onExpire }: { seconds: number; onExpire?: () => void }) {
@@ -26,4 +26,6 @@ export default function Timer({ seconds, onExpire }: { seconds: number; onExpire
 
   return <div className="text-sm font-mono">??{mm}:{ss}</div>;
 }
+
+
 

@@ -1,4 +1,4 @@
-// components/dashboard/TopbarClient.tsx
+﻿// components/dashboard/TopbarClient.tsx
 'use client';
 
 import { useMemo, useTransition } from 'react';
@@ -33,11 +33,13 @@ export default function TopbarClient({ email }: Props) {
           onClick={handleSignOut}
           disabled={isPending}
           aria-busy={isPending}
-          title={isPending ? 'Signing out…' : 'Sign out'}
+          title={isPending ? 'Signing out?? : 'Sign out'}
         >
-          {isPending ? 'Signing out…' : 'Sign out'}
+          {isPending ? 'Signing out?? : 'Sign out'}
         </button>
       </div>
     </div>
   );
 }
+
+

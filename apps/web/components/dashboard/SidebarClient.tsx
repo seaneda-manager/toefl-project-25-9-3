@@ -1,4 +1,4 @@
-// components/dashboard/SidebarClient.tsx
+﻿// components/dashboard/SidebarClient.tsx
 'use client';
 
 import Link from 'next/link';
@@ -10,7 +10,7 @@ type Props = { role: 'student' | 'teacher' };
 export default function SidebarClient({ role }: Props) {
   const pathname = usePathname();
 
-  // 활성 경로 판정: 끝의 슬래시는 무시하고, 하위 경로도 활성 처리
+  // ?쒖꽦 寃쎈줈 ?먯젙: ?앹쓽 ?щ옒?쒕뒗 臾댁떆?섍퀬, ?섏쐞 寃쎈줈???쒖꽦 泥섎━
   const isActive = (href: string) => {
     const clean = (s: string) => s.replace(/\/+$/, '');
     const cur = clean(pathname || '/');
@@ -18,8 +18,8 @@ export default function SidebarClient({ role }: Props) {
     return cur === tgt || cur.startsWith(tgt + '/');
   };
 
-  // NOTE: route group(예: (protected), (teacher))은 URL에 포함되지 않으므로
-  // 실제 URL 경로로만 작성해야 합니다.
+  // NOTE: route group(?? (protected), (teacher))? URL???ы븿?섏? ?딆쑝誘濡?
+  // ?ㅼ젣 URL 寃쎈줈濡쒕쭔 ?묒꽦?댁빞 ?⑸땲??
   const items = useMemo(
     () => [
       { section: 'Main', href: '/home', label: 'Home' },
@@ -41,7 +41,7 @@ export default function SidebarClient({ role }: Props) {
     [role]
   );
 
-  // 섹션별 그룹핑
+  // ?뱀뀡蹂?洹몃９??
   const groups = useMemo(() => {
     const map = new Map<string, typeof items>();
     for (const it of items) {
@@ -84,3 +84,5 @@ export default function SidebarClient({ role }: Props) {
     </nav>
   );
 }
+
+

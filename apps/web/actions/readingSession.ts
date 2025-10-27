@@ -1,5 +1,5 @@
-// apps/web/app/(protected)/reading/actions/readingSession.ts (예시 경로)
-// 실제 위치에 맞게 파일 경로는 유지하세요.
+﻿// apps/web/app/(protected)/reading/actions/readingSession.ts (?덉떆 寃쎈줈)
+// ?ㅼ젣 ?꾩튂??留욊쾶 ?뚯씪 寃쎈줈???좎??섏꽭??
 'use server';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -12,12 +12,12 @@ function asNullIfEmpty(v: string | undefined | null) {
 }
 
 /**
- * 세션 시작
+ * ?몄뀡 ?쒖옉
  */
 export async function startReadingSession(args: { setId?: string; passageId?: string; mode?: Mode }) {
   const supabase = await getSupabaseServer();
 
-  // 사용자 인증 (RLS를 위해 필수)
+  // ?ъ슜???몄쬆 (RLS瑜??꾪빐 ?꾩닔)
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth?.user) {
     return { ok: false as const, error: 'unauthorized' };
@@ -27,7 +27,7 @@ export async function startReadingSession(args: { setId?: string; passageId?: st
   const setId = asNullIfEmpty(args.setId);
   const passageId = asNullIfEmpty(args.passageId);
 
-  // 최소 setId는 있어야 집계/리뷰 가능
+  // 理쒖냼 setId???덉뼱??吏묎퀎/由щ럭 媛??
   if (!setId) {
     return { ok: false as const, error: 'setId required' };
   }
@@ -36,7 +36,7 @@ export async function startReadingSession(args: { setId?: string; passageId?: st
     user_id: auth.user.id,
     set_id: setId,
     mode,
-    // passageId가 있을 경우 첫 진입 지점으로 메타에 기록
+    // passageId媛 ?덉쓣 寃쎌슦 泥?吏꾩엯 吏?먯쑝濡?硫뷀???湲곕줉
     meta: passageId ? { passageId } : {},
   };
 
@@ -54,14 +54,14 @@ export async function startReadingSession(args: { setId?: string; passageId?: st
 }
 
 /**
- * 답안 제출 (upsert)
+ * ?듭븞 ?쒖텧 (upsert)
  */
 export async function submitReadingAnswer(args: {
   sessionId: string;
   questionId: string;
-  /** 기본 단일선택. 요약문항 등은 직렬화 문자열을 서버에서 파싱할 수도 있음 */
+  /** 湲곕낯 ?⑥씪?좏깮. ?붿빟臾명빆 ?깆? 吏곷젹??臾몄옄?댁쓣 ?쒕쾭?먯꽌 ?뚯떛???섎룄 ?덉쓬 */
   choiceId: string;       
-  /** 필요 시 사용: 경과시간, 그룹핑 등 확장 메타에 활용 가능 */
+  /** ?꾩슂 ???ъ슜: 寃쎄낵?쒓컙, 洹몃９?????뺤옣 硫뷀????쒖슜 媛??*/
   passageId?: string;     
   elapsedMs?: number;
 }) {
@@ -69,7 +69,7 @@ export async function submitReadingAnswer(args: {
 
   const sessionId = asNullIfEmpty(args.sessionId);
   const questionId = asNullIfEmpty(args.questionId);
-  // 빈 문자열은 null로 저장(무응답)
+  // 鍮?臾몄옄?댁? null濡????臾댁쓳??
   const choiceId = asNullIfEmpty(args.choiceId);
   const elapsedMs = Number.isFinite(args.elapsedMs)
     ? Math.max(0, Math.trunc(args.elapsedMs as number))
@@ -82,8 +82,8 @@ export async function submitReadingAnswer(args: {
   const { error } = await supabase.from('reading_answers').upsert({
     session_id: sessionId,
     question_id: questionId,
-    choice_id: choiceId,   // null 허용(무응답)
-    elapsed_ms: elapsedMs, // 이전 문항 기준 경과시간 등으로 기록
+    choice_id: choiceId,   // null ?덉슜(臾댁쓳??
+    elapsed_ms: elapsedMs, // ?댁쟾 臾명빆 湲곗? 寃쎄낵?쒓컙 ?깆쑝濡?湲곕줉
   });
 
   if (error) {
@@ -93,7 +93,7 @@ export async function submitReadingAnswer(args: {
 }
 
 /**
- * 세션 종료 (finished_at 설정)
+ * ?몄뀡 醫낅즺 (finished_at ?ㅼ젙)
  */
 export async function finishReadingSession(args: { sessionId: string }) {
   const supabase = await getSupabaseServer();
@@ -111,3 +111,5 @@ export async function finishReadingSession(args: { sessionId: string }) {
   }
   return { ok: true as const };
 }
+
+

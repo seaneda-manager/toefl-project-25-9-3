@@ -1,4 +1,4 @@
-// apps/web/app/api/reading/submit/route.ts
+ï»¿// apps/web/app/api/reading/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -6,12 +6,12 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await getSupabaseServer(); // ? await
 
-    // ÀÎÁõ
+    // ì¸ì¦
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr) return NextResponse.json({ ok: false, error: userErr.message }, { status: 500 });
     if (!user)   return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 
-    // ¹Ùµğ ÆÄ½Ì/°ËÁõ (reading_* ½ºÅ°¸¶´Â º¸Åë uuid)
+    // ë°”ë”” íŒŒì‹±/ê²€ì¦ (reading_* ìŠ¤í‚¤ë§ˆëŠ” ë³´í†µ uuid)
     const body = (await req.json()) as {
       sessionId?: string;      // uuid
       questionId?: string;     // uuid
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ¼ÒÀ¯ÀÚ °¡µå: ³» ¼¼¼Ç¿¡¸¸ ´äº¯ °¡´É
+    // ì†Œìœ ì ê°€ë“œ: ë‚´ ì„¸ì…˜ì—ë§Œ ë‹µë³€ ê°€ëŠ¥
     const { data: sess, error: sessErr } = await supabase
       .from('reading_sessions')
       .select('id')
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     if (sessErr) return NextResponse.json({ ok: false, error: sessErr.message }, { status: 400 });
     if (!sess)   return NextResponse.json({ ok: false, error: 'not found or forbidden' }, { status: 404 });
 
-    // ÀúÀå (session_id + question_id ±âÁØ upsert)
+    // ì €ì¥ (session_id + question_id ê¸°ì¤€ upsert)
     const { error } = await supabase
       .from('reading_answers')
       .upsert(
@@ -64,3 +64,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+

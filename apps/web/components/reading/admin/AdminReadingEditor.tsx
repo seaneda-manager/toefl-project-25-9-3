@@ -4,16 +4,16 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// 스키마 경로 주의(서버/클라이언트에서 동일 import 사용)
-import { readingSetSchema } from '@/lib/readingSchemas';
+// ?ㅽ궎留?寃쎈줈 二쇱쓽(?쒕쾭/?대씪?댁뼵?몄뿉???숈씪 import ?ъ슜)
+import { readingSetSchema } from '@/models/reading/zod';
 
-import type { RSet, RQuestion, RChoice, RPassage } from '@/lib/readingSchemas';
+import type { RSet, RQuestion, RChoice, RPassage } from '@/models/reading/zod';
 type RQType = RQuestion['type'];
 
 type Props = {
   initialJson: string;
   defaultSetId: string;
-  // 서버에서 내려준 액션 (Client에서 직접 import 금지)
+  // ?쒕쾭?먯꽌 ?대젮以 ?≪뀡 (Client?먯꽌 吏곸젒 import 湲덉?)
   onSave: (fd: FormData) => Promise<{ ok: true; id: string }>;
 };
 
@@ -28,11 +28,11 @@ function splitParagraphs(content: string, mode: 'auto' | 'blankline' | 'html' = 
       .map((s) => s.replace(/<[^>]+>/g, '').trim())
       .filter(Boolean);
   }
-  // default: 두 줄 공백 기준
+  // default: ??以?怨듬갚 湲곗?
   return content.split(/\n{2,}/g).map((s) => s.trim()).filter(Boolean);
 }
 
-/** meta 안전 접근을 위해 any 래퍼 생성 */
+/** meta ?덉쟾 ?묎렐???꾪빐 any ?섑띁 ?앹꽦 */
 function metaView(q: RQuestion) {
   const m = (q.meta ?? {}) as any;
   return {
@@ -60,7 +60,7 @@ function lintReadingSet(set: RSet): LintIssue[] {
   const issues: LintIssue[] = [];
   const p0 = set.passages[0];
   if (!p0) {
-    issues.push({ level: 'error', where: 'set.passages', msg: '최소 1개 passage 필요' });
+    issues.push({ level: 'error', where: 'set.passages', msg: '理쒖냼 1媛?passage ?꾩슂' });
     return issues;
   }
   const paras = splitParagraphs(p0.content, (p0.ui as any)?.paragraphSplit ?? 'auto');
@@ -69,22 +69,22 @@ function lintReadingSet(set: RSet): LintIssue[] {
     const where = `Q${q.number}(${q.type})`;
     const m = metaView(q);
 
-    // 번호 연속성(경고)
+    // 踰덊샇 ?곗냽??寃쎄퀬)
     if (q.number !== qi + 1) {
       issues.push({
         level: 'warn',
         where,
-        msg: `문항 번호가 연속적이지 않음: 기대 ${qi + 1}, 현재 ${q.number}`,
+        msg: `臾명빆 踰덊샇媛 ?곗냽?곸씠吏 ?딆쓬: 湲곕? ${qi + 1}, ?꾩옱 ${q.number}`,
       });
     }
 
-    // 보기
-    if (!q.choices?.length) issues.push({ level: 'error', where, msg: '보기 없음' });
+    // 蹂닿린
+    if (!q.choices?.length) issues.push({ level: 'error', where, msg: '蹂닿린 ?놁쓬' });
     q.choices?.forEach((c, ci) => {
-      if (!c.text?.trim()) issues.push({ level: 'warn', where, msg: `보기 #${ci + 1} 텍스트 없음` });
+      if (!c.text?.trim()) issues.push({ level: 'warn', where, msg: `蹂닿린 #${ci + 1} ?띿뒪???놁쓬` });
     });
 
-    // 유형별 체크
+    // ?좏삎蹂?泥댄겕
     if (q.type === 'summary') {
       const cand = m.summary.candidates ?? [];
       const cor = m.summary.correct ?? [];
@@ -92,49 +92,49 @@ function lintReadingSet(set: RSet): LintIssue[] {
         ? (m.summary.selectionCount as number)
         : NaN;
 
-      if (cand.length === 0) issues.push({ level: 'error', where, msg: 'summary.candidates 비어 있음' });
+      if (cand.length === 0) issues.push({ level: 'error', where, msg: 'summary.candidates 鍮꾩뼱 ?덉쓬' });
       if (!Number.isFinite(sel) || sel < 1)
-        issues.push({ level: 'error', where, msg: 'summary.selectionCount 값이 유효하지 않음' });
+        issues.push({ level: 'error', where, msg: 'summary.selectionCount 媛믪씠 ?좏슚?섏? ?딆쓬' });
       if (cor.length !== sel)
         issues.push({
           level: 'error',
           where,
-          msg: `summary.correct 개수(${cor.length}) ≠ selectionCount(${Number.isNaN(sel) ? 'NaN' : sel})`,
+          msg: `summary.correct 媛쒖닔(${cor.length}) ??selectionCount(${Number.isNaN(sel) ? 'NaN' : sel})`,
         });
       if (cor.some((i) => i < 0 || i >= cand.length))
-        issues.push({ level: 'error', where, msg: 'summary.correct 인덱스 범위 초과' });
+        issues.push({ level: 'error', where, msg: 'summary.correct ?몃뜳??踰붿쐞 珥덇낵' });
     } else if (q.type === 'insertion') {
       const ins = m.insertion;
       const anchorsLen = ins.anchors?.length ?? 0;
-      if (!anchorsLen) issues.push({ level: 'error', where, msg: 'insertion.anchors 비어 있음' });
+      if (!anchorsLen) issues.push({ level: 'error', where, msg: 'insertion.anchors 鍮꾩뼱 ?덉쓬' });
       if (ins && (ins.correctIndex! < 0 || ins.correctIndex! >= anchorsLen)) {
-        issues.push({ level: 'error', where, msg: 'insertion.correctIndex 범위 초과' });
+        issues.push({ level: 'error', where, msg: 'insertion.correctIndex 踰붿쐞 珥덇낵' });
       }
     } else if (q.type === 'pronoun_ref') {
       const pr = m.pronoun_ref;
-      if (!pr?.pronoun) issues.push({ level: 'warn', where, msg: 'pronoun_ref.pronoun 비어 있음' });
+      if (!pr?.pronoun) issues.push({ level: 'warn', where, msg: 'pronoun_ref.pronoun 鍮꾩뼱 ?덉쓬' });
       const refLen = pr?.referents?.length ?? 0;
-      if (!refLen) issues.push({ level: 'error', where, msg: 'pronoun_ref.referents 비어 있음' });
+      if (!refLen) issues.push({ level: 'error', where, msg: 'pronoun_ref.referents 鍮꾩뼱 ?덉쓬' });
       if (pr && (pr.correctIndex! < 0 || pr.correctIndex! >= refLen)) {
-        issues.push({ level: 'error', where, msg: 'pronoun_ref.correctIndex 범위 초과' });
+        issues.push({ level: 'error', where, msg: 'pronoun_ref.correctIndex 踰붿쐞 珥덇낵' });
       }
     }
 
-    // 하이라이트 인덱스 범위
+    // ?섏씠?쇱씠???몃뜳??踰붿쐞
     const ph = m.paragraph_highlight.paragraphs ?? [];
     if (ph.some((i) => i < 0 || i >= paras.length)) {
       issues.push({
         level: 'error',
         where,
-        msg: `paragraph_highlight 인덱스 범위 초과 (문단 수 ${paras.length})`,
+        msg: `paragraph_highlight ?몃뜳??踰붿쐞 珥덇낵 (臾몃떒 ??${paras.length})`,
       });
     }
 
-    // summary 외 유형: 정답 정확히 1개
+    // summary ???좏삎: ?뺣떟 ?뺥솗??1媛?
     if (q.type !== 'summary') {
       const cs = (q.choices || []).filter((c) => c.is_correct);
       if (cs.length !== 1) {
-        issues.push({ level: 'error', where, msg: `정답 개수 ${cs.length}개(1개여야 함)` });
+        issues.push({ level: 'error', where, msg: `?뺣떟 媛쒖닔 ${cs.length}媛?1媛쒖뿬????` });
       }
     }
   });
@@ -150,7 +150,7 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // schema → RSet 변환(경고 TS2352 방지: unknown 경유)
+  // schema ??RSet 蹂??寃쎄퀬 TS2352 諛⑹?: unknown 寃쎌쑀)
   const parsed: RSet | null = useMemo(() => {
     try {
       const obj = JSON.parse(text);
@@ -168,7 +168,7 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
       const obj = JSON.parse(text);
       readingSetSchema.parse(obj);
       setErr(null);
-      setMsg('✓ JSON valid.');
+      setMsg('??JSON valid.');
     } catch (e: any) {
       setMsg(null);
       setErr(e?.message || 'Invalid JSON.');
@@ -180,13 +180,13 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
       const obj = JSON.parse(text);
       const ok = readingSetSchema.parse(obj) as unknown as RSet;
       const issues = lintReadingSet(ok);
-      if (issues.length === 0) setMsg('✓ Deep Check: 문제 없음');
+      if (issues.length === 0) setMsg('??Deep Check: 臾몄젣 ?놁쓬');
       else {
         const lines = issues.map((i) => `${i.level.toUpperCase()} | ${i.where} | ${i.msg}`).join('\n');
-        setErr(`Deep Check 결과\n${lines}`);
+        setErr(`Deep Check 寃곌낵\n${lines}`);
       }
     } catch (e: any) {
-      setErr('Deep Check 실패: ' + (e?.message || 'invalid json'));
+      setErr('Deep Check ?ㅽ뙣: ' + (e?.message || 'invalid json'));
     }
   }, [text]);
 
@@ -196,14 +196,14 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
       setMsg(null);
       setErr(null);
       try {
-        // 유효성 미리 확인
+        // ?좏슚??誘몃━ ?뺤씤
         const obj = JSON.parse(text);
         readingSetSchema.parse(obj);
 
         const fd = new FormData();
         fd.set('json', JSON.stringify(obj));
         const r = await onSave(fd);
-        setMsg(`✓ Saved: ${r.id}`);
+        setMsg(`??Saved: ${r.id}`);
         router.replace(`/reading/admin?setId=${encodeURIComponent(r.id)}`);
       } catch (e: any) {
         setErr(e?.message || 'Save failed.');
@@ -242,7 +242,7 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
         </div>
       </div>
 
-      {/* 액션들 */}
+      {/* ?≪뀡??*/}
       <div className="flex flex-wrap gap-2">
         <button className="rounded border px-3 py-1" onClick={validate}>
           Validate
@@ -266,7 +266,7 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
         </div>
       )}
 
-      {/* JSON 편집기 */}
+      {/* JSON ?몄쭛湲?*/}
       {tab === 'json' && (
         <form onSubmit={save} className="space-y-3">
           <textarea
@@ -290,13 +290,13 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
         </form>
       )}
 
-      {/* FORM 에디터(MVP) */}
+      {/* FORM ?먮뵒??MVP) */}
       {tab === 'form' &&
         (parsed ? (
           <FormEditor parsed={parsed} setText={setText} />
         ) : (
           <div className="text-sm text-red-400">
-            JSON이 유효해야 Form 편집기를 사용할 수 있어요. 먼저 JSON 탭에서 Validate 해주세요.
+            JSON???좏슚?댁빞 Form ?몄쭛湲곕? ?ъ슜?????덉뼱?? 癒쇱? JSON ??뿉??Validate ?댁＜?몄슂.
           </div>
         ))}
     </div>
@@ -309,7 +309,7 @@ function makeMinimalSet(id: string): RSet {
     id,
     label: 'New Reading Set',
     source: '',
-    // schema는 number → 숫자로 관리
+    // schema??number ???レ옄濡?愿由?
     version: 1,
     passages: [
       {
@@ -395,9 +395,9 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
 
   const setType = (qi: number, t: RQType) => updateQuestion(qi, { type: t });
 
-  // ---- 유형별 메타 (요약/서술/대명사 등) ----
+  // ---- ?좏삎蹂?硫뷀? (?붿빟/?쒖닠/?紐낆궗 ?? ----
 
-  // summary: selectionCount만 바꿔도 candidates/correct 유지
+  // summary: selectionCount留?諛붽퓭??candidates/correct ?좎?
   const setSummarySelection = (qi: number, n: number) => {
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
@@ -417,7 +417,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // 요약 문장 편집 (줄바꿈 또는 | 구분)
+  // ?붿빟 臾몄옣 ?몄쭛 (以꾨컮轅??먮뒗 | 援щ텇)
   const setSummaryCandidates = (qi: number, raw: string) => {
     const candidates = raw
       .split(/\r?\n|\|/g)
@@ -443,7 +443,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // 정답 인덱스 편집 (1-based 입력 → 0-based 저장)
+  // ?뺣떟 ?몃뜳???몄쭛 (1-based ?낅젰 ??0-based ???
   const setSummaryCorrect = (qi: number, raw: string) => {
     const correct = raw
       .split(/\D+/g)
@@ -535,7 +535,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           </div>
           <div>
             <label className="text-xs text-neutral-500">Version</label>
-            {/* number로 관리(스키마 일치) */}
+            {/* number濡?愿由??ㅽ궎留??쇱튂) */}
             <input
               className="mt-1 w-full rounded border px-3 py-2"
               value={String(draft.version ?? 1)}
@@ -607,7 +607,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                 onChange={(e) => updateQuestion(qi, { stem: e.target.value })}
               />
 
-              {/* 유형별 메타 (MVP) */}
+              {/* ?좏삎蹂?硫뷀? (MVP) */}
               {q.type === 'summary' && (
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="flex items-center gap-2">
@@ -621,7 +621,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                   </div>
                   <div>
                     <div className="mb-1 text-neutral-500">
-                      candidates (줄바꿈 또는 <code>|</code> 구분)
+                      candidates (以꾨컮轅??먮뒗 <code>|</code> 援щ텇)
                     </div>
                     <textarea
                       className="w-full rounded border px-3 py-2 font-mono"
@@ -632,7 +632,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                   </div>
                   <div>
                     <div className="mb-1 text-neutral-500">
-                      correct (정답 인덱스 1-based, 예: <code>1|3|4</code>)
+                      correct (?뺣떟 ?몃뜳??1-based, ?? <code>1|3|4</code>)
                     </div>
                     <input
                       className="w-full rounded border px-3 py-2 font-mono"
@@ -646,7 +646,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
               {q.type === 'insertion' && (
                 <div className="mt-2 text-sm">
                   <div className="mb-1 text-neutral-500">
-                    anchors (<code>|</code> 구분)
+                    anchors (<code>|</code> 援щ텇)
                   </div>
                   <input
                     className="w-full rounded border px-3 py-2"
@@ -674,7 +674,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                   />
                   <input
                     className="rounded border px-3 py-2 md:col-span-2"
-                    placeholder="referents ( | 구분 )"
+                    placeholder="referents ( | 援щ텇 )"
                     value={(m.pronoun_ref.referents || []).join(' | ')}
                     onChange={(e) =>
                       setPronounRef(
@@ -724,9 +724,11 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           Apply to JSON
         </button>
         <div className="text-xs text-neutral-500">
-          Apply를 눌러야 JSON 탭에 반영돼요
+          Apply瑜??뚮윭??JSON ??뿉 諛섏쁺?쇱슂
         </div>
       </div>
     </div>
   );
 }
+
+

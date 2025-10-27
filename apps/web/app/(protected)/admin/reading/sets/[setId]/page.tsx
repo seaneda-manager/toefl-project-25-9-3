@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { upsertReadingSet, loadReadingSet } from '@/actions/reading';
 import { validateSet } from '@/lib/reading/validate';
-import type { RSet, RPassage, RQuestion, RChoice } from '@/types/types-reading';
+import type { RSet, RPassage, RQuestion, RChoice } from '@/models/reading';
 
 /** ✅ validateSet이 기대하는 형태로 RSet을 확장 */
 type RSetFull = RSet & {

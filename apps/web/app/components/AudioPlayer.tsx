@@ -1,12 +1,12 @@
-// normalized utf8
+﻿// normalized utf8
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Props = {
   src?: string;
-  oneShot?: boolean;         // ���� �� ��� ����
-  disableSeek?: boolean;     // ��� �� Ž�� ����
+  oneShot?: boolean;         // 占쏙옙占쏙옙 占쏙옙 占쏙옙占?占쏙옙占쏙옙
+  disableSeek?: boolean;     // 占쏙옙占?占쏙옙 탐占쏙옙 占쏙옙占쏙옙
   defaultVolume?: number;    // 0~1
   onStart?: () => void;
   onEnd?: () => void;
@@ -32,7 +32,7 @@ export default function AudioPlayer({
     Number.isFinite(defaultVolume) ? Math.min(1, Math.max(0, defaultVolume)) : 1
   );
 
-  // src ���� �� ���� ����
+  // src 占쏙옙占쏙옙 占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙
   useEffect(() => {
     startedOnceRef.current = false;
     endedRef.current = false;
@@ -40,12 +40,12 @@ export default function AudioPlayer({
     lastTimeRef.current = 0;
   }, [src]);
 
-  // ����� �̺�Ʈ ���ε�
+  // 占쏙옙占쏙옙占?占싱븝옙트 占쏙옙占싸듸옙
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
 
-    // �ʱ� ����
+    // 占십깍옙 占쏙옙占쏙옙
     el.volume = volume;
 
     const handlePlay = () => {
@@ -70,7 +70,7 @@ export default function AudioPlayer({
 
     const handleSeeking = () => {
       if (disableSeek) {
-        // seeking �̺�Ʈ�� cancel �Ұ� �� �ð��� �ǵ���
+        // seeking 占싱븝옙트占쏙옙 cancel 占쌀곤옙 占쏙옙 占시곤옙占쏙옙 占실듸옙占쏙옙
         el.currentTime = lastTimeRef.current;
       }
     };
@@ -92,12 +92,12 @@ export default function AudioPlayer({
     const el = audioRef.current;
     if (!el) return;
 
-    // oneShot�̸� ���� ���� ��� ����
+    // oneShot占싱몌옙 占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占?占쏙옙占쏙옙
     if (oneShot && endedRef.current) return;
 
-    // ������ �ڵ���� ��å ����
+    // 占쏙옙占쏙옙占쏙옙 占쌘듸옙占쏙옙占?占쏙옙책 占쏙옙占쏙옙
     el.play().catch(() => {
-      // ����ڰ� ��ư �ٽ� �������� ������ ���� ����
+      // 占쏙옙占쏙옙微占?占쏙옙튼 占쌕쏙옙 占쏙옙占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙
     });
   }, [oneShot]);
 
@@ -119,7 +119,7 @@ export default function AudioPlayer({
     if (el) el.volume = clamped;
   };
 
-  // src ������ ���� ����
+  // src 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙
   const disabled = !src || src.trim().length === 0;
   const canPlay = !disabled && !(oneShot && endedRef.current);
 
@@ -151,8 +151,10 @@ export default function AudioPlayer({
         <span className="text-xs text-neutral-500">Playback finished</span>
       ) : null}
 
-      {/* ����Ƽ�� ��Ʈ���� ����. ���ټ������θ� ���� */}
+      {/* 占쏙옙占쏙옙티占쏙옙 占쏙옙트占쏙옙占쏙옙 占쏙옙占쏙옙. 占쏙옙占쌕쇽옙占쏙옙占쏙옙占싸몌옙 占쏙옙占쏙옙 */}
       <audio ref={audioRef} src={src} controls={false} preload="auto" />
     </div>
   );
 }
+
+

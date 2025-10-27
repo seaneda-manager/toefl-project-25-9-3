@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ListeningTrack, LQuestion } from '@/app/types/types-listening';
-import type { Mode as QuestionMode } from '@/types/listening'; // 화면 컴포넌트가 기대하는 Mode
+import type { Mode as QuestionMode } from '@/types/listening'; // ?붾㈃ 而댄룷?뚰듃媛 湲곕??섎뒗 Mode
 import LAudioScreen from '@/app/(protected)/listening/test/components/LAudioScreen';
 import LQuestionScreen from '@/app/(protected)/listening/test/components/LQuestionScreen';
 import {
@@ -20,10 +20,10 @@ type LoadedSet = {
 
 type Screen = 'idle' | 'conv_play' | 'conv_qna' | 'lect_play' | 'lect_qna' | 'done';
 
-/** UI에서만 쓰는 모드(별칭 포함) */
+/** UI?먯꽌留??곕뒗 紐⑤뱶(蹂꾩묶 ?ы븿) */
 type UIMode = 'p' | 't' | 'r' | 'test' | 'study';
 
-/** API가 받는 모드(정확히 이 셋만 허용) */
+/** API媛 諛쏅뒗 紐⑤뱶(?뺥솗?????뗫쭔 ?덉슜) */
 type ApiMode = 'p' | 't' | 'r';
 
 type Props = {
@@ -32,14 +32,14 @@ type Props = {
   autoStart?: boolean;
 };
 
-/** UI 모드 → API 모드 */
+/** UI 紐⑤뱶 ??API 紐⑤뱶 */
 const toApiMode = (m: UIMode): ApiMode => {
   if (m === 'test') return 't';
   if (m === 'study') return 'p';
   return m; // 'p' | 't' | 'r'
 };
 
-/** UI 모드 → 화면 컴포넌트가 기대하는 Mode로 변환 */
+/** UI 紐⑤뱶 ???붾㈃ 而댄룷?뚰듃媛 湲곕??섎뒗 Mode濡?蹂??*/
 const toQuestionMode = (m: UIMode): QuestionMode => {
   const v = m === 'test' ? 't' : m === 'study' ? 'p' : m; // 'p'|'t'|'r'
   return v as unknown as QuestionMode;
@@ -53,7 +53,7 @@ export default function ListeningTestRunner({
   const router = useRouter();
 
   const [trackSetId, setTrackSetId] = useState(initialSetId);
-  const [mode, setMode] = useState<UIMode>('t'); // UI 모드 ('test'|'study' 포함)
+  const [mode, setMode] = useState<UIMode>('t'); // UI 紐⑤뱶 ('test'|'study' ?ы븿)
   const [sessionId, setSessionId] = useState<string>('');
   const [loadedSet, setLoadedSet] = useState<LoadedSet | null>(null);
   const [screen, setScreen] = useState<Screen>('idle');
@@ -106,7 +106,7 @@ export default function ListeningTestRunner({
   const activeQs: LQuestion[] = isConvQna ? convQs : isLectQna ? lectQs : [];
   const q = activeQs[qIndex];
 
-  // 세션 시작
+  // ?몄뀡 ?쒖옉
   const startSession = useCallback(async () => {
     if (!loadedSet) return;
     setLoading(true);
@@ -127,7 +127,7 @@ export default function ListeningTestRunner({
     }
   }, [loadedSet, mode, sessionId, convQs.length]);
 
-  // 선택 & 서버 제출
+  // ?좏깮 & ?쒕쾭 ?쒖텧
   const onChoose = useCallback(
     async (qid: string, cid?: string) => {
       setAnswers((prev) => {
@@ -143,7 +143,7 @@ export default function ListeningTestRunner({
     [sessionId]
   );
 
-  // 오디오 끝나면 다음 화면으로
+  // ?ㅻ뵒???앸굹硫??ㅼ쓬 ?붾㈃?쇰줈
   const nextFromAudio = useCallback(() => {
     setQIndex(0);
     setScreen((s) => {
@@ -222,7 +222,7 @@ export default function ListeningTestRunner({
           </label>
           <div className="flex items-end gap-2">
             <button className="px-4 py-2 rounded border" onClick={loadSet} disabled={loadingSet || loading}>
-              {loadingSet ? 'Loading…' : 'Reload Set'}
+              {loadingSet ? 'Loading?? : 'Reload Set'}
             </button>
             <button
               className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
@@ -230,7 +230,7 @@ export default function ListeningTestRunner({
               disabled={!canStart}
               title="Create session & start Conversation"
             >
-              {loading ? 'Starting…' : 'Start'}
+              {loading ? 'Starting?? : 'Start'}
             </button>
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function ListeningTestRunner({
                 onClick={startSession}
                 disabled={!canStart}
               >
-                {loading ? 'Starting…' : 'Start'}
+                {loading ? 'Starting?? : 'Start'}
               </button>
             )}
           </div>
@@ -271,10 +271,10 @@ export default function ListeningTestRunner({
         <div className="rounded-xl border p-6 text-sm text-neutral-600">
           {loadedSet ? (
             <>
-              세트가 로드되었습니다. <b>Start</b>를 누르면 세션이 생성되고 대화(Conversation)부터 시작합니다.
+              ?명듃媛 濡쒕뱶?섏뿀?듬땲?? <b>Start</b>瑜??꾨Ⅴ硫??몄뀡???앹꽦?섍퀬 ???Conversation)遺???쒖옉?⑸땲??
             </>
           ) : (
-            <>이 세트를 불러오지 못했습니다. (다운로드/권한 확인 필요)</>
+            <>???명듃瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲?? (?ㅼ슫濡쒕뱶/沅뚰븳 ?뺤씤 ?꾩슂)</>
           )}
         </div>
       )}
@@ -290,18 +290,18 @@ export default function ListeningTestRunner({
               onNext={nextFromAudio}
               sessionId={sessionId}
               trackId={loadedSet.conversation.id}
-              mode={toQuestionMode(mode)}   /* 화면용 Mode로 전달 */
+              mode={toQuestionMode(mode)}   /* ?붾㈃??Mode濡??꾨떖 */
             />
           )}
 
           {screen === 'conv_qna' && q && (
             <LQuestionScreen
-              mode={toQuestionMode(mode)}               /* 화면용 Mode로 전달 */
+              mode={toQuestionMode(mode)}               /* ?붾㈃??Mode濡??꾨떖 */
               question={q}
-              index={qIndex}                            /* ✅ 전달 */
-              total={activeQs.length}                   /* ✅ 전달 */
-              selectedChoiceId={answers[q.id]}          /* ✅ 이름 정합 */
-              onChooseAction={(qid: string, cid?: string) => { void onChoose(qid, cid); }}  /* ✅ 타입 명시 */
+              index={qIndex}                            /* ???꾨떖 */
+              total={activeQs.length}                   /* ???꾨떖 */
+              selectedChoiceId={answers[q.id]}          /* ???대쫫 ?뺥빀 */
+              onChooseAction={(qid: string, cid?: string) => { void onChoose(qid, cid); }}  /* ?????紐낆떆 */
               onNextAction={gotoNextQ}
               onPrevAction={gotoPrevQ}
               sessionId={sessionId}
@@ -318,18 +318,18 @@ export default function ListeningTestRunner({
               onNext={nextFromAudio}
               sessionId={sessionId}
               trackId={loadedSet.lecture.id}
-              mode={toQuestionMode(mode)}   /* 화면용 Mode로 전달 */
+              mode={toQuestionMode(mode)}   /* ?붾㈃??Mode濡??꾨떖 */
             />
           )}
 
           {screen === 'lect_qna' && q && (
             <LQuestionScreen
-              mode={toQuestionMode(mode)}               /* 화면용 Mode로 전달 */
+              mode={toQuestionMode(mode)}               /* ?붾㈃??Mode濡??꾨떖 */
               question={q}
-              index={qIndex}                            /* ✅ 전달 */
-              total={activeQs.length}                   /* ✅ 전달 */
-              selectedChoiceId={answers[q.id]}          /* ✅ 이름 정합 */
-              onChooseAction={(qid: string, cid?: string) => { void onChoose(qid, cid); }}  /* ✅ 타입 명시 */
+              index={qIndex}                            /* ???꾨떖 */
+              total={activeQs.length}                   /* ???꾨떖 */
+              selectedChoiceId={answers[q.id]}          /* ???대쫫 ?뺥빀 */
+              onChooseAction={(qid: string, cid?: string) => { void onChoose(qid, cid); }}  /* ?????紐낆떆 */
               onNextAction={gotoNextQ}
               onPrevAction={gotoPrevQ}
               sessionId={sessionId}
@@ -362,3 +362,5 @@ export default function ListeningTestRunner({
     </div>
   );
 }
+
+

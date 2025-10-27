@@ -1,4 +1,4 @@
-// app/(protected)/_components/ReviewPage.tsx
+﻿// app/(protected)/_components/ReviewPage.tsx
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
 type Row = {
@@ -22,7 +22,7 @@ export default async function ReviewPage({
 }) {
   const supabase = await getSupabaseServer();
 
-  // 점수/문항 병렬 호출
+  // ?먯닔/臾명빆 蹂묐젹 ?몄텧
   const [scoreRes, rowsRes] = await Promise.all([
     supabase.rpc(scoreRpc, { session_id: sessionId }),
     supabase.rpc(rowsRpc, { session_id: sessionId }),
@@ -33,7 +33,7 @@ export default async function ReviewPage({
   const scoreRows = scoreRes.data as Array<{ total: number; correct: number }> | null;
   const rows = rowsRes.data as Row[] | null;
 
-  // Fallback: DB 오류/부재 시 모킹 데이터
+  // Fallback: DB ?ㅻ쪟/遺????紐⑦궧 ?곗씠??
   if (rowsErr || scoreErr || !rows || !scoreRows) {
     const mock: Row[] = [
       { q_no: 1, question: "Mock Q1", user_choice: "A", correct_choice: "B", is_correct: false },
@@ -46,7 +46,7 @@ export default async function ReviewPage({
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold">{title}</h1>
           <p className="text-sm opacity-70">
-            sessionId: {sessionId} · Score: {score.correct}/{score.total} (mock)
+            sessionId: {sessionId} 쨌 Score: {score.correct}/{score.total} (mock)
           </p>
         </header>
         <Table rows={mock} />
@@ -61,7 +61,7 @@ export default async function ReviewPage({
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">{title}</h1>
         <p className="text-sm opacity-70">
-          sessionId: {sessionId} · Score: {score.correct}/{score.total}
+          sessionId: {sessionId} 쨌 Score: {score.correct}/{score.total}
         </p>
       </header>
       <Table rows={rows} />
@@ -86,12 +86,12 @@ function Table({ rows }: { rows: Row[] }) {
           {rows.map((r) => (
             <tr key={r.q_no} className="[&>td]:px-3 [&>td]:py-2 border-t">
               <td className="font-medium">{r.q_no}</td>
-              <td>{r.question ?? <span className="opacity-60">—</span>}</td>
-              <td>{r.user_choice ?? <span className="opacity-60">—</span>}</td>
-              <td>{r.correct_choice ?? <span className="opacity-60">—</span>}</td>
+              <td>{r.question ?? <span className="opacity-60">??/span>}</td>
+              <td>{r.user_choice ?? <span className="opacity-60">??/span>}</td>
+              <td>{r.correct_choice ?? <span className="opacity-60">??/span>}</td>
               <td>
                 {r.is_correct === null ? (
-                  <span className="opacity-60">—</span>
+                  <span className="opacity-60">??/span>
                 ) : r.is_correct ? (
                   <span className="text-green-600">Correct</span>
                 ) : (
@@ -105,3 +105,5 @@ function Table({ rows }: { rows: Row[] }) {
     </div>
   );
 }
+
+

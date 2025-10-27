@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/admin/_components/SetForm.tsx
+﻿// apps/web/app/(protected)/admin/_components/SetForm.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ type Props = {
   id?: string;
 };
 
-/** 폼 상태 타입(암시적 any 방지) */
+/** ???곹깭 ????붿떆??any 諛⑹?) */
 type SetFormState = {
   title: string;
   section: ContentSet['section'];
@@ -94,11 +94,11 @@ export default function SetForm({ initial, id }: Props) {
         </div>
 
         <div>
-          <label htmlFor="level" className="block text-sm mb-1">Level (옵션)</label>
+          <label htmlFor="level" className="block text-sm mb-1">Level (?듭뀡)</label>
           <input
             id="level"
             className="w-full border rounded-lg px-3 py-2"
-            placeholder="예) 초/중/고, A2/B1 등"
+            placeholder="?? 珥?以?怨? A2/B1 ??
             value={form.level ?? ''}
             onChange={(e) =>
               setForm((f: SetFormState) => ({ ...f, level: e.target.value }))
@@ -108,7 +108,7 @@ export default function SetForm({ initial, id }: Props) {
       </div>
 
       <div>
-        <label htmlFor="tags" className="block text-sm mb-1">Tags (쉼표 구분)</label>
+        <label htmlFor="tags" className="block text-sm mb-1">Tags (?쇳몴 援щ텇)</label>
         <input
           id="tags"
           className="w-full border rounded-lg px-3 py-2"
@@ -152,9 +152,11 @@ export default function SetForm({ initial, id }: Props) {
           disabled={busy}
           className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-60"
         >
-          {busy ? (id ? 'Updating…' : 'Creating…') : id ? 'Update Set' : 'Create Set'}
+          {busy ? (id ? 'Updating?? : 'Creating??) : id ? 'Update Set' : 'Create Set'}
         </button>
       </div>
     </form>
   );
 }
+
+

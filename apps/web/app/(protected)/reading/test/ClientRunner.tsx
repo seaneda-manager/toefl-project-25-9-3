@@ -1,8 +1,8 @@
-// apps/web/app/(protected)/reading/test/ClientRunner.tsx
+﻿// apps/web/app/(protected)/reading/test/ClientRunner.tsx
 'use client';
 
 import TestRunnerV2 from '@/components/reading/runner/TestRunnerV2';
-import type { RPassage } from '@/types/types-reading';
+import type { RPassage } from '@/models/reading';
 
 type StrictQuestion = {
   id: string;
@@ -25,16 +25,16 @@ type StrictQuestion = {
 
 type StrictPassage = {
   id: string;
-  title: string;    // 필수
-  content: string;  // 필수
+  title: string;    // ?꾩닔
+  content: string;  // ?꾩닔
   questions: StrictQuestion[];
 };
 
 type ClientRunnerProps = {
-  passage: RPassage | StrictPassage;   // 유연하게 받되 아래에서 보정
+  passage: RPassage | StrictPassage;   // ?좎뿰?섍쾶 諛쏅릺 ?꾨옒?먯꽌 蹂댁젙
   sessionId: string;
-  /** 완료 시 상위로 세션ID 전달 */
-  onFinishAction?: (sessionId: string | number) => void; // ✅ 이름 통일
+  /** ?꾨즺 ???곸쐞濡??몄뀡ID ?꾨떖 */
+  onFinishAction?: (sessionId: string | number) => void; // ???대쫫 ?듭씪
 };
 
 export default function ClientRunner({
@@ -42,7 +42,7 @@ export default function ClientRunner({
   sessionId,
   onFinishAction,
 }: ClientRunnerProps) {
-  // 엄격형으로 보정 (title/content 보장, questions 배열 보장)
+  // ?꾧꺽?뺤쑝濡?蹂댁젙 (title/content 蹂댁옣, questions 諛곗뿴 蹂댁옣)
   const p: StrictPassage = {
     id: String((passage as any).id),
     title: (passage as any).title ?? '',
@@ -56,7 +56,9 @@ export default function ClientRunner({
     <TestRunnerV2
       passage={p as any}
       sessionId={sessionId}
-      onFinishAction={onFinishAction} // ✅ prop 이름 변경 반영
+      onFinishAction={onFinishAction} // ??prop ?대쫫 蹂寃?諛섏쁺
     />
   );
 }
+
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import {useEffect, useRef} from 'react';
 
 type Cue = { questionId:string; enableMs:number };
@@ -20,3 +20,5 @@ export default function AutoAdvanceController({cues=[], onEnable}:{cues?:Cue[]; 
   },[cues,onEnable]);
   return null;
 }
+
+

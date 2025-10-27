@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -47,4 +47,6 @@ export function TeacherSideNav({ section }: { section: Section }) {
     </aside>
   );
 }
+
+
 

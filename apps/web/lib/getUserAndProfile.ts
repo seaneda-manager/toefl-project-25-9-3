@@ -1,4 +1,4 @@
-// apps/web/lib/getUserAndProfile.ts
+﻿// apps/web/lib/getUserAndProfile.ts
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import type { User } from "@supabase/supabase-js";
 
@@ -27,3 +27,5 @@ export async function getUserAndProfile(): Promise<Result> {
 
   return { user, profile: profile ?? null };
 }
+
+

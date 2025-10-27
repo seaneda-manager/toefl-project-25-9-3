@@ -1,11 +1,11 @@
-// apps/web/app/(protected)/reading/study/page.tsx
+﻿// apps/web/app/(protected)/reading/study/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import StudyRunner from './StudyRunner';
-import type { RPassage, RQuestion } from '@/types/types-reading';
+import type { RPassage, RQuestion } from '@/models/reading';
 
 type RQType = RQuestion['type'];
 
-/** 안전한 JSON 파서: 이미 객체면 그대로, 문자열이면 try-parse, 아니면 fallback */
+/** ?덉쟾??JSON ?뚯꽌: ?대? 媛앹껜硫?洹몃?濡? 臾몄옄?댁씠硫?try-parse, ?꾨땲硫?fallback */
 function safeJson<T>(val: unknown, fallback: T): T {
   if (val == null) return fallback;
   if (typeof val === 'object') return val as T;
@@ -15,7 +15,7 @@ function safeJson<T>(val: unknown, fallback: T): T {
   return fallback;
 }
 
-/** 질문 타입 정규화 */
+/** 吏덈Ц ????뺢퇋??*/
 function normalizeType(t: unknown): RQType {
   const allowed: RQType[] = [
     'vocab',
@@ -29,14 +29,14 @@ function normalizeType(t: unknown): RQType {
     'summary',
     'organization',
   ];
-  if (t === 'single') return 'detail'; // 예전 데이터 호환
+  if (t === 'single') return 'detail'; // ?덉쟾 ?곗씠???명솚
   return (allowed as string[]).includes(String(t)) ? (t as RQType) : 'detail';
 }
 
 export default async function Page() {
   const supabase = await getSupabaseServer();
 
-  // 최신 passage 1개
+  // 理쒖떊 passage 1媛?
   const { data: p, error: pErr } = await supabase
     .from('reading_passages')
     .select('*')
@@ -44,25 +44,25 @@ export default async function Page() {
     .limit(1)
     .maybeSingle();
 
-  if (pErr) return <div>오류: {pErr.message}</div>;
-  if (!p) return <div>Passage가 없습니다.</div>;
+  if (pErr) return <div>?ㅻ쪟: {pErr.message}</div>;
+  if (!p) return <div>Passage媛 ?놁뒿?덈떎.</div>;
 
-  // 관련 질문 + 보기
+  // 愿??吏덈Ц + 蹂닿린
   const { data: qs, error: qErr } = await supabase
     .from('reading_questions')
     .select('*, choices:reading_choices(*)')
     .eq('passage_id', p.id)
     .order('number', { ascending: true });
 
-  if (qErr) return <div>질문 로드 오류: {qErr.message}</div>;
+  if (qErr) return <div>吏덈Ц 濡쒕뱶 ?ㅻ쪟: {qErr.message}</div>;
 
-  // RPassage 스펙에 존재하는 필드로만 구성 (ui / set_id 제거)
+  // RPassage ?ㅽ럺??議댁옱?섎뒗 ?꾨뱶濡쒕쭔 援ъ꽦 (ui / set_id ?쒓굅)
   const passage: RPassage = {
     id: p.id,
     title: p.title ?? '',
     content: p.content ?? '',
     questions: (qs ?? []).map((q: any) => {
-      // meta / explanation은 보통 선택 필드. 프로젝트 스펙에 맞게 가벼운 보정만.
+      // meta / explanation? 蹂댄넻 ?좏깮 ?꾨뱶. ?꾨줈?앺듃 ?ㅽ럺??留욊쾶 媛踰쇱슫 蹂댁젙留?
       const meta = safeJson<NonNullable<RQuestion['meta']>>(q.meta, undefined as any);
       const explanation =
         q.explanation
@@ -84,9 +84,11 @@ export default async function Page() {
           is_correct: !!c.is_correct,
           explain: c.explain ?? undefined,
         })),
-      } satisfies RQuestion; // ❗ RQuestion에 없는 키가 있으면 여기서 컴파일 에러로 잡힘
+      } satisfies RQuestion; // ??RQuestion???녿뒗 ?ㅺ? ?덉쑝硫??ш린??而댄뙆???먮윭濡??≫옒
     }),
   };
 
   return <StudyRunner passage={passage} />;
 }
+
+

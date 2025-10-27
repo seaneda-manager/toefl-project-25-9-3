@@ -1,4 +1,4 @@
-// apps/web/app/api/whoami/route.ts
+﻿// apps/web/app/api/whoami/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -26,3 +26,5 @@ export async function GET() {
     user_metadata: session?.user?.user_metadata ?? null,
   });
 }
+
+

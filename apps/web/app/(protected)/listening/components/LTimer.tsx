@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 
@@ -19,4 +19,6 @@ export default function LTimer({ seconds, onExpire }: { seconds: number; onExpir
   const ss = String(left % 60).padStart(2, '0');
   return <div className="px-2 py-1 rounded border text-sm font-mono">??{mm}:{ss}</div>;
 }
+
+
 

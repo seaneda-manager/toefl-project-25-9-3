@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 export async function GET(req: Request) {
@@ -10,4 +10,6 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ ok:false, error:'DB_ERROR', detail:error.message }, { status:500 })
   return NextResponse.json({ ok:true, session:data }, { status:200 })
 }
+
+
 

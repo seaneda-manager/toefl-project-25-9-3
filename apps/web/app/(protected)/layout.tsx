@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/layout.tsx  (예시 경로 — 실제 파일 경로 유지)
+﻿// apps/web/app/(protected)/layout.tsx  (?덉떆 寃쎈줈 ???ㅼ젣 ?뚯씪 寃쎈줈 ?좎?)
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -8,19 +8,19 @@ import SidebarClient from '@/components/dashboard/SidebarClient';
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const supabase = await getSupabaseServer();
 
-  // 세션 확인 (없으면 로그인으로)
+  // ?몄뀡 ?뺤씤 (?놁쑝硫?濡쒓렇?몄쑝濡?
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) redirect('/auth/login');
 
-  // 유저 정보
+  // ?좎? ?뺣낫
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const email = user?.email ?? '';
 
-  // TODO: profiles.role 등에서 역할을 읽어오도록 개선. 현재는 기본 student로 고정.
+  // TODO: profiles.role ?깆뿉????븷???쎌뼱?ㅻ룄濡?媛쒖꽑. ?꾩옱??湲곕낯 student濡?怨좎젙.
   const role: 'student' | 'teacher' = 'student';
 
   return (
@@ -37,3 +37,5 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     </div>
   );
 }
+
+

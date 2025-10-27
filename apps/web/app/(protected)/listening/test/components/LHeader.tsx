@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect } from 'react';
 
 function LTimer({
@@ -28,7 +28,7 @@ export default function LHeader({
     <header className="sticky top-0 z-10 border-b border-neutral-200">
       <div className="bg-gradient-to-r from-violet-700 to-pink-600 text-white">
         <div className="flex items-center justify-between px-4 py-2">
-          {/* 좌측 버튼 */}
+          {/* 醫뚯륫 踰꾪듉 */}
           <div className="flex items-center gap-3">
             <button className="rounded-md bg-white/10 px-3 py-1 hover:bg-white/20" onClick={onHome}>Home</button>
             <button className="rounded-md bg-white/10 px-3 py-1 hover:bg-white/20" onClick={onPause}>Pause</button>
@@ -36,10 +36,10 @@ export default function LHeader({
             <button className="rounded-md bg-white/10 px-3 py-1 hover:bg-white/20 disabled:opacity-40" onClick={onNext} disabled={!canNext}>Next</button>
           </div>
 
-          {/* 중앙 ?�목 */}
+          {/* 以묒븰 ?쒕ぉ */}
           <div className="text-base font-semibold">{titleCenter}</div>
 
-          {/* ?�측 컨트�?*/}
+          {/* ?곗륫 而⑦듃濡?*/}
           <div className="flex items-center gap-3">
             <button className="rounded-full bg-white/10 px-3 py-1 text-sm hover:bg-white/20">VOLUME</button>
             <button className="rounded-full bg-white/10 px-3 py-1 text-sm hover:bg-white/20">report</button>
@@ -55,3 +55,5 @@ export default function LHeader({
     </header>
   );
 }
+
+

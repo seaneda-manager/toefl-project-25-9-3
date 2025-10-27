@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/reading/test/_DebugHud.tsx
+﻿// apps/web/app/(protected)/reading/test/_DebugHud.tsx
 'use client';
 import { useEffect } from 'react';
 
@@ -13,3 +13,5 @@ export default function DebugHud({ setId }: { setId: string }) {
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-/* ??: apps/web/app/auth/update-password/page.tsx */
+﻿/* ??: apps/web/app/auth/update-password/page.tsx */
 import { redirect } from 'next/navigation';
 import { updatePassword } from '@/actions/auth';
 import type { ActionState } from '@/actions/auth';
@@ -35,4 +35,6 @@ export default function UpdatePasswordPage() {
     </main>
   );
 }
+
+
 

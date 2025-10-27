@@ -1,4 +1,4 @@
-// apps/web/app/api/admin/set-role/route.ts
+﻿// apps/web/app/api/admin/set-role/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (uerr) return NextResponse.json({ error: uerr.message }, { status: 500 });
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  // ?�출??admin 가??
+  // ?몄텧??admin 媛??
   const { data: me, error: perr } = await supabase
     .from("profiles")
     .select("role")
@@ -29,3 +29,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+

@@ -1,8 +1,8 @@
-// normalized utf8
+﻿// normalized utf8
 'use client';
 
 import React from 'react';
-import type { RQuestion, RChoice } from '@/types/types-reading';
+import type { RQuestion, RChoice } from '@/models/reading';
 
 type Props = {
   q: RQuestion;
@@ -10,7 +10,7 @@ type Props = {
   index?: number;
 };
 
-// explanation ?�전 ?�??
+// explanation ?占쎌쟾 ?占??
 type Explanation = {
   clue_quote?: string;
   why_correct?: string;
@@ -37,7 +37,7 @@ export default function ReviewRow({ q, selected }: Props) {
   return (
     <div className="rounded-xl border border-gray-200 p-4 space-y-3 bg-white dark:bg-neutral-900 dark:border-neutral-800">
       <div className="font-medium text-gray-900 dark:text-gray-100">
-        Q{q.number ?? ''}. {/* 문제 본문???�로 ?�으�??�기??출력 */}
+        Q{q.number ?? ''}. {/* 臾몄젣 蹂몃Ц???占쎈줈 ?占쎌쑝占??占쎄린??異쒕젰 */}
       </div>
 
       <ul className="space-y-2">
@@ -61,9 +61,9 @@ export default function ReviewRow({ q, selected }: Props) {
               <div className="flex items-start gap-2">
                 <span className="font-semibold">{letter}.</span>
                 <span className="flex-1">{c.text}</span>
-                {isCorrect && <span className="text-xs text-green-700 dark:text-green-300">?�답</span>}
+                {isCorrect && <span className="text-xs text-green-700 dark:text-green-300">?占쎈떟</span>}
                 {isSelected && !isCorrect && (
-                  <span className="text-xs text-amber-700 dark:text-amber-300">???�택</span>
+                  <span className="text-xs text-amber-700 dark:text-amber-300">???占쏀깮</span>
                 )}
               </div>
             </li>
@@ -71,10 +71,10 @@ export default function ReviewRow({ q, selected }: Props) {
         })}
       </ul>
 
-      {/* ?�트/?�명 */}
+      {/* ?占쏀듃/?占쎈챸 */}
       {exp.clue_quote && (
         <div className="text-sm">
-          <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">근거 문장</div>
+          <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">洹쇨굅 臾몄옣</div>
           <blockquote className="rounded-md border-l-4 border-gray-300 bg-gray-50 p-2 dark:bg-neutral-800 dark:border-neutral-700">
             {exp.clue_quote}
           </blockquote>
@@ -85,14 +85,14 @@ export default function ReviewRow({ q, selected }: Props) {
         <div className="space-y-2 text-sm">
           {exp.why_correct && (
             <div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">???�답?��??</div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">???占쎈떟?占쏙옙??</div>
               <div className="whitespace-pre-wrap">{exp.why_correct}</div>
             </div>
           )}
 
           {exp.why_others && (
             <div>
-              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">?�른 ?�택지가 ?��??�유</div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">?占쎈Ⅸ ?占쏀깮吏媛 ?占쏙옙??占쎌쑀</div>
               <div className="space-y-1">
                 {Object.entries(exp.why_others).map(([k, v]) => (
                   <div key={k} className="text-gray-800 dark:text-gray-200">
@@ -107,3 +107,5 @@ export default function ReviewRow({ q, selected }: Props) {
     </div>
   );
 }
+
+

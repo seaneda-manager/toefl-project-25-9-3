@@ -1,10 +1,12 @@
-// normalized utf8
+﻿// normalized utf8
 export default function WritingTestPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <h1 className="text-2xl font-semibold">Writing · Test</h1>
-      <p className="mt-2 text-sm text-gray-600">?�스???�면 준비용 ?�켈?�톤?�니??</p>
+      <h1 className="text-2xl font-semibold">Writing 쨌 Test</h1>
+      <p className="mt-2 text-sm text-gray-600">?占쎌뒪???占쎈㈃ 以鍮꾩슜 ?占쎌펷?占쏀넠?占쎈땲??</p>
     </main>
   );
 }
+
+
 

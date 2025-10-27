@@ -1,4 +1,4 @@
-// apps/web/app/auth/forgot-password/page.tsx
+﻿// apps/web/app/auth/forgot-password/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -67,9 +67,9 @@ export default function ForgotPasswordPage() {
           disabled={loading}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
           aria-busy={loading}
-          title={loading ? 'Sending…' : 'Send reset link'}
+          title={loading ? 'Sending?? : 'Send reset link'}
         >
-          {loading ? 'Sending…' : 'Send reset link'}
+          {loading ? 'Sending?? : 'Send reset link'}
         </button>
 
         {msg && (
@@ -86,3 +86,5 @@ export default function ForgotPasswordPage() {
     </main>
   );
 }
+
+

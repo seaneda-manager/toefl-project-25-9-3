@@ -1,4 +1,4 @@
-export type Choice = {
+ï»¿export type Choice = {
   id: string;
   text: string;
   is_correct?: boolean;
@@ -15,7 +15,9 @@ export type Question = {
 export type Passage = {
   id: string;
   title?: string;
-  content?: string;   // reading¿ë ÅØ½ºÆ®
-  audioUrl?: string;  // listening¿ë ¿Àµğ¿À
+  content?: string;   // readingìš© í…ìŠ¤íŠ¸
+  audioUrl?: string;  // listeningìš© ì˜¤ë””ì˜¤
   questions: Question[];
 };
+
+

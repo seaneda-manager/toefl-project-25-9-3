@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 async function guardAdmin() {
@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'id,question_id,text required' }, { status: 400 });
   }
 
-  // ?�답?� 질문??1�??��?
+  // ?뺣떟? 吏덈Ц??1媛??좎?
   if (is_correct === true) {
     await g.supabase.from('reading_choices').update({ is_correct: false }).eq('question_id', question_id);
   }
@@ -46,3 +46,5 @@ export async function DELETE(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
+
+

@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/listening/page.tsx
+﻿// apps/web/app/(protected)/listening/page.tsx
 export const dynamic = 'force-dynamic';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -10,15 +10,15 @@ export default async function Page() {
   const supabase = await getSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    // (protected)??거의 ?????��?�??�전?�치
+    // (protected)??嫄곗쓽 ?????놁?留??덉쟾?μ튂
     return <div className="p-6">Please sign in.</div>;
   }
 
-  // ??RPC 권장 (?�시)
+  // ??RPC 沅뚯옣 (?덉떆)
   // const { data: sets, error } = await supabase
   //   .rpc<AvailSet[]>('listening_available_sets', { p_user_id: user.id });
 
-  // ??�?조인 직접 (?�재 로직 ?��?)
+  // ??酉?議곗씤 吏곸젒 (?꾩옱 濡쒖쭅 ?좎?)
   const { data: sets, error } = await supabase
     .from('v_user_listening_sets')
     .select('id,tpo,title')
@@ -36,15 +36,17 @@ export default async function Page() {
       {(!sets || sets.length === 0) ? (
         <>
           <p className="text-sm text-neutral-600">
-            ?�운로드??TPO가 ?�습?�다. 먼�? ?�료�??�운로드?�세??
+            ?ㅼ슫濡쒕뱶??TPO媛 ?놁뒿?덈떎. 癒쇱? ?먮즺瑜??ㅼ슫濡쒕뱶?섏꽭??
           </p>
         </>
       ) : (
         <SetPicker sets={sets} />
       )}
       <p className="text-xs text-neutral-500">
-        목록?�는 ?�운로드 ?�료???�차�??�시?�니??
+        紐⑸줉?먮뒗 ?ㅼ슫濡쒕뱶 ?꾨즺???뚯감留??쒖떆?⑸땲??
       </p>
     </div>
   );
 }
+
+

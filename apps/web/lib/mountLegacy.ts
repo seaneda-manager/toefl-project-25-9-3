@@ -1,20 +1,20 @@
-// normalized utf8
+﻿// normalized utf8
 // apps/web/lib/mountLegacy.ts
 'use client';
 
 /**
- * ���Ž� HTML ������ �����ϰ� mount�ϴ� ��ƿ.
- * - �ζ��� <script>�� JS�� ����(HTML/�ּ�/������ ��ũ��Ʈ ����)
- * - �ܺ� <script src>�� �Ӽ� ���� �� ������
- * - <link rel="stylesheet">, <style> ������(�ɼ�)
- * - �����̳�: selector | Element | Document | DocumentFragment | NodeList | Array ��� ����
+ * 占쏙옙占신쏙옙 HTML 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙占싹곤옙 mount占싹댐옙 占쏙옙틸.
+ * - 占싸띰옙占쏙옙 <script>占쏙옙 JS占쏙옙 占쏙옙占쏙옙(HTML/占쌍쇽옙/占쏙옙占쏙옙占쏙옙 占쏙옙크占쏙옙트 占쏙옙占쏙옙)
+ * - 占쌤븝옙 <script src>占쏙옙 占쌈쇽옙 占쏙옙占쏙옙 占쏙옙 占쏙옙占쏙옙占쏙옙
+ * - <link rel="stylesheet">, <style> 占쏙옙占쏙옙占쏙옙(占심쇽옙)
+ * - 占쏙옙占쏙옙占싱놂옙: selector | Element | Document | DocumentFragment | NodeList | Array 占쏙옙占?占쏙옙占쏙옙
  */
 
 export type MountLegacyOptions = {
-  appendTarget?: HTMLElement;     // ��ũ��Ʈ ���� �� (�⺻ document.body)
-  removeOriginal?: boolean;       // ������ ��������(�⺻ true ? ����� ���������� ����)
-  onDataScript?: (el: HTMLScriptElement) => boolean; // ������ ��ũ��Ʈ ���� ó�� �� true ��ȯ
-  reinsertStyles?: boolean;       // ��Ÿ�� ������ ���� (�⺻ true)
+  appendTarget?: HTMLElement;     // 占쏙옙크占쏙옙트 占쏙옙占쏙옙 占쏙옙 (占썩본 document.body)
+  removeOriginal?: boolean;       // 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙占쏙옙(占썩본 true ? 占쏙옙占쏙옙占?占쏙옙占쏙옙占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙)
+  onDataScript?: (el: HTMLScriptElement) => boolean; // 占쏙옙占쏙옙占쏙옙 占쏙옙크占쏙옙트 占쏙옙占쏙옙 처占쏙옙 占쏙옙 true 占쏙옙환
+  reinsertStyles?: boolean;       // 占쏙옙타占쏙옙 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙 (占썩본 true)
 };
 
 const DEFAULTS: Required<MountLegacyOptions> = {
@@ -31,21 +31,21 @@ function isBrowser() {
 
 // ---------- container normalizer ----------
 /**
- * � �Է��̵� querySelectorAll�� ���� ParentNode���� �迭�� ����ȭ
- * - selector(string): document.querySelectorAll �� �ټ� ��Ī ����
- * - ���� ���: [node]
- * - NodeList/HTMLCollection/�迭: ���͸� �� �迭
+ * 占쏘떤 占쌉뤄옙占싱듸옙 querySelectorAll占쏙옙 占쏙옙占쏙옙 ParentNode占쏙옙占쏙옙 占썼열占쏙옙 占쏙옙占쏙옙화
+ * - selector(string): document.querySelectorAll 占쏙옙 占쌕쇽옙 占쏙옙칭 占쏙옙占쏙옙
+ * - 占쏙옙占쏙옙 占쏙옙占? [node]
+ * - NodeList/HTMLCollection/占썼열: 占쏙옙占싶몌옙 占쏙옙 占썼열
  */
 function normalizeToParentNodes(input: any): ParentNode[] {
   if (!isBrowser()) return [];
   if (!input) return [];
 
-  // string selector �� ���� ���� ����
+  // string selector 占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙
   if (typeof input === 'string') {
     return Array.from(document.querySelectorAll(input));
   }
 
-  // ���� ���(Document, DocumentFragment, Element ��) �� querySelectorAll ���� ���η� ����
+  // 占쏙옙占쏙옙 占쏙옙占?Document, DocumentFragment, Element 占쏙옙) 占쏙옙 querySelectorAll 占쏙옙占쏙옙 占쏙옙占싸뤄옙 占쏙옙占쏙옙
   if (typeof input.querySelectorAll === 'function') {
     return [input as ParentNode];
   }
@@ -101,7 +101,7 @@ async function mountInlineScript(el: HTMLScriptElement, appendTarget: HTMLElemen
   const raw = el.textContent ?? '';
   const stripped = stripLegacyHtmlComment(raw).trim();
   if (!isAllowedJsType(el.type) || !stripped || looksLikeHtml(stripped)) {
-    console.warn('[legacy] inline script syntax invalid �� skipped', {
+    console.warn('[legacy] inline script syntax invalid 占쏙옙 skipped', {
       type: el.type || '(default)',
       preview: stripped.slice(0, 80),
     });
@@ -189,7 +189,7 @@ function reinsertStyles(container: ParentNode) {
 
 // ---------- public API ----------
 /**
- * �����̳�(��) ���� ���Ž� ��ũ��Ʈ/��Ÿ���� �����ϰ� ������.
+ * 占쏙옙占쏙옙占싱놂옙(占쏙옙) 占쏙옙占쏙옙 占쏙옙占신쏙옙 占쏙옙크占쏙옙트/占쏙옙타占쏙옙占쏙옙 占쏙옙占쏙옙占싹곤옙 占쏙옙占쏙옙占쏙옙.
  * @param containerOrSelector selector | Element | Document | DocumentFragment | NodeList | Array
  */
 export async function mountLegacy(
@@ -211,7 +211,7 @@ export async function mountLegacy(
       reinsertStyles(container);
     }
     await reinsertScripts(container, options.appendTarget!, options.onDataScript);
-    // ���� ���� ������ �ʿ��ϸ� ���⼭ ó�� (����� ����)
+    // 占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙 占십울옙占싹몌옙 占쏙옙占썩서 처占쏙옙 (占쏙옙占쏙옙占?占쏙옙占쏙옙)
     // if (options.removeOriginal && 'remove' in (container as any)) {
     //   try { (container as any).remove(); } catch {}
     // }
@@ -219,7 +219,7 @@ export async function mountLegacy(
 }
 
 /**
- * ���ڿ� HTML�� �ӽ� �����̳ʿ� �־� mount.
+ * 占쏙옙占쌘울옙 HTML占쏙옙 占쌈쏙옙 占쏙옙占쏙옙占싱너울옙 占쌍억옙 mount.
  */
 export async function mountLegacyFromString(html: string, opts?: MountLegacyOptions) {
   if (!isBrowser()) return;
@@ -229,4 +229,6 @@ export async function mountLegacyFromString(html: string, opts?: MountLegacyOpti
 }
 
 export default mountLegacy;
+
+
 

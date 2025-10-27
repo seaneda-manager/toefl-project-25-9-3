@@ -1,13 +1,15 @@
-// 최소 트랙 타입 — id는 문자열로 정규화 추천
+﻿// 理쒖냼 ?몃옓 ?????id??臾몄옄?대줈 ?뺢퇋??異붿쿇
 export type ListeningTrack = {
-  id: string;            // string | number 대신 string 권장 (URL/키로 자주 씀)
+  id: string;            // string | number ???string 沅뚯옣 (URL/?ㅻ줈 ?먯＜ ?)
   title?: string;
   name?: string;
   label?: string;
 };
 
-// Client entry 파일에서 쓸 Props
+// Client entry ?뚯씪?먯꽌 ??Props
 export type Props = Readonly<{
   track: ListeningTrack;
-  onFinishAction?: (sessionId: string) => void; // ← *Action 네이밍으로 경고 제거
+  onFinishAction?: (sessionId: string) => void; // ??*Action ?ㅼ씠諛띿쑝濡?寃쎄퀬 ?쒓굅
 }>;
+
+

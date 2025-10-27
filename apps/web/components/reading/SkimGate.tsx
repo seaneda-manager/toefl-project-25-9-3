@@ -1,13 +1,13 @@
-// apps/web/components/reading/SkimGate.tsx
+﻿// apps/web/components/reading/SkimGate.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
   content: string;
-  /** 시작 트리거 (Enter 또는 버튼 클릭) */
-  onUnlockAction: () => void;   // ← 이름 변경
-  /** 스크롤 박스 높이(px) */
+  /** ?쒖옉 ?몃━嫄?(Enter ?먮뒗 踰꾪듉 ?대┃) */
+  onUnlockAction: () => void;   // ???대쫫 蹂寃?
+  /** ?ㅽ겕濡?諛뺤뒪 ?믪씠(px) */
   height?: number;
 };
 
@@ -62,7 +62,7 @@ export default function SkimGate({ content, onUnlockAction, height = 520 }: Prop
     };
   }, []);
 
-  // Enter 키로 시작 (하단까지 스크롤 완료 시에만)
+  // Enter ?ㅻ줈 ?쒖옉 (?섎떒源뚯? ?ㅽ겕濡??꾨즺 ?쒖뿉留?
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!atBottom) return;
@@ -76,11 +76,11 @@ export default function SkimGate({ content, onUnlockAction, height = 520 }: Prop
     <div className="p-6">
       <h2 className="mb-3 text-xl font-semibold">Skim the passage</h2>
       <p id="skim-instruction" className="mb-3 text-sm text-neutral-500">
-        아래 영역의 끝까지 스크롤하면 시작 버튼이 활성화됩니다.
+        ?꾨옒 ?곸뿭???앷퉴吏 ?ㅽ겕濡ㅽ븯硫??쒖옉 踰꾪듉???쒖꽦?붾맗?덈떎.
       </p>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(300px,420px)_1fr]">
-        {/* 본문 스크롤 박스 */}
+        {/* 蹂몃Ц ?ㅽ겕濡?諛뺤뒪 */}
         <div
           ref={boxRef}
           className="overflow-y-auto rounded-2xl border p-4"
@@ -88,7 +88,7 @@ export default function SkimGate({ content, onUnlockAction, height = 520 }: Prop
           aria-labelledby="skim-instruction"
           role="region"
         >
-          {/* 진행 막대 */}
+          {/* 吏꾪뻾 留됰? */}
           <div className="mb-3 h-1 w-full overflow-hidden rounded bg-neutral-200/60">
             <div
               className="h-full bg-neutral-900 transition-[width]"
@@ -110,7 +110,7 @@ export default function SkimGate({ content, onUnlockAction, height = 520 }: Prop
           )}
         </div>
 
-        {/* 우측 패널 */}
+        {/* ?곗륫 ?⑤꼸 */}
         <div className="flex items-start">
           <button
             type="button"
@@ -123,10 +123,12 @@ export default function SkimGate({ content, onUnlockAction, height = 520 }: Prop
             aria-disabled={!atBottom}
             aria-describedby="skim-instruction"
           >
-            {atBottom ? 'Start Questions (Enter)' : `Scroll to Continue · ${progress}%`}
+            {atBottom ? 'Start Questions (Enter)' : `Scroll to Continue 쨌 ${progress}%`}
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+

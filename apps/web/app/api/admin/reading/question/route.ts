@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 async function guardAdmin() {
@@ -37,7 +37,7 @@ export async function DELETE(req: NextRequest) {
   const { id } = body as { id?: string };
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  // ?�안 존재 ?��?(질문 ?�위)
+  // ?듭븞 議댁옱 ?щ?(吏덈Ц ?⑥쐞)
   const { count } = await g.supabase
     .from('answers')
     .select('*', { count: 'exact', head: true })
@@ -52,3 +52,5 @@ export async function DELETE(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
+
+

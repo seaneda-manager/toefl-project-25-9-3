@@ -1,4 +1,4 @@
-// apps/web/app/home/admin/page.tsx
+﻿// apps/web/app/home/admin/page.tsx
 import { redirect } from 'next/navigation';
 import { getSessionAndRole } from '@/lib/authServer';
 import AdminUploader from './uploader';
@@ -9,7 +9,7 @@ export default async function AdminHomePage() {
   const { session, role } = await getSessionAndRole();
   if (!session) redirect('/auth/login?next=/home/admin');
   if (role !== 'admin') {
-    // ??���??�으�??�려보내�?
+    // ??븷蹂??덉쑝濡??뚮젮蹂대궡湲?
     if (role === 'teacher') redirect('/home/teacher');
     redirect('/home/student');
   }
@@ -49,3 +49,5 @@ export default async function AdminHomePage() {
     </main>
   );
 }
+
+

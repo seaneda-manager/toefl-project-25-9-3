@@ -1,6 +1,6 @@
-// apps/web/app/(protected)/reading/test/page.tsx
+﻿// apps/web/app/(protected)/reading/test/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
-import type { RPassage, RQuestion } from '@/types/types-reading';
+import type { RPassage, RQuestion } from '@/models/reading';
 import TestRunnerV2 from '@/components/reading/runner/TestRunnerV2';
 import { startReadingSession } from '@/actions/readingSession';
 
@@ -47,7 +47,7 @@ export default async function Page({
 }) {
   const setId = searchParams?.setId || 'demo-set';
 
-  // 1) Supabase 로드 (타임아웃 + 폴백)
+  // 1) Supabase 濡쒕뱶 (??꾩븘??+ ?대갚)
   let passage: RPassage | null = null;
   try {
     const supabase = await getSupabaseServer();
@@ -69,7 +69,7 @@ export default async function Page({
       return (
         <div className="p-6">
           <div className="rounded-xl border p-4">
-            Passage가 없습니다. (setId=<b>{setId}</b>)
+            Passage媛 ?놁뒿?덈떎. (setId=<b>{setId}</b>)
           </div>
         </div>
       );
@@ -86,7 +86,7 @@ export default async function Page({
     );
     const qs = respQs.data ?? [];
 
-    // RPassage로 먼저 보편형 구성
+    // RPassage濡?癒쇱? 蹂댄렪??援ъ꽦
     passage = {
       id: p.id,
       title: p.title ?? '',
@@ -96,7 +96,7 @@ export default async function Page({
         number: q.number ?? 0,
         stem: q.stem ?? '',
         type: normalizeType(q.type),
-        // null 가능성 정리: meta/explanation은 undefined로 치환
+        // null 媛?μ꽦 ?뺣━: meta/explanation? undefined濡?移섑솚
         meta: (q.meta as any) ?? undefined,
         explanation:
           (q.explanation as any) ??
@@ -112,7 +112,7 @@ export default async function Page({
   } catch (e: any) {
     console.warn('[Reading/Test] DB load failed:', e?.message || e);
     passage = {
-      // 최소 폴백 (RPassage)
+      // 理쒖냼 ?대갚 (RPassage)
       id: 'local-fallback',
       title: 'Fallback Passage',
       content:
@@ -134,18 +134,18 @@ export default async function Page({
     };
   }
 
-  // 2) 문항 유효성
+  // 2) 臾명빆 ?좏슚??
   if (!passage?.questions?.length) {
     return (
       <div className="p-6">
         <div className="rounded-xl border p-4">
-          현재 패시지에는 문항이 없습니다. (passage: <b>{passage?.title || 'untitled'}</b>)
+          ?꾩옱 ?⑥떆吏?먮뒗 臾명빆???놁뒿?덈떎. (passage: <b>{passage?.title || 'untitled'}</b>)
         </div>
       </div>
     );
   }
 
-  // 3) 세션 생성 (mode는 optional이므로 생략 — 서버 기본값 사용)
+  // 3) ?몄뀡 ?앹꽦 (mode??optional?대?濡??앸왂 ???쒕쾭 湲곕낯媛??ъ슜)
   let sessionId = `local-${Date.now()}`;
   try {
     const r = await startReadingSession({ setId });
@@ -154,7 +154,7 @@ export default async function Page({
     console.warn('[Reading/Test] startReadingSession failed, fallback to local id');
   }
 
-  // 4) TestRunnerV2가 요구하는 "더 좁은" 타입으로 변환해 전달
+  // 4) TestRunnerV2媛 ?붽뎄?섎뒗 "??醫곸?" ??낆쑝濡?蹂?섑빐 ?꾨떖
   type RunnerPassage = {
     id: string;
     title: string;
@@ -182,11 +182,11 @@ export default async function Page({
       choices: q.choices.map((c) => ({
         id: c.id,
         text: c.text ?? '',
-        is_correct: c.is_correct,                                // optional과 호환
-        explain: (c.explain as string | null | undefined) ?? undefined, // null 제거
+        is_correct: c.is_correct,                                // optional怨??명솚
+        explain: (c.explain as string | null | undefined) ?? undefined, // null ?쒓굅
       })),
-      explanation: (q.explanation as any) ?? undefined, // null 제거
-      meta: (q.meta as any) ?? undefined,               // null 제거
+      explanation: (q.explanation as any) ?? undefined, // null ?쒓굅
+      meta: (q.meta as any) ?? undefined,               // null ?쒓굅
     })),
   };
 
@@ -196,3 +196,5 @@ export default async function Page({
     </div>
   );
 }
+
+

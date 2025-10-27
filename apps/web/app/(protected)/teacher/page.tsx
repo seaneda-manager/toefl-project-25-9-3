@@ -1,4 +1,4 @@
-export default function TeacherHome() {
+﻿export default function TeacherHome() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
       <h1 className="text-2xl font-semibold">Teacher Dashboard</h1>
@@ -12,4 +12,6 @@ export default function TeacherHome() {
     </main>
   );
 }
+
+
 
