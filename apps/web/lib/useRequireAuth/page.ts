@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -40,6 +40,8 @@ export function useRequireAuth(redirect = '/auth/login') {
 
   return { loading, session, user: session?.user ?? null }
 }
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -286,8 +286,8 @@ export default function ListeningTestRunner({
               title={convTitle}
               imageUrl={convImage}
               audioUrl={loadedSet.conversation.audioUrl}
-              onEnded={nextFromAudio}
-              onNext={nextFromAudio}
+              onEndedAction={nextFromAudio}
+              onNextAction={nextFromAudio}
               sessionId={sessionId}
               trackId={loadedSet.conversation.id}
               mode={toQuestionMode(mode)}   /* ?붾㈃??Mode濡??꾨떖 */
@@ -314,8 +314,8 @@ export default function ListeningTestRunner({
               title={lectTitle}
               imageUrl={lectImage}
               audioUrl={loadedSet.lecture.audioUrl}
-              onEnded={nextFromAudio}
-              onNext={nextFromAudio}
+              onEndedAction={nextFromAudio}
+              onNextAction={nextFromAudio}
               sessionId={sessionId}
               trackId={loadedSet.lecture.id}
               mode={toQuestionMode(mode)}   /* ?붾㈃??Mode濡??꾨떖 */
@@ -362,5 +362,7 @@ export default function ListeningTestRunner({
     </div>
   );
 }
+
+
 
 

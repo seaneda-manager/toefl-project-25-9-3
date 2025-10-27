@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/route.ts
+// apps/web/app/api/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -22,5 +22,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true, items: data ?? [] }, { status: 200 });
 }
+
+
 
 

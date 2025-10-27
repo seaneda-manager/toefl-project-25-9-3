@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
@@ -46,5 +46,7 @@ export default function AuthGate({ children, fallback = null }: AuthGateProps) {
 
   return <>{children}</>;
 }
+
+
 
 

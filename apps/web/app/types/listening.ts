@@ -1,4 +1,4 @@
-﻿// apps/web/app/types/listening.ts
+// apps/web/app/types/listening.ts
 
 /** 紐⑤뱶 ??? 異뺤빟??t/p/r)怨??뺢퇋??test/study/review) 紐⑤몢 ?덉슜 */
 export type CanonicalMode = 'test' | 'study' | 'review';
@@ -37,5 +37,7 @@ export type ConsumePlayRow = {
 export type ConsumePlayResponse =
   | { ok: true; data: ConsumePlayRow[] }
   | { ok: false; error: string };
+
+
 
 

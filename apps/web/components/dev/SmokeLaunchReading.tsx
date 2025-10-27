@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 export default function SmokeLaunchReading() {
   const href = "/reading/test?setId=demo-set&mode=study&debug=1";
@@ -12,5 +12,7 @@ export default function SmokeLaunchReading() {
     </button>
   );
 }
+
+
 
 

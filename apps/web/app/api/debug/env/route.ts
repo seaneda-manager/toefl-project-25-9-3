@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -10,6 +10,8 @@ export async function GET() {
     keyPrefix: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').slice(0, 10),
   })
 }
+
+
 
 
 

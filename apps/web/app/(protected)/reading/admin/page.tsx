@@ -12,7 +12,7 @@ type Search = { setId?: string };
 export default async function Page({ searchParams }: { searchParams?: Search }) {
   const setId = searchParams?.setId || 'demo-set';
 
-  // 珥덇린 濡쒕뱶 (?놁쑝硫?鍮?怨④꺽)
+  // ?λ뜃由?嚥≪뮆諭?(??곸몵筌????ⓥ몿爰?
   const initial = await loadReadingSet(setId);
   const initialJson = initial
     ? JSON.stringify(initial, null, 2)
@@ -36,7 +36,7 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
         2
       );
 
-  // ?쒕쾭 ?≪뀡: ???쒖텧濡????(?대씪?먯꽌 吏곸젒 import 湲덉? ??prop?쇰줈 ?꾨떖)
+  // ??뺤쒔 ??る? ????뽱뀱嚥?????(????癒?퐣 筌욊낯??import 疫뀀뜆? ??prop??곗쨮 ?袁⑤뼎)
   async function saveAction(formData: FormData) {
     'use server';
     const raw = String(formData.get('json') || '');
@@ -56,5 +56,7 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
     </div>
   );
 }
+
+
 
 

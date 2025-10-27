@@ -1,4 +1,4 @@
-﻿/* apps/web/actions/auth.ts */
+/* apps/web/actions/auth.ts */
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -229,5 +229,7 @@ function sanitizeAuthError(msg?: string | null) {
   if (s.includes('email not confirmed')) return 'Please confirm your email.';
   return msg || 'Authentication failed.';
 }
+
+
 
 

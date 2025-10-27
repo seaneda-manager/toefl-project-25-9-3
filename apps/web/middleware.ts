@@ -1,4 +1,4 @@
-﻿// apps/web/middleware.ts
+// apps/web/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
@@ -130,5 +130,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|assets/|teacher/|legacy/).*)'],
 };
+
+
 
 

@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/admin/users/route.ts
+// apps/web/app/api/admin/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServer } from '../../../../lib/supabaseServer';
 const PAGE_SIZE = 20;
@@ -63,5 +63,7 @@ export async function GET(req: NextRequest) {
     total: count ?? undefined,
   });
 }
+
+
 
 

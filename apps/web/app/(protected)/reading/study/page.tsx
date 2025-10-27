@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/reading/study/page.tsx
+// apps/web/app/(protected)/reading/study/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import StudyRunner from './StudyRunner';
 import type { RPassage, RQuestion } from '@/models/reading';
@@ -90,5 +90,7 @@ export default async function Page() {
 
   return <StudyRunner passage={passage} />;
 }
+
+
 
 

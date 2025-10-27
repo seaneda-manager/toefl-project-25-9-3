@@ -1,4 +1,4 @@
-﻿// apps/web/app/student/layout.tsx
+// apps/web/app/student/layout.tsx
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -27,5 +27,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   return <>{children}</>;
 }
+
+
 
 

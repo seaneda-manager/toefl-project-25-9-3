@@ -1,4 +1,4 @@
-﻿// apps/web/app/auth/callback/page.tsx
+// apps/web/app/auth/callback/page.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -45,6 +45,8 @@ export default function AuthCallbackPage() {
 
   return <p className="p-4 text-center">Signing you in…</p>;
 }
+
+
 
 
 

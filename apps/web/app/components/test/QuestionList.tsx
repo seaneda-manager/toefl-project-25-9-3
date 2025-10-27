@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client'
 
 // Reading/Listening 怨듭슜 臾명빆 由ъ뒪??(?占쎌씪?占쏀깮)
@@ -58,5 +58,7 @@ export default function QuestionList({
     </div>
   )
 }
+
+
 
 

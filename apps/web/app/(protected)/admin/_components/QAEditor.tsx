@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import type { Question, Choice } from '../../../types/types-cms';
@@ -260,5 +260,7 @@ export function ChoiceList({ questionId }: { questionId: string }) {
     </div>
   );
 }
+
+
 
 

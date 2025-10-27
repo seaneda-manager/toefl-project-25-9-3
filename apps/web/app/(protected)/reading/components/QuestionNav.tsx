@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 type Props = {
   total: number;
@@ -58,6 +58,8 @@ export default function QuestionNav({
     </div>
   );
 }
+
+
 
 
 

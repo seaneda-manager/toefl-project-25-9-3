@@ -4,17 +4,17 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// ?ㅽ궎留?寃쎈줈 二쇱쓽(?쒕쾭/?대씪?댁뼵?몄뿉???숈씪 import ?ъ슜)
+// NOTE: schema export명이 실제로 존재해야 합니다.
 import { readingSetSchema } from '@/models/reading/zod';
 
-import type { RSet, RQuestion, RChoice, RPassage } from '@/models/reading/zod';
+import type { RSet, RQuestion, RChoice } from '@/models/reading/zod';
 type RQType = RQuestion['type'];
 
 type Props = {
   initialJson: string;
   defaultSetId: string;
-  // ?쒕쾭?먯꽌 ?대젮以 ?≪뀡 (Client?먯꽌 吏곸젒 import 湲덉?)
-  onSave: (fd: FormData) => Promise<{ ok: true; id: string }>;
+  // Server Action 아님: client prop 이름은 *Action 으로
+  onSaveAction: (fd: FormData) => Promise<{ ok: true; id: string }>;
 };
 
 type LintIssue = { level: 'error' | 'warn'; where: string; msg: string };
@@ -28,11 +28,14 @@ function splitParagraphs(content: string, mode: 'auto' | 'blankline' | 'html' = 
       .map((s) => s.replace(/<[^>]+>/g, '').trim())
       .filter(Boolean);
   }
-  // default: ??以?怨듬갚 湲곗?
-  return content.split(/\n{2,}/g).map((s) => s.trim()).filter(Boolean);
+  // default: 빈 줄 2개 이상을 단락 구분으로 처리
+  return content
+    .split(/\n{2,}/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
-/** meta ?덉쟾 ?묎렐???꾪빐 any ?섑띁 ?앹꽦 */
+/** meta 보조 뷰: 안전한 any 취급 */
 function metaView(q: RQuestion) {
   const m = (q.meta ?? {}) as any;
   return {
@@ -58,33 +61,34 @@ function metaView(q: RQuestion) {
 
 function lintReadingSet(set: RSet): LintIssue[] {
   const issues: LintIssue[] = [];
-  const p0 = set.passages[0];
+  const p0 = set.passages?.[0];
   if (!p0) {
-    issues.push({ level: 'error', where: 'set.passages', msg: '理쒖냼 1媛?passage ?꾩슂' });
+    issues.push({ level: 'error', where: 'set.passages', msg: 'At least one passage is required.' });
     return issues;
   }
-  const paras = splitParagraphs(p0.content, (p0.ui as any)?.paragraphSplit ?? 'auto');
+  const paras = Array.isArray(p0.paragraphs) ? p0.paragraphs : [];
 
   (p0.questions || []).forEach((q, qi) => {
     const where = `Q${q.number}(${q.type})`;
     const m = metaView(q);
 
-    // 踰덊샇 ?곗냽??寃쎄퀬)
+    // 번호 연속성 체크
     if (q.number !== qi + 1) {
       issues.push({
         level: 'warn',
         where,
-        msg: `臾명빆 踰덊샇媛 ?곗냽?곸씠吏 ?딆쓬: 湲곕? ${qi + 1}, ?꾩옱 ${q.number}`,
+        msg: `Question number mismatch. Expected ${qi + 1}, got ${q.number}.`,
       });
     }
 
-    // 蹂닿린
-    if (!q.choices?.length) issues.push({ level: 'error', where, msg: '蹂닿린 ?놁쓬' });
+    // 선택지 존재/내용 체크
+    if (!q.choices?.length) issues.push({ level: 'error', where, msg: 'No choices provided.' });
     q.choices?.forEach((c, ci) => {
-      if (!c.text?.trim()) issues.push({ level: 'warn', where, msg: `蹂닿린 #${ci + 1} ?띿뒪???놁쓬` });
+      if (!c.text?.trim())
+        issues.push({ level: 'warn', where, msg: `Choice #${ci + 1} has empty text.` });
     });
 
-    // ?좏삎蹂?泥댄겕
+    // 유형별 메타 체크
     if (q.type === 'summary') {
       const cand = m.summary.candidates ?? [];
       const cor = m.summary.correct ?? [];
@@ -92,49 +96,64 @@ function lintReadingSet(set: RSet): LintIssue[] {
         ? (m.summary.selectionCount as number)
         : NaN;
 
-      if (cand.length === 0) issues.push({ level: 'error', where, msg: 'summary.candidates 鍮꾩뼱 ?덉쓬' });
+      if (cand.length === 0) issues.push({ level: 'error', where, msg: 'summary.candidates required.' });
       if (!Number.isFinite(sel) || sel < 1)
-        issues.push({ level: 'error', where, msg: 'summary.selectionCount 媛믪씠 ?좏슚?섏? ?딆쓬' });
+        issues.push({ level: 'error', where, msg: 'summary.selectionCount must be >= 1.' });
       if (cor.length !== sel)
         issues.push({
           level: 'error',
           where,
-          msg: `summary.correct 媛쒖닔(${cor.length}) ??selectionCount(${Number.isNaN(sel) ? 'NaN' : sel})`,
+          msg: `summary.correct length (${cor.length}) must equal selectionCount (${Number.isNaN(sel) ? 'NaN' : sel}).`,
         });
       if (cor.some((i) => i < 0 || i >= cand.length))
-        issues.push({ level: 'error', where, msg: 'summary.correct ?몃뜳??踰붿쐞 珥덇낵' });
+        issues.push({
+          level: 'error',
+          where,
+          msg: 'summary.correct index out of range.',
+        });
     } else if (q.type === 'insertion') {
       const ins = m.insertion;
       const anchorsLen = ins.anchors?.length ?? 0;
-      if (!anchorsLen) issues.push({ level: 'error', where, msg: 'insertion.anchors 鍮꾩뼱 ?덉쓬' });
-      if (ins && (ins.correctIndex! < 0 || ins.correctIndex! >= anchorsLen)) {
-        issues.push({ level: 'error', where, msg: 'insertion.correctIndex 踰붿쐞 珥덇낵' });
+      if (!anchorsLen) issues.push({ level: 'error', where, msg: 'insertion.anchors required.' });
+      if (
+        ins &&
+        (ins.correctIndex == null || ins.correctIndex < 0 || ins.correctIndex >= anchorsLen)
+      ) {
+        issues.push({
+          level: 'error',
+          where,
+          msg: 'insertion.correctIndex out of range.',
+        });
       }
     } else if (q.type === 'pronoun_ref') {
       const pr = m.pronoun_ref;
-      if (!pr?.pronoun) issues.push({ level: 'warn', where, msg: 'pronoun_ref.pronoun 鍮꾩뼱 ?덉쓬' });
+      if (!pr?.pronoun) issues.push({ level: 'warn', where, msg: 'pronoun_ref.pronoun is empty.' });
       const refLen = pr?.referents?.length ?? 0;
-      if (!refLen) issues.push({ level: 'error', where, msg: 'pronoun_ref.referents 鍮꾩뼱 ?덉쓬' });
-      if (pr && (pr.correctIndex! < 0 || pr.correctIndex! >= refLen)) {
-        issues.push({ level: 'error', where, msg: 'pronoun_ref.correctIndex 踰붿쐞 珥덇낵' });
+      if (!refLen) issues.push({ level: 'error', where, msg: 'pronoun_ref.referents required.' });
+      if (pr && (pr.correctIndex == null || pr.correctIndex < 0 || pr.correctIndex >= refLen)) {
+        issues.push({
+          level: 'error',
+          where,
+          msg: 'pronoun_ref.correctIndex out of range.',
+        });
       }
     }
 
-    // ?섏씠?쇱씠???몃뜳??踰붿쐞
+    // 단락 하이라이트 인덱스 범위
     const ph = m.paragraph_highlight.paragraphs ?? [];
-    if (ph.some((i) => i < 0 || i >= paras.length)) {
+    if (ph.some((i: number) => i < 0 || i >= paras.length)) {
       issues.push({
         level: 'error',
         where,
-        msg: `paragraph_highlight ?몃뜳??踰붿쐞 珥덇낵 (臾몃떒 ??${paras.length})`,
+        msg: `paragraph_highlight index out of range (passages have ${paras.length} paragraphs).`,
       });
     }
 
-    // summary ???좏삎: ?뺣떟 ?뺥솗??1媛?
+    // summary 외 유형은 정답 1개 강제
     if (q.type !== 'summary') {
-      const cs = (q.choices || []).filter((c) => c.is_correct);
+      const cs = (q.choices || []).filter((c) => c.isCorrect);
       if (cs.length !== 1) {
-        issues.push({ level: 'error', where, msg: `?뺣떟 媛쒖닔 ${cs.length}媛?1媛쒖뿬????` });
+        issues.push({ level: 'error', where, msg: `Single correct choice required. Found ${cs.length}.` });
       }
     }
   });
@@ -143,14 +162,18 @@ function lintReadingSet(set: RSet): LintIssue[] {
 }
 
 /* ------------------------------ component ------------------------------ */
-export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }: Props) {
+export default function AdminReadingEditor({
+  initialJson,
+  defaultSetId,
+  onSaveAction,
+}: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<'json' | 'form'>('json');
   const [text, setText] = useState(initialJson);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // schema ??RSet 蹂??寃쎄퀬 TS2352 諛⑹?: unknown 寃쎌쑀)
+  // schema -> RSet
   const parsed: RSet | null = useMemo(() => {
     try {
       const obj = JSON.parse(text);
@@ -168,7 +191,7 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
       const obj = JSON.parse(text);
       readingSetSchema.parse(obj);
       setErr(null);
-      setMsg('??JSON valid.');
+      setMsg('✓ JSON is valid.');
     } catch (e: any) {
       setMsg(null);
       setErr(e?.message || 'Invalid JSON.');
@@ -180,13 +203,13 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
       const obj = JSON.parse(text);
       const ok = readingSetSchema.parse(obj) as unknown as RSet;
       const issues = lintReadingSet(ok);
-      if (issues.length === 0) setMsg('??Deep Check: 臾몄젣 ?놁쓬');
+      if (issues.length === 0) setMsg('✓ Deep Check: no issues found.');
       else {
         const lines = issues.map((i) => `${i.level.toUpperCase()} | ${i.where} | ${i.msg}`).join('\n');
-        setErr(`Deep Check 寃곌낵\n${lines}`);
+        setErr(`Deep Check Report\n${lines}`);
       }
     } catch (e: any) {
-      setErr('Deep Check ?ㅽ뙣: ' + (e?.message || 'invalid json'));
+      setErr('Deep Check failed: ' + (e?.message || 'invalid json'));
     }
   }, [text]);
 
@@ -196,20 +219,19 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
       setMsg(null);
       setErr(null);
       try {
-        // ?좏슚??誘몃━ ?뺤씤
         const obj = JSON.parse(text);
         readingSetSchema.parse(obj);
 
         const fd = new FormData();
         fd.set('json', JSON.stringify(obj));
-        const r = await onSave(fd);
-        setMsg(`??Saved: ${r.id}`);
+        const r = await onSaveAction(fd);
+        setMsg(`✓ Saved: ${r.id}`);
         router.replace(`/reading/admin?setId=${encodeURIComponent(r.id)}`);
       } catch (e: any) {
         setErr(e?.message || 'Save failed.');
       }
     },
-    [text, onSave, router]
+    [text, onSaveAction, router]
   );
 
   const openTest = useCallback(() => {
@@ -242,7 +264,7 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
         </div>
       </div>
 
-      {/* ?≪뀡??*/}
+      {/* Actions */}
       <div className="flex flex-wrap gap-2">
         <button className="rounded border px-3 py-1" onClick={validate}>
           Validate
@@ -261,12 +283,12 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
         </div>
       )}
       {err && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-red-300 whitespace-pre-wrap">
+        <div className="whitespace-pre-wrap rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-red-300">
           {err}
         </div>
       )}
 
-      {/* JSON ?몄쭛湲?*/}
+      {/* JSON 에디터 */}
       {tab === 'json' && (
         <form onSubmit={save} className="space-y-3">
           <textarea
@@ -290,13 +312,13 @@ export default function AdminReadingEditor({ initialJson, defaultSetId, onSave }
         </form>
       )}
 
-      {/* FORM ?먮뵒??MVP) */}
+      {/* FORM 에디터 (MVP) */}
       {tab === 'form' &&
         (parsed ? (
           <FormEditor parsed={parsed} setText={setText} />
         ) : (
           <div className="text-sm text-red-400">
-            JSON???좏슚?댁빞 Form ?몄쭛湲곕? ?ъ슜?????덉뼱?? 癒쇱? JSON ??뿉??Validate ?댁＜?몄슂.
+            JSON이 유효해야 Form 편집이 가능합니다. 먼저 Validate를 통과시켜 주세요.
           </div>
         ))}
     </div>
@@ -309,14 +331,12 @@ function makeMinimalSet(id: string): RSet {
     id,
     label: 'New Reading Set',
     source: '',
-    // schema??number ???レ옄濡?愿由?
     version: 1,
     passages: [
       {
         id: crypto.randomUUID(),
         title: 'Untitled Passage',
-        content: 'Write your passage here...',
-        ui: { paragraphSplit: 'auto' },
+        paragraphs: ['Write your passage here...'],
         questions: [],
       },
     ],
@@ -370,7 +390,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
-    q.choices = q.choices.map((c, i) => ({ ...c, is_correct: i === ci }));
+    q.choices = q.choices.map((c, i) => ({ ...c, isCorrect: i === ci }));
     qs[qi] = q;
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
@@ -395,9 +415,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
 
   const setType = (qi: number, t: RQType) => updateQuestion(qi, { type: t });
 
-  // ---- ?좏삎蹂?硫뷀? (?붿빟/?쒖닠/?紐낆궗 ?? ----
-
-  // summary: selectionCount留?諛붽퓭??candidates/correct ?좎?
+  // summary: selectionCount 및 candidates/correct 구성
   const setSummarySelection = (qi: number, n: number) => {
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
@@ -417,7 +435,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // ?붿빟 臾몄옣 ?몄쭛 (以꾨컮轅??먮뒗 | 援щ텇)
+  // summary 후보 입력 (개행 또는 | 구분)
   const setSummaryCandidates = (qi: number, raw: string) => {
     const candidates = raw
       .split(/\r?\n|\|/g)
@@ -443,7 +461,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // ?뺣떟 ?몃뜳???몄쭛 (1-based ?낅젰 ??0-based ???
+  // summary 정답 입력 (1-based → 0-based)
   const setSummaryCorrect = (qi: number, raw: string) => {
     const correct = raw
       .split(/\D+/g)
@@ -513,6 +531,9 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
+  // Passage content textarea는 paragraphs를 join해서 보여주고, 입력 시 split하여 paragraphs로 반영
+  const passageText = (draft.passages[0]?.paragraphs || []).join('\n\n');
+
   return (
     <div className="space-y-4 rounded-2xl border p-4">
       <div className="grid gap-3 md:grid-cols-2">
@@ -520,7 +541,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           <label className="text-xs text-neutral-500">Set Label</label>
           <input
             className="mt-1 w-full rounded border px-3 py-2"
-            value={draft.label}
+            value={draft.label || ''}
             onChange={(e) => setDraft((prev) => ({ ...prev, label: e.target.value }))}
           />
         </div>
@@ -535,7 +556,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           </div>
           <div>
             <label className="text-xs text-neutral-500">Version</label>
-            {/* number濡?愿由??ㅽ궎留??쇱튂) */}
+            {/* number지만 문자열 입력 허용 후 Number 변환 */}
             <input
               className="mt-1 w-full rounded border px-3 py-2"
               value={String(draft.version ?? 1)}
@@ -557,8 +578,8 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           <label className="text-xs text-neutral-500">Passage Content</label>
           <textarea
             className="mt-1 h-40 w-full rounded border px-3 py-2 font-mono text-sm"
-            value={draft.passages[0]?.content || ''}
-            onChange={(e) => setPassageField('content', e.target.value)}
+            value={passageText}
+            onChange={(e) => setPassageField('paragraphs', splitParagraphs(e.target.value))}
           />
         </div>
       </div>
@@ -607,7 +628,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                 onChange={(e) => updateQuestion(qi, { stem: e.target.value })}
               />
 
-              {/* ?좏삎蹂?硫뷀? (MVP) */}
+              {/* 유형별 메타 (MVP) */}
               {q.type === 'summary' && (
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="flex items-center gap-2">
@@ -621,7 +642,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                   </div>
                   <div>
                     <div className="mb-1 text-neutral-500">
-                      candidates (以꾨컮轅??먮뒗 <code>|</code> 援щ텇)
+                      candidates (줄바꿈 또는 <code>|</code> 구분)
                     </div>
                     <textarea
                       className="w-full rounded border px-3 py-2 font-mono"
@@ -632,7 +653,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                   </div>
                   <div>
                     <div className="mb-1 text-neutral-500">
-                      correct (?뺣떟 ?몃뜳??1-based, ?? <code>1|3|4</code>)
+                      correct (1-based, 예: <code>1|3|4</code>)
                     </div>
                     <input
                       className="w-full rounded border px-3 py-2 font-mono"
@@ -646,7 +667,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
               {q.type === 'insertion' && (
                 <div className="mt-2 text-sm">
                   <div className="mb-1 text-neutral-500">
-                    anchors (<code>|</code> 援щ텇)
+                    anchors (<code>|</code> 구분)
                   </div>
                   <input
                     className="w-full rounded border px-3 py-2"
@@ -674,7 +695,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                   />
                   <input
                     className="rounded border px-3 py-2 md:col-span-2"
-                    placeholder="referents ( | 援щ텇 )"
+                    placeholder="referents ( | 구분 )"
                     value={(m.pronoun_ref.referents || []).join(' | ')}
                     onChange={(e) =>
                       setPronounRef(
@@ -702,7 +723,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                         <input
                           type="radio"
                           name={`correct-${q.id}`}
-                          checked={!!c.is_correct}
+                          checked={!!c.isCorrect}
                           onChange={() => setCorrect(qi, ci)}
                         />
                         correct
@@ -724,11 +745,9 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           Apply to JSON
         </button>
         <div className="text-xs text-neutral-500">
-          Apply瑜??뚮윭??JSON ??뿉 諛섏쁺?쇱슂
+          Apply를 누르면 현재 Form 상태가 JSON 영역에 반영됩니다.
         </div>
       </div>
     </div>
   );
 }
-
-

@@ -1,12 +1,13 @@
-﻿/* apps/web/tailwind.config.ts */
+/* apps/web/tailwind.config.ts */
 import type { Config } from 'tailwindcss';
+import typography from '@tailwindcss/typography';
 
-const config: Config = {
+export default {
   content: [
-    './app/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './pages/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -36,9 +37,5 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('@tailwindcss/typography')],
-};
-export default config;
-
-
-
+  plugins: [typography],
+} satisfies Config;

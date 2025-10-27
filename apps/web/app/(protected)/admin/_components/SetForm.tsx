@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/admin/_components/SetForm.tsx
+// apps/web/app/(protected)/admin/_components/SetForm.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ type Props = {
   id?: string;
 };
 
-/** ???곹깭 ????붿떆??any 諛⑹?) */
+/** 폼 상태 (서버 타입과 분리해서 안전하게 관리) */
 type SetFormState = {
   title: string;
   section: ContentSet['section'];
@@ -39,48 +39,68 @@ export default function SetForm({ initial, id }: Props) {
     setBusy(true);
     setErr(null);
     try {
+      const payload: ContentSetInput = {
+        title: form.title.trim(),
+        section: form.section,
+        level: form.level.trim(),
+        tags: form.tags,
+        description: form.description,
+        is_published: !!form.is_published,
+      };
+
       const res = await fetch(id ? `/api/admin/sets/${id}` : '/api/admin/sets', {
         method: id ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form as ContentSetInput),
+        body: JSON.stringify(payload),
       });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || 'failed');
-      router.push('/(protected)/admin/sets');
+
+      let j: any = null;
+      try {
+        j = await res.json();
+      } catch {
+        // noop: 비JSON 응답 방어
+      }
+      if (!res.ok) {
+        throw new Error(j?.error || `Request failed (${res.status})`);
+      }
+
+      router.push('/admin/sets'); // URL에 (protected) 세그먼트는 포함되지 않음
       router.refresh();
     } catch (e: any) {
-      setErr(e.message);
+      setErr(e?.message ?? String(e));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 max-w-2xl">
-      {err && <div className="text-red-600 text-sm">{err}</div>}
+    <form onSubmit={onSubmit} className="max-w-2xl space-y-4">
+      {err && <div className="text-sm text-red-600">{err}</div>}
 
       <div>
-        <label htmlFor="title" className="block text-sm mb-1">Title</label>
+        <label htmlFor="title" className="mb-1 block text-sm">
+          Title
+        </label>
         <input
           id="title"
-          className="w-full border rounded-lg px-3 py-2"
+          className="w-full rounded-lg border px-3 py-2"
           value={form.title}
-          onChange={(e) =>
-            setForm((f: SetFormState) => ({ ...f, title: e.target.value }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
           required
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="section" className="block text-sm mb-1">Section</label>
+          <label htmlFor="section" className="mb-1 block text-sm">
+            Section
+          </label>
           <select
             id="section"
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full rounded-lg border px-3 py-2"
             value={form.section}
             onChange={(e) =>
-              setForm((f: SetFormState) => ({
+              setForm((f) => ({
                 ...f,
                 section: e.target.value as ContentSet['section'],
               }))
@@ -94,69 +114,68 @@ export default function SetForm({ initial, id }: Props) {
         </div>
 
         <div>
-          <label htmlFor="level" className="block text-sm mb-1">Level (?듭뀡)</label>
+          <label htmlFor="level" className="mb-1 block text-sm">
+            Level (난도)
+          </label>
           <input
             id="level"
-            className="w-full border rounded-lg px-3 py-2"
-            placeholder="?? 珥?以?怨? A2/B1 ??
+            className="w-full rounded-lg border px-3 py-2"
+            placeholder="예: CEFR B1/B2 또는 High/Upper-Intermediate"
             value={form.level ?? ''}
-            onChange={(e) =>
-              setForm((f: SetFormState) => ({ ...f, level: e.target.value }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="tags" className="block text-sm mb-1">Tags (?쇳몴 援щ텇)</label>
+        <label htmlFor="tags" className="mb-1 block text-sm">
+          Tags (쉼표로 구분)
+        </label>
         <input
           id="tags"
-          className="w-full border rounded-lg px-3 py-2"
+          className="w-full rounded-lg border px-3 py-2"
+          placeholder="예: inference, vocabulary, TPO54"
           value={(form.tags ?? []).join(', ')}
           onChange={(e) => {
             const t = e.target.value
               .split(',')
               .map((s) => s.trim())
               .filter(Boolean);
-            setForm((f: SetFormState) => ({ ...f, tags: t }));
+            setForm((f) => ({ ...f, tags: t }));
           }}
         />
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm mb-1">Description</label>
+        <label htmlFor="description" className="mb-1 block text-sm">
+          Description
+        </label>
         <textarea
           id="description"
-          className="w-full border rounded-lg px-3 py-2 min-h-[100px]"
+          className="min-h-[100px] w-full rounded-lg border px-3 py-2"
           value={form.description ?? ''}
-          onChange={(e) =>
-            setForm((f: SetFormState) => ({ ...f, description: e.target.value }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
         />
       </div>
 
-      <label className="inline-flex items-center gap-2">
+      <label className="inline-flex cursor-pointer items-center gap-2">
         <input
           type="checkbox"
           checked={!!form.is_published}
-          onChange={(e) =>
-            setForm((f: SetFormState) => ({ ...f, is_published: e.target.checked }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, is_published: e.target.checked }))}
         />
+        <span className="text-sm">Published</span>
       </label>
-      <span className="text-sm">Published</span>
 
       <div className="pt-2">
         <button
           type="submit"
           disabled={busy}
-          className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-60"
+          className="rounded-xl bg-blue-600 px-4 py-2 text-white disabled:opacity-60"
         >
-          {busy ? (id ? 'Updating?? : 'Creating??) : id ? 'Update Set' : 'Create Set'}
+          {busy ? (id ? 'Updating...' : 'Creating...') : id ? 'Update Set' : 'Create Set'}
         </button>
       </div>
     </form>
   );
 }
-
-

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React from 'react';
 
 type Col<T> = { header: string; render: (row: T) => React.ReactNode; className?: string };
@@ -41,5 +41,7 @@ export default function DataTable<T>({
     </div>
   );
 }
+
+
 
 

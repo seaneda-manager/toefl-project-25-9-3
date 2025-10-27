@@ -1,4 +1,4 @@
-﻿// apps/web/app/home/student/page.tsx
+// apps/web/app/home/student/page.tsx
 import { redirect } from 'next/navigation';
 import { getSessionAndRole } from '@/lib/authServer';
 
@@ -51,5 +51,7 @@ export default async function StudentHomePage() {
     </main>
   );
 }
+
+
 
 

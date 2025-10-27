@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 // apps/web/lib/analytics.ts
 import mixpanel from 'mixpanel-browser';
 
@@ -37,6 +37,8 @@ export function setUserProperties(props: Record<string, any>) {
     mixpanel.people.set(props);
   }
 }
+
+
 
 
 

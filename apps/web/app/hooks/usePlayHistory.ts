@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -82,6 +82,8 @@ export function usePlayHistory(sessionId: string | undefined) {
 
   return { history, addPlay, getLastPlay, clearHistory, ready: loadedRef.current };
 }
+
+
 
 
 

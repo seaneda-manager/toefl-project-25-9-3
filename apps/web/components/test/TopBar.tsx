@@ -1,4 +1,4 @@
-﻿// apps/web/components/test/TopBar.tsx
+// apps/web/components/test/TopBar.tsx
 'use client';
 
 import Link from 'next/link';
@@ -51,7 +51,7 @@ export default function TopBar({
   );
 
   const _onBack = onBack ?? noop;
-  const _onNext = onNext ?? noop;
+  const _onNextAction= onNext ?? noop;
   const _onPause = onPause ?? noop;
   const _onReview = onReview ?? noop;
   const _onToggleTime = onToggleTime ?? noop;
@@ -132,5 +132,7 @@ export default function TopBar({
     </header>
   );
 }
+
+
 
 

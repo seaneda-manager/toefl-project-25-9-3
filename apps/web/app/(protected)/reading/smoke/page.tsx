@@ -1,4 +1,4 @@
-﻿import SmokeLaunchReading from "@/components/dev/SmokeLaunchReading";
+import SmokeLaunchReading from "@/components/dev/SmokeLaunchReading";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +10,7 @@ export default function Page() {
     </div>
   );
 }
+
+
 
 

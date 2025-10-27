@@ -1,4 +1,4 @@
-﻿// apps/web/app/auth/forgot-password/page.tsx
+// apps/web/app/auth/forgot-password/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -23,8 +23,7 @@ export default function ForgotPasswordPage() {
     try {
       setLoading(true);
       const origin =
-        process.env.NEXT_PUBLIC_SITE_URL ??
-        (typeof window !== 'undefined' ? window.location.origin : '');
+        process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
 
       // Send reset link email; clicking it will go to /auth/update-password
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -67,9 +66,9 @@ export default function ForgotPasswordPage() {
           disabled={loading}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
           aria-busy={loading}
-          title={loading ? 'Sending?? : 'Send reset link'}
+          title={loading ? 'Sending…' : 'Send reset link'}
         >
-          {loading ? 'Sending?? : 'Send reset link'}
+          {loading ? 'Sending…' : 'Send reset link'}
         </button>
 
         {msg && (
@@ -86,5 +85,3 @@ export default function ForgotPasswordPage() {
     </main>
   );
 }
-
-

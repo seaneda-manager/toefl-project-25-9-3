@@ -1,4 +1,4 @@
-﻿// apps/web/lib/consumePlay.ts
+// apps/web/lib/consumePlay.ts
 import type { Mode } from '@/types/consume-play';
 
 export async function consumePlay({
@@ -13,5 +13,7 @@ export async function consumePlay({
   // ?꾩떆(而댄뙆???숈옉 理쒖냼??
   return { remaining: 0 };
 }
+
+
 
 

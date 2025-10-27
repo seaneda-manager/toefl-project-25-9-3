@@ -1,4 +1,4 @@
-﻿// apps/web/models/cms/db-types.ts
+// apps/web/models/cms/db-types.ts
 
 export type DbContentSet = {
   id: string;
@@ -59,5 +59,7 @@ export type DbChoice = {
   created_at: string;
   updated_at: string;
 };
+
+
 
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRef, useState } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabaseBrowser';
@@ -52,5 +52,7 @@ export default function AdminUploader() {
     </div>
   );
 }
+
+
 
 

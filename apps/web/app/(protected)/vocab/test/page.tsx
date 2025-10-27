@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 export default function VocabTestPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
@@ -7,6 +7,8 @@ export default function VocabTestPage() {
     </main>
   );
 }
+
+
 
 
 

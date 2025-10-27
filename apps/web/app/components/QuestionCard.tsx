@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client';
 import { useCallback, useId } from 'react';
 
@@ -119,5 +119,7 @@ export default function QuestionCard({ prompt, choices, selected, onAnswer }: Pr
     </div>
   );
 }
+
+
 
 

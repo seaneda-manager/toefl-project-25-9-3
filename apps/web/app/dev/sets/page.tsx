@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ORG_ID } from '@/lib/constants';
@@ -22,6 +22,8 @@ export default function Page(){
     </div>
   );
 }
+
+
 
 
 

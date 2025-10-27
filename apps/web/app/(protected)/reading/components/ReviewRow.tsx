@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client';
 
 import React from 'react';
@@ -107,5 +107,7 @@ export default function ReviewRow({ q, selected }: Props) {
     </div>
   );
 }
+
+
 
 

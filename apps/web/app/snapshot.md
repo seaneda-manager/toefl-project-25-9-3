@@ -1,4 +1,4 @@
-﻿[STATE v1 — 2025-09-18 15:31 +09:00]
+[STATE v1 — 2025-09-18 15:31 +09:00]
 1) Git: branch= / last=
 2) Versions: node=, pnpm=, npm=, yarn=, next=, typescript=
 3) tsconfig (apps/web/tsconfig.json) 존재: False; 일부 내용:

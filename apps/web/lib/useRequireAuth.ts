@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabaseClient";
@@ -22,6 +22,8 @@ export function useRequireAuth(returnTo: string = "/") {
 
   return ready;
 }
+
+
 
 
 

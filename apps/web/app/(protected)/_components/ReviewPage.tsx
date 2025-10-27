@@ -1,4 +1,4 @@
-﻿// app/(protected)/_components/ReviewPage.tsx
+// app/(protected)/_components/ReviewPage.tsx
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
 type Row = {
@@ -86,12 +86,12 @@ function Table({ rows }: { rows: Row[] }) {
           {rows.map((r) => (
             <tr key={r.q_no} className="[&>td]:px-3 [&>td]:py-2 border-t">
               <td className="font-medium">{r.q_no}</td>
-              <td>{r.question ?? <span className="opacity-60">??/span>}</td>
-              <td>{r.user_choice ?? <span className="opacity-60">??/span>}</td>
-              <td>{r.correct_choice ?? <span className="opacity-60">??/span>}</td>
+              <td>{r.question ?? <span className="opacity-60">-</span>}</td>
+              <td>{r.user_choice ?? <span className="opacity-60">-</span>}</td>
+              <td>{r.correct_choice ?? <span className="opacity-60">-</span>}</td>
               <td>
                 {r.is_correct === null ? (
-                  <span className="opacity-60">??/span>
+                  <span className="opacity-60">-</span>
                 ) : r.is_correct ? (
                   <span className="text-green-600">Correct</span>
                 ) : (
@@ -105,5 +105,7 @@ function Table({ rows }: { rows: Row[] }) {
     </div>
   );
 }
+
+
 
 

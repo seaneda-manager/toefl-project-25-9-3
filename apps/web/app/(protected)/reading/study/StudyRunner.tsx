@@ -1,4 +1,4 @@
-﻿// apps/web/components/reading/StudyRunner.tsx (?덉떆 寃쎈줈, ?ㅼ젣 ?꾩튂 ?좎?)
+// apps/web/components/reading/StudyRunner.tsx (?덉떆 寃쎈줈, ?ㅼ젣 ?꾩튂 ?좎?)
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -131,5 +131,7 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
     </div>
   );
 }
+
+
 
 

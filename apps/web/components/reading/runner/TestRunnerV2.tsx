@@ -13,11 +13,11 @@ type Props = {
   sessionId: string;
   mode?: 'study' | 'exam' | 'review' | 'test';
   gateFirst?: boolean;
-  /** ?꾨즺 ???곸쐞濡??몄뀡ID ?꾨떖 (?쇱슦???깆? ?곸쐞?먯꽌 泥섎━) */
+  /** ?袁⑥┷ ???怨몄맄嚥??紐꾨좮D ?袁⑤뼎 (??깆뒭???源? ?怨몄맄?癒?퐣 筌ｌ꼶?? */
   onFinishAction?: (sessionId: string | number) => void;
 };
 
-// 硫뷀? ?붿빟 酉곗뼱
+// 筌롫?? ?遺용튋 ?됯퀣堉?
 function viewMeta(q?: RQuestion) {
   const summary = (q?.meta?.summary ?? {}) as {
     candidates?: string[];
@@ -47,7 +47,7 @@ export default function TestRunnerV2({
     return (
       <SkimGate
         content={passage.content}
-        onUnlockAction={() => setGateDone(true)}  // ???대쫫 蹂寃?
+        onUnlockAction={() => setGateDone(true)}  // ????已?癰궰野?
       />
     );
   }
@@ -60,7 +60,7 @@ export default function TestRunnerV2({
   );
 }
 
-// Core: ?ㅼ젣 ?щ꼫
+// Core: ??쇱젫 ??瑗?
 function RunnerCore({
   passage,
   sessionId,
@@ -159,7 +159,7 @@ function RunnerCore({
   const next = useCallback(async () => {
     if (!qKey) return;
     if (!canNext) {
-      alert(isSummary ? `?뺥솗??${selectionCount}媛쒕? ?좏깮??二쇱꽭??` : '?듭븞???좏깮??二쇱꽭??');
+      alert(isSummary ? `?類μ넇??${selectionCount}揶쏆뮆? ?醫뤾문??雅뚯눘苑??` : '???툧???醫뤾문??雅뚯눘苑??');
       return;
     }
     await submitOne();
@@ -201,7 +201,7 @@ function RunnerCore({
   if (total === 0) {
     return (
       <div className="rounded-xl border p-4 text-sm">
-        濡쒕뱶??臾명빆???놁뒿?덈떎. (passage: <b>{passage?.title ?? 'untitled'}</b>)
+        嚥≪뮆諭???얜챸鍮????곷뮸??덈뼄. (passage: <b>{passage?.title ?? 'untitled'}</b>)
       </div>
     );
   }
@@ -214,7 +214,7 @@ function RunnerCore({
     return (
       <div className="p-6">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm text-neutral-500">Summary question 쨌 Full Text View</div>
+          <div className="text-sm text-neutral-500">Summary question 夷?Full Text View</div>
           <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(false)}>
             View Questions
           </button>
@@ -256,7 +256,7 @@ function RunnerCore({
         <h2 className="mt-2 text-lg font-semibold">{q?.stem ?? ''}</h2>
         {isSummary && (
           <div className="mt-1 text-xs text-neutral-500">
-            Select <b>{selectionCount}</b> choices. (?⑥? ?좏깮: {remaining})
+            Select <b>{selectionCount}</b> choices. (??? ?醫뤾문: {remaining})
           </div>
         )}
 
@@ -316,5 +316,7 @@ function RunnerCore({
     </div>
   );
 }
+
+
 
 

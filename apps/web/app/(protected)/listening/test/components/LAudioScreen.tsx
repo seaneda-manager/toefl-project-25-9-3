@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/listening/test/components/LAudioScreen.tsx
+// apps/web/app/(protected)/listening/test/components/LAudioScreen.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -6,26 +6,27 @@ import Image from 'next/image';
 import { consumePlay } from '@/lib/consumePlay';
 import type { Mode } from '@/types/consume-play';
 
+type Props = {
+  title: string;
+  imageUrl?: string;
+  audioUrl: string;
+  onEndedAction?: () => void; // ✅ *Action 이름만 사용
+  onNextAction?: () => void;  // ✅ *Action 이름만 사용
+  sessionId: string;
+  trackId?: string;
+  mode: Mode;
+};
+
 export default function LAudioScreen({
   title,
   imageUrl,
   audioUrl,
-  onEnded,
-  onNext,
+  onEndedAction,
+  onNextAction,
   sessionId,
   trackId,
   mode,
-}: {
-  title: string;
-  imageUrl?: string;
-  audioUrl: string;
-  onEnded?: () => void;
-  onNext?: () => void;
-  /** ?ъ깮 移댁슫?몃? ?뚮퉬(consume)?????꾩슂???뺣낫 */
-  sessionId: string;
-  trackId?: string;
-  mode: Mode;
-}) {
+}: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const autoStartedRef = useRef(false);
 
@@ -35,27 +36,29 @@ export default function LAudioScreen({
   const [rate, setRate] = useState(1);
   const [playing, setPlaying] = useState(false);
 
-  // consume ?곹깭
   const [consumed, setConsumed] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // ?몃옓 蹂寃???珥덇린??
   useEffect(() => {
     setConsumed(false);
     setRemaining(null);
     setErr(null);
     autoStartedRef.current = false;
+    const el = audioRef.current;
+    if (el) {
+      el.pause();
+      el.currentTime = 0;
+      el.load();
+    }
   }, [sessionId, trackId, audioUrl]);
 
-  // ?ㅻ뵒???대깽??諛붿씤??
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
 
     const onLoadedMeta = () => {
       setDur(el.duration || 0);
-      // 珥덇린 濡쒕뱶 ???ъ깮 ?띾룄 諛섏쁺 (釉뚮씪?곗?蹂?硫뷀? 濡쒕뱶 ??대컢 李⑥씠 怨좊젮)
       el.playbackRate = rate;
     };
     const onTime = () => {
@@ -68,7 +71,11 @@ export default function LAudioScreen({
     const onPause = () => setPlaying(false);
     const onEnd = () => {
       setPlaying(false);
-      onEnded?.();
+      onEndedAction?.(); // ✅ 여기서만 호출
+    };
+    const onError = () => {
+      setPlaying(false);
+      setErr('Audio failed to load or play.');
     };
 
     el.addEventListener('loadedmetadata', onLoadedMeta);
@@ -76,24 +83,21 @@ export default function LAudioScreen({
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onEnd);
-
+    el.addEventListener('error', onError);
     return () => {
       el.removeEventListener('loadedmetadata', onLoadedMeta);
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnd);
+      el.removeEventListener('error', onError);
     };
-  }, [onEnded, rate]);
+  }, [onEndedAction, rate]);
 
-  // ?ъ깮 ?띾룄 蹂寃????ㅻ뵒?ㅼ뿉 諛섏쁺
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = rate;
-    }
+    if (audioRef.current) audioRef.current.playbackRate = rate;
   }, [rate]);
 
-  // ?뚮퉬 + ?ъ깮 (理쒖큹 ?ъ깮 ??1??consume)
   const tryPlay = async () => {
     const el = audioRef.current;
     if (!el) return;
@@ -106,16 +110,14 @@ export default function LAudioScreen({
         setConsumed(true);
       } catch (e: any) {
         setErr(e?.message ?? String(e));
-        return; // consume ?ㅽ뙣 ???ъ깮?섏? ?딆쓬
+        return;
       }
     }
-
     el.play().catch(() => {
-      // ?먮룞?ъ깮 李⑤떒 ?깆쑝濡??ㅽ뙣?????덉쓬(臾댁떆)
+      setErr((prev) => prev ?? 'Tap Play to start the audio.');
     });
   };
 
-  // 吏꾩엯 ???먮룞 ?뚮퉬/?ъ깮 (StrictMode 以묐났 諛⑹?)
   useEffect(() => {
     if (autoStartedRef.current) return;
     autoStartedRef.current = true;
@@ -125,8 +127,8 @@ export default function LAudioScreen({
 
   const fmt = (t: number) => {
     if (!isFinite(t) || t < 0) return '00:00';
-    const m = Math.floor(t / 60),
-      s = Math.floor(t % 60);
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
@@ -148,14 +150,13 @@ export default function LAudioScreen({
     const pct = Number(e.target.value);
     const d = el.duration || 0;
     el.currentTime = (pct / 100) * d;
-    setProgress(pct); // ?щ씪?대뜑 利됱떆 諛섏쁺
+    setProgress(pct);
   };
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6">
       <h3 className="mb-4 text-lg font-semibold">{title}</h3>
 
-      {/* 以묒븰 ?대?吏 (next/image ?ъ슜) */}
       <div className="mb-6 flex min-h-[360px] items-center justify-center rounded-2xl border bg-white p-4">
         {imageUrl ? (
           <div className="relative h-[320px] w-full max-w-[720px]">
@@ -173,18 +174,21 @@ export default function LAudioScreen({
         )}
       </div>
 
-      {/* 而ㅼ뒪? 而⑦듃濡ㅻ윭 */}
       <div className="rounded-2xl border bg-white p-4">
         <div className="mb-3 flex items-center gap-3">
           <button
+            type="button"
             onClick={togglePlay}
             className="rounded-full border px-4 py-2 hover:bg-neutral-50"
           >
             {playing ? 'Pause' : 'Play'}
           </button>
           <button
+            type="button"
             onClick={changeRate}
             className="rounded-full border px-3 py-2 text-sm hover:bg-neutral-50"
+            aria-label="Change playback rate"
+            title="Change playback rate"
           >
             {rate.toFixed(2)}x
           </button>
@@ -203,6 +207,7 @@ export default function LAudioScreen({
           onChange={onSeek}
           className="w-full accent-yellow-400"
           aria-label="Seek"
+          disabled={!isFinite(dur) || dur === 0}
         />
 
         <div className="mt-3 flex items-center justify-between text-xs">
@@ -211,22 +216,22 @@ export default function LAudioScreen({
               ? `Remaining plays: ${remaining}`
               : consumed
                 ? 'Consumed'
-                : 'Preparing??}
+                : 'Preparing...'}
           </span>
           {err && <span className="text-red-600">Consume error: {err}</span>}
         </div>
 
         <div className="mt-4 flex justify-end">
           <button
+            type="button"
             className="rounded-xl border px-4 py-2 hover:bg-neutral-50"
-            onClick={onNext}
+            onClick={onNextAction} // ✅ *Action만 사용
           >
             Next
           </button>
         </div>
       </div>
 
-      {/* ?ㅼ젣 ?ㅻ뵒?ㅻ뒗 蹂댁“(?묎렐??怨좊젮 ???붾㈃?먯꽌 ?④?) */}
       <audio ref={audioRef} src={audioUrl} className="sr-only" preload="auto" />
     </div>
   );

@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/reading/components/QuestionCard.tsx
+// apps/web/app/(protected)/reading/components/QuestionCard.tsx
 'use client';
 
 import type { RQuestion as Question, RChoice as Choice } from '@/models/reading';
@@ -60,5 +60,7 @@ export default function QuestionCard({
     </ul>
   );
 }
+
+
 
 

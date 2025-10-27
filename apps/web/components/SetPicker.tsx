@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/listening/page.tsx
+// apps/web/app/(protected)/listening/page.tsx
 export const dynamic = 'force-dynamic';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -48,5 +48,7 @@ export default async function Page() {
     </div>
   );
 }
+
+
 
 

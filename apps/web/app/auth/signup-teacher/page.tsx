@@ -1,4 +1,4 @@
-﻿// apps/web/app/auth/signup-teacher/page.tsx
+// apps/web/app/auth/signup-teacher/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -27,7 +27,7 @@ export default function SignupTeacherPage() {
         noValidate
       >
         <div>
-          <label htmlFor="email" className="block text-sm mb-1">
+          <label htmlFor="email" className="mb-1 block text-sm">
             Email
           </label>
           <input
@@ -37,14 +37,14 @@ export default function SignupTeacherPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full rounded-lg border px-3 py-2"
             placeholder="you@example.com"
             autoComplete="email"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm mb-1">
+          <label htmlFor="password" className="mb-1 block text-sm">
             Password
           </label>
           <input
@@ -53,7 +53,7 @@ export default function SignupTeacherPage() {
             type="password"
             required
             minLength={6}
-            className="w-full border rounded-lg px-3 py-2"
+            className="w-full rounded-lg border px-3 py-2"
             placeholder="At least 6 characters"
             autoComplete="new-password"
           />
@@ -62,11 +62,11 @@ export default function SignupTeacherPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="px-4 py-2 rounded-xl bg-black text-white disabled:opacity-60"
+          className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60"
           aria-busy={submitting}
-          title={submitting ? 'Creating?? : 'Create teacher account'}
+          title={submitting ? 'Creating…' : 'Create teacher account'}
         >
-          {submitting ? 'Creating?? : 'Create teacher account'}
+          {submitting ? 'Creating…' : 'Create teacher account'}
         </button>
       </form>
 
@@ -79,5 +79,3 @@ export default function SignupTeacherPage() {
     </div>
   );
 }
-
-

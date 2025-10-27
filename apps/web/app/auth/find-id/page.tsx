@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 export default function FindIdPage() {
   return (
     <div className="min-h-[50vh] flex items-center justify-center px-4">
@@ -13,5 +13,7 @@ export default function FindIdPage() {
     </div>
   );
 }
+
+
 
 

@@ -1,4 +1,4 @@
-﻿export type Choice = {
+export type Choice = {
   id: string;
   text: string;
   is_correct?: boolean;
@@ -19,5 +19,7 @@ export type Passage = {
   audioUrl?: string;  // listening용 오디오
   questions: Question[];
 };
+
+
 
 

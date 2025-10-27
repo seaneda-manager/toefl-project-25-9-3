@@ -1,4 +1,4 @@
-﻿// apps/web/lib/supabaseClient.ts
+// apps/web/lib/supabaseClient.ts
 'use client';
 
 import { createBrowserClient } from '@supabase/ssr';
@@ -26,5 +26,7 @@ export function getSupabaseBrowser(): SupabaseClient {
 
 /** ?몄쓽??湲곕낯 ?몄뒪?댁뒪 */
 export const supabase = getSupabaseBrowser();
+
+
 
 

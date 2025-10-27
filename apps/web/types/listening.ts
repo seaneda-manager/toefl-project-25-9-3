@@ -1,4 +1,4 @@
-﻿// apps/web/types/consume-play.ts
+// apps/web/types/consume-play.ts
 
 /** 紐⑤뱶(吏㏃? ?쒓린/湲??쒓린) */
 export type ModeShort = 'p' | 't' | 'r';          // practice, test, review
@@ -72,5 +72,7 @@ export function remainingPlays(row: ConsumePlayRow): number {
 export function canPlay(row: ConsumePlayRow): boolean {
   return remainingPlays(row) > 0;
 }
+
+
 
 

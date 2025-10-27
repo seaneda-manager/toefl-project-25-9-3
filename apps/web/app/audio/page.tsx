@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -139,6 +139,8 @@ export default function Page() {
     </div>
   );
 }
+
+
 
 
 

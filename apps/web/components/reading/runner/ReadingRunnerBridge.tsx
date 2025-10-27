@@ -1,4 +1,4 @@
-﻿// apps/web/components/reading/runner/ReadingRunnerBridge.tsx
+// apps/web/components/reading/runner/ReadingRunnerBridge.tsx
 'use client';
 
 import { useMemo } from 'react';
@@ -71,5 +71,7 @@ export default function ReadingRunnerBridge({ data, mode = 'study', onFinish }: 
 
   return <TestRunnerV2 passage={passage} sessionId={sessionId} mode={mode} />;
 }
+
+
 
 

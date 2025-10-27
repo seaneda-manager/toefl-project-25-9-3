@@ -1,4 +1,4 @@
-﻿// tools/audit-routes.ts
+// tools/audit-routes.ts
 // Usage: pnpm tsx tools/audit-routes.ts
 import fs from 'fs';
 import path from 'path';
@@ -99,5 +99,7 @@ fs.writeFileSync(path.join(OUT, 'dupes.json'), JSON.stringify(dupesFiltered, nul
 fs.writeFileSync(path.join(OUT, 'components.json'), JSON.stringify(compIndex, null, 2));
 
 console.log('??Wrote audit/routes.json, audit/dupes.json, audit/components.json');
+
+
 
 

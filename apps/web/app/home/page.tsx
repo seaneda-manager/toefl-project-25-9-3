@@ -1,4 +1,4 @@
-﻿/* apps/web/app/home/page.tsx */
+/* apps/web/app/home/page.tsx */
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -56,5 +56,7 @@ export default async function HomeEntry() {
 
   redirect(roleHome(role));
 }
+
+
 
 

@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -99,5 +99,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ items });
 }
+
+
 
 

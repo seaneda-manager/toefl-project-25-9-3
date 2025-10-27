@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import ListeningPlayer from '@/components/ListeningPlayer'
@@ -33,6 +33,8 @@ export default function ListeningScreen() {
     </div>
   )
 }
+
+
 
 
 

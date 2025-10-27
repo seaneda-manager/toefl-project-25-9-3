@@ -20,10 +20,11 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.65.0",
-    "zod": "^3"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@sentry/nextjs": "^10.17.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/cheerio": "^1.0.0",
     "@types/fs-extra": "^11.0.4",
     "@types/mixpanel-browser": "^2.66.0",

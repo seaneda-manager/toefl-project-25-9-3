@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 export default function Page(){
@@ -9,6 +9,8 @@ export default function Page(){
   })();},[]);
   return <pre style={{padding:20,whiteSpace:'pre-wrap'}}>{JSON.stringify(out,null,2)}</pre>;
 }
+
+
 
 
 

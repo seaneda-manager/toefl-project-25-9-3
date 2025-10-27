@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/layout.tsx  (?덉떆 寃쎈줈 ???ㅼ젣 ?뚯씪 寃쎈줈 ?좎?)
+// apps/web/app/(protected)/layout.tsx  (?덉떆 寃쎈줈 ???ㅼ젣 ?뚯씪 寃쎈줈 ?좎?)
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -37,5 +37,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     </div>
   );
 }
+
+
 
 

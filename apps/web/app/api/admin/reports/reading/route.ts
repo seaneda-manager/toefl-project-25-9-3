@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/admin/reports/reading/route.ts
+// apps/web/app/api/admin/reports/reading/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -79,5 +79,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ summary, list });
 }
+
+
 
 

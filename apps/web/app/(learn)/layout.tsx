@@ -1,4 +1,4 @@
-﻿// apps/web/app/(learn)/layout.tsx
+// apps/web/app/(learn)/layout.tsx
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -39,5 +39,7 @@ export default async function LearnRoot({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
+
 
 

@@ -1,4 +1,4 @@
-﻿// apps/web/actions/listening.ts (?덉떆 ?꾩튂; ?꾩옱 ?뚯씪 ?꾩튂 ?좎? 媛??
+// apps/web/actions/listening.ts (?덉떆 ?꾩튂; ?꾩옱 ?뚯씪 ?꾩튂 ?좎? 媛??
 'use server';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -88,5 +88,7 @@ export async function finishListeningSession(
   if (error) throw new Error(error.message);
   return { ok: true };
 }
+
+
 
 

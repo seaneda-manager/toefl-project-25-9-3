@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 // apps/web/app/student/home/page.tsx
 'use client';
 import Link from 'next/link';
@@ -15,6 +15,8 @@ export default function StudentHome() {
     </main>
   );
 }
+
+
 
 
 

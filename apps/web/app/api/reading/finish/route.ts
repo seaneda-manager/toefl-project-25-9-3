@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/reading/finish/route.ts
+// apps/web/app/api/reading/finish/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -34,5 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 });
   }
 }
+
+
 
 

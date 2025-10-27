@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import {useEffect, useRef, useState} from 'react';
 
 export default function SkimmingGate({html, onUnlock}:{html:string; onUnlock:()=>void}){
@@ -22,5 +22,7 @@ export default function SkimmingGate({html, onUnlock}:{html:string; onUnlock:()=
     </div>
   );
 }
+
+
 
 

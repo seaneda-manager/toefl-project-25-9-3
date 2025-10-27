@@ -1,4 +1,4 @@
-﻿import SetForm from '../../_components/SetForm';
+import SetForm from '../../_components/SetForm';
 
 export default function NewSetPage() {
   return (
@@ -8,5 +8,7 @@ export default function NewSetPage() {
     </div>
   );
 }
+
+
 
 

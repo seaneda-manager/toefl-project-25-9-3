@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 export default function PassagePane({ title, content }: { title: string; content: string }) {
   return (
     <aside className="p-4 border rounded-2xl bg-white/5">
@@ -9,6 +9,8 @@ export default function PassagePane({ title, content }: { title: string; content
     </aside>
   );
 }
+
+
 
 
 

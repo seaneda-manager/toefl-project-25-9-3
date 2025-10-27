@@ -1,4 +1,4 @@
-﻿// apps/web/models/cms/types.ts
+// apps/web/models/cms/types.ts
 
 export type CmsChoice = {
   id: string;
@@ -28,5 +28,7 @@ export type CmsPassage = {
   content: string; // HTML or plain text
   questions: CmsQuestion[];
 };
+
+
 
 

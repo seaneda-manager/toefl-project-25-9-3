@@ -1,4 +1,4 @@
-﻿/* apps/web/app/auth/signup/page.tsx */
+/* apps/web/app/auth/signup/page.tsx */
 import { redirect } from 'next/navigation';
 import { signUp } from '@/actions/auth';
 import type { ActionState } from '@/actions/auth';
@@ -111,5 +111,7 @@ export default function SignUpPage({
     </main>
   );
 }
+
+
 
 

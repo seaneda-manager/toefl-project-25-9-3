@@ -1,4 +1,4 @@
-﻿// apps/web/app/login/LoginForm.tsx  ??寃쎈줈???ㅼ젣 ?꾩튂??留욎떠 二쇱꽭??
+// apps/web/components/auth/LoginForm.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -10,13 +10,17 @@ export default function LoginForm() {
   const [rememberId, setRememberId] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 濡쒖뺄????λ맂 ?꾩씠??濡쒕뱶
+  // 저장된 아이디 자동 채우기
   useEffect(() => {
-    const saved = localStorage.getItem('kp.rememberId');
-    const savedId = localStorage.getItem('kp.savedId');
-    if (saved === '1' && savedId) {
-      setRememberId(true);
-      setId(savedId);
+    try {
+      const saved = localStorage.getItem('kp.rememberId');
+      const savedId = localStorage.getItem('kp.savedId');
+      if (saved === '1' && savedId) {
+        setRememberId(true);
+        setId(savedId);
+      }
+    } catch {
+      // localStorage 접근 불가 시 무시
     }
   }, []);
 
@@ -26,7 +30,7 @@ export default function LoginForm() {
 
     setLoading(true);
     try {
-      // ?꾩씠??????듭뀡 泥섎━
+      // 아이디 저장/삭제
       if (rememberId) {
         localStorage.setItem('kp.rememberId', '1');
         localStorage.setItem('kp.savedId', id);
@@ -35,12 +39,12 @@ export default function LoginForm() {
         localStorage.removeItem('kp.savedId');
       }
 
-      // TODO: ?ㅼ젣 濡쒓렇??泥섎━ (?? supabase.auth.signInWithPassword)
+      // TODO: 실제 로그인 처리 (예: supabase.auth.signInWithPassword)
       await new Promise((r) => setTimeout(r, 600));
-      alert(`濡쒓렇???쒕룄\nID: ${id}\nPW: ${'*'.repeat(pw.length)}`);
+      alert(`로그인 시도\nID: ${id}\nPW: ${'*'.repeat(pw.length)}`);
     } catch (err) {
       console.error(err);
-      alert('濡쒓렇??以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
+      alert('로그인 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -49,22 +53,22 @@ export default function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="inline-block">
       {/* 
-        洹몃━??2??
-        - 1?? ?낅젰?(怨좎젙 ??320px)
-        - 2?? 踰꾪듉(?몃줈濡???移?李⑥?)
+        레이아웃 2열
+        - 1열: 입력영역(고정 320px)
+        - 2열: 버튼(세로로 길게)
       */}
       <div className="grid grid-cols-[320px_minmax(140px,1fr)] items-stretch gap-3">
-        {/* ?꾩씠??*/}
+        {/* 아이디 */}
         <div className="col-start-1">
           <label className="sr-only" htmlFor="login-id">
-            ?꾩씠??
+            아이디
           </label>
           <input
             id="login-id"
             type="text"
             inputMode="email"
             autoComplete="username"
-            placeholder="?꾩씠???먮뒗 ?대찓??
+            placeholder="아이디 또는 이메일"
             value={id}
             onChange={(e) => setId(e.target.value)}
             className="h-12 w-[320px] rounded-xl border px-4 text-[15px]
@@ -73,7 +77,7 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* 濡쒓렇??踰꾪듉 (?몃줈濡?2移?李⑥?) */}
+        {/* 로그인 버튼 (오른쪽 열 전체 높이) */}
         <div className="col-start-2 row-span-2">
           <button
             type="submit"
@@ -84,22 +88,22 @@ export default function LoginForm() {
                        disabled:opacity-60 disabled:cursor-not-allowed
                        transition"
             aria-busy={loading}
-            title={loading ? '濡쒓렇??以묅? : '濡쒓렇??}
+            title={loading ? '로그인 중…' : '로그인'}
           >
-            {loading ? '濡쒓렇??以묅? : '濡쒓렇??}
+            {loading ? '로그인 중…' : '로그인'}
           </button>
         </div>
 
-        {/* 鍮꾨?踰덊샇 */}
+        {/* 비밀번호 */}
         <div className="col-start-1">
           <label className="sr-only" htmlFor="login-pw">
-            鍮꾨?踰덊샇
+            비밀번호
           </label>
           <input
             id="login-pw"
             type="password"
             autoComplete="current-password"
-            placeholder="鍮꾨?踰덊샇"
+            placeholder="비밀번호"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
             className="h-12 w-[320px] rounded-xl border px-4 text-[15px]
@@ -108,7 +112,7 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* ?듭뀡/留곹겕: ?낅젰?怨?踰꾪듉 ?ъ씠????以꾨줈 諛곗튂 + 以꾨컮轅?諛⑹? */}
+        {/* 옵션/링크 줄 */}
         <div
           className="col-start-1 col-span-2 row-start-3 mt-1
                      flex flex-nowrap items-center gap-4
@@ -121,7 +125,7 @@ export default function LoginForm() {
               onChange={(e) => setRememberId(e.target.checked)}
               className="accent-blue-600"
             />
-            ?꾩씠?????
+            아이디 저장
           </label>
 
           <div className="flex flex-nowrap items-center gap-4 shrink-0">
@@ -130,20 +134,20 @@ export default function LoginForm() {
               className="underline-offset-2 hover:underline whitespace-nowrap"
               onClick={(e) => {
                 e.preventDefault();
-                alert('?꾩씠??李얘린 ?섏씠吏 ?곌껐 ?덉젙');
+                alert('아이디 찾기 페이지 연결 예정');
               }}
             >
-              ?꾩씠??李얘린
+              아이디 찾기
             </Link>
             <Link
               href="#"
               className="underline-offset-2 hover:underline whitespace-nowrap"
               onClick={(e) => {
                 e.preventDefault();
-                alert('鍮꾨?踰덊샇 李얘린 ?섏씠吏 ?곌껐 ?덉젙');
+                alert('비밀번호 찾기 페이지 연결 예정');
               }}
             >
-              鍮꾨?踰덊샇 李얘린
+              비밀번호 찾기
             </Link>
           </div>
         </div>
@@ -151,5 +155,3 @@ export default function LoginForm() {
     </form>
   );
 }
-
-

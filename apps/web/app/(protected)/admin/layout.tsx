@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/admin/layout.tsx
+// apps/web/app/(protected)/admin/layout.tsx
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -31,17 +31,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <Link href="/admin" className="font-semibold">
           Admin Dashboard
         </Link>
+
         <nav className="text-sm flex gap-3">
-          <Link href="/admin">媛쒖슂</Link>
-          <Link href="/admin/content/new/json">JSON ?낅줈??/Link>
-          <Link href="/admin/content/new/form">???낅젰</Link>
-          <Link href="/admin/content/list">肄섑뀗痢?愿由?/Link>
-          <Link href="/admin/reports">由ы룷??/Link>
+          <Link href="/admin">대시보드</Link>
+          <Link href="/admin/content/new/json">JSON 업로드</Link>
+          <Link href="/admin/content/new/form">폼 입력</Link>
+          <Link href="/admin/content/list">콘텐츠 목록</Link>
+          <Link href="/admin/reports">리포트</Link>
           <Link href="/admin/users" className="font-medium">
-            ?ъ슜??愿由?
+            사용자 관리
           </Link>
         </nav>
       </header>
+
       <AdminShell>{children}</AdminShell>
     </div>
   );

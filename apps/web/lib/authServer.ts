@@ -1,4 +1,4 @@
-﻿// apps/web/lib/authServer.ts
+// apps/web/lib/authServer.ts
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
@@ -24,5 +24,7 @@ export async function getSessionAndRole() {
   const role = (session?.user?.user_metadata?.role ?? 'student') as UserRole;
   return { session, role, supabase };
 }
+
+
 
 

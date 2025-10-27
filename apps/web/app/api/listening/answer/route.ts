@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/listening/answer/route.ts
+// apps/web/app/api/listening/answer/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -51,5 +51,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true }, { status: 200 });
 }
+
+
 
 

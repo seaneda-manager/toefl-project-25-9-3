@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/sessions/answer/route.ts (寃쎈줈 留욊쾶)
+// apps/web/app/api/sessions/answer/route.ts (寃쎈줈 留욊쾶)
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
@@ -56,5 +56,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true }, { status: 200 });
 }
+
+
 
 

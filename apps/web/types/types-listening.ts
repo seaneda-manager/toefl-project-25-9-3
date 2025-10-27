@@ -1,91 +1,91 @@
 // apps/web/types/types-listening.ts
 import type { RSet, RQuestion, RChoice, RPassage } from '@/models/reading/zod';
-// ?ㅽ뻾 紐⑤뱶
+// ??쎈뻬 筌뤴뫀諭?
 export type Mode = 'study' | 'test';
 
-/** Choice (怨쇨굅/?꾩옱 ?꾨뱶 ?명솚) */
+/** Choice (?⑥눊援??袁⑹삺 ?袁⑤굡 ?紐낆넎) */
 export interface ListeningChoice {
   id: string;
   text: string;
-  /** 怨쇨굅/?꾩옱 ?쇱슜???뺣떟 ?쒓린 */
+  /** ?⑥눊援??袁⑹삺 ??깆뒠???類ｋ뼗 ??볥┛ */
   correct?: boolean;
   is_correct?: boolean;
 }
-/** ?щ꼫 肄붾뱶?먯꽌 湲곕??섎뒗 ?대쫫???④퍡 ?쒓났 */
+/** ??瑗??꾨뗀諭?癒?퐣 疫꿸퀡???롫뮉 ??已????ｍ뜞 ??볥궗 */
 export type LChoice = ListeningChoice;
 
-/** Question (怨쇨굅/?꾩옱 ?꾨뱶 ?명솚) */
+/** Question (?⑥눊援??袁⑹삺 ?袁⑤굡 ?紐낆넎) */
 export interface ListeningQuestion {
   id: string;
   number?: number;
 
-  /** 怨쇨굅 肄붾뱶?먯꽑 prompt/stem ?쇱슜 */
+  /** ?⑥눊援??꾨뗀諭?癒?퐨 prompt/stem ??깆뒠 */
   prompt?: string;
   stem?: string;
 
   choices: ListeningChoice[];
   meta?: Record<string, unknown>;
 }
-/** ?щ꼫?먯꽌 ?곕뒗 蹂꾩묶 */
+/** ??瑗?癒?퐣 ?怨뺣뮉 癰귢쑴臾?*/
 export type LQuestion = ListeningQuestion;
 
-/** Track (怨쇨굅/?꾩옱 ?꾨뱶 ?명솚) */
+/** Track (?⑥눊援??袁⑹삺 ?袁⑤굡 ?紐낆넎) */
 export interface ListeningTrack {
   id: string;
   title?: string;
 
-  /** ?ㅻ뵒??URL: 怨쇨굅 audio_url, ?꾩옱 audioUrl */
-  audioUrl: string;     // ?꾩옱 ?쒖?
-  audio_url?: string;   // 怨쇨굅 ?명솚
+  /** ??삳탵??URL: ?⑥눊援?audio_url, ?袁⑹삺 audioUrl */
+  audioUrl: string;     // ?袁⑹삺 ???
+  audio_url?: string;   // ?⑥눊援??紐낆넎
 
-  /** ?쒓컙 愿???듭뀡 */
+  /** ??볦퍢 ?온??????*/
   timeLimitSec?: number;
   durationSec?: number;
 
   questions: ListeningQuestion[];
 }
 
-/* ===================== Helpers (?명솚/?몄쓽 ?좏떥) ===================== */
+/* ===================== Helpers (?紐낆넎/?紐꾩벥 ?醫뤿뼢) ===================== */
 
-/** 吏덈Ц ?띿뒪???쇨큵 異붿텧 (怨듬갚 泥섎━ ?ы븿) */
+/** 筌욌뜄揆 ??용뮞????⑦겣 ?곕뗄??(?⑤벉媛?筌ｌ꼶????釉? */
 export function getQuestionText(q: ListeningQuestion): string {
   const txt = q.prompt ?? q.stem ?? '';
   return typeof txt === 'string' ? txt.trim() : '';
 }
 
-/** ?ㅻ뵒??URL ?쇨큵 異붿텧 (audio_url ??audioUrl 留ㅽ븨 ?ы븿) */
+/** ??삳탵??URL ??⑦겣 ?곕뗄??(audio_url ??audioUrl 筌띲끋釉???釉? */
 export function getAudioUrl(t: ListeningTrack): string {
   return (t.audioUrl ?? t.audio_url ?? '').trim();
 }
 
-/** ?대떦 ?좏깮吏媛 ?뺣떟?몄? 寃??*/
+/** ?????醫뤾문筌왖揶쎛 ?類ｋ뼗?紐? 野꺜??*/
 export function isChoiceCorrect(q: ListeningQuestion, choiceId: string): boolean {
   const c = q.choices.find((x) => x.id === choiceId);
   return !!(c && (c.is_correct === true || c.correct === true));
 }
 
-/** ?섎굹?쇰룄 ?뺣떟???덈뒗吏(?곗씠??寃利앹슜) */
+/** ??롪돌??곕즲 ?類ｋ뼗????덈뮉筌왖(?怨쀬뵠??野꺜筌앹빘?? */
 export function hasAnyCorrectChoice(q: ListeningQuestion): boolean {
   return q.choices.some((c) => c.is_correct === true || c.correct === true);
 }
 
-/* ===================== Normalizers (?뺢퇋?? ===================== */
+/* ===================== Normalizers (?類?뇣?? ===================== */
 /**
- * ?ㅼ뼱?ㅻ뒗 ?곗씠?곗쓽 ?ㅼ뫁?좎뫁?⑥쓣 ?≪닔?섍퀬,
- * UI/濡쒖쭅?먯꽌 ?곌린 ?ъ슫 "?꾩닔 ?꾨뱶 蹂댁옣" ?뺥깭濡?諛붽퓠?덈떎.
+ * ??쇰선??삳뮉 ?怨쀬뵠?怨쀬벥 ??쇰쳛?醫롫쳛??μ뱽 ??る땾??랁?
+ * UI/嚥≪뮇彛?癒?퐣 ?怨뚮┛ ????"?袁⑸땾 ?袁⑤굡 癰귣똻?? ?類κ묶嚥?獄쏅떽???덈뼄.
  */
 
 export type NormalizedListeningChoice = Readonly<{
   id: string;
   text: string;
-  /** ?뺢퇋?붾맂 ?뺣떟 ?뚮옒洹?湲곕낯媛?false) */
+  /** ?類?뇣?遺얜쭆 ?類ｋ뼗 ???삋域?疫꿸퀡??첎?false) */
   is_correct: boolean;
 }>;
 
 export type NormalizedListeningQuestion = Readonly<{
   id: string;
-  number: number;          // 蹂댁옣
-  text: string;            // prompt/stem ?듯빀
+  number: number;          // 癰귣똻??
+  text: string;            // prompt/stem ????
   choices: NormalizedListeningChoice[];
   meta?: Record<string, unknown>;
 }>;
@@ -93,13 +93,13 @@ export type NormalizedListeningQuestion = Readonly<{
 export type NormalizedListeningTrack = Readonly<{
   id: string;
   title?: string;
-  audioUrl: string;        // audio_url ?명솚 泥섎━ + 怨듬갚 ?쒓굅
+  audioUrl: string;        // audio_url ?紐낆넎 筌ｌ꼶??+ ?⑤벉媛???볤탢
   timeLimitSec?: number;
   durationSec?: number;
   questions: NormalizedListeningQuestion[];
 }>;
 
-/** ?좏깮吏 ?뺢퇋??*/
+/** ?醫뤾문筌왖 ?類?뇣??*/
 export function normalizeChoice(c: ListeningChoice): NormalizedListeningChoice {
   return {
     id: String(c.id),
@@ -108,7 +108,7 @@ export function normalizeChoice(c: ListeningChoice): NormalizedListeningChoice {
   };
 }
 
-/** 吏덈Ц ?뺢퇋?? number 蹂댁옣, text ?듯빀 */
+/** 筌욌뜄揆 ?類?뇣?? number 癰귣똻?? text ???? */
 export function normalizeQuestion(
   q: ListeningQuestion,
   fallbackNumber?: number
@@ -129,7 +129,7 @@ export function normalizeQuestion(
   };
 }
 
-/** ?몃옓 ?뺢퇋?? audioUrl 蹂댁옣(+audio_url), 吏덈Ц ?섎쾭 ?먮룞 蹂댁젙 */
+/** ?紐껋삌 ?類?뇣?? audioUrl 癰귣똻??+audio_url), 筌욌뜄揆 ??롮쒔 ?癒?짗 癰귣똻??*/
 export function normalizeTrack(t: ListeningTrack): NormalizedListeningTrack {
   const audio = getAudioUrl(t);
   const qs = (t.questions ?? []).map((qq, i) =>
@@ -146,14 +146,14 @@ export function normalizeTrack(t: ListeningTrack): NormalizedListeningTrack {
   };
 }
 
-/** ?щ윭 ?몃옓 ??踰덉뿉 ?뺢퇋??*/
+/** ?????紐껋삌 ??甕곕뜆肉??類?뇣??*/
 export function normalizeTracks(ts: ListeningTrack[]): NormalizedListeningTrack[] {
   return (ts ?? []).map(normalizeTrack);
 }
 
 /* ============================================================
-   ??Play Consume API ???諛??뺢퇋???⑥닔
-   (listening-sample/page.tsx?먯꽌 import?섎뒗 ??ぉ??
+   ??Play Consume API ????獄??類?뇣????λ땾
+   (listening-sample/page.tsx?癒?퐣 import??롫뮉 ?????
 ============================================================ */
 
 export type ConsumePlayRow = Readonly<{
@@ -168,7 +168,7 @@ export type ConsumePlayResponse =
   | { ok: true; data: ConsumePlayRow }
   | { ok: false; error: string };
 
-/** ?쒕쾭 ?묐떟(snake_case ?ы븿)??camelCase濡??듭씪 */
+/** ??뺤쒔 ?臾먮뼗(snake_case ??釉???camelCase嚥????뵬 */
 export function normalizeConsumePlayRow(input: any): ConsumePlayRow {
   if (!input) {
     return { sessionId: '', playsAllowed: 0, playsUsed: 0, remaining: 0 };
@@ -189,5 +189,7 @@ export function normalizeConsumePlayRow(input: any): ConsumePlayRow {
     remaining: Number(remaining),
   };
 }
+
+
 
 

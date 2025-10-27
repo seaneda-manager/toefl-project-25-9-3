@@ -1,4 +1,4 @@
-﻿// apps/web/lib/supabaseServer.ts
+// apps/web/lib/supabaseServer.ts
 'use server';
 
 import { cookies } from 'next/headers';
@@ -48,5 +48,7 @@ export async function getSupabaseServer(): Promise<SupabaseClient> {
 
   return supabase;
 }
+
+
 
 

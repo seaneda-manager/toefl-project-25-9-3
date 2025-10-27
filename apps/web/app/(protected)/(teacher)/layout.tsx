@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/(teacher)/layout.tsx
+// apps/web/app/(protected)/(teacher)/layout.tsx
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import TeacherTopTabs from '@/components/teacher/TeacherTopTabs';
@@ -29,5 +29,7 @@ export default async function TeacherLayout({ children }: { children: ReactNode 
     </div>
   );
 }
+
+
 
 

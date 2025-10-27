@@ -1,4 +1,4 @@
-﻿// apps/web/app/page.tsx  (?먮뒗 ?대떦 ?꾩튂???섏씠吏 ?뚯씪)
+// apps/web/app/page.tsx  (?먮뒗 ?대떦 ?꾩튂???섏씠吏 ?뚯씪)
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -30,5 +30,7 @@ export default function Page() {
     />
   );
 }
+
+
 
 

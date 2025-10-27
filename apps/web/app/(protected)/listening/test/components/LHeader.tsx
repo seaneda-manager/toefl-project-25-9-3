@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect } from 'react';
 
 function LTimer({
@@ -55,5 +55,7 @@ export default function LHeader({
     </header>
   );
 }
+
+
 
 

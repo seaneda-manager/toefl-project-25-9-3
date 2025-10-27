@@ -1,4 +1,4 @@
-﻿// apps/web/lib/auth/requireTeacher.ts
+// apps/web/lib/auth/requireTeacher.ts
 'use server';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
@@ -49,5 +49,7 @@ export async function requireTeacher(): Promise<RoleFlags> {
     canProduce: row?.can_produce ?? true,
   };
 }
+
+
 
 

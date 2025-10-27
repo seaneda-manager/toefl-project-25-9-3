@@ -1,4 +1,4 @@
-﻿// apps/web/lib/sessionClient.ts
+// apps/web/lib/sessionClient.ts
 
 export type Section = 'reading' | 'listening';
 export type Mode = 'study' | 'exam' | 'review';
@@ -230,5 +230,7 @@ export async function finishSession({
     return { ok: true, finishedAt };
   }
 }
+
+
 
 

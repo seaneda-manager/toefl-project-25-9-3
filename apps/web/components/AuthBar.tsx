@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -55,6 +55,8 @@ const barStyle: React.CSSProperties = {
 const logoStyle: React.CSSProperties = {
   fontWeight:700, textDecoration:'none'
 };
+
+
 
 
 

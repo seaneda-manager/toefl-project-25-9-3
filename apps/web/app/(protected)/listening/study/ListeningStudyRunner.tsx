@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/listening/study/ListeningStudyRunner.tsx
+// apps/web/app/(protected)/listening/study/ListeningStudyRunner.tsx
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -159,7 +159,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
         qIndex={current}
         total={total}
         onBack={() => guardedGo(current - 1)}
-        onNext={() => (current < total - 1 ? guardedGo(current + 1) : finish())}
+        onNextAction={() => (current < total - 1 ? guardedGo(current + 1) : finish())}
         onPause={() => {}}
         onReview={() => {}}
         onToggleTime={() => setShowTimer((v) => !v)}
@@ -313,5 +313,7 @@ export default function ListeningStudyRunner({ track, onFinish }: Props) {
     </div>
   );
 }
+
+
 
 

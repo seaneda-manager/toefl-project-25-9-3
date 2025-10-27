@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 // apps/web/app/auth/login/actions.ts
 'use server';
 
@@ -42,5 +42,7 @@ export async function signOutAction() {
   await supabase.auth.signOut();
   return { ok: true as const };
 }
+
+
 
 

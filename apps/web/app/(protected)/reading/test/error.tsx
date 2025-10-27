@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -13,5 +13,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     </div>
   );
 }
+
+
 
 

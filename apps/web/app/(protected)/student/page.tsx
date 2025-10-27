@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/student/page.tsx
+// apps/web/app/(protected)/student/page.tsx
 import Link from "next/link";
 
 type LastScore = { tpo: number; RC: number; LC: number; SPK: number; WRT: number };
@@ -7,15 +7,15 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function StudentDashboardPage() {
-  // --- mock ?곗씠??異뷀썑 Supabase?먯꽌 媛?몄삱 ?덉젙) ---
+  // --- mock 데이터 (이후 Supabase에서 가져오도록 교체 예정) ---
   const now = new Date();
   const dateLabel = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(
     now.getDate()
   ).padStart(2, "0")}`;
 
   const student = {
-    name: "?띻만??,
-    status: "?ы븰",
+    name: "홍길동",
+    status: "재학생",
     level: "Upper-Intermediate",
     target: 105,
   };
@@ -27,19 +27,19 @@ export default async function StudentDashboardPage() {
   ];
 
   const teacherMemo =
-    "理쒓렐 2二쇨컙 RC ?뺣떟瑜??덉젙?? LC??dictation 怨쇱젣 袁몄???吏꾪뻾 以? Speaking? ?섑뵆 ?듬? 援먯젙 ?꾨즺.";
+    "최근 2주간 RC 정답률 보강 완료. LC는 dictation 과제 지속 진행 중. Speaking 피드백 적용 잘 되고 있음. 다음 주부터 WRT 통합형 구조 반복.";
 
   const tasksToday = [
-    "RC: Passage 1~3 ?ㅻ떟?명듃",
-    "LC: Short lecture 2??諛섎났",
-    "Vocab: Day 12 ?뚯뒪??,
+    "RC: Passage 1~3 오답노트",
+    "LC: Short lecture 2개 복습",
+    "Vocab: Day 12 테스트",
   ];
-  const tasksPrev = ["RC: Insertion ?좏삎 6臾몄젣", "Essay: Integrated ?묒꽦", "Grammar Set #4"];
+  const tasksPrev = ["RC: Insertion 유형 6문제", "Essay: Integrated 완성", "Grammar Set #4"];
 
   return (
     <div className="min-h-screen bg-[rgb(15,15,18)] text-white">
       <div className="mx-auto grid max-w-7xl grid-cols-[260px_1fr] gap-6 p-6">
-        {/* 醫뚯륫 ?ъ씠?쒕컮 */}
+        {/* 사이드바 */}
         <aside className="sticky top-6 h-[calc(100vh-3rem)] rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="mb-4 text-sm font-semibold opacity-60">TOEFL Menu</div>
           <nav className="space-y-1">
@@ -55,9 +55,9 @@ export default async function StudentDashboardPage() {
           </nav>
         </aside>
 
-        {/* 硫붿씤 */}
+        {/* 메인 */}
         <main className="space-y-6">
-          {/* ?곷떒 ?붿빟 */}
+          {/* 상단 요약 */}
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div className="grid gap-4 md:grid-cols-4">
               <SummaryItem label="Date (Year)" value={dateLabel} />
@@ -67,9 +67,9 @@ export default async function StudentDashboardPage() {
             </div>
           </section>
 
-          {/* 理쒓렐 3???쒗뿕 湲곕줉 */}
+          {/* 최근 3회 성적 기록 */}
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <h2 className="mb-3 text-lg font-semibold">?쒗뿕 湲곕줉 (理쒓렐 3??</h2>
+            <h2 className="mb-3 text-lg font-semibold">성적 기록 (최근 3회)</h2>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-sm">
                 <thead>
@@ -98,7 +98,7 @@ export default async function StudentDashboardPage() {
             </div>
           </section>
 
-          {/* ?쇱젙/?숈젣 (2x3) */}
+          {/* 일정/과제 (2x3) */}
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <table className="w-full border-collapse text-sm">
               <thead>
@@ -113,7 +113,7 @@ export default async function StudentDashboardPage() {
               <tbody>
                 <tr>
                   <Td className="align-top">
-                    <div className="opacity-70">????紐⑸줉</div>
+                    <div className="opacity-70">할 일 목록</div>
                   </Td>
                   <Td className="align-top">
                     <ul className="list-disc space-y-1 pl-5">
@@ -152,9 +152,8 @@ function DashLink({
   return (
     <Link
       href={href}
-      className={`block rounded-xl px-3 py-2 text-sm hover:bg-white/10 ${
-        active ? "bg-white/10 font-semibold" : "opacity-90"
-      }`}
+      className={`block rounded-xl px-3 py-2 text-sm hover:bg-white/10 ${active ? "bg-white/10 font-semibold" : "opacity-90"
+        }`}
     >
       {children}
     </Link>
@@ -206,5 +205,3 @@ function ScoreRow({ label, values }: { label: string; values: (string | number)[
     </tr>
   );
 }
-
-

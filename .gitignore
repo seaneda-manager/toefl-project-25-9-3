@@ -9,3 +9,5 @@ node_modules/
 *.bak-wipe
 apps/web/.tsc-files.txt
 apps/web/tsconfig.tmp.json
+apps/web/.trash-*
+apps/web/.trash-*

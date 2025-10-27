@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -44,7 +44,7 @@ export default function AudioPlayer({
       setStarted(true);
     };
     const onPause = () => setStarted(false);
-    const onEnded = () => {
+    const onEndedAction= () => {
       endedRef.current = true;
       setStarted(false);
       onEnd?.();
@@ -105,5 +105,7 @@ export default function AudioPlayer({
     </div>
   );
 }
+
+
 
 

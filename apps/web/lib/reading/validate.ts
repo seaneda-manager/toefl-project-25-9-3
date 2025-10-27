@@ -1,12 +1,12 @@
 // apps/web/lib/reading/validate.ts
-import type { RSet, RQuestion } from '@/models/reading/zod'; // 寃쎈줈/????듭씪
+import type { RSet, RQuestion } from '@/models/reading/zod'; // 野껋럥以????????뵬
 
-/** ?덉쟾??RegExp escape */
+/** ??됱읈??RegExp escape */
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** 硫뷀? 酉곗뼱: ?꾩슂???쒕툕硫뷀?留??덉쟾?섍쾶 爰쇰궡?ㅺ린 */
+/** 筌롫?? ?됯퀣堉? ?袁⑹뒄????뺥닏筌롫??筌???됱읈??띿쓺 ?곗눖沅??븍┛ */
 function viewMeta(q: RQuestion) {
   const summary = (q.meta?.summary ?? {}) as {
     candidates?: string[];
@@ -14,14 +14,14 @@ function viewMeta(q: RQuestion) {
     selectionCount?: number;   // required selection count
   };
   const insertion = (q.meta?.insertion ?? {}) as {
-    anchors?: Array<string | number>; // explicit anchor list -> choices length? ?숈씪?댁빞 ??
+    anchors?: Array<string | number>; // explicit anchor list -> choices length?? ??덉뵬??곷튊 ??
     correctIndex?: number;
-    /** 蹂몃Ц??吏곸젒 留덉빱瑜?諛뺤븘 ?곕뒗 寃쎌슦 ?ъ슜???띿뒪??(?? '[[INS]]' ?먮뒗 '[#]') */
+    /** 癰귣챶揆??筌욊낯??筌띾뜆鍮긺몴?獄쏅벡釉??怨뺣뮉 野껋럩?????????용뮞??(?? '[[INS]]' ?癒?뮉 '[#]') */
     marker?: string;
   };
   const pronoun = (q.meta?.pronoun_ref ?? {}) as {
     pronoun?: string;
-    referents?: string[];      // ?꾨낫 理쒖냼 2媛?
+    referents?: string[];      // ?袁⑤궖 筌ㅼ뮇??2揶?
     correctIndex?: number;
   };
   const paragraphHighlight = (q.meta?.paragraph_highlight ?? {}) as {
@@ -30,19 +30,19 @@ function viewMeta(q: RQuestion) {
   return { summary, insertion, pronoun, paragraphHighlight };
 }
 
-/** passage.content ?덉뿉???쎌엯 留덉빱 媛쒖닔 ?멸린 */
+/** passage.content ??됰퓠????뚯뿯 筌띾뜆鍮?揶쏆뮇???硫몃┛ */
 function countInsertionMarkers(content: string, marker: string) {
   if (!marker) return 0;
   const re = new RegExp(escapeRegExp(marker), 'g');
   return (content.match(re) || []).length;
 }
 
-/** ?고????대줈???좏떥: 媛앹껜?몄? ?뺤씤 */
+/** ?怨?????以???醫뤿뼢: 揶쏆빘猿?紐? ?類ㅼ뵥 */
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** 臾몄젣 ?명듃 寃利?*/
+/** ?얜챷???紐낅뱜 野꺜筌?*/
 export function validateSet(s: RSet) {
   const errs: string[] = [];
 
@@ -55,14 +55,14 @@ export function validateSet(s: RSet) {
     const seenNumbers = new Set<number>();
 
     (p.questions ?? []).forEach((q) => {
-      // 踰덊샇 以묐났
+      // 甕곕뜇??餓λ쵎??
       if (seenNumbers.has(q.number)) errs.push(`P${pi + 1} Q# dup: ${q.number}`);
       seenNumbers.add(q.number);
 
       const choices = q.choices ?? [];
       const { summary, insertion, pronoun } = viewMeta(q);
 
-      // ?⑥씪 ?뺣떟 ?좏삎: summary/organization ?쒖쇅?섍퀬 ?뺥솗??1媛??뺣떟
+      // ??μ뵬 ?類ｋ뼗 ?醫륁굨: summary/organization ??뽰뇚??랁??類μ넇??1揶??類ｋ뼗
       if (q.type !== 'summary' && q.type !== 'organization') {
         const corrects = choices.filter((c) => !!c.is_correct).length;
         if (corrects !== 1) {
@@ -70,8 +70,8 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // insertion: anchors 諛곗뿴???덉쑝硫?湲몄씠 === choices.length
-      // ?놁쑝硫?蹂몃Ц???덈뒗 marker ?띿뒪??媛쒖닔? choices.length ?쇱튂 寃??
+      // insertion: anchors 獄쏄퀣肉????됱몵筌?疫뀀챷??=== choices.length
+      // ??곸몵筌?癰귣챶揆????덈뮉 marker ??용뮞??揶쏆뮇??? choices.length ??깊뒄 野꺜??
       if (q.type === 'insertion') {
         const choiceCount = choices.length;
         if (Array.isArray(insertion.anchors)) {
@@ -82,7 +82,7 @@ export function validateSet(s: RSet) {
             );
           }
         } else {
-          // 湲곕낯 留덉빱??'[[INS]]'濡?媛??(?꾨줈?앺듃?먯꽌 ?곕뒗 媛믪쑝濡?諛붽퓭????
+          // 疫꿸퀡??筌띾뜆鍮??'[[INS]]'嚥?揶쎛??(?袁⑥쨮??븍뱜?癒?퐣 ?怨뺣뮉 揶쏅??앮에?獄쏅떽?????
           const markerText = insertion.marker ?? '[[INS]]';
           const markerCount = countInsertionMarkers(p.content || '', markerText);
           if (markerCount !== choiceCount) {
@@ -93,13 +93,13 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // summary: selectionCount & correct 媛쒖닔, ?좏깮吏 ??寃??
+      // summary: selectionCount & correct 揶쏆뮇?? ?醫뤾문筌왖 ??野꺜??
       if (q.type === 'summary') {
         const sel = Number.isFinite(summary.selectionCount)
           ? (summary.selectionCount as number)
           : 3;
 
-        // 紐낆떆??correct 諛곗뿴???덉쑝硫?洹?湲몄씠, ?놁쑝硫?choices??is_correct 媛쒖닔 ?ъ슜
+        // 筌뤿굞???correct 獄쏄퀣肉????됱몵筌?域?疫뀀챷?? ??곸몵筌?choices??is_correct 揶쏆뮇??????
         const correctCount = Array.isArray(summary.correct)
           ? summary.correct.length
           : choices.filter((c) => !!c.is_correct).length;
@@ -112,7 +112,7 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // pronoun_ref: ?대떦 ??낆씪 ?뚮쭔 sanity 泥댄겕
+      // pronoun_ref: ????????놁뵬 ???춸 sanity 筌ｋ똾寃?
       if (q.type === 'pronoun_ref') {
         const refLen = pronoun.referents?.length ?? 0;
         if (refLen < 2) {
@@ -123,7 +123,7 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // explanation.why_others(蹂닿린蹂??ㅻ떟?ъ쑀) ?ㅺ? ?ㅼ젣 choice id? 留ㅼ묶?섎뒗吏
+      // explanation.why_others(癰귣떯由계퉪???삳뼗???) ??? ??쇱젫 choice id?? 筌띲끉臾??롫뮉筌왖
       {
         const exp = q.explanation as unknown;
         if (isObject(exp) && 'why_others' in exp) {
@@ -145,5 +145,7 @@ export function validateSet(s: RSet) {
 
   return errs;
 }
+
+
 
 

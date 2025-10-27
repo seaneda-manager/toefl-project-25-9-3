@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 // app/api/<<your-endpoint>>/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from "@/lib/supabaseServer";
@@ -59,5 +59,7 @@ export async function POST(req: NextRequest) {
   }
   return NextResponse.json({ sessionId: data.id }, { status: 201 });
 }
+
+
 
 

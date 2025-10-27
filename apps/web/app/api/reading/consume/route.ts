@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/reading/consume/route.ts
+// apps/web/app/api/reading/consume/route.ts
 export const runtime = 'nodejs';
 
 import { NextResponse, NextRequest } from 'next/server';
@@ -55,5 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'INTERNAL', detail: String(err?.message ?? err) }, { status: 500 });
   }
 }
+
+
 
 

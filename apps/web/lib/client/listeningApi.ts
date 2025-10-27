@@ -1,4 +1,4 @@
-﻿export async function startListeningSessionClient(params: { setId: string; mode: 'p'|'t'|'r' }) {
+export async function startListeningSessionClient(params: { setId: string; mode: 'p'|'t'|'r' }) {
   const res = await fetch('/api/listening/session', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -27,5 +27,7 @@ export async function finishListeningSessionClient(params: { sessionId: string }
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{ ok: true }>;
 }
+
+
 
 

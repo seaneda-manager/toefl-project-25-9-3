@@ -36,17 +36,18 @@
       "@/types/*": [
         "./app/types/*"
       ],
-      "@internal-types/*": [
-        "../../packages/types/src/*"
+      /* --- SSOT: reading --- */
+      "@/models/reading": [
+        "./models/reading/index.ts"
       ],
       "@/models/*": [
         "./models/*"
       ],
-      "@/models/reading": [
-        "./models/reading/index.ts"
+      /* (있다면) 내부 패키지 타입 */
+      "@internal-types/*": [
+        "../../packages/types/src/*"
       ]
     },
-    // ⬇️ 보강 포인트
     "plugins": [
       {
         "name": "next"
@@ -71,15 +72,23 @@
     "incremental": true,
     "skipLibCheck": true,
     "noEmit": true
-    // "strict": true,           // 장기적으로 추천
-    // "noImplicitAny": false    // 급하면 임시 완화용
+    /* 선택: 루트에서 strict 꺼져 있으면 아래 주석 해제
+    "strict": true
+    */
   },
   "include": [
+    "next-env.d.ts",
     "./**/*.ts",
     "./**/*.tsx",
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "**/.eslintrc.cjs",
+    "**/postcss.config.*",
+    "**/tailwind.config.*",
+    "**/next.config.*",
+    "node_modules",
+    ".next",
+    "dist"
   ]
 }

@@ -1,4 +1,4 @@
-﻿// apps/web/app/components/TokenCatcher.tsx
+// apps/web/app/components/TokenCatcher.tsx
 'use client';
 
 import { useEffect } from 'react';
@@ -33,6 +33,8 @@ export default function TokenCatcher() {
 
   return null;
 }
+
+
 
 
 

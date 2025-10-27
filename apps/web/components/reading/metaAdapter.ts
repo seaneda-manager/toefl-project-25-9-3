@@ -1,4 +1,4 @@
-﻿// apps/web/components/reading/metaAdapter.ts
+// apps/web/components/reading/metaAdapter.ts
 import type { RQuestion } from '@/models/reading';
 
 export type Target =
@@ -49,5 +49,7 @@ export function targetFromMeta(q: any): Target {
 
   return undefined;
 }
+
+
 
 

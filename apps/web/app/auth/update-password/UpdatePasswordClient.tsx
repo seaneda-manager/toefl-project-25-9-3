@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -121,5 +121,7 @@ export default function UpdatePasswordClient() {
     </main>
   );
 }
+
+
 
 

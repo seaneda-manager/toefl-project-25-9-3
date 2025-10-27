@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { startSession, consumeOnce, getStatus } from '@/lib/listening';
@@ -89,5 +89,7 @@ export default function ListeningPlayer({ trackId, mode = 'study' }: Props) {
     </div>
   );
 }
+
+
 
 

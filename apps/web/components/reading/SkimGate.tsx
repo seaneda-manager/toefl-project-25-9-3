@@ -1,4 +1,4 @@
-﻿// apps/web/components/reading/SkimGate.tsx
+// apps/web/components/reading/SkimGate.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -130,5 +130,7 @@ export default function SkimGate({ content, onUnlockAction, height = 520 }: Prop
     </div>
   );
 }
+
+
 
 

@@ -1,4 +1,4 @@
-﻿// apps/web/lib/listening.ts
+// apps/web/lib/listening.ts
 
 export type Mode = 'study' | 'test'
 
@@ -50,6 +50,8 @@ export async function getStatus(sessionId: string): Promise<StatusRes> {
   const qs = encodeURIComponent(sessionId)
   return api<StatusRes>(`/api/listening/status?sessionId=${qs}`)
 }
+
+
 
 
 

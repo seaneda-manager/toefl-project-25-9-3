@@ -1,4 +1,4 @@
-﻿// apps/web/app/home/admin/page.tsx
+// apps/web/app/home/admin/page.tsx
 import { redirect } from 'next/navigation';
 import { getSessionAndRole } from '@/lib/authServer';
 import AdminUploader from './uploader';
@@ -49,5 +49,7 @@ export default async function AdminHomePage() {
     </main>
   );
 }
+
+
 
 

@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/admin/reports/page.tsx
+// apps/web/app/(protected)/admin/reports/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -83,5 +83,7 @@ function KPI({label, value}:{label:string; value:any}){
     </div>
   );
 }
+
+
 
 

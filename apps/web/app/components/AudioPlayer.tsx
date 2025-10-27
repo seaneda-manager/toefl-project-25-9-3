@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -156,5 +156,7 @@ export default function AudioPlayer({
     </div>
   );
 }
+
+
 
 

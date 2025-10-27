@@ -1,4 +1,4 @@
-﻿// normalized utf8
+// normalized utf8
 // apps/web/lib/mountLegacy.ts
 'use client';
 
@@ -229,6 +229,8 @@ export async function mountLegacyFromString(html: string, opts?: MountLegacyOpti
 }
 
 export default mountLegacy;
+
+
 
 
 

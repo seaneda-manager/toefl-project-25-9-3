@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/listening/review/[sessionId]/page.tsx
+// apps/web/app/(protected)/listening/review/[sessionId]/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
 type Row = {

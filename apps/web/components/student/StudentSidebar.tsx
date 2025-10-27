@@ -1,4 +1,4 @@
-﻿// apps/web/components/student/StudentSidebar.tsx
+// apps/web/components/student/StudentSidebar.tsx
 import Link from "next/link";
 
 export default function StudentSidebar({ active = "Dashboard" }: { active?: string }) {
@@ -30,5 +30,7 @@ export default function StudentSidebar({ active = "Dashboard" }: { active?: stri
     </aside>
   );
 }
+
+
 
 

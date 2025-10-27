@@ -1,4 +1,4 @@
-﻿// apps/web/app/api/listening/consume/route.ts
+// apps/web/app/api/listening/consume/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import type { ConsumePlayRow, ConsumePlayResponse, Mode, CanonicalMode } from '@/app/types/listening';
@@ -100,5 +100,7 @@ export async function POST(req: Request) {
     return NextResponse.json(body, { status: 500 });
   }
 }
+
+
 
 

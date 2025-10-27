@@ -1,4 +1,4 @@
-﻿// apps/web/app/auth/check-email/page.tsx
+// apps/web/app/auth/check-email/page.tsx
 export default function CheckEmailPage({
   searchParams,
 }: {
@@ -24,6 +24,8 @@ export default function CheckEmailPage({
     </div>
   );
 }
+
+
 
 
 

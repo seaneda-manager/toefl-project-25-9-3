@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/reading/test/ClientPage.tsx
+// apps/web/app/(protected)/reading/test/ClientPage.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -47,5 +47,7 @@ export default function ClientPage({ passage }: { passage: RPassage }) {
 
   return <ClientRunner passage={passageStrict} sessionId={sessionId} />;
 }
+
+
 
 

@@ -5,7 +5,7 @@ import { getSupabaseServer } from '@/lib/supabaseServer';
 import { readingSetSchema } from '@/models/reading/zod';
 import { z } from 'zod';
 
-// Zod ?ㅽ궎留덈줈遺??RSet ????좊룄
+// Zod ??쎄텕筌띾뜄以덆겫???RSet ?????醫딅즲
 export type RSet = z.infer<typeof readingSetSchema>;
 
 /** ====== Types for actions ====== */
@@ -20,25 +20,25 @@ export type SubmitReadingArgs = {
 export type FinishReadingArgs = { sessionId?: string | number };
 
 /** ====== Content (Set/Passage/Q/A) ====== */
-// 二쇱쓽: FK on delete cascade ?ㅼ젙 ?꾩슂 (reading_passages ??questions ??choices)
+// 雅뚯눘?? FK on delete cascade ??쇱젟 ?袁⑹뒄 (reading_passages ??questions ??choices)
 export async function upsertReadingSet(json: unknown) {
   const supabase = await getSupabaseServer();
 
-  // 1) ?ㅽ궎留?寃利?
+  // 1) ??쎄텕筌?野꺜筌?
   const parsed = readingSetSchema.parse(json);
 
-  // 2) ?곸쐞 ?명듃 upsert
+  // 2) ?怨몄맄 ?紐낅뱜 upsert
   {
     const { error } = await supabase.from('reading_sets').upsert({
       id: parsed.id,
       label: parsed.label,
       source: parsed.source,
-      version: parsed.version, // schema ??낆뿉 留욎떠 ?꾨떖
+      version: parsed.version, // schema ????녿퓠 筌띿쉸???袁⑤뼎
     });
     if (error) throw error;
   }
 
-  // 3) 湲곗〈 passage/?섏쐞 ?몃━ ?뺣━ (DB??ON DELETE CASCADE 沅뚯옣)
+  // 3) 疫꿸퀣??passage/??륁맄 ?紐꺿봺 ?類ｂ봺 (DB??ON DELETE CASCADE 亦낅슣??
   {
     const { error } = await supabase
       .from('reading_passages')
@@ -47,7 +47,7 @@ export async function upsertReadingSet(json: unknown) {
     if (error) throw error;
   }
 
-  // 4) ???곗씠???쎌엯
+  // 4) ???怨쀬뵠????뚯뿯
   for (let i = 0; i < parsed.passages.length; i++) {
     const p = parsed.passages[i];
 
@@ -71,7 +71,7 @@ export async function upsertReadingSet(json: unknown) {
         type: q.type,
         stem: q.stem,
         meta: q.meta ?? {},
-        // ??吏덈Ц ?덈꺼 ?댁꽕
+        // ??筌욌뜄揆 ??덇볼 ??곴퐬
         explanation: q.explanation ?? null,
         ord: j + 1,
       });
@@ -85,7 +85,7 @@ export async function upsertReadingSet(json: unknown) {
           question_id: q.id,
           text: c.text,
           is_correct: !!c.is_correct,
-          // ???좏깮吏 ?덈꺼 ?댁꽕
+          // ???醫뤾문筌왖 ??덇볼 ??곴퐬
           explain: c.explain ?? null,
           ord: k + 1,
         });
@@ -144,7 +144,7 @@ export async function loadReadingSet(setId: string): Promise<RSet | null> {
 }
 
 /** ====== Session Actions ====== */
-// ?ㅼ젣 ?몄뀡 ?뚯씠釉?濡쒖쭅 ?곌껐 ?꾧퉴吏???꾩떆 ID留?諛섑솚
+// ??쇱젫 ?紐꾨????뵠??嚥≪뮇彛??怨뚭퍙 ?袁㏉돱筌왖???袁⑸뻻 ID筌?獄쏆꼹??
 export async function startReadingSession(_args: StartReadingArgs) {
   return { ok: true, sessionId: `${Date.now()}` as string } as const;
 }
@@ -155,14 +155,14 @@ export async function submitReadingAnswer(
     choiceId: string | number;
   },
 ) {
-  // ?쒕쾭 ?????string?쇰줈 ?쒖???
+  // ??뺤쒔 ??????string??곗쨮 ?????
   const payload: SubmitReadingArgs = {
     ...args,
     questionId: String(args.questionId),
     choiceId: String(args.choiceId),
   };
 
-  // TODO: upsert into reading_answers (?몄뀡/臾명빆/?좏깮/?쒓컙)
+  // TODO: upsert into reading_answers (?紐꾨??얜챸鍮??醫뤾문/??볦퍢)
   void payload;
 
   return { ok: true } as const;
@@ -179,5 +179,7 @@ export async function finishReadingSession(arg: FinishReadingArgs | string | num
   // TODO: mark session finished
   return { ok: true, sessionId } as const;
 }
+
+
 
 

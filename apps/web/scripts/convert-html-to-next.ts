@@ -1,4 +1,4 @@
-﻿/* eslint-disable */
+/* eslint-disable */
 import fs from 'fs-extra';
 import path from 'path';
 import * as cheerio from 'cheerio';
@@ -97,6 +97,8 @@ export default function Page(){
   }
   if (!foundAny) console.warn('No target IDs were found in the source HTML.');
 })().catch(e => { console.error(e); process.exit(1); });
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 type Props = { src: string };
 
@@ -33,5 +33,7 @@ export default function AudioPlayer({ src }: Props) {
     </div>
   );
 }
+
+
 
 

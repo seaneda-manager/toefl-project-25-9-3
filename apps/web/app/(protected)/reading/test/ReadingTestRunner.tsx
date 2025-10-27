@@ -1,4 +1,4 @@
-﻿// apps/web/app/(protected)/reading/test/ReadingTestRunner.tsx
+// apps/web/app/(protected)/reading/test/ReadingTestRunner.tsx
 'use client';
 
 import { useMemo, useState, useCallback, useRef } from 'react';
@@ -231,5 +231,7 @@ function QuestionCard(props: {
     </div>
   );
 }
+
+
 
 
