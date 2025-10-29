@@ -1,7 +1,31 @@
+﻿# ── 텍스트는 LF 고정 ─────────────────────────────────────────────
 * text=auto eol=lf
-*.ts  text eol=lf
-*.tsx text eol=lf
-*.js  text eol=lf
-*.jsx text eol=lf
-*.css text eol=lf
-*.md  text eol=lf
+
+# (선택) 윈도우 배치/명령 스크립트는 CRLF 유지
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 락/의존성 파일은 정규화 금지 (바이트 그대로)
+pnpm-lock.yaml -text
+package-lock.json -text
+yarn.lock -text
+
+# ── 바이너리(이미지/폰트/미디어/압축/PDF 등) ───────────────────
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.7z   binary
+*.rar  binary
+*.mp3  binary
+*.mp4  binary
+*.wav  binary
+*.mov  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
