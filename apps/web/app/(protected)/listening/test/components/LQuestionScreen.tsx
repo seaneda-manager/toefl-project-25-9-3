@@ -1,8 +1,6 @@
 // apps/web/app/(protected)/listening/test/components/LQuestionScreen.tsx
 'use client';
 
-import { useMemo } from 'react';
-
 type Choice = { id: string; text: string };
 type Question = {
   id: string | number;
@@ -39,10 +37,8 @@ export default function LQuestionScreen({
   onNextAction,
   onPrevAction,
 }: Props) {
-  const choices = useMemo<Choice[]>(
-    () => (Array.isArray(question?.choices) ? (question.choices as Choice[]) : []),
-    [question?.choices]
-  );
+  // React Compiler 경고 회피: 불필요한 useMemo 제거
+  const choices: Choice[] = Array.isArray(question?.choices) ? (question.choices as Choice[]) : [];
 
   const isChecked = (cid: string) => {
     if (Array.isArray(selectedChoiceIds) && selectedChoiceIds.length > 0) {
@@ -101,7 +97,6 @@ export default function LQuestionScreen({
                   className="mt-1"
                   checked={checked}
                   disabled={disabled}
-                  // qid, cid 함께 전달 (JSX prop 안에 주석 X)
                   onChange={() => onChooseAction?.(String(question.id), c.id)}
                   aria-label={`Choice ${i + 1}`}
                 />
@@ -134,7 +129,3 @@ export default function LQuestionScreen({
     </div>
   );
 }
-
-
-
-

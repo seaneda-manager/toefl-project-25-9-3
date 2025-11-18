@@ -27,8 +27,8 @@ export default function QuestionCard({
         // A, B, C... (i>=26면 숫자표시로 폴백)
         const label = i < 26 ? String.fromCharCode(65 + i) : String(i + 1);
         const isPicked = selected === c.id;
-        const isCorrect = !!c.is_correct;
-
+        const isCorrect = !!c.isCorrect;
+        
         // 피드백 표시 모드일 때 스타일
         const feedbackCls = showFeedback
           ? (isCorrect

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { upsertReadingSet, loadReadingSet } from '@/actions/reading';
 import { validateSet } from '@/lib/reading/validate';
-import type { RSet, RPassage, RQuestion, RChoice } from '@/models/reading';
+import type { RSet, RPassage, RQuestion } from '@/models/reading';
 
 /** ✅ validateSet이 기대하는 형태로 RSet을 확장 */
 type RSetFull = RSet & {
@@ -39,7 +39,7 @@ type ValidateQuestion = {
 type ValidatePassage = {
   id: string;
   title: string;   // 필수
-  content: string; // 필수
+  content: string; // 필수(검증용), paragraphs를 합쳐 생성
   questions: ValidateQuestion[];
 };
 
@@ -50,7 +50,7 @@ type ValidateInput = {
   passages: ValidatePassage[];
 };
 
-/** ✅ 느슨한 런타입을 화면 상태로: version/label/passages 기본값 채움 */
+/** ✅ 느슨한 런타임을 화면 상태로: version/label/passages 기본값 채움 */
 function normalizeRSet(
   raw: Partial<RSetFull> | Partial<RSet> | null | undefined,
   setId: string
@@ -115,18 +115,33 @@ function toValidateShape(src: RSetFull): ValidateInput {
     type: coerceType((q as any).type),
     stem: String(q.stem ?? ''),
     choices: coerceChoices(q),
-    explanation: q.explanation ? String(q.explanation) : undefined,
-    clue_quote: (q as any).clue_quote ? String((q as any).clue_quote) : undefined,
+    // RQuestion 정식 스키마에는 explanation 없음 → meta.explanation 또는 구형 필드에서 흡수
+    explanation: (q as any)?.meta?.explanation
+      ? String((q as any).meta.explanation)
+      : (q as any)?.explanation
+      ? String((q as any).explanation)
+      : undefined,
+    clue_quote: (q as any)?.clue_quote ? String((q as any).clue_quote) : undefined,
   });
 
-  const coercePassage = (p: Partial<RPassage>, pIdx: number): ValidatePassage => ({
-    id: String(p.id ?? `p${pIdx + 1}`),
-    title: String(p.title ?? ''),     // ⬅️ 필수 문자열 보정
-    content: String(p.content ?? ''), // ⬅️ 필수 문자열 보정
-    questions: Array.isArray(p.questions)
-      ? p.questions.map(coerceQuestion)
-      : [],
-  });
+  const coercePassage = (p: Partial<RPassage>, pIdx: number): ValidatePassage => {
+    // RPassage에는 paragraphs만 있음 → 검증용 content 문자열로 합성
+    const contentFromParagraphs =
+      Array.isArray((p as any)?.paragraphs) && (p as any).paragraphs.length
+        ? ((p as any).paragraphs as string[]).join('\n\n')
+        : typeof (p as any)?.content === 'string'
+        ? String((p as any).content) // 구형 호환
+        : '';
+
+    return {
+      id: String(p.id ?? `p${pIdx + 1}`),
+      title: String(p.title ?? ''),     // ⬅️ 필수 문자열 보정
+      content: contentFromParagraphs,   // ⬅️ paragraphs → content
+      questions: Array.isArray(p.questions)
+        ? p.questions.map(coerceQuestion)
+        : [],
+    };
+  };
 
   return {
     id: String(src.id),
@@ -136,7 +151,9 @@ function toValidateShape(src: RSetFull): ValidateInput {
   };
 }
 
-export default function Page({ params }: { params: { setId: string } }) {
+export default function Page(props: any) {
+  const { params } = props as { params: { setId: string } };
+
   const [data, setData] = useState<RSetFull>(() =>
     normalizeRSet({ id: params.setId, label: '', version: 1, passages: [] }, params.setId)
   );

@@ -4,22 +4,28 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// NOTE: schema export명이 실제로 존재해야 합니다.
+// SSOT
 import { readingSetSchema } from '@/models/reading/zod';
-
 import type { RSet, RQuestion, RChoice } from '@/models/reading/zod';
+
 type RQType = RQuestion['type'];
 
 type Props = {
   initialJson: string;
   defaultSetId: string;
-  // Server Action 아님: client prop 이름은 *Action 으로
+  // Server Action 이 아님 → 클라이언트 콜백은 *Action 네이밍
   onSaveAction: (fd: FormData) => Promise<{ ok: true; id: string }>;
 };
 
 type LintIssue = { level: 'error' | 'warn'; where: string; msg: string };
 
-/* ------------------------------ util ------------------------------ */
+/* ------------------------------ utils ------------------------------ */
+const uuid = () =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+
+/** textarea → paragraphs */
 function splitParagraphs(content: string, mode: 'auto' | 'blankline' | 'html' = 'auto') {
   if (!content) return [];
   if (mode === 'html') {
@@ -28,14 +34,14 @@ function splitParagraphs(content: string, mode: 'auto' | 'blankline' | 'html' = 
       .map((s) => s.replace(/<[^>]+>/g, '').trim())
       .filter(Boolean);
   }
-  // default: 빈 줄 2개 이상을 단락 구분으로 처리
+  // 기본: 빈 줄 2개 이상
   return content
     .split(/\n{2,}/g)
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
-/** meta 보조 뷰: 안전한 any 취급 */
+/** meta 보조 뷰: 안전 any */
 function metaView(q: RQuestion) {
   const m = (q.meta ?? {}) as any;
   return {
@@ -72,29 +78,26 @@ function lintReadingSet(set: RSet): LintIssue[] {
     const where = `Q${q.number}(${q.type})`;
     const m = metaView(q);
 
-    // 번호 연속성 체크
+    // 번호 연속성
     if (q.number !== qi + 1) {
       issues.push({
         level: 'warn',
         where,
-        msg: `Question number mismatch. Expected ${qi + 1}, got ${q.number}.`,
+      msg: `Question number mismatch. Expected ${qi + 1}, got ${q.number}.`,
       });
     }
 
-    // 선택지 존재/내용 체크
+    // 선택지
     if (!q.choices?.length) issues.push({ level: 'error', where, msg: 'No choices provided.' });
     q.choices?.forEach((c, ci) => {
-      if (!c.text?.trim())
-        issues.push({ level: 'warn', where, msg: `Choice #${ci + 1} has empty text.` });
+      if (!c.text?.trim()) issues.push({ level: 'warn', where, msg: `Choice #${ci + 1} has empty text.` });
     });
 
-    // 유형별 메타 체크
+    // 유형별 메타
     if (q.type === 'summary') {
       const cand = m.summary.candidates ?? [];
       const cor = m.summary.correct ?? [];
-      const sel = Number.isFinite(m.summary.selectionCount)
-        ? (m.summary.selectionCount as number)
-        : NaN;
+      const sel = Number.isFinite(m.summary.selectionCount) ? (m.summary.selectionCount as number) : NaN;
 
       if (cand.length === 0) issues.push({ level: 'error', where, msg: 'summary.candidates required.' });
       if (!Number.isFinite(sel) || sel < 1)
@@ -106,24 +109,13 @@ function lintReadingSet(set: RSet): LintIssue[] {
           msg: `summary.correct length (${cor.length}) must equal selectionCount (${Number.isNaN(sel) ? 'NaN' : sel}).`,
         });
       if (cor.some((i) => i < 0 || i >= cand.length))
-        issues.push({
-          level: 'error',
-          where,
-          msg: 'summary.correct index out of range.',
-        });
+        issues.push({ level: 'error', where, msg: 'summary.correct index out of range.' });
     } else if (q.type === 'insertion') {
       const ins = m.insertion;
       const anchorsLen = ins.anchors?.length ?? 0;
       if (!anchorsLen) issues.push({ level: 'error', where, msg: 'insertion.anchors required.' });
-      if (
-        ins &&
-        (ins.correctIndex == null || ins.correctIndex < 0 || ins.correctIndex >= anchorsLen)
-      ) {
-        issues.push({
-          level: 'error',
-          where,
-          msg: 'insertion.correctIndex out of range.',
-        });
+      if (ins && (ins.correctIndex == null || ins.correctIndex < 0 || ins.correctIndex >= anchorsLen)) {
+        issues.push({ level: 'error', where, msg: 'insertion.correctIndex out of range.' });
       }
     } else if (q.type === 'pronoun_ref') {
       const pr = m.pronoun_ref;
@@ -131,15 +123,11 @@ function lintReadingSet(set: RSet): LintIssue[] {
       const refLen = pr?.referents?.length ?? 0;
       if (!refLen) issues.push({ level: 'error', where, msg: 'pronoun_ref.referents required.' });
       if (pr && (pr.correctIndex == null || pr.correctIndex < 0 || pr.correctIndex >= refLen)) {
-        issues.push({
-          level: 'error',
-          where,
-          msg: 'pronoun_ref.correctIndex out of range.',
-        });
+        issues.push({ level: 'error', where, msg: 'pronoun_ref.correctIndex out of range.' });
       }
     }
 
-    // 단락 하이라이트 인덱스 범위
+    // paragraph_highlight 인덱스
     const ph = m.paragraph_highlight.paragraphs ?? [];
     if (ph.some((i: number) => i < 0 || i >= paras.length)) {
       issues.push({
@@ -149,7 +137,7 @@ function lintReadingSet(set: RSet): LintIssue[] {
       });
     }
 
-    // summary 외 유형은 정답 1개 강제
+    // summary 외: 정답 1개
     if (q.type !== 'summary') {
       const cs = (q.choices || []).filter((c) => c.isCorrect);
       if (cs.length !== 1) {
@@ -162,18 +150,14 @@ function lintReadingSet(set: RSet): LintIssue[] {
 }
 
 /* ------------------------------ component ------------------------------ */
-export default function AdminReadingEditor({
-  initialJson,
-  defaultSetId,
-  onSaveAction,
-}: Props) {
+export default function AdminReadingEditor({ initialJson, defaultSetId, onSaveAction }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<'json' | 'form'>('json');
   const [text, setText] = useState(initialJson);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // schema -> RSet
+  // schema → RSet
   const parsed: RSet | null = useMemo(() => {
     try {
       const obj = JSON.parse(text);
@@ -250,12 +234,14 @@ export default function AdminReadingEditor({
         </div>
         <div className="flex gap-2">
           <button
+            type="button"
             className={`rounded border px-3 py-1 ${tab === 'json' ? 'bg-white/10' : ''}`}
             onClick={() => setTab('json')}
           >
             JSON
           </button>
           <button
+            type="button"
             className={`rounded border px-3 py-1 ${tab === 'form' ? 'bg-white/10' : ''}`}
             onClick={() => setTab('form')}
           >
@@ -266,13 +252,13 @@ export default function AdminReadingEditor({
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        <button className="rounded border px-3 py-1" onClick={validate}>
+        <button type="button" className="rounded border px-3 py-1" onClick={validate}>
           Validate
         </button>
-        <button className="rounded border px-3 py-1" onClick={deepCheck}>
+        <button type="button" className="rounded border px-3 py-1" onClick={deepCheck}>
           Deep Check
         </button>
-        <button className="rounded border px-3 py-1" onClick={openTest}>
+        <button type="button" className="rounded border px-3 py-1" onClick={openTest}>
           Open Test Window
         </button>
       </div>
@@ -317,9 +303,7 @@ export default function AdminReadingEditor({
         (parsed ? (
           <FormEditor parsed={parsed} setText={setText} />
         ) : (
-          <div className="text-sm text-red-400">
-            JSON이 유효해야 Form 편집이 가능합니다. 먼저 Validate를 통과시켜 주세요.
-          </div>
+          <div className="text-sm text-red-400">JSON이 유효해야 Form 편집이 가능합니다. 먼저 Validate를 통과시켜 주세요.</div>
         ))}
     </div>
   );
@@ -334,7 +318,7 @@ function makeMinimalSet(id: string): RSet {
     version: 1,
     passages: [
       {
-        id: crypto.randomUUID(),
+        id: uuid(),
         title: 'Untitled Passage',
         paragraphs: ['Write your passage here...'],
         questions: [],
@@ -347,7 +331,16 @@ function makeMinimalSet(id: string): RSet {
 function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) => void }) {
   const [draft, setDraft] = useState<RSet>(parsed);
 
-  const sync = () => setText(JSON.stringify(draft, null, 2));
+  const sync = () => {
+    try {
+      const next = JSON.stringify(draft, null, 2);
+      // 저장 전 SSOT 스키마 검증
+      readingSetSchema.parse(JSON.parse(next));
+      setText(next);
+    } catch (e: any) {
+      alert('Schema validation failed: ' + (e?.message ?? 'invalid'));
+    }
+  };
 
   const setPassageField = (k: keyof RSet['passages'][number], v: any, idx = 0) => {
     setDraft((prev) => ({
@@ -359,23 +352,21 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
   const addQuestion = () => {
     const p0 = draft.passages[0];
     const q: RQuestion = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       number: (p0?.questions?.length ?? 0) + 1,
       type: 'detail',
       stem: 'Write the stem...',
       choices: [
-        { id: crypto.randomUUID(), text: 'Choice A' },
-        { id: crypto.randomUUID(), text: 'Choice B' },
-        { id: crypto.randomUUID(), text: 'Choice C' },
-        { id: crypto.randomUUID(), text: 'Choice D' },
+        { id: uuid(), text: 'Choice A' },
+        { id: uuid(), text: 'Choice B' },
+        { id: uuid(), text: 'Choice C' },
+        { id: uuid(), text: 'Choice D' },
       ],
       meta: {},
     };
     setDraft((prev) => ({
       ...prev,
-      passages: prev.passages.map((p, i) =>
-        i === 0 ? { ...p, questions: [...(p.questions || []), q] } : p
-      ),
+      passages: prev.passages.map((p, i) => (i === 0 ? { ...p, questions: [...(p.questions || []), q] } : p)),
     }));
   };
 
@@ -408,26 +399,29 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
-    q.choices = [...q.choices, { id: crypto.randomUUID(), text: 'New choice' } as RChoice];
+    q.choices = [...q.choices, { id: uuid(), text: 'New choice' } as RChoice];
     qs[qi] = q;
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
   const setType = (qi: number, t: RQType) => updateQuestion(qi, { type: t });
 
-  // summary: selectionCount 및 candidates/correct 구성
+  // summary: selectionCount 및 candidates/correct 구성(길이 동기화)
   const setSummarySelection = (qi: number, n: number) => {
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
     const prev = metaView(q).summary;
 
+    const sel = Math.max(1, Number.isFinite(n) ? n : 2);
+    const nextCorrect = (Array.isArray(prev.correct) ? prev.correct : []).slice(0, sel);
+
     q.meta = {
       ...(q.meta || {}),
       summary: {
         candidates: Array.isArray(prev.candidates) ? prev.candidates : [],
-        correct: Array.isArray(prev.correct) ? prev.correct : [],
-        selectionCount: Math.max(1, Number.isFinite(n) ? n : 2),
+        correct: nextCorrect,
+        selectionCount: sel,
       },
     };
 
@@ -435,25 +429,27 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // summary 후보 입력 (개행 또는 | 구분)
+  // summary 후보 입력
   const setSummaryCandidates = (qi: number, raw: string) => {
-    const candidates = raw
-      .split(/\r?\n|\|/g)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const candidates = raw.split(/\r?\n|\|/g).map((s) => s.trim()).filter(Boolean);
 
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
     const m = metaView(q);
-    const prevSel = Number(m.summary.selectionCount ?? 2) || 2;
+    const sel = Math.max(1, Number(m.summary.selectionCount ?? 2) || 2);
+
+    // 기존 correct 인덱스를 새 후보 길이에 맞게 정리
+    const prevCorrect = (Array.isArray(m.summary.correct) ? m.summary.correct : []).filter(
+      (i) => i >= 0 && i < candidates.length
+    ).slice(0, sel);
 
     q.meta = {
       ...(q.meta || {}),
       summary: {
         candidates,
-        correct: Array.isArray(m.summary.correct) ? m.summary.correct : [],
-        selectionCount: Math.max(1, prevSel),
+        correct: prevCorrect,
+        selectionCount: sel,
       },
     };
 
@@ -461,27 +457,29 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // summary 정답 입력 (1-based → 0-based)
+  // summary 정답 입력 (1-based → 0-based, selectionCount 자르기)
   const setSummaryCorrect = (qi: number, raw: string) => {
-    const correct = raw
-      .split(/\D+/g)
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((v) => Math.max(0, (parseInt(v, 10) || 0) - 1));
-
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
     const m = metaView(q);
-    const prevCandidates = Array.isArray(m.summary.candidates) ? m.summary.candidates : [];
-    const prevSel = Number(m.summary.selectionCount ?? 2) || 2;
+    const candidates = Array.isArray(m.summary.candidates) ? m.summary.candidates : [];
+    const sel = Math.max(1, Number(m.summary.selectionCount ?? 2) || 2);
+
+    let correct = raw
+      .split(/\D+/g)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((v) => Math.max(0, (parseInt(v, 10) || 0) - 1))
+      .filter((i) => i >= 0 && i < candidates.length)
+      .slice(0, sel);
 
     q.meta = {
       ...(q.meta || {}),
       summary: {
-        candidates: prevCandidates,
+        candidates,
         correct,
-        selectionCount: Math.max(1, prevSel),
+        selectionCount: sel,
       },
     };
 
@@ -489,33 +487,35 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // insertion
+  // insertion (anchors + correctIndex 범위 보정)
   const setInsertionAnchors = (qi: number, anchorsCsv: string) => {
     const anchors = anchorsCsv.split('|').map((s) => s.trim()).filter(Boolean);
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
     const m = metaView(q);
+
+    const maxIdx = Math.max(0, anchors.length - 1);
+    const nextCorrect = Math.min(Math.max(0, m.insertion.correctIndex ?? 0), maxIdx);
+
     q.meta = {
       ...(q.meta || {}),
       insertion: {
         ...m.insertion,
         anchors,
-        correctIndex: m.insertion.correctIndex ?? 0,
+        correctIndex: nextCorrect,
       },
     };
     qs[qi] = q;
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // pronoun_ref
-  const setPronounRef = (
-    qi: number,
-    pronoun: string,
-    referentsCsv: string,
-    correctIndex: number
-  ) => {
+  // pronoun_ref (correctIndex 범위 보정)
+  const setPronounRef = (qi: number, pronoun: string, referentsCsv: string, correctIndex: number) => {
     const referents = referentsCsv.split('|').map((s) => s.trim()).filter(Boolean);
+    const maxIdx = Math.max(0, referents.length - 1);
+    const fixedIdx = Math.min(Math.max(0, correctIndex | 0), maxIdx);
+
     const p0 = draft.passages[0];
     const qs = p0.questions.slice();
     const q = { ...qs[qi] };
@@ -524,14 +524,14 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
       pronoun_ref: {
         pronoun,
         referents,
-        correctIndex: Math.max(0, correctIndex | 0),
+        correctIndex: fixedIdx,
       },
     };
     qs[qi] = q;
     setDraft((prev) => ({ ...prev, passages: [{ ...p0, questions: qs }] }));
   };
 
-  // Passage content textarea는 paragraphs를 join해서 보여주고, 입력 시 split하여 paragraphs로 반영
+  // textarea 표시용
   const passageText = (draft.passages[0]?.paragraphs || []).join('\n\n');
 
   return (
@@ -556,13 +556,10 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
           </div>
           <div>
             <label className="text-xs text-neutral-500">Version</label>
-            {/* number지만 문자열 입력 허용 후 Number 변환 */}
             <input
               className="mt-1 w-full rounded border px-3 py-2"
               value={String(draft.version ?? 1)}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, version: Number(e.target.value || 1) }))
-              }
+              onChange={(e) => setDraft((prev) => ({ ...prev, version: Number(e.target.value || 1) }))}
             />
           </div>
         </div>
@@ -586,7 +583,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
 
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Questions</h3>
-        <button className="rounded border px-3 py-1" onClick={addQuestion}>
+        <button type="button" className="rounded border px-3 py-1" onClick={addQuestion}>
           + Add Question
         </button>
       </div>
@@ -636,7 +633,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                     <input
                       type="number"
                       className="w-20 rounded border px-2 py-1"
-                      value={m.summary.selectionCount ?? 2}
+                      value={metaView(q).summary.selectionCount ?? 2}
                       onChange={(e) => setSummarySelection(qi, Number(e.target.value))}
                     />
                   </div>
@@ -731,7 +728,7 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
                     </li>
                   ))}
                 </ul>
-                <button className="mt-2 rounded border px-3 py-1" onClick={() => addChoice(qi)}>
+                <button type="button" className="mt-2 rounded border px-3 py-1" onClick={() => addChoice(qi)}>
                   + Add choice
                 </button>
               </div>
@@ -741,12 +738,10 @@ function FormEditor({ parsed, setText }: { parsed: RSet; setText: (s: string) =>
       </div>
 
       <div className="flex gap-2">
-        <button className="rounded border px-3 py-2" onClick={sync}>
+        <button type="button" className="rounded border px-3 py-2" onClick={sync}>
           Apply to JSON
         </button>
-        <div className="text-xs text-neutral-500">
-          Apply를 누르면 현재 Form 상태가 JSON 영역에 반영됩니다.
-        </div>
+        <div className="text-xs text-neutral-500">Apply를 누르면 현재 Form 상태가 JSON 영역에 반영됩니다.</div>
       </div>
     </div>
   );

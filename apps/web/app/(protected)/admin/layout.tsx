@@ -5,7 +5,11 @@ import Link from "next/link";
 import AdminShell from "./_components/AdminShell";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
-export default async function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const supabase = await getSupabaseServer();
 
   const {
@@ -32,7 +36,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           Admin Dashboard
         </Link>
 
-        <nav className="text-sm flex gap-3">
+        <nav className="text-sm flex gap-3 items-center">
           <Link href="/admin">대시보드</Link>
           <Link href="/admin/content/new/json">JSON 업로드</Link>
           <Link href="/admin/content/new/form">폼 입력</Link>
@@ -41,6 +45,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Link href="/admin/users" className="font-medium">
             사용자 관리
           </Link>
+
+          {/* 👉 추가: 고급 리딩 에디터(A–F) 바로가기 */}
+          <Link
+            href="/content/reading/editor"
+            className="ml-4 inline-flex items-center rounded-md border px-2.5 py-1 hover:bg-gray-50"
+            title="Advanced Editor (A–F choices)"
+          >
+            Advanced Editor (A–F)
+          </Link>
         </nav>
       </header>
 
@@ -48,5 +61,3 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     </div>
   );
 }
-
-

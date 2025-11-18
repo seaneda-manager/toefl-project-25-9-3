@@ -1,14 +1,17 @@
-// apps/web/components/auth/LoginForm.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+// 브라우저용 Supabase 헬퍼 (없으면 아래 주석의 파일도 생성)
+import { getBrowserSupabase } from '@/lib/supabase/client';
 
 export default function LoginForm() {
+  const supabase = getBrowserSupabase();
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
   const [rememberId, setRememberId] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   // 저장된 아이디 자동 채우기
   useEffect(() => {
@@ -29,6 +32,7 @@ export default function LoginForm() {
     if (loading) return;
 
     setLoading(true);
+    setErr(null);
     try {
       // 아이디 저장/삭제
       if (rememberId) {
@@ -39,12 +43,31 @@ export default function LoginForm() {
         localStorage.removeItem('kp.savedId');
       }
 
-      // TODO: 실제 로그인 처리 (예: supabase.auth.signInWithPassword)
-      await new Promise((r) => setTimeout(r, 600));
-      alert(`로그인 시도\nID: ${id}\nPW: ${'*'.repeat(pw.length)}`);
-    } catch (err) {
-      console.error(err);
-      alert('로그인 처리 중 오류가 발생했습니다.');
+      // 1) Supabase 비밀번호 로그인
+      const { error } = await supabase.auth.signInWithPassword({
+        email: id, // 이메일 또는 아이디 입력란을 이메일로 사용
+        password: pw,
+      });
+      if (error) throw error;
+
+      // 2) 서버에서 최종 role 확인(쿠키 인증 기준)
+      const res = await fetch('/api/debug/role', { cache: 'no-store' });
+      const json = await res.json();
+      const role = json?.me?.role ?? 'student';
+
+      // 3) 역할별 라우팅
+      if (role === 'admin' || role === 'teacher') {
+        location.href = '/admin/content/list';
+      } else {
+        location.href = '/home/student';
+      }
+    } catch (e: any) {
+      // 친절한 에러 메시지
+      const msg =
+        e?.message?.includes('Invalid login') || e?.status === 400
+          ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+          : e?.message ?? '로그인 처리 중 오류가 발생했습니다.';
+      setErr(msg);
     } finally {
       setLoading(false);
     }
@@ -52,23 +75,16 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="inline-block">
-      {/* 
-        레이아웃 2열
-        - 1열: 입력영역(고정 320px)
-        - 2열: 버튼(세로로 길게)
-      */}
       <div className="grid grid-cols-[320px_minmax(140px,1fr)] items-stretch gap-3">
         {/* 아이디 */}
         <div className="col-start-1">
-          <label className="sr-only" htmlFor="login-id">
-            아이디
-          </label>
+          <label className="sr-only" htmlFor="login-id">아이디</label>
           <input
             id="login-id"
-            type="text"
+            type="email"
             inputMode="email"
             autoComplete="username"
-            placeholder="아이디 또는 이메일"
+            placeholder="이메일"
             value={id}
             onChange={(e) => setId(e.target.value)}
             className="h-12 w-[320px] rounded-xl border px-4 text-[15px]
@@ -78,11 +94,11 @@ export default function LoginForm() {
         </div>
 
         {/* 로그인 버튼 (오른쪽 열 전체 높이) */}
-        <div className="col-start-2 row-span-2">
+        <div className="col-start-2 row-span-3">
           <button
             type="submit"
             disabled={loading}
-            className="h-full min-h-[102px] w-full rounded-xl border
+            className="h-full min-h-[130px] w-full rounded-xl border
                        bg-blue-600 text-white font-semibold
                        hover:bg-blue-600/90 active:scale-[0.99]
                        disabled:opacity-60 disabled:cursor-not-allowed
@@ -96,9 +112,7 @@ export default function LoginForm() {
 
         {/* 비밀번호 */}
         <div className="col-start-1">
-          <label className="sr-only" htmlFor="login-pw">
-            비밀번호
-          </label>
+          <label className="sr-only" htmlFor="login-pw">비밀번호</label>
           <input
             id="login-pw"
             type="password"
@@ -112,13 +126,9 @@ export default function LoginForm() {
           />
         </div>
 
-        {/* 옵션/링크 줄 */}
-        <div
-          className="col-start-1 col-span-2 row-start-3 mt-1
-                     flex flex-nowrap items-center gap-4
-                     text-sm text-neutral-600 whitespace-nowrap"
-        >
-          <label className="inline-flex items-center gap-2 shrink-0 select-none">
+        {/* 옵션/링크 + 에러 */}
+        <div className="col-start-1 col-span-1 row-start-3 mt-1 flex flex-col gap-2">
+          <label className="inline-flex items-center gap-2 select-none text-sm text-neutral-700">
             <input
               type="checkbox"
               checked={rememberId}
@@ -128,24 +138,20 @@ export default function LoginForm() {
             아이디 저장
           </label>
 
-          <div className="flex flex-nowrap items-center gap-4 shrink-0">
+          {err && <div className="text-sm text-red-600">{err}</div>}
+
+          <div className="flex items-center gap-4 text-sm text-neutral-600">
             <Link
               href="#"
-              className="underline-offset-2 hover:underline whitespace-nowrap"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('아이디 찾기 페이지 연결 예정');
-              }}
+              className="underline-offset-2 hover:underline"
+              onClick={(e) => { e.preventDefault(); alert('아이디 찾기 페이지 연결 예정'); }}
             >
               아이디 찾기
             </Link>
             <Link
               href="#"
-              className="underline-offset-2 hover:underline whitespace-nowrap"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('비밀번호 찾기 페이지 연결 예정');
-              }}
+              className="underline-offset-2 hover:underline"
+              onClick={(e) => { e.preventDefault(); alert('비밀번호 찾기 페이지 연결 예정'); }}
             >
               비밀번호 찾기
             </Link>

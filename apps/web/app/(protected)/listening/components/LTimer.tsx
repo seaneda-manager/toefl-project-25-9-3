@@ -1,239 +1,182 @@
-// apps/web/app/(protected)/listening/components/LTimer.tsx
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+/**
+ * Lightweight timer for Listening pages.
+ * - no setState during render
+ * - no reading refs during render (only in handlers/effects)
+ * - exposes minimal API: totalSeconds, onExpire, (optional) autoStart
+ */
 type Props = {
-  /** 총 타이머 길이(초). 예: 90 = 1분 30초 */
   totalSeconds: number;
-
-  /** 자동 시작 여부 (기본 true) */
+  onExpire?: () => void | Promise<void>;
   autoStart?: boolean;
-
-  /** 시작할 때 이미 경과된 초(리줌/복구용). 기본 0 */
-  initialElapsed?: number;
-
-  /** 1초마다 현재 남은 시간(초)을 통지 */
-  onTickAction?: (remainingSeconds: number) => void;
-
-  /** 0초 도달 시 호출 */
-  onExpireAction?: () => void;
-
-  /** 시간이 0이 되면 음수로 내려가지 않게 clamp (기본 true) */
-  clampToZero?: boolean;
-
-  /** 일시정지/재개 버튼 노출 여부 (기본 true) */
-  showControls?: boolean;
-
-  /** 화면 리더 공지용 라이브 영역 모드 (off, polite, assertive). 기본 'polite' */
-  ariaLive?: 'off' | 'polite' | 'assertive';
-
-  /** 외부에서 스타일 합치기용 클래스 */
   className?: string;
-
-  /** mm:ss 말고 mm:ss.t (10th) 로 보여줄지 */
-  showTenths?: boolean;
-
-  /** 경과 방향: down(카운트다운) | up(카운트업). 기본 down */
-  direction?: 'down' | 'up';
 };
 
 export default function LTimer({
   totalSeconds,
+  onExpire,
   autoStart = true,
-  initialElapsed = 0,
-  onTickAction,
-  onExpireAction,
-  clampToZero = true,
-  showControls = true,
-  ariaLive = 'polite',
   className = '',
-  showTenths = false,
-  direction = 'down',
 }: Props) {
-  // 내부 시간은 "경과 시간(ms)"을 기준으로 관리 -> 정밀/일관
+  // “시간 원천”은 Date.now()를 effects/RAF 안에서만 읽는다.
   const startMsRef = useRef<number | null>(null);
-  const pausedAccMsRef = useRef<number>(0); // 누적 일시정지 ms
-  const pausedAtRef = useRef<number | null>(null);
+  const pausedAccMsRef = useRef(0); // 누적 일시정지 시간
+  const runningRef = useRef<boolean>(false);
   const rafRef = useRef<number | null>(null);
-  const [running, setRunning] = useState<boolean>(autoStart);
-  const [renderNow, setRenderNow] = useState<number>(Date.now());
 
-  const totalMs = useMemo(() => Math.max(0, Math.floor(totalSeconds * 1000)), [totalSeconds]);
-  const initialElapsedMs = useMemo(
-    () => Math.max(0, Math.floor(initialElapsed * 1000)),
-    [initialElapsed]
-  );
+  // 화면 표시만 state로 관리
+  const [remainingMs, setRemainingMs] = useState<number>(totalSeconds * 1000);
 
-  // 초기화
+  // totalSeconds 바뀌면 리셋 (render 중 setState 금지 -> effect에서)
   useEffect(() => {
-    // 시작 시각 설정 (initialElapsed 반영)
-    const now = performance.now();
-    startMsRef.current = now - initialElapsedMs;
+    // 초기화
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    startMsRef.current = null;
     pausedAccMsRef.current = 0;
-    pausedAtRef.current = null;
-    setRenderNow(Date.now());
-    setRunning(autoStart);
-  }, [autoStart, initialElapsedMs, totalMs]);
+    runningRef.current = false;
+    setRemainingMs(Math.max(0, totalSeconds * 1000));
 
-  // 렌더 타이커(raf) — 100ms 간격으로도 충분하지만 스무스하게 유지
-  const tick = useCallback(() => {
-    setRenderNow(Date.now());
+    if (autoStart) {
+      // 다음 tick 에서 시작
+      requestAnimationFrame(() => {
+        start();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalSeconds, autoStart]);
 
-    // 다음 프레임 예약
-    rafRef.current = window.requestAnimationFrame(tick);
-  }, []);
+  const updateFrame = useCallback(() => {
+    // 렌더 중 ref 읽지 않음: 이 함수는 RAF 핸들러에서만 호출됨
+    const start = startMsRef.current;
+    const now = Date.now();
+    const pausedAcc = pausedAccMsRef.current;
 
-  // 실행/정지 제어
-  useEffect(() => {
-    if (!running) {
-      if (rafRef.current) {
-        window.cancelAnimationFrame(rafRef.current);
+    let elapsed = 0;
+    if (runningRef.current && start != null) {
+      elapsed = now - start + pausedAcc;
+    } else {
+      elapsed = pausedAcc;
+    }
+    if (!Number.isFinite(elapsed) || elapsed < 0) elapsed = 0;
+
+    const totalMs = Math.max(0, Math.floor(totalSeconds * 1000));
+    const nextRemaining = Math.max(0, totalMs - elapsed);
+
+    setRemainingMs(nextRemaining);
+
+    if (nextRemaining <= 0) {
+      runningRef.current = false;
+      startMsRef.current = null;
+      pausedAccMsRef.current = totalMs; // 소진
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
-      // 일시정지 시작 스탬프
-      if (pausedAtRef.current == null) pausedAtRef.current = performance.now();
+      void onExpire?.();
       return;
     }
 
-    // 재개: 누적 일시정지 시간 반영
-    if (pausedAtRef.current != null) {
-      pausedAccMsRef.current += performance.now() - pausedAtRef.current;
-      pausedAtRef.current = null;
+    rafRef.current = requestAnimationFrame(updateFrame);
+  }, [onExpire, totalSeconds]);
+
+  const start = useCallback(() => {
+    if (runningRef.current) return;
+    const now = Date.now();
+    if (startMsRef.current == null) {
+      startMsRef.current = now;
+      pausedAccMsRef.current = 0;
+    } else {
+      // resume: start 지점을 now 로 옮기고 paused 누적은 유지
+      startMsRef.current = now;
     }
+    runningRef.current = true;
 
-    // raf 시작
-    if (rafRef.current == null) rafRef.current = window.requestAnimationFrame(tick);
+    if (rafRef.current == null) {
+      rafRef.current = requestAnimationFrame(updateFrame);
+    }
+  }, [updateFrame]);
 
+  const pause = useCallback(() => {
+    if (!runningRef.current) return;
+    const now = Date.now();
+    const start = startMsRef.current ?? now;
+    pausedAccMsRef.current += now - start; // 경과분 누적
+    runningRef.current = false;
+    startMsRef.current = null;
+
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    // 남은 시간은 다음 render 의 RAF 재시작 시 계속 갱신
+  }, []);
+
+  const reset = useCallback(() => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    startMsRef.current = null;
+    pausedAccMsRef.current = 0;
+    runningRef.current = false;
+    setRemainingMs(Math.max(0, totalSeconds * 1000));
+  }, [totalSeconds]);
+
+  useEffect(() => {
     return () => {
-      if (rafRef.current) {
-        window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [running, tick]);
+  }, []);
 
-  // 현재 경과/남은 시간 계산 (ms 단위)
-  const { elapsedMs, remainingMs, clampedRemainingMs } = useMemo(() => {
-    const now = performance.now();
-    const started = startMsRef.current ?? now;
-    const pausedAcc = pausedAccMsRef.current;
-    let elapsed = now - started - pausedAcc;
-    if (elapsed < 0) elapsed = 0;
-
-    const remaining = totalMs - elapsed;
-    const clamped = clampToZero ? Math.max(0, remaining) : remaining;
-
+  const { mm, ss } = useMemo(() => {
+    const sec = Math.floor(remainingMs / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
     return {
-      elapsedMs: elapsed,
-      remainingMs: remaining,
-      clampedRemainingMs: clamped,
+      mm: String(m).padStart(2, '0'),
+      ss: String(s).padStart(2, '0'),
     };
-  }, [renderNow, totalMs, clampToZero]);
-
-  // 1초 단위 onTickAction 호출 (스팸 방지)
-  const lastTickedSecRef = useRef<number | null>(null);
-  useEffect(() => {
-    const remainSec = Math.floor(clampedRemainingMs / 1000);
-    if (remainSec !== lastTickedSecRef.current) {
-      lastTickedSecRef.current = remainSec;
-      onTickAction?.(remainSec);
-    }
-  }, [clampedRemainingMs, onTickAction]);
-
-  // 만료 처리
-  const expiredRef = useRef<boolean>(false);
-  useEffect(() => {
-    if (clampToZero && clampedRemainingMs === 0 && !expiredRef.current) {
-      expiredRef.current = true;
-      setRunning(false);
-      onExpireAction?.();
-    }
-    if (clampedRemainingMs > 0) {
-      expiredRef.current = false;
-    }
-  }, [clampedRemainingMs, clampToZero, onExpireAction]);
-
-  // 포맷터
-  const fmt = (ms: number) => {
-    const positive = Math.abs(ms);
-    const totalSecondsF = positive / 1000;
-    const sec = Math.floor(totalSecondsF);
-    const mm = Math.floor(sec / 60);
-    const ss = sec % 60;
-    if (showTenths) {
-      const tenth = Math.floor((totalSecondsF - sec) * 10);
-      return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}.${tenth}`;
-    }
-    return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
-  };
-
-  // 표시할 값
-  const display = useMemo(() => {
-    if (direction === 'up') return fmt(elapsedMs);
-    return fmt(clampedRemainingMs);
-  }, [direction, elapsedMs, clampedRemainingMs]);
-
-  // 조작 핸들러
-  const pause = () => setRunning(false);
-  const resume = () => setRunning(true);
-  const reset = () => {
-    const now = performance.now();
-    startMsRef.current = now;
-    pausedAccMsRef.current = 0;
-    pausedAtRef.current = null;
-    setRenderNow(Date.now());
-    setRunning(autoStart);
-    expiredRef.current = false;
-    lastTickedSecRef.current = null;
-  };
+  }, [remainingMs]);
 
   return (
-    <div
-      className={`rounded-xl border bg-white p-4 ${className}`}
-      role="timer"
-      aria-live={ariaLive}
-      aria-atomic="true"
-      aria-label={direction === 'down' ? 'Countdown timer' : 'Count-up timer'}
-    >
-      <div className="flex items-baseline justify-between">
-        <div className="text-3xl font-semibold tabular-nums">{display}</div>
-        <div className="text-xs text-neutral-500">
-          {direction === 'down'
-            ? `Total ${Math.floor(totalMs / 1000)}s`
-            : `Target ${Math.floor(totalMs / 1000)}s`}
-        </div>
+    <div className={`inline-flex items-center gap-2 ${className}`}>
+      <span aria-live="polite" aria-atomic="true" className="font-mono tabular-nums">
+        {mm}:{ss}
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={start}
+          title="Start"
+        >
+          Start
+        </button>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={pause}
+          title="Pause"
+        >
+          Pause
+        </button>
+        <button
+          type="button"
+          className="rounded border px-2 py-0.5 text-xs"
+          onClick={reset}
+          title="Reset"
+        >
+          Reset
+        </button>
       </div>
-
-      {showControls && (
-        <div className="mt-3 flex gap-2">
-          {running ? (
-            <button
-              type="button"
-              onClick={pause}
-              className="rounded-lg border px-3 py-1.5 text-sm hover:bg-neutral-50"
-            >
-              Pause
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={resume}
-              className="rounded-lg border px-3 py-1.5 text-sm hover:bg-neutral-50"
-            >
-              Resume
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={reset}
-            className="rounded-lg border px-3 py-1.5 text-sm hover:bg-neutral-50"
-          >
-            Reset
-          </button>
-        </div>
-      )}
     </div>
   );
 }
-

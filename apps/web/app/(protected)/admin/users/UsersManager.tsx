@@ -30,7 +30,6 @@ export default function UsersManager() {
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 吏꾪뻾 以?fetch 痍⑥냼??
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<number | null>(null);
 
@@ -52,7 +51,6 @@ export default function UsersManager() {
 
   const fetchList = useCallback(
     async (c?: string) => {
-      // ?댁쟾 ?붿껌 痍⑥냼
       if (abortRef.current) abortRef.current.abort();
       const ac = new AbortController();
       abortRef.current = ac;
@@ -66,7 +64,7 @@ export default function UsersManager() {
         setData(json);
         setCursor(c);
       } catch (e: any) {
-        if (e?.name === 'AbortError') return; // ?ъ슜?먭? 痍⑥냼
+        if (e?.name === 'AbortError') return;
         setError(e?.message || 'Failed to load users');
       } finally {
         setLoading(false);
@@ -76,12 +74,10 @@ export default function UsersManager() {
     [buildURL]
   );
 
-  // 理쒖큹 濡쒕뱶
   useEffect(() => {
     fetchList(undefined);
   }, [fetchList]);
 
-  // Enter 寃???몃뱾??(?붾컮?댁뒪 臾댁떆)
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (debounceRef.current) {
@@ -91,7 +87,6 @@ export default function UsersManager() {
     fetchList(undefined);
   };
 
-  // ?낅젰 ?붾컮?댁뒪
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
@@ -103,7 +98,6 @@ export default function UsersManager() {
     };
   }, [query, fetchList]);
 
-  // ?숆????낅뜲?댄듃 + 濡ㅻ갚
   const applyRole = async (userId: string) => {
     const newRole = draftRole[userId];
     if (!newRole) return;
@@ -114,7 +108,6 @@ export default function UsersManager() {
     setError(null);
     setToast(null);
 
-    // ?숆???諛섏쁺
     setData((d) => ({
       ...d,
       items: d.items.map((it) => (it.id === userId ? { ...it, role: newRole } : it)),
@@ -127,9 +120,8 @@ export default function UsersManager() {
         body: JSON.stringify({ userId, role: newRole }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('??븷????λ릺?덉뒿?덈떎.');
+      setToast('권한이 저장되었습니다.');
     } catch (e: any) {
-      // 濡ㅻ갚
       if (prev) {
         setData((d) => ({
           ...d,
@@ -185,7 +177,7 @@ export default function UsersManager() {
       <form onSubmit={onSearch} className="flex items-center gap-2">
         <input
           className="flex-1 rounded border px-3 py-2"
-          placeholder="?대찓???대쫫 寃??
+          placeholder="이름/이메일 검색"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search users"
@@ -195,7 +187,6 @@ export default function UsersManager() {
         </button>
       </form>
 
-      {/* ?좎뒪???먮윭: ?ㅽ겕由곕━??利됱떆 ?쎄린 */}
       <div aria-live="polite" className="min-h-5">
         {toast && <div className="text-sm text-green-600">{toast}</div>}
         {error && <div className="text-sm text-red-600">{error}</div>}
@@ -214,7 +205,6 @@ export default function UsersManager() {
           </thead>
           <tbody>
             {loading && data.items.length === 0 ? (
-              // ?ㅼ펷?덊넠 濡쒕뵫
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-t">
                   <td className="px-3 py-3">
@@ -281,7 +271,3 @@ export default function UsersManager() {
     </div>
   );
 }
-
-
-
-

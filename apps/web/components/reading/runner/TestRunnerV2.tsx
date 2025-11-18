@@ -1,23 +1,20 @@
 // apps/web/components/reading/runner/TestRunnerV2.tsx
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import type { RPassage, RQuestion } from '@/models/reading/zod';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import type { RPassage, RQuestion } from '@/models/reading';
 import PassagePane from '@/components/reading/PassagePane';
 import SkimGate from '@/components/reading/SkimGate';
-import { submitReadingAnswer, finishReadingSession } from '@/actions/readingSession';
+import { submitReadingAnswer, finishReadingSession } from '@/actions/reading';
 
 type Props = {
   passage: RPassage;
   sessionId: string;
   mode?: 'study' | 'exam' | 'review' | 'test';
   gateFirst?: boolean;
-  /** ?袁⑥┷ ???怨몄맄嚥??紐꾨좮D ?袁⑤뼎 (??깆뒭???源? ?怨몄맄?癒?퐣 筌ｌ꼶?? */
   onFinishAction?: (sessionId: string | number) => void;
 };
 
-// 筌롫?? ?遺용튋 ?됯퀣堉?
 function viewMeta(q?: RQuestion) {
   const summary = (q?.meta?.summary ?? {}) as {
     candidates?: string[];
@@ -43,56 +40,59 @@ export default function TestRunnerV2({
   onFinishAction,
 }: Props) {
   const [gateDone, setGateDone] = useState(!gateFirst);
+
+  const contentStr = useMemo(
+    () => (Array.isArray(passage.paragraphs) ? passage.paragraphs.join('\n\n') : ''),
+    [passage.paragraphs],
+  );
+
   if (!gateDone) {
-    return (
-      <SkimGate
-        content={passage.content}
-        onUnlockAction={() => setGateDone(true)}  // ????已?癰궰野?
-      />
-    );
+    return <SkimGate content={contentStr} onUnlockAction={() => setGateDone(true)} />;
   }
+
   return (
     <RunnerCore
       passage={passage}
       sessionId={sessionId}
       onFinishAction={onFinishAction}
+      contentStr={contentStr}
     />
   );
 }
 
-// Core: ??쇱젫 ??瑗?
 function RunnerCore({
   passage,
   sessionId,
   onFinishAction,
+  contentStr,
 }: {
   passage: RPassage;
   sessionId: string;
   onFinishAction?: (sessionId: string | number) => void;
+  contentStr: string;
 }) {
   const qs = (passage?.questions ?? []) as RQuestion[];
   const total = qs.length;
 
-  const [showText, setShowText] = useState(false);
-
+  // 인덱스는 네비게이션 시에만 클램프
   const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    if (total === 0) setIdx(0);
-    else if (idx >= total) setIdx(total - 1);
-    else if (idx < 0) setIdx(0);
-  }, [total, idx]);
+  const clamp = useCallback(
+    (i: number) => Math.min(Math.max(0, i), Math.max(0, total - 1)),
+    [total],
+  );
 
+  const [showText, setShowText] = useState(false);
   const [picked, setPicked] = useState<Record<string, string | string[]>>({});
-  const q = total > 0 ? qs[idx] : undefined;
-  const qKey = q ? String(q.id) : '';
 
+  const q = total > 0 ? qs[clamp(idx)] : undefined;
+  const qKey = q ? String(q.id) : '';
   const isSummary = q?.type === 'summary';
   const selectionCount = Math.max(1, Number(viewMeta(q).summary.selectionCount ?? 2) || 2);
 
   const getSelArray = useCallback((): string[] => {
     if (!qKey) return [];
     const v = picked[qKey];
-    return Array.isArray(v) ? v : (typeof v === 'string' && v ? [v] : []);
+    return Array.isArray(v) ? v : typeof v === 'string' && v ? [v] : [];
   }, [qKey, picked]);
 
   const toggle = useCallback(
@@ -112,7 +112,7 @@ function RunnerCore({
         return s[qid] === cid ? s : { ...s, [qid]: cid };
       });
     },
-    [isSummary, selectionCount]
+    [isSummary, selectionCount],
   );
 
   const canNext = useMemo(() => {
@@ -120,13 +120,18 @@ function RunnerCore({
     return isSummary ? getSelArray().length === selectionCount : !!picked[qKey];
   }, [qKey, isSummary, selectionCount, picked, getSelArray]);
 
-  const lastTickRef = useRef<number>(Date.now());
-  const tick = () => {
+  // 렌더 중 impure 호출 금지 → 최초 0으로 세팅 후 tick()에서만 Date.now() 사용
+  const lastTickRef = useRef<number>(0);
+  const tick = useCallback(() => {
     const now = Date.now();
+    if (lastTickRef.current === 0) {
+      lastTickRef.current = now;
+      return 0;
+    }
     const elapsed = now - lastTickRef.current;
     lastTickRef.current = now;
     return Math.max(0, elapsed);
-  };
+  }, []);
 
   const submitOne = useCallback(async () => {
     if (!qKey) return;
@@ -134,11 +139,10 @@ function RunnerCore({
     if (isSummary) {
       const arr = getSelArray();
       if (arr.length === 0) return;
-      const serialized = arr.join('|');
       await submitReadingAnswer({
         sessionId,
         questionId: qKey,
-        choiceId: serialized,
+        choiceId: arr.join('|'),
         elapsedMs: tick(),
       });
       return;
@@ -153,68 +157,52 @@ function RunnerCore({
       choiceId: cid,
       elapsedMs: tick(),
     });
-  }, [qKey, picked, sessionId, isSummary, getSelArray]);
+  }, [qKey, picked, sessionId, isSummary, getSelArray, tick]);
 
-  const goPrev = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
-  const next = useCallback(async () => {
+  // ✅ React Compiler 경고 회피: 수동 메모이제이션 제거
+  const goPrev = () => setIdx((i) => clamp(i - 1));
+
+  // ✅ React Compiler 경고 회피: 수동 메모이제이션 제거
+  const next = async () => {
     if (!qKey) return;
     if (!canNext) {
-      alert(isSummary ? `?類μ넇??${selectionCount}揶쏆뮆? ?醫뤾문??雅뚯눘苑??` : '???툧???醫뤾문??雅뚯눘苑??');
+      alert(
+        isSummary
+          ? `Please select exactly ${selectionCount} choices.`
+          : 'Please select an answer before continuing.',
+      );
       return;
     }
     await submitOne();
     setShowText(false);
-    if (idx < total - 1) setIdx((i) => i + 1);
-    else {
+    setIdx((i) => {
+      if (i < total - 1) return clamp(i + 1);
+      return i;
+    });
+    // 마지막 문제면 세션 종료
+    if (clamp(idx + 1) === idx) {
       await finishReadingSession({ sessionId });
       onFinishAction?.(sessionId);
     }
-  }, [qKey, canNext, submitOne, idx, total, sessionId, isSummary, selectionCount, onFinishAction]);
-
-  useEffect(() => {
-    if (showText) return;
-    const handler = (e: KeyboardEvent) => {
-      if (!qKey || !q) return;
-      if (e.key >= '1' && e.key <= '9') {
-        const n = Number(e.key) - 1;
-        const target = (q.choices ?? [])[n];
-        if (target) toggle(qKey, target.id);
-      } else if (e.key === 'Enter') {
-        void next();
-      } else if (e.key === 'Backspace') {
-        goPrev();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [q, qKey, toggle, next, goPrev, showText]);
-
-  const badge = useMemo(
-    () => (
-      <span className="ml-2 rounded bg-purple-600/20 px-2 py-0.5 text-[11px] text-purple-300">
-        Runner V2
-      </span>
-    ),
-    []
-  );
-
-  if (total === 0) {
-    return (
-      <div className="rounded-xl border p-4 text-sm">
-        嚥≪뮆諭???얜챸鍮????곷뮸??덈뼄. (passage: <b>{passage?.title ?? 'untitled'}</b>)
-      </div>
-    );
-  }
+  };
 
   const selArr = getSelArray();
   const remaining = isSummary ? selectionCount - selArr.length : 0;
 
+  if (total === 0) {
+    return (
+      <div className="rounded-xl border p-4 text-sm">
+        No questions available. (passage: <b>{passage?.title ?? 'untitled'}</b>)
+      </div>
+    );
+  }
+
   if (isSummary && showText) {
-    const looksLikeHTML = /<[a-z][\s\S]*>/i.test(passage.content);
+    const looksLikeHTML = /<[a-z][\s\S]*>/i.test(contentStr);
     return (
       <div className="p-6">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm text-neutral-500">Summary question 夷?Full Text View</div>
+          <div className="text-sm text-neutral-500">Summary question — Full Text View</div>
           <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(false)}>
             View Questions
           </button>
@@ -223,9 +211,9 @@ function RunnerCore({
         <div className="mx-auto max-w-4xl rounded-2xl border p-5">
           <h1 className="mb-3 text-2xl font-bold">{passage.title}</h1>
           {looksLikeHTML ? (
-            <div dangerouslySetInnerHTML={{ __html: passage.content }} />
+            <div dangerouslySetInnerHTML={{ __html: contentStr }} />
           ) : (
-            <pre className="whitespace-pre-wrap text-[16px] leading-8">{passage.content}</pre>
+            <pre className="whitespace-pre-wrap text-[16px] leading-8">{contentStr}</pre>
           )}
         </div>
       </div>
@@ -244,7 +232,10 @@ function RunnerCore({
       <div style={{ order: 1, minWidth: 0 }}>
         <div className="flex items-center justify-between text-sm text-neutral-500">
           <div>
-            Question {q?.number ?? 0} / {total} {badge}
+            Question {q?.number ?? clamp(idx) + 1} / {total}{' '}
+            <span className="ml-2 rounded bg-purple-600/20 px-2 py-0.5 text-[11px] text-purple-300">
+              Runner V2
+            </span>
           </div>
           {isSummary && (
             <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(true)}>
@@ -256,7 +247,7 @@ function RunnerCore({
         <h2 className="mt-2 text-lg font-semibold">{q?.stem ?? ''}</h2>
         {isSummary && (
           <div className="mt-1 text-xs text-neutral-500">
-            Select <b>{selectionCount}</b> choices. (??? ?醫뤾문: {remaining})
+            Select <b>{selectionCount}</b> choices. (Remaining: {remaining})
           </div>
         )}
 
@@ -286,7 +277,12 @@ function RunnerCore({
         </ul>
 
         <div className="mt-4 flex justify-between">
-          <button type="button" className="rounded border px-4 py-2" disabled={idx === 0} onClick={goPrev}>
+          <button
+            type="button"
+            className="rounded border px-4 py-2"
+            disabled={clamp(idx) === 0}
+            onClick={() => setIdx((i) => clamp(i - 1))}
+          >
             Prev
           </button>
           <button
@@ -295,7 +291,7 @@ function RunnerCore({
             onClick={next}
             disabled={!canNext}
           >
-            {idx < total - 1 ? 'Next' : 'Finish'}
+            {clamp(idx) < total - 1 ? 'Next' : 'Finish'}
           </button>
         </div>
       </div>
@@ -310,13 +306,9 @@ function RunnerCore({
         }}
       >
         <div className="rounded-2xl border p-4">
-          {q ? <PassagePane content={passage.content} q={q} /> : null}
+          {q ? <PassagePane content={contentStr} q={q} /> : null}
         </div>
       </div>
     </div>
   );
 }
-
-
-
-

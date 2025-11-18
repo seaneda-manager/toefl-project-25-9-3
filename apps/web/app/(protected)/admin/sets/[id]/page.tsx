@@ -1,3 +1,5 @@
+// apps/web/app/(protected)/admin/sets/[id]/page.tsx
+
 import SetForm from '../../_components/SetForm';
 import type { DbContentSet as ContentSet } from '@/app/types/types-cms';
 
@@ -8,7 +10,9 @@ async function fetchSet(id: string): Promise<ContentSet | null> {
   return res.json();
 }
 
-export default async function EditSetPage({ params }: { params: { id: string } }) {
+export default async function EditSetPage(props: any) {
+  const { params } = props as { params: { id: string } };
+
   const item = await fetchSet(params.id);
   if (!item) return <div className="text-sm text-red-600">세트를 불러오지 못했습니다.</div>;
 

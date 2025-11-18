@@ -3,9 +3,10 @@
 
 import { useMemo } from 'react';
 import TestRunnerV2 from '@/components/reading/runner/TestRunnerV2';
+import type { RPassage, RQuestion, RChoice } from '@/models/reading';
 
-export type RChoice = { id: string; text: string; is_correct?: boolean };
-export type RQuestion = {
+type LegacyChoice = { id: string; text: string; is_correct?: boolean; isCorrect?: boolean };
+type LegacyQuestion = {
   id: string;
   number: number;
   type:
@@ -18,60 +19,121 @@ export type RQuestion = {
     | 'purpose'
     | 'pronoun_ref'
     | 'summary'
-    | 'organization';
+    | 'organization'
+    | 'single';
   stem: string;
-  choices: RChoice[];
+  choices: LegacyChoice[];
   meta?: any;
+  explanation?: any;
+  clue_quote?: string;
 };
-export type RPassage = {
+type LegacyPassage = {
   id?: string;
   title: string;
-  content: string;
-  questions: RQuestion[];
+  content?: string;      // 레거시: 단일 문자열
+  paragraphs?: string[]; // 최신: 배열
+  questions: LegacyQuestion[];
   ui?: any;
 };
 
 type Props = {
-  data: RPassage;
-  mode?: 'study' | 'test';
-  /** 釉뚮━吏 ?몃??먯꽌 留덈Т由??꾪겕瑜??곌퀬 ?띠쓣 ???대? ?대깽?몄뿉 留ㅽ븨 ?덉젙) */
-  onFinish?: (sessionId: string) => void;
+  data: LegacyPassage; // 입력은 레거시/최신 둘 다 허용
+  mode?: 'study' | 'test' | 'exam' | 'review';
+  onFinish?: (sessionId: string) => void; // 현재 TestRunnerV2로는 전달하지 않음
 };
 
-/**
- * TestRunnerV2??留욎떠 ?곗씠???꾩닔 ?꾨뱶留?蹂댁젙?댁꽌 ?곌껐?섎뒗 ?대뙌??
- * - TestRunnerV2 Props?먮뒗 onFinish媛 ?놁쑝誘濡??꾨떖?섏? ?딆쓬.
- */
-export default function ReadingRunnerBridge({ data, mode = 'study', onFinish }: Props) {
-  // id媛 ?놁쑝硫??덉쟾???꾩떆 id ?앹꽦
-  const passage = useMemo(() => {
-    const fallbackId =
-      (data.title?.trim()?.toLowerCase().replace(/\s+/g, '-').slice(0, 50) || 'passage') +
-      '-' +
-      Math.random().toString(36).slice(2, 8);
+// ✅ 순수한 slugify (impure 함수/시간 의존 없음)
+function slugifyTitle(s: string) {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .slice(0, 50) || 'passage';
+}
+
+// ✅ 순수한 해시 (djb2 변형, 렌더 중 호출 OK)
+function hashString(s: string) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 33) ^ s.charCodeAt(i);
+  }
+  // 고정 길이 8자리 hex
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+const normalizeType = (t: LegacyQuestion['type']): RQuestion['type'] => {
+  if (t === 'single') return 'detail';
+  const ok: RQuestion['type'][] = [
+    'vocab',
+    'detail',
+    'negative_detail',
+    'paraphrasing',
+    'inference',
+    'purpose',
+    'pronoun_ref',
+    'insertion',
+    'summary',
+    'organization',
+  ];
+  return (ok as string[]).includes(String(t)) ? (t as RQuestion['type']) : 'detail';
+};
+
+export default function ReadingRunnerBridge({ data, mode = 'study' }: Props) {
+  // content→paragraphs, is_correct→isCorrect, meta 보존
+  const passage: RPassage = useMemo(() => {
+    const slug = slugifyTitle(data.title ?? '');
+    const stableHashSeed =
+      (data.title ?? '') +
+      '|' +
+      (Array.isArray(data.questions) ? data.questions.map(q => q.id).join(',') : '');
+    const stableHash = hashString(stableHashSeed);
+    const fallbackId = `${slug}-${stableHash}`;
+
+    const paragraphs =
+      Array.isArray(data.paragraphs)
+        ? data.paragraphs
+        : typeof data.content === 'string' && data.content.length
+        ? data.content.split(/\r?\n\r?\n+/g)
+        : [];
+
+    const questions: RQuestion[] = (data.questions ?? []).map((q) => {
+      const meta =
+        q.meta || q.explanation || q.clue_quote
+          ? {
+              ...(q.meta ?? {}),
+              ...(q.explanation ? { explanation: q.explanation } : {}),
+              ...(q.clue_quote ? { clue_quote: q.clue_quote } : {}),
+            }
+          : undefined;
+
+      const choices: RChoice[] = (q.choices ?? []).map((c) => ({
+        id: c.id,
+        text: c.text ?? '',
+        isCorrect: (c as any).isCorrect ?? !!c.is_correct,
+      }));
+
+      return {
+        id: q.id,
+        number: q.number ?? 0,
+        stem: q.stem ?? '',
+        type: normalizeType(q.type),
+        meta,
+        choices,
+      } as RQuestion;
+    });
 
     return {
       id: String(data.id ?? fallbackId),
-      title: data.title,
-      content: data.content,
-      questions: data.questions,
-      ui: data.ui,
-    } as {
-      id: string;
-      title: string;
-      content: string;
-      questions: RQuestion[];
-      ui?: any;
+      title: data.title ?? '',
+      paragraphs,
+      questions,
     };
   }, [data]);
 
-  // TODO: ?섏쨷??TestRunnerV2媛 醫낅즺 ?대깽?몃? ?쒓났?섎㈃ ?ш린??onFinish?.(sessionId)濡??곌껐
-  // Generate a sessionId if needed; you can customize this logic as appropriate
-  const sessionId = passage.id + '-' + Math.random().toString(36).slice(2, 10);
+  // ⚠️ React Compiler 규칙상 렌더에서 impure 사용 금지 → 세션ID를 안정적으로 고정
+  // 고유 세션이 꼭 필요하면 상위에서 prop으로 주입하거나, 효과에서 ref로 설정하세요.
+  const sessionId = `${passage.id}-local`;
 
   return <TestRunnerV2 passage={passage} sessionId={sessionId} mode={mode} />;
 }
-
-
-
-

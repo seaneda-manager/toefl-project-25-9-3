@@ -1,161 +1,68 @@
-/* apps/web/app/auth/login/page.tsx */
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { createSupabaseBrowser } from '@/lib/supabaseBrowser';
-import PlasmicLoginForm from '@/components/plasmic/PlasmicLoginForm';
-
-type Role = 'student' | 'teacher' | 'admin';
-
-/** 라우트 그룹 제거 + 외부 URL 차단 + /auth 가드 */
-function normalizeClientPath(raw?: string | null) {
-  let s = (typeof raw === 'string' ? raw : '') || '';
-  try { s = decodeURIComponent(s); } catch {}
-  s = s.trim();
-  if (!s || s.includes('://')) return '/home';
-  if (!s.startsWith('/')) s = `/${s}`;
-  const groupHead = /^\/\([^/]+\)(?=\/|$)/;
-  while (groupHead.test(s)) {
-    s = s.replace(groupHead, '');
-    if (!s) break;
-  }
-  if (s === '' || s === '/' || s.startsWith('/auth')) return '/home';
-  return s;
-}
+import { useState, useTransition } from "react";
+import { signInEmailPassword } from "@/actions/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const sp = useSearchParams();
-
-  const supabase = useMemo(() => createSupabaseBrowser(), []);
-
-  // URL params
-  const presetEmail = sp.get('email') ?? '';
-  const nextFromQuery = sp.get('next'); // 있으면 우선
-
-  // UI state
-  const [email, setEmail] = useState(presetEmail);
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role>('student'); // 현재는 리다이렉트에 사용 안 함(요청: 일단 /home)
-  const [remember, setRemember] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // 이메일 프리셋/기억하기
-  useEffect(() => {
-    if (presetEmail) {
-      setEmail(presetEmail);
-      setRemember(true);
-      return;
-    }
-    try {
-      const saved = localStorage.getItem('rememberId');
-      if (saved) {
-        setEmail(saved);
-        setRemember(true);
-      }
-    } catch {}
-  }, [presetEmail]);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
 
-  const onSubmit = useCallback(
-    async (e?: React.FormEvent) => {
-      e?.preventDefault?.();
-      if (isPending) return;
-
-      setError(null);
-
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message || 'Login failed');
-        return;
-      }
-
+    startTransition(async () => {
       try {
-        if (remember) localStorage.setItem('rememberId', email);
-        else localStorage.removeItem('rememberId');
-      } catch {}
+        // ✅ FormData로 변환해서 액션에 넘기기
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("password", password);
 
-      // ? 요청사항: 일단 /home으로. 단, ?next가 있으면 우선 적용.
-      const target = normalizeClientPath(nextFromQuery ?? '/home');
-
-      startTransition(() => {
-        router.replace(target);
-      });
-    },
-    [email, password, remember, router, supabase, isPending, nextFromQuery]
-  );
+        const result = await signInEmailPassword(formData);
+        if (!result.ok) throw new Error(result.error || "Login failed");
+      } catch (err: any) {
+        setError(err.message || "Login failed");
+      }
+    });
+  }
 
   return (
-    <div className="pb-10">
-      {/* 프리젠테이션은 Plasmic 컴포넌트에서 처리 */}
-      <PlasmicLoginForm
-        email={email}
-        password={password}
-        remember={remember}
-        loading={isPending}
-        error={error}
-        onChangeEmail={setEmail}
-        onChangePassword={setPassword}
-        onToggleRemember={setRemember}
-        onSubmit={onSubmit}
-        onFindId={() => router.push('/auth/find-id')}
-        onForgotPw={() => router.push('/auth/forgot-password')}
-      />
-
-      {/* Role selector & extra links */}
-      <div className="mx-auto max-w-[960px] px-4 mt-4">
-        <div className="rounded-2xl border border-neutral-200/20 bg-white/5 p-4 text-sm flex flex-wrap items-center gap-4">
-          <span className="opacity-80">Role</span>
-
-          <label className="flex items-center gap-1">
-            <input
-              type="radio"
-              name="role"
-              value="student"
-              checked={role === 'student'}
-              onChange={() => setRole('student')}
-            />
-            <span>Student</span>
-          </label>
-
-          <label className="flex items-center gap-1">
-            <input
-              type="radio"
-              name="role"
-              value="teacher"
-              checked={role === 'teacher'}
-              onChange={() => setRole('teacher')}
-            />
-            <span>Teacher</span>
-          </label>
-
-          <label className="flex items-center gap-1">
-            <input
-              type="radio"
-              name="role"
-              value="admin"
-              checked={role === 'admin'}
-              onChange={() => setRole('admin')}
-            />
-            <span>Admin</span>
-          </label>
-
-          <div className="ml-auto flex items-center gap-4">
-            <Link className="underline underline-offset-4" href="/auth/forgot-password">
-              Forgot password?
-            </Link>
-            <Link className="underline underline-offset-4" href="/auth/signup">
-              Create account
-            </Link>
-          </div>
+    <main className="mx-auto max-w-md px-6 py-10">
+      <h1 className="text-2xl font-semibold mb-6">Sign In</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium">Email</label>
+          <input
+            type="email"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full rounded border px-3 py-2 mt-1"
+          />
         </div>
-      </div>
-    </div>
+        <div>
+          <label className="block text-sm font-medium">Password</label>
+          <input
+            type="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full rounded border px-3 py-2 mt-1"
+          />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded border px-4 py-2"
+        >
+          {isPending ? "Signing in..." : "Sign In"}
+        </button>
+      </form>
+    </main>
   );
 }
-
-
-
-

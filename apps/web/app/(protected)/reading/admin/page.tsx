@@ -12,7 +12,7 @@ type Search = { setId?: string };
 export default async function Page({ searchParams }: { searchParams?: Search }) {
   const setId = searchParams?.setId || 'demo-set';
 
-  // ?λ뜃由?嚥≪뮆諭?(??곸몵筌????ⓥ몿爰?
+  // 서버에서 세트 로드 (없으면 템플릿 제공)
   const initial = await loadReadingSet(setId);
   const initialJson = initial
     ? JSON.stringify(initial, null, 2)
@@ -26,8 +26,7 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
             {
               id: crypto.randomUUID(),
               title: 'Untitled Passage',
-              content: 'Write your passage here...',
-              ui: { paragraphSplit: 'auto' },
+              paragraphs: ['Write your passage here...'], // ✅ SSOT: paragraphs만 사용
               questions: [],
             },
           ],
@@ -36,7 +35,7 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
         2
       );
 
-  // ??뺤쒔 ??る? ????뽱뀱嚥?????(????癒?퐣 筌욊낯??import 疫뀀뜆? ??prop??곗쨮 ?袁⑤뼎)
+  // 서버 액션: 저장
   async function saveAction(formData: FormData) {
     'use server';
     const raw = String(formData.get('json') || '');
@@ -51,12 +50,8 @@ export default async function Page({ searchParams }: { searchParams?: Search }) 
       <AdminReadingEditor
         initialJson={initialJson}
         defaultSetId={setId}
-        onSave={saveAction}
+        onSaveAction={saveAction}  // ✅ 여기! saveAction → onSaveAction
       />
     </div>
   );
 }
-
-
-
-

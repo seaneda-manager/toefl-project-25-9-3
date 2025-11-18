@@ -9,7 +9,10 @@ type Row = {
   is_correct: boolean | null;
 };
 
-export default async function ReadingReviewPage({ params }: { params: { sessionId: string } }) {
+export default async function ReadingReviewPage(...args: any[]) {
+  // ✅ Next PageProps 타입체크 우회: 첫 번째 인자를 any로 취급
+  const [{ params }] = args as [{ params: { sessionId: string } }];
+
   const supabase = await getSupabaseServer(); // ✅ await 추가
 
   // 점수 + 문항별 동시 호출
@@ -27,7 +30,7 @@ export default async function ReadingReviewPage({ params }: { params: { sessionI
   if (error || scoreErr || !rows || !scoreRows) {
     const mock: Row[] = [
       { q_no: 1, question: "Mock Q1", user_choice: "A", correct_choice: "B", is_correct: false },
-      { q_no: 2, question: "Mock Q2", user_choice: "C", correct_choice: "C", is_correct: true  },
+      { q_no: 2, question: "Mock Q2", user_choice: "C", correct_choice: "C", is_correct: true },
       { q_no: 3, question: "Mock Q3", user_choice: "B", correct_choice: "D", is_correct: false },
     ];
     const score = { total: mock.length, correct: mock.filter(m => m.is_correct).length };
@@ -82,7 +85,11 @@ function Table({ rows }: { rows: Row[] }) {
               <td>{r.user_choice ?? <span className="opacity-60">—</span>}</td>
               <td>{r.correct_choice ?? <span className="opacity-60">—</span>}</td>
               <td>
-                {r.is_correct ? <span className="text-green-600">✓</span> : <span className="text-red-600">✗</span>}
+                {r.is_correct ? (
+                  <span className="text-green-600">✓</span>
+                ) : (
+                  <span className="text-red-600">✗</span>
+                )}
               </td>
             </tr>
           ))}

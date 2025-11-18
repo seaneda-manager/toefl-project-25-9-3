@@ -47,7 +47,7 @@ export default async function Page({
 }) {
   const setId = searchParams?.setId || 'demo-set';
 
-  // 1) Supabase 濡쒕뱶 (??꾩븘??+ ?대갚)
+  // 1) Supabase 로드 (타임아웃 + 폴백)
   let passage: RPassage | null = null;
   try {
     const supabase = await getSupabaseServer();
@@ -68,9 +68,7 @@ export default async function Page({
     if (!p) {
       return (
         <div className="p-6">
-          <div className="rounded-xl border p-4">
-            Passage媛 ?놁뒿?덈떎. (setId=<b>{setId}</b>)
-          </div>
+          <div className="rounded-xl border p-4">Passage가 없습니다. (setId=<b>{setId}</b>)</div>
         </div>
       );
     }
@@ -86,37 +84,66 @@ export default async function Page({
     );
     const qs = respQs.data ?? [];
 
-    // RPassage濡?癒쇱? 蹂댄렪??援ъ꽦
+    // paragraphs 우선, 없으면 content를 빈 줄 기준으로 분해
+    const paragraphs: string[] = Array.isArray((p as any)?.paragraphs)
+      ? (p as any).paragraphs
+      : typeof (p as any)?.content === 'string' && (p as any).content.length
+      ? String((p as any).content).split(/\r?\n\r?\n+/g)
+      : [];
+
+    // RPassage 변환 (SSOT)
     passage = {
       id: p.id,
       title: p.title ?? '',
-      content: p.content ?? '',
-      questions: qs.map((q: any) => ({
-        id: q.id,
-        number: q.number ?? 0,
-        stem: q.stem ?? '',
-        type: normalizeType(q.type),
-        // null 媛?μ꽦 ?뺣━: meta/explanation? undefined濡?移섑솚
-        meta: (q.meta as any) ?? undefined,
-        explanation:
-          (q.explanation as any) ??
-          (q.clue_quote ? { clue_quote: q.clue_quote } : undefined),
-        choices: (q.choices ?? []).map((c: any) => ({
+      paragraphs,
+      questions: qs.map((q: any) => {
+        const metaRaw =
+          typeof q.meta === 'string'
+            ? (() => {
+                try {
+                  return JSON.parse(q.meta);
+                } catch {
+                  return undefined;
+                }
+              })()
+            : q.meta ?? undefined;
+
+        // explanation/clue_quote는 meta로 흡수
+        const meta =
+          metaRaw || q.explanation || q.clue_quote
+            ? {
+                ...(metaRaw ?? {}),
+                ...(q.explanation ? { explanation: String(q.explanation) } : {}),
+                ...(q.clue_quote ? { clue_quote: String(q.clue_quote) } : {}),
+              }
+            : undefined;
+
+        const choices = (q.choices ?? []).map((c: any) => ({
           id: c.id,
           text: c.text ?? c.label ?? '',
-          is_correct: !!c.is_correct,
-          explain: (c.explain as string | null | undefined) ?? undefined,
-        })),
-      })) as RQuestion[],
+          isCorrect: (c as any).isCorrect ?? !!c.is_correct, // 레거시 호환
+        }));
+
+        return {
+          id: q.id,
+          number: q.number ?? 0,
+          stem: q.stem ?? '',
+          type: normalizeType(q.type),
+          meta,
+          choices,
+        } as RQuestion;
+      }),
     };
   } catch (e: any) {
     console.warn('[Reading/Test] DB load failed:', e?.message || e);
     passage = {
-      // 理쒖냼 ?대갚 (RPassage)
+      // 최소 폴백 (RPassage)
       id: 'local-fallback',
       title: 'Fallback Passage',
-      content:
-        'This is a local fallback passage used when the database is slow or unavailable.\n\nYou can still test the runner UX.',
+      paragraphs: [
+        'This is a local fallback passage used when the database is slow or unavailable.',
+        'You can still test the runner UX.',
+      ],
       questions: [
         {
           id: 'q1',
@@ -124,28 +151,28 @@ export default async function Page({
           type: 'detail',
           stem: 'According to the fallback passage, what is its purpose?',
           choices: [
-            { id: 'c1', text: 'To test the runner UX', is_correct: true },
+            { id: 'c1', text: 'To test the runner UX', isCorrect: true },
             { id: 'c2', text: 'To measure network bandwidth' },
             { id: 'c3', text: 'To replace the real database' },
             { id: 'c4', text: 'To disable the app' },
           ],
-        },
+        } as RQuestion,
       ],
     };
   }
 
-  // 2) 臾명빆 ?좏슚??
+  // 2) 문항 유효성
   if (!passage?.questions?.length) {
     return (
       <div className="p-6">
         <div className="rounded-xl border p-4">
-          ?꾩옱 ?⑥떆吏?먮뒗 臾명빆???놁뒿?덈떎. (passage: <b>{passage?.title || 'untitled'}</b>)
+          현재 패시지에는 문항이 없습니다. (passage: <b>{passage?.title || 'untitled'}</b>)
         </div>
       </div>
     );
   }
 
-  // 3) ?몄뀡 ?앹꽦 (mode??optional?대?濡??앸왂 ???쒕쾭 湲곕낯媛??ъ슜)
+  // 3) 세션 생성 (실패 시 로컬 폴백)
   let sessionId = `local-${Date.now()}`;
   try {
     const r = await startReadingSession({ setId });
@@ -154,49 +181,10 @@ export default async function Page({
     console.warn('[Reading/Test] startReadingSession failed, fallback to local id');
   }
 
-  // 4) TestRunnerV2媛 ?붽뎄?섎뒗 "??醫곸?" ??낆쑝濡?蹂?섑빐 ?꾨떖
-  type RunnerPassage = {
-    id: string;
-    title: string;
-    content: string;
-    questions: Array<{
-      id: string;
-      number: number;
-      type: RQType;
-      stem: string;
-      choices: Array<{ id: string; text: string; is_correct?: boolean; explain?: string }>;
-      explanation?: string | { clue_quote?: string } | Record<string, any>;
-      meta?: Record<string, any>;
-    }>;
-  };
-
-  const passageForRunner: RunnerPassage = {
-    id: passage.id,
-    title: passage.title ?? '',
-    content: passage.content ?? '',
-    questions: passage.questions.map((q) => ({
-      id: q.id,
-      number: q.number ?? 0,
-      type: q.type as RQType,
-      stem: q.stem ?? '',
-      choices: q.choices.map((c) => ({
-        id: c.id,
-        text: c.text ?? '',
-        is_correct: c.is_correct,                                // optional怨??명솚
-        explain: (c.explain as string | null | undefined) ?? undefined, // null ?쒓굅
-      })),
-      explanation: (q.explanation as any) ?? undefined, // null ?쒓굅
-      meta: (q.meta as any) ?? undefined,               // null ?쒓굅
-    })),
-  };
-
+  // 4) TestRunnerV2는 RPassage를 직접 받음
   return (
     <div className="px-6 py-4">
-      <TestRunnerV2 passage={passageForRunner} sessionId={sessionId} />
+      <TestRunnerV2 passage={passage} sessionId={sessionId} />
     </div>
   );
 }
-
-
-
-

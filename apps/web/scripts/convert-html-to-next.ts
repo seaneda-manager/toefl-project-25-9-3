@@ -1,4 +1,3 @@
-/* eslint-disable */
 import fs from 'fs-extra';
 import path from 'path';
 import * as cheerio from 'cheerio';
@@ -21,10 +20,10 @@ function getArg(name: string, fallback: string) {
 
 (async () => {
   const inFile = getArg('--in', '');
-  const outDir = getArg('--out', '.'); // 기본값 보장
+  const outDir = getArg('--out', '.'); // 기본�?보장
 
   if (!inFile) {
-    console.error('Usage: ts-node scripts/convert-html-to-next.ts --in ./raw/Layout-완전합본.html --out .');
+    console.error('Usage: ts-node scripts/convert-html-to-next.ts --in ./raw/Layout-?�전?�본.html --out .');
     process.exit(1);
   }
 
@@ -39,7 +38,7 @@ function getArg(name: string, fallback: string) {
   await fs.ensureDir(appDir);
 
   const html = await fs.readFile(inputPath, 'utf8');
-  // cheerio 옵션 타입 문제 회피: 기본 로드 사용
+  // cheerio ?�션 ?�??문제 ?�피: 기본 로드 ?�용
   const $ = cheerio.load(html);
 
   // Collect inline styles

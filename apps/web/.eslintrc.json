@@ -1,5 +1,15 @@
 {
+  "root": true,
   "extends": ["next/core-web-vitals"],
+  "settings": {
+    "next": { "rootDir": ["./"] },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./tsconfig.json"
+      }
+    }
+  },
   "rules": {
     "no-restricted-imports": [
       "error",
@@ -16,5 +26,6 @@
         ]
       }
     ]
-  }
+  },
+  "ignorePatterns": ["node_modules/", ".next/", "dist/", "build/", "coverage/", "**/*.d.ts"]
 }

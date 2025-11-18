@@ -2,13 +2,20 @@
   "name": "repo-root",
   "private": true,
   "packageManager": "pnpm@9.12.3",
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "dependencies": {
     "@plasmicapp/loader-nextjs": "^1.0.440",
     "@supabase/ssr": "^0.7.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.23",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "^16.0.1",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "supabase": "^2.48.3",
     "tsx": "^4.20.6",
     "typescript": "5.4.5"

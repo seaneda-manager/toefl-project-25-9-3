@@ -8,17 +8,21 @@ export const revalidate = 0;
 
 type RQType = RQuestion['type'];
 
-/** ?덉쟾??JSON ?뚯꽌: ?대? 媛앹껜硫?洹몃?濡? 臾몄옄?댁씠硫?try-parse, ?꾨땲硫?fallback */
+/** safe JSON parse with fallback */
 function safeJson<T>(val: unknown, fallback: T): T {
   if (val == null) return fallback;
   if (typeof val === 'object') return val as T;
   if (typeof val === 'string') {
-    try { return JSON.parse(val) as T; } catch { return fallback; }
+    try {
+      return JSON.parse(val) as T;
+    } catch {
+      return fallback;
+    }
   }
   return fallback;
 }
 
-/** 吏덈Ц ????뺢퇋??*/
+/** normalize legacy/various question types into RQType */
 function normalizeType(t: unknown): RQType {
   const allowed: RQType[] = [
     'vocab',
@@ -32,8 +36,10 @@ function normalizeType(t: unknown): RQType {
     'summary',
     'organization',
   ];
-  if (t === 'single') return 'detail'; // 援щ쾭???명솚
-  return (allowed as unknown as string[]).includes(String(t)) ? (t as RQType) : 'detail';
+  if (t === 'single') return 'detail'; // legacy alias
+  return (allowed as unknown as string[]).includes(String(t))
+    ? (t as RQType)
+    : 'detail';
 }
 
 export default async function Page({
@@ -44,7 +50,7 @@ export default async function Page({
   const setId = searchParams?.setId ?? 'demo-set';
   const supabase = await getSupabaseServer();
 
-  // 理쒖떊 passage (?대떦 setId)
+  // latest passage in the set
   const { data: p, error: pErr } = await supabase
     .from('reading_passages')
     .select('*')
@@ -53,8 +59,8 @@ export default async function Page({
     .limit(1)
     .maybeSingle();
 
-  if (pErr) return <div className="p-6 text-red-600">?⑥떆吏 濡쒕뱶 ?ㅻ쪟: {pErr.message}</div>;
-  if (!p) return <div className="p-6">Passage ?놁쓬 (setId={setId}).</div>;
+  if (pErr) return <div className="p-6 text-red-600">패시지 로드 오류: {pErr.message}</div>;
+  if (!p) return <div className="p-6">Passage 없음 (setId={setId}).</div>;
 
   const { data: qs, error: qErr } = await supabase
     .from('reading_questions')
@@ -63,33 +69,47 @@ export default async function Page({
     .order('number', { ascending: true });
 
   if (qErr) {
-    return <div className="p-6 text-red-600">臾명빆 濡쒕뱶 ?ㅻ쪟: {qErr.message}</div>;
+    return <div className="p-6 text-red-600">문항 로드 오류: {qErr.message}</div>;
   }
 
-  // ?좑툘 RPassage/RQuestion ??낆뿉 議댁옱?섎뒗 ?꾨뱶留?援ъ꽦 (set_id/ui/passag e_id ?쒓굅)
+  // paragraphs 우선 사용, 없으면 content를 빈 줄 기준으로 분해
+  const paragraphs: string[] = Array.isArray((p as any)?.paragraphs)
+    ? (p as any).paragraphs
+    : typeof (p as any)?.content === 'string' && (p as any).content.length
+    ? String((p as any).content).split(/\r?\n\r?\n+/g)
+    : [];
+
   const passage: RPassage = {
     id: p.id,
     title: p.title ?? '',
-    content: p.content ?? '',
+    paragraphs,
     questions: (qs ?? []).map((q: any) => {
-      const meta = safeJson<NonNullable<RQuestion['meta']>>(q.meta, undefined as any);
-      const explanation =
-        q.explanation ?? (q.clue_quote ? { clue_quote: q.clue_quote } : undefined);
+      const metaRaw = safeJson<NonNullable<RQuestion['meta']>>(q.meta, undefined as any);
+
+      // explanation/clue_quote는 meta로 흡수하여 보존
+      const mergedMeta =
+        metaRaw || q.explanation || q.clue_quote
+          ? {
+              ...(metaRaw ?? {}),
+              ...(q.explanation ? { explanation: String(q.explanation) } : {}),
+              ...(q.clue_quote ? { clue_quote: String(q.clue_quote) } : {}),
+            }
+          : undefined;
+
+      const choices = (q.choices ?? []).map((c: any) => ({
+        id: c.id,
+        text: c.text ?? c.label ?? '',
+        isCorrect: (c as any).isCorrect ?? !!c.is_correct, // 레거시 호환
+      }));
 
       return {
         id: q.id,
         number: q.number ?? 0,
         stem: q.stem ?? '',
         type: normalizeType(q.type),
-        meta,
-        explanation,
-        choices: (q.choices ?? []).map((c: any) => ({
-          id: c.id,
-          text: c.text ?? c.label ?? '',
-          is_correct: !!c.is_correct,
-          explain: c.explain ?? undefined,
-        })),
-      } satisfies RQuestion;
+        meta: mergedMeta,
+        choices,
+      } as RQuestion;
     }),
   };
 
@@ -99,7 +119,3 @@ export default async function Page({
     </div>
   );
 }
-
-
-
-

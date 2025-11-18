@@ -1,42 +1,36 @@
-/* ??: apps/web/app/auth/update-password/page.tsx */
-import { redirect } from 'next/navigation';
-import { updatePassword } from '@/actions/auth';
-import type { ActionState } from '@/actions/auth';
+import { updatePassword } from "@/actions/auth";
+import { redirect } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default function UpdatePasswordPage() {
-  async function updateAction(formData: FormData) {
-    'use server';
-    const r = await updatePassword(formData);
-
-    const mapped: ActionState = r.ok
-      ? { ok: true, error: null }
-      : { ok: false, error: r.error ?? 'Unknown error' };
-
-    if (mapped.ok) {
-      redirect('/?password=updated');
-    }
-    redirect(`/auth/update-password?error=${encodeURIComponent(mapped.error ?? 'Unknown error')}`);
+  async function onSubmit(formData: FormData) {
+    "use server";
+    const res = await updatePassword(formData);
+    if (res.ok) redirect("/auth/login?m=password-updated");
+    redirect(
+      `/auth/update-password?error=${encodeURIComponent(res.error ?? "Failed")}`
+    );
   }
 
   return (
     <main className="mx-auto max-w-md px-6 py-10">
       <h1 className="text-2xl font-semibold mb-6">Update Password</h1>
-      <form action={updateAction} className="space-y-4">
+      <form action={onSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium">New Password</label>
-          <input name="password" type="password" required minLength={6} className="mt-1 w-full rounded border px-3 py-2" />
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={6}
+            className="w-full rounded border px-3 py-2 mt-1"
+          />
         </div>
-        <button type="submit" className="rounded px-4 py-2 border">
+        <button type="submit" className="rounded border px-4 py-2">
           Update
         </button>
       </form>
     </main>
   );
 }
-
-
-
-
-

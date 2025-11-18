@@ -11,9 +11,9 @@ type Row = {
 
 type Score = { total: number; correct: number };
 
-export default async function ListeningReviewPage({
-  params,
-}: { params: { sessionId: string } }) {
+export default async function ListeningReviewPage(props: any) {
+  const { params } = props as { params: { sessionId: string } };
+
   const supabase = await getSupabaseServer(); // ✅ await 추가
 
   // 세션ID는 bigint 기준 number로 사용

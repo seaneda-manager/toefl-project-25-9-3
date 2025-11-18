@@ -1,36 +1,47 @@
 // apps/web/app/(protected)/reading/test/ClientPage.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { RPassage } from '@/models/reading';
 import SkimGate from '@/components/reading/SkimGate';
 import ClientRunner from './ClientRunner';
 
+function getSearchParams(): URLSearchParams {
+  if (typeof window === 'undefined') return new URLSearchParams('');
+  return new URLSearchParams(window.location.search);
+}
+
 export default function ClientPage({ passage }: { passage: RPassage }) {
-  const [gateDone, setGateDone] = useState(false);
+  // ?skipGate=1 → 초기 상태에서 바로 반영 (effect 금지)
+  const initialGateDone =
+    typeof window !== 'undefined' && getSearchParams().get('skipGate') === '1';
+  const [gateDone, setGateDone] = useState<boolean>(initialGateDone);
 
-  // ?몄뀡 ID: 荑쇰━?먯꽌 ?곗꽑, ?놁쑝硫??앹꽦
-  const [sessionId] = useState<string>(() => {
-    const usp = new URLSearchParams(location.search);
-    return usp.get('sessionId') || usp.get('sid') || crypto.randomUUID();
-  });
+  // paragraphs → content 문자열 브릿지
+  const contentStr = useMemo(
+    () =>
+      Array.isArray(passage.paragraphs) ? passage.paragraphs.join('\n\n') : '',
+    [passage.paragraphs]
+  );
 
-  // ?붾쾭洹? ?skipGate=1 ?대㈃ 寃뚯씠???ㅽ궢
-  useEffect(() => {
-    const usp = new URLSearchParams(location.search);
-    if (usp.get('skipGate') === '1') setGateDone(true);
-  }, []);
+  // sessionId: 쿼리 우선, 없으면 useId로 결정적 생성 (Math.random/crypto.randomUUID 사용 금지)
+  const rid = useId();
+  const paramSid =
+    typeof window !== 'undefined'
+      ? getSearchParams().get('sessionId') || getSearchParams().get('sid')
+      : null;
+  const sessionId = paramSid ?? `${String(passage.id)}-${rid}`;
 
   if (!gateDone) {
     return (
       <SkimGate
-        content={passage.content ?? ''}
-        onUnlockAction={() => setGateDone(true)}  // ???대쫫 蹂寃?
+        content={contentStr}
+        onUnlockAction={() => setGateDone(true)}
       />
     );
   }
 
-  // ClientRunner媛 ?붽뎄?섎뒗 ?꾧꺽???뺥깭濡?蹂댁젙
+  // ClientRunner가 content(string)를 기대하므로 런타임 브릿지 타입 구성
   type StrictPassage = {
     id: string;
     title: string;
@@ -41,13 +52,9 @@ export default function ClientPage({ passage }: { passage: RPassage }) {
   const passageStrict: StrictPassage = {
     id: String(passage.id),
     title: passage.title ?? '',
-    content: passage.content ?? '',
+    content: contentStr,
     questions: Array.isArray(passage.questions) ? passage.questions : [],
   };
 
   return <ClientRunner passage={passageStrict} sessionId={sessionId} />;
 }
-
-
-
-

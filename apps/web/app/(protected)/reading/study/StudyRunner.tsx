@@ -1,4 +1,4 @@
-// apps/web/components/reading/StudyRunner.tsx (?덉떆 寃쎈줈, ?ㅼ젣 ?꾩튂 ?좎?)
+﻿// apps/web/components/reading/StudyRunner.tsx
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -14,36 +14,35 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const questions = useMemo<RQuestion[]>(
-    () => Array.isArray(passage.questions) ? [...passage.questions] : [],
+    () => (Array.isArray(passage.questions) ? [...passage.questions] : []),
     [passage.questions]
   );
 
   const total = questions.length;
   const q = questions[current];
 
-  // ?몄뀡 ?쒖옉 (study 紐⑤뱶)
+  /** Start a study session (fallback to local session if API fails) */
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        // ?쒕쾭 ?≪뀡 ?쒓렇?덉쿂??留욎떠 ?꾩슂 ??setId??媛숈씠 ?섍린?몄슂.
         const res = await startReadingSession({ passageId: String(passage.id), mode: 'study' as const });
-        if (active) {
-          const sid = (res && 'sessionId' in res) ? String(res.sessionId) : null;
-          setSessionId(sid ?? `local-${Date.now()}`);
-        }
+        if (!active) return;
+        const sid = (res && 'sessionId' in res) ? String(res.sessionId) : null;
+        setSessionId(sid ?? `local-${Date.now()}`);
       } catch {
         if (active) setSessionId(`local-${Date.now()}`);
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [passage.id]);
 
-  // ?좏깮 & ?쒖텧
+  /** Pick an answer (optimistic), sync to server if session exists */
   const pick = useCallback(
     async (questionId: string, choiceId: string) => {
       setAnswers((prev) => ({ ...prev, [questionId]: choiceId }));
-      // ?몄뀡???꾩쭅 ?놁쑝硫??쒖텧? ?ㅽ궢(濡쒖뺄 ?곹깭留?諛섏쁺)
       if (!sessionId) return;
       await submitReadingAnswer({
         sessionId,
@@ -56,23 +55,24 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
 
   const onFinish = useCallback(async () => {
     if (sessionId) {
-      // ??finishReadingSession? 媛앹껜 ?몄옄瑜?諛쏅룄濡??섏젙
       await finishReadingSession({ sessionId });
     }
-    // TODO: 醫낅즺 ???쇱슦??由щ럭 ?섏씠吏 ?대룞 ???꾩슂 ??異붽?
+    // TODO: navigate to review page if desired
   }, [sessionId]);
 
   if (!q) {
-    return <div className="p-4 text-sm text-gray-500">臾명빆???놁뒿?덈떎.</div>;
+    return <div className="p-4 text-sm text-gray-500">No questions available.</div>;
   }
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Passage */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">{passage.title ?? 'Passage'}</h2>
         <div className="prose whitespace-pre-wrap">{passage.content ?? ''}</div>
       </div>
 
+      {/* Questions */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-500">
@@ -97,8 +97,10 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
         </div>
 
         <div className="rounded-xl border p-4">
-          <div className="mb-2 font-medium">
-            {q.number ? `${q.number}. ` : ''}{q.stem ?? '臾명빆'}
+          <div className="mb-2 font-medium whitespace-pre-wrap">
+            {/* 모지바케/미종결 방지: 두 조각으로 안전하게 분리 */}
+            {q.number ? `${q.number}. ` : ''}
+            {q.stem ?? ''}
           </div>
 
           <div className="grid grid-cols-1 gap-2">
@@ -107,13 +109,20 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
               return (
                 <button
                   key={c.id}
-                  className={`rounded-md border px-3 py-2 text-left ${selected ? 'bg-black text-white' : 'bg-white'}`}
+                  className={[
+                    'rounded-md border px-3 py-2 text-left',
+                    selected ? 'bg-black text-white' : 'bg-white',
+                  ].join(' ')}
                   onClick={() => pick(String(q.id), String(c.id))}
                 >
-                  {c.label ? `${c.label}. ` : ''}{c.text ?? ''}
+                  {c.label ? `${c.label}. ` : ''}
+                  {c.text ?? ''}
                 </button>
               );
             })}
+            {(q.choices ?? []).length === 0 && (
+              <div className="text-sm text-neutral-500">No choices for this question.</div>
+            )}
           </div>
         </div>
 
@@ -122,7 +131,7 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
             className="rounded-xl border px-4 py-2"
             onClick={onFinish}
             disabled={!sessionId}
-            title={sessionId ? 'Finish session' : '?몄뀡 ?앹꽦 以묅?}
+            title={sessionId ? undefined : 'Start a session first'}
           >
             Finish
           </button>
@@ -131,7 +140,3 @@ export default function StudyRunner({ passage }: { passage: Passage }) {
     </div>
   );
 }
-
-
-
-

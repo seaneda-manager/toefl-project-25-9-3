@@ -2,9 +2,9 @@
 'use server';
 
 import { getSupabaseServer } from '@/lib/supabaseServer';
-import type { Mode } from '@/types/consume-play';
+import type { Mode } from '@/lib/consumePlay';
 // ?꾩슂 ??吏㏃?/湲??쒓린 蹂?섏쓣 ?먰븳?ㅻ㈃ ?꾨옒 二쇱꽍 ?댁젣 ???ъ슜
-// import { canonicalMode } from '@/types/consume-play';
+// import { canonicalMode } from '@/lib/consumePlay';
 
 export type StartListeningSessionArgs = {
   setId: string;

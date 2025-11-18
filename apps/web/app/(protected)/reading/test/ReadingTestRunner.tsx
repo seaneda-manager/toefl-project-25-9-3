@@ -35,6 +35,7 @@ function normalizeKey(v: unknown): string {
 function getPassageText(p: unknown): string {
   if (p && typeof p === 'object') {
     const o = p as Record<string, any>;
+    if (Array.isArray(o.paragraphs)) return o.paragraphs.join('\n\n');
     return o.content ?? o.text ?? o.body ?? o.passage ?? o.html ?? '';
   }
   return '';
@@ -55,18 +56,16 @@ type Props = {
 };
 
 export default function ReadingTestRunner({ sessionId, passage }: Props) {
-  // 濡쒖뺄 ?곹깭: question.id -> choice.id
+  // 답변 상태: question.id -> choice.id
   const [answers, setAnswers] = useState<Record<number | string, string>>({});
-  // 媛?臾명빆 理쒖큹 ?ъ빱???쒖젏(ms)
+  // 각 문항 최초 포커스 시각(ms)
   const startedAtRef = useRef<Record<number | string, number>>({});
 
-  const questions = useMemo<RQuestion[]>(
-    () => [...(passage?.questions ?? [])],
-    [passage]
-  );
+  // memoization 없이도 충분 (Compiler 보존 이슈 예방)
+  const questions = (passage?.questions ?? []) as RQuestion[];
   const total = questions.length;
 
-  // Object.entries濡?怨꾩궛?섏뿬 ?몃뜳?????寃쎄퀬 ?뚰뵾
+  // 답변된 개수
   const answered = useMemo(
     () => Object.entries(answers).filter(([, v]) => v !== '').length,
     [answers]
@@ -75,14 +74,14 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
   const passageTitle = useMemo(() => getPassageTitle(passage), [passage]);
   const passageText = useMemo(() => getPassageText(passage), [passage]);
 
-  // ?ъ빱???쒓컙 湲곕줉
+  // 포커스 타임 스탬프 기록
   const onFocusQuestion = useCallback((qid: number | string) => {
     if (!startedAtRef.current[qid]) {
       startedAtRef.current[qid] = Date.now();
     }
   }, []);
 
-  // ?좏깮 泥섎━ + ?쒕쾭 ?꾩넚
+  // 선택 처리 + 서버 전송
   const onSelect = useCallback(
     async (qid: number | string, cid: string) => {
       setAnswers((prev) => ({ ...prev, [qid]: cid }));
@@ -92,30 +91,28 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
 
       try {
         await submitReadingAnswer({
-          sessionId,                 // 臾몄옄??洹몃?濡??꾨떖
-          questionId: String(qid),   // ?쒕쾭??string 湲곕?
-          choiceId: String(cid),     // ?쒕쾭??string 湲곕?
+          sessionId,
+          questionId: String(qid),
+          choiceId: String(cid),
           elapsedMs,
         });
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.error('submitReadingAnswer failed', e);
       } finally {
-        // ?ㅼ쓬 ?좏깮???꾪빐 ??대㉧ 由ъ뀑
+        // 다음 선택을 위해 타이머 리셋
         startedAtRef.current[qid] = Date.now();
       }
     },
     [sessionId]
   );
 
-  // ?몄뀡 醫낅즺
+  // 세션 종료
   const handleFinish = useCallback(async () => {
     try {
-      await finishReadingSession(sessionId); // 臾몄옄??吏곸젒 ?꾨떖
+      await finishReadingSession(sessionId);
       alert(`Submitted ${answered}/${total} answers. Session finished.`);
-      // ?꾩슂 ?? window.location.href = `/app/(protected)/reading/review/${sessionId}`;
+      // 필요 시: window.location.href = `/app/(protected)/reading/review/${sessionId}`;
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error('finishReadingSession failed', e);
       alert('Finish failed. Please try again.');
     }
@@ -126,7 +123,7 @@ export default function ReadingTestRunner({ sessionId, passage }: Props) {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Reading Test</h1>
         <p className="text-sm opacity-70">
-          Session: {sessionId} 쨌 Progress: {answered}/{total}
+          Session: {sessionId} · Progress: {answered}/{total}
         </p>
         {passageTitle ? <h2 className="text-xl font-semibold">{passageTitle}</h2> : null}
       </header>
@@ -231,7 +228,3 @@ function QuestionCard(props: {
     </div>
   );
 }
-
-
-
-

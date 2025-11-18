@@ -1,42 +1,56 @@
-// apps/web/app/(protected)/reading/study/page.tsx
+﻿// apps/web/app/(protected)/reading/study/page.tsx
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import StudyRunner from './StudyRunner';
-import type { RPassage, RQuestion } from '@/models/reading';
 
-type RQType = RQuestion['type'];
-
-/** ?덉쟾??JSON ?뚯꽌: ?대? 媛앹껜硫?洹몃?濡? 臾몄옄?댁씠硫?try-parse, ?꾨땲硫?fallback */
+/** 안전 JSON 파서 */
 function safeJson<T>(val: unknown, fallback: T): T {
   if (val == null) return fallback;
   if (typeof val === 'object') return val as T;
   if (typeof val === 'string') {
-    try { return JSON.parse(val) as T; } catch { return fallback; }
+    try {
+      return JSON.parse(val) as T;
+    } catch {
+      return fallback;
+    }
   }
   return fallback;
 }
 
-/** 吏덈Ц ????뺢퇋??*/
-function normalizeType(t: unknown): RQType {
-  const allowed: RQType[] = [
+/** 문제 타입 정규화 */
+function normalizeType(
+  t: unknown
+):
+  | 'vocab'
+  | 'detail'
+  | 'negative_detail'
+  | 'paraphrasing'
+  | 'insertion'
+  | 'inference'
+  | 'purpose'
+  | 'pronoun_ref'
+  | 'summary'
+  | 'organization' {
+  const allowed = [
     'vocab',
     'detail',
     'negative_detail',
     'paraphrasing',
+    'insertion',
     'inference',
     'purpose',
     'pronoun_ref',
-    'insertion',
     'summary',
     'organization',
   ];
-  if (t === 'single') return 'detail'; // ?덉쟾 ?곗씠???명솚
-  return (allowed as string[]).includes(String(t)) ? (t as RQType) : 'detail';
+  if (t === 'single') return 'detail';
+  const s = String(t);
+  return (allowed as string[]).includes(s) ? (s as any) : 'detail';
 }
 
 export default async function Page() {
   const supabase = await getSupabaseServer();
 
-  // 理쒖떊 passage 1媛?
+  // 최신 passage 1개
   const { data: p, error: pErr } = await supabase
     .from('reading_passages')
     .select('*')
@@ -44,53 +58,51 @@ export default async function Page() {
     .limit(1)
     .maybeSingle();
 
-  if (pErr) return <div>?ㅻ쪟: {pErr.message}</div>;
-  if (!p) return <div>Passage媛 ?놁뒿?덈떎.</div>;
+  if (pErr) return <div className="p-6 text-red-600">오류: {pErr.message}</div>;
+  if (!p) return <div className="p-6">Passage가 없습니다.</div>;
 
-  // 愿??吏덈Ц + 蹂닿린
+  // 해당 passage의 문제 + 보기
   const { data: qs, error: qErr } = await supabase
     .from('reading_questions')
     .select('*, choices:reading_choices(*)')
     .eq('passage_id', p.id)
     .order('number', { ascending: true });
 
-  if (qErr) return <div>吏덈Ц 濡쒕뱶 ?ㅻ쪟: {qErr.message}</div>;
+  if (qErr) return <div className="p-6 text-red-600">문항 로드 오류: {qErr.message}</div>;
 
-  // RPassage ?ㅽ럺??議댁옱?섎뒗 ?꾨뱶濡쒕쭔 援ъ꽦 (ui / set_id ?쒓굅)
-  const passage: RPassage = {
-    id: p.id,
-    title: p.title ?? '',
+  // StudyRunner 입력 형태로 변환: { passage: { id, title, content, questions } }
+  const passage = {
+    id: String(p.id),
+    title: p.title ?? 'Reading Study',
     content: p.content ?? '',
     questions: (qs ?? []).map((q: any) => {
-      // meta / explanation? 蹂댄넻 ?좏깮 ?꾨뱶. ?꾨줈?앺듃 ?ㅽ럺??留욊쾶 媛踰쇱슫 蹂댁젙留?
-      const meta = safeJson<NonNullable<RQuestion['meta']>>(q.meta, undefined as any);
-      const explanation =
-        q.explanation
+      const _meta = safeJson(q?.meta, undefined as unknown as Record<string, unknown> | undefined);
+      const _explanation =
+        q?.explanation
           ? q.explanation
-          : q.clue_quote
+          : q?.clue_quote
           ? { clue_quote: q.clue_quote }
           : undefined;
 
       return {
-        id: q.id,
+        id: String(q.id),
         number: q.number ?? 0,
         type: normalizeType(q.type),
         stem: q.stem ?? '',
-        meta,
-        explanation,
-        choices: (q.choices ?? []).map((c: any) => ({
-          id: c.id,
+        explanation: _explanation ?? undefined,
+        clue_quote: q?.clue_quote ?? undefined,
+        choices: (q?.choices ?? []).map((c: any) => ({
+          id: String(c.id),
           text: c.text ?? c.label ?? '',
           is_correct: !!c.is_correct,
-          explain: c.explain ?? undefined,
         })),
-      } satisfies RQuestion; // ??RQuestion???녿뒗 ?ㅺ? ?덉쑝硫??ш린??而댄뙆???먮윭濡??≫옒
+      };
     }),
   };
 
-  return <StudyRunner passage={passage} />;
+  return (
+    <div className="p-6">
+      <StudyRunner passage={passage} />
+    </div>
+  );
 }
-
-
-
-

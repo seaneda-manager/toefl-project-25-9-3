@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 선택: 기본 바디 스타일 */
+html, body {
+  height: 100%;
+}

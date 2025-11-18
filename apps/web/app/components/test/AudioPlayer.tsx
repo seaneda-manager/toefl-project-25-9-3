@@ -1,111 +1,74 @@
-// normalized utf8
 'use client';
-import { useEffect, useRef, useState, useCallback } from 'react';
 
-type Props = {
-  src?: string;
-  oneShot?: boolean;          // 占쏙옙占쏙옙 占쏙옙 占쏙옙占?占쏙옙占쏙옙
-  disableSeek?: boolean;      // 탐占쏙옙(占썲래占쏙옙) 占쏙옙占쏙옙
-  onStart?: () => void;
-  onEnd?: () => void;
-};
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 
-export default function AudioPlayer({
-  src,
-  oneShot = true,
-  disableSeek = true,
-  onStart,
-  onEnd,
-}: Props) {
-  const ref = useRef<HTMLAudioElement>(null);
-  const startedOnceRef = useRef(false);
-  const endedRef = useRef(false);
-  const lastTimeRef = useRef(0);
+type Props = { src?: string; oneShot?: boolean; className?: string };
+
+export default function TestAudioPlayer(props: Props) {
+  return <Inner key={props.src ?? 'none'} {...props} />;
+}
+
+function Inner({ src, oneShot = false, className = '' }: Props) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [started, setStarted] = useState(false);
+  const [canPlay, setCanPlay] = useState(false);
+  const [ended, setEnded] = useState(false);
 
-  // src 占쏙옙占쏙옙 占쏙옙 占십깍옙화
   useEffect(() => {
-    startedOnceRef.current = false;
-    endedRef.current = false;
-    lastTimeRef.current = 0;
-    setStarted(false);
-  }, [src]);
-
-  // 占싱븝옙트 占쏙옙占싸듸옙 (ref.current 占쏙옙占쏙옙占쏙옙 占쏙옙占?
-  useEffect(() => {
-    const el = ref.current;
+    const el = audioRef.current;
     if (!el) return;
-
-    const onPlay = () => {
-      if (!startedOnceRef.current) {
-        startedOnceRef.current = true;
-        onStart?.();
-      }
-      setStarted(true);
-    };
-    const onPause = () => setStarted(false);
-    const onEndedAction= () => {
-      endedRef.current = true;
-      setStarted(false);
-      onEnd?.();
-    };
-    const onTime = () => {
-      lastTimeRef.current = el.currentTime || 0;
-    };
-    const onSeeking = () => {
-      if (disableSeek) {
-        // seeking占쏙옙 占쏙옙占?占쌀곤옙 占쏙옙 占시곤옙占쏙옙 占쏙옙占쏙옙치
-        el.currentTime = lastTimeRef.current;
-      }
-    };
-
-    el.addEventListener('play', onPlay);
-    el.addEventListener('pause', onPause);
+    const onCanPlay = () => setCanPlay(true);
+    const onEnded = () => { setEnded(true); setStarted(false); };
+    el.addEventListener('canplay', onCanPlay);
     el.addEventListener('ended', onEnded);
-    el.addEventListener('timeupdate', onTime);
-    el.addEventListener('seeking', onSeeking);
-
     return () => {
-      el.removeEventListener('play', onPlay);
-      el.removeEventListener('pause', onPause);
+      el.removeEventListener('canplay', onCanPlay);
       el.removeEventListener('ended', onEnded);
-      el.removeEventListener('timeupdate', onTime);
-      el.removeEventListener('seeking', onSeeking);
     };
-  }, [disableSeek, onStart, onEnd]);
+  }, []);
 
-  const start = useCallback(() => {
-    const el = ref.current;
+  const disabled = !src || src.trim().length === 0;
+  const computedCanPlay = useMemo(() => {
+    if (disabled) return false;
+    if (oneShot && ended) return false;
+    return canPlay;
+  }, [disabled, oneShot, ended, canPlay]);
+
+  const toggle = useCallback(() => {
+    const el = audioRef.current;
+    if (!el || !computedCanPlay) return;
+    if (started) { el.pause(); setStarted(false); }
+    else { if (oneShot && ended) return; void el.play(); setStarted(true); }
+  }, [computedCanPlay, started, oneShot, ended]);
+
+  const reset = useCallback(() => {
+    const el = audioRef.current;
     if (!el) return;
-    if (!src || (oneShot && endedRef.current)) return;
-    el.play().catch(() => {
-      /* 占쌘듸옙占쏙옙占?占쏙옙책 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙: 占쏙옙占쏙옙 */
-    });
-  }, [src, oneShot]);
+    el.pause();
+    el.currentTime = 0;
+    setStarted(false);
+    setEnded(false);
+  }, []);
 
   return (
-    <div className="p-4 flex items-center gap-4">
-      {!started && (
-        <button className="btn-primary" onClick={start} disabled={!src || (oneShot && endedRef.current)}>
-          Start Audio
-        </button>
-      )}
-      <audio ref={ref} src={src} controls={false} preload="auto" />
-      <input
-        type="range"
-        min={0}
-        max={1}
-        step={0.01}
-        onChange={(e) => {
-          const el = ref.current;
-          if (el) el.volume = Number(e.currentTarget.value);
-        }}
-        aria-label="Volume"
-      />
+    <div className={`p-4 flex items-center gap-4 ${className}`}>
+      <audio ref={audioRef} src={src} preload="metadata" />
+      <button
+        type="button"
+        className="rounded border px-3 py-2 text-sm disabled:opacity-50"
+        onClick={toggle}
+        disabled={!computedCanPlay}
+      >
+        {started ? 'Pause' : 'Start'}
+      </button>
+      <button type="button" className="rounded border px-3 py-2 text-sm" onClick={reset}>
+        Reset
+      </button>
+      {!src ? (
+        <span className="text-xs text-neutral-500">No audio source</span>
+      ) : oneShot && ended ? (
+        <span className="text-xs text-neutral-500">Playback finished</span>
+      ) : null}
     </div>
   );
 }
-
-
-
-

@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { consumePlay } from '@/lib/consumePlay';
-import type { Mode } from '@/types/consume-play';
+import type { Mode } from '@/lib/consumePlay';
 
 type Props = {
   title: string;

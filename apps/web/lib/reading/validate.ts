@@ -1,12 +1,12 @@
 // apps/web/lib/reading/validate.ts
-import type { RSet, RQuestion } from '@/models/reading/zod'; // 野껋럥以????????뵬
+import type { RSet, RQuestion } from '@/models/reading';
 
-/** ??됱읈??RegExp escape */
+/** RegExp escape */
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** 筌롫?? ?됯퀣堉? ?袁⑹뒄????뺥닏筌롫??筌???됱읈??띿쓺 ?곗눖沅??븍┛ */
+/** meta 뷰 전용 안전 파서 */
 function viewMeta(q: RQuestion) {
   const summary = (q.meta?.summary ?? {}) as {
     candidates?: string[];
@@ -14,14 +14,14 @@ function viewMeta(q: RQuestion) {
     selectionCount?: number;   // required selection count
   };
   const insertion = (q.meta?.insertion ?? {}) as {
-    anchors?: Array<string | number>; // explicit anchor list -> choices length?? ??덉뵬??곷튊 ??
+    anchors?: Array<string | number>; // explicit anchor list -> choices.length와 동일해야 함
     correctIndex?: number;
-    /** 癰귣챶揆??筌욊낯??筌띾뜆鍮긺몴?獄쏅벡釉??怨뺣뮉 野껋럩?????????용뮞??(?? '[[INS]]' ?癒?뮉 '[#]') */
+    /** 본문 마커 텍스트(예: '[[INS]]' 또는 '[#]') */
     marker?: string;
   };
   const pronoun = (q.meta?.pronoun_ref ?? {}) as {
     pronoun?: string;
-    referents?: string[];      // ?袁⑤궖 筌ㅼ뮇??2揶?
+    referents?: string[];      // 최소 2개
     correctIndex?: number;
   };
   const paragraphHighlight = (q.meta?.paragraph_highlight ?? {}) as {
@@ -30,19 +30,19 @@ function viewMeta(q: RQuestion) {
   return { summary, insertion, pronoun, paragraphHighlight };
 }
 
-/** passage.content ??됰퓠????뚯뿯 筌띾뜆鍮?揶쏆뮇???硫몃┛ */
+/** content 문자열에서 삽입 마커 개수 세기 */
 function countInsertionMarkers(content: string, marker: string) {
   if (!marker) return 0;
   const re = new RegExp(escapeRegExp(marker), 'g');
   return (content.match(re) || []).length;
 }
 
-/** ?怨?????以???醫뤿뼢: 揶쏆빘猿?紐? ?類ㅼ뵥 */
+/** 얕은 객체 판별 */
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** ?얜챷???紐낅뱜 野꺜筌?*/
+/** 세트 검증 */
 export function validateSet(s: RSet) {
   const errs: string[] = [];
 
@@ -50,28 +50,33 @@ export function validateSet(s: RSet) {
 
   s.passages?.forEach((p, pi) => {
     if (!p.title) errs.push(`P${pi + 1}: title missing`);
-    if (!p.content) errs.push(`P${pi + 1}: content missing`);
+    if (!Array.isArray(p.paragraphs) || p.paragraphs.length === 0) {
+      errs.push(`P${pi + 1}: paragraphs missing`);
+    }
+
+    // paragraphs를 content 문자열로 브릿지
+    const contentStr = Array.isArray(p.paragraphs) ? p.paragraphs.join('\n\n') : '';
 
     const seenNumbers = new Set<number>();
 
     (p.questions ?? []).forEach((q) => {
-      // 甕곕뜇??餓λ쵎??
+      // 번호 중복
       if (seenNumbers.has(q.number)) errs.push(`P${pi + 1} Q# dup: ${q.number}`);
       seenNumbers.add(q.number);
 
       const choices = q.choices ?? [];
       const { summary, insertion, pronoun } = viewMeta(q);
 
-      // ??μ뵬 ?類ｋ뼗 ?醫륁굨: summary/organization ??뽰뇚??랁??類μ넇??1揶??類ｋ뼗
+      // 단일 정답 유형: summary/organization 제외하고 정답은 정확히 1개
       if (q.type !== 'summary' && q.type !== 'organization') {
-        const corrects = choices.filter((c) => !!c.is_correct).length;
+        const corrects = choices.filter((c) => !!(c as any).isCorrect).length;
         if (corrects !== 1) {
           errs.push(`P${pi + 1} Q${q.number}: single-answer must have exactly 1 correct`);
         }
       }
 
-      // insertion: anchors 獄쏄퀣肉????됱몵筌?疫뀀챷??=== choices.length
-      // ??곸몵筌?癰귣챶揆????덈뮉 marker ??용뮞??揶쏆뮇??? choices.length ??깊뒄 野꺜??
+      // insertion: anchors 길이 === choices.length
+      // anchors가 없으면 marker 기반으로 본문 마커 개수 === choices.length
       if (q.type === 'insertion') {
         const choiceCount = choices.length;
         if (Array.isArray(insertion.anchors)) {
@@ -82,9 +87,8 @@ export function validateSet(s: RSet) {
             );
           }
         } else {
-          // 疫꿸퀡??筌띾뜆鍮??'[[INS]]'嚥?揶쎛??(?袁⑥쨮??븍뱜?癒?퐣 ?怨뺣뮉 揶쏅??앮에?獄쏅떽?????
           const markerText = insertion.marker ?? '[[INS]]';
-          const markerCount = countInsertionMarkers(p.content || '', markerText);
+          const markerCount = countInsertionMarkers(contentStr, markerText);
           if (markerCount !== choiceCount) {
             errs.push(
               `P${pi + 1} Q${q.number}: insertion markers(${markerCount}) != choices(${choiceCount}) [marker="${markerText}"]`
@@ -93,16 +97,16 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // summary: selectionCount & correct 揶쏆뮇?? ?醫뤾문筌왖 ??野꺜??
+      // summary: selectionCount & correct 개수 검증
       if (q.type === 'summary') {
         const sel = Number.isFinite(summary.selectionCount)
           ? (summary.selectionCount as number)
           : 3;
 
-        // 筌뤿굞???correct 獄쏄퀣肉????됱몵筌?域?疫뀀챷?? ??곸몵筌?choices??is_correct 揶쏆뮇??????
+        // meta.summary.correct가 있으면 우선, 없으면 choices.isCorrect 기반
         const correctCount = Array.isArray(summary.correct)
           ? summary.correct.length
-          : choices.filter((c) => !!c.is_correct).length;
+          : choices.filter((c) => !!(c as any).isCorrect).length;
 
         if (correctCount !== sel) {
           errs.push(`P${pi + 1} Q${q.number}: summary correct must be ${sel}`);
@@ -112,7 +116,7 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // pronoun_ref: ????????놁뵬 ???춸 sanity 筌ｋ똾寃?
+      // pronoun_ref: 후보 최소 2, correctIndex 범위 체크
       if (q.type === 'pronoun_ref') {
         const refLen = pronoun.referents?.length ?? 0;
         if (refLen < 2) {
@@ -123,18 +127,16 @@ export function validateSet(s: RSet) {
         }
       }
 
-      // explanation.why_others(癰귣떯由계퉪???삳뼗???) ??? ??쇱젫 choice id?? 筌띲끉臾??롫뮉筌왖
+      // explanation.why_others (메타 안에 있는 구조화된 설명) 의 choice id 유효성
       {
-        const exp = q.explanation as unknown;
+        const exp = (q.meta as any)?.explanation as unknown;
         if (isObject(exp) && 'why_others' in exp) {
           const why = (exp as Record<string, unknown>)['why_others'];
           if (isObject(why)) {
             const ids = new Set(choices.map((c) => c.id));
             for (const id of Object.keys(why)) {
               if (!ids.has(id)) {
-                errs.push(
-                  `P${pi + 1} Q${q.number}: why_others has unknown choice id "${id}"`
-                );
+                errs.push(`P${pi + 1} Q${q.number}: why_others has unknown choice id "${id}"`);
               }
             }
           }
@@ -145,7 +147,3 @@ export function validateSet(s: RSet) {
 
   return errs;
 }
-
-
-
-

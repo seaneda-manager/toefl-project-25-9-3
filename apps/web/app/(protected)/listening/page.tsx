@@ -1,8 +1,8 @@
 // apps/web/app/(protected)/listening/page.tsx
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { getSupabaseServer } from '@/lib/supabaseServer';
-import SetPicker from '@/components/listening/SetPicker';
+import { getSupabaseServer } from "@/lib/supabaseServer";
+import SetPicker from "@/components/listening/SetPicker";
 
 type AvailSet = { id: string; tpo: number; title: string };
 
@@ -12,22 +12,22 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // (protected) ?꾨옒吏留??뱀떆 鍮꾨줈洹몄씤 ?묎렐 ???덈궡
+  // (protected) 영역: 로그인된 유저만 접근 가능
   if (!user) {
     return <div className="p-6">Please sign in.</div>;
   }
 
-  // NOTE: ?ㅼ젣 ?댁쁺?먯꽌??RPC媛 ??沅뚯옣??(?? listening_available_sets)
+  // NOTE: 나중에 listening_available_sets RPC로 교체 예정
   // const { data: sets, error } = await supabase
   //   .rpc<AvailSet[]>('listening_available_sets', { p_user_id: user.id });
 
-  // ?꾩옱 濡쒖쭅 ?좎?: 酉곗뿉??吏곸젒 議고쉶
+  // 현재 로직: 뷰에서 사용 가능한 세트 조회
   const { data: sets, error } = await supabase
-    .from('v_user_listening_sets')
-    .select('id, tpo, title')
-    .eq('user_id', user.id)
-    .eq('downloaded', true)
-    .order('tpo', { ascending: true })
+    .from("v_user_listening_sets")
+    .select("id, tpo, title")
+    .eq("user_id", user.id)
+    .eq("downloaded", true)
+    .order("tpo", { ascending: true })
     .returns<AvailSet[]>();
 
   if (error) {
@@ -41,7 +41,8 @@ export default async function Page() {
       {!sets || sets.length === 0 ? (
         <>
           <p className="text-sm text-neutral-600">
-            ?ㅼ슫濡쒕뱶??TPO ?명듃媛 ?놁뒿?덈떎. 癒쇱? ?먮즺瑜??ㅼ슫濡쒕뱶??二쇱꽭??
+            다운로드된 TPO 리스닝 세트가 없습니다. 먼저 Admin에서 세트를
+            다운로드해 주세요.
           </p>
         </>
       ) : (
@@ -49,12 +50,8 @@ export default async function Page() {
       )}
 
       <p className="text-xs text-neutral-500">
-        紐⑸줉? ?ㅼ슫濡쒕뱶???먮즺留??쒖떆?⑸땲??
+        목록에는 다운로드가 완료된 세트만 표시됩니다.
       </p>
     </div>
   );
 }
-
-
-
-
