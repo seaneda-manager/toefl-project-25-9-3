@@ -1,145 +1,141 @@
 // apps/web/components/HomeSelector.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 type Section = 'reading' | 'listening' | 'speaking' | 'writing';
 type Mode = 'study' | 'test';
 
-type StartPayload = { tpo: string; section: string; mode: string };
-type TeacherPayload = { section: string };
+const SECTIONS: { id: Section; label: string }[] = [
+  { id: 'reading', label: 'Reading' },
+  { id: 'listening', label: 'Listening' },
+  { id: 'speaking', label: 'Speaking' },
+  { id: 'writing', label: 'Writing' },
+];
 
-export default function HomeSelector({
-  onStart,
-  onTeacher,
-}: {
-  onStart: (v: StartPayload) => void;
-  onTeacher: (v: TeacherPayload) => void;
-}) {
-  // ---- 초기값을 렌더 시 한 번만 계산(이펙트에서 setState 금지) ----
-  const [prefs, setPrefs] = useState<{
-    tpo: string;
-    section: Section;
-    mode: Mode;
-  }>(() => {
-    if (typeof window === 'undefined') {
-      return { tpo: 'TPO 1', section: 'reading', mode: 'study' };
+export default function HomeSelector() {
+  const router = useRouter();
+  const [section, setSection] = useState<Section>('reading');
+  const [mode, setMode] = useState<Mode>('study');
+  const [tpoSet, setTpoSet] = useState<'tpo1' | 'tpo2'>('tpo1'); // 나중에 실제 세트랑 연결
+
+  const go = (path: string) => router.push(path);
+
+  const handleStart = () => {
+    if (mode === 'study') {
+      if (section === 'reading') go('/reading-2026/study');
+      else if (section === 'listening') go('/listening_2026/study');
+      else if (section === 'speaking') go('/speaking_2026/listen-and-repeat');
+      else if (section === 'writing') go('/writing_2026/study');
+      else alert('알 수 없는 섹션입니다.');
+    } else {
+      if (section === 'reading') go('/reading-2026/test');
+      else if (section === 'listening') go('/listening_2026/test');
+      else if (section === 'speaking') alert('Speaking test UI는 준비 중입니다.');
+      else if (section === 'writing') alert('Writing test UI는 준비 중입니다.');
+      else alert('알 수 없는 섹션입니다.');
     }
-    const raw = window.localStorage.getItem('home_prefs');
-    if (!raw) return { tpo: 'TPO 1', section: 'reading', mode: 'study' };
-    try {
-      const p = JSON.parse(raw) as Partial<{
-        tpo: string;
-        section: Section;
-        mode: Mode;
-      }>;
-      return {
-        tpo: p.tpo || 'TPO 1',
-        section: (p.section as Section) || 'reading',
-        mode: (p.mode as Mode) || 'study',
-      };
-    } catch {
-      return { tpo: 'TPO 1', section: 'reading', mode: 'study' };
-    }
-  });
+  };
 
-  // ---- 변경사항만 저장 (이펙트에서 setState 호출 없음) ----
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem('home_prefs', JSON.stringify(prefs));
-  }, [prefs]);
-
-  const tpoOptions = useMemo(
-    () => Array.from({ length: 60 }, (_, i) => `TPO ${i + 1}`),
-    []
-  );
+  const handleTeacherMode = () => {
+    if (section === 'reading') go('/teacher/reading');
+    else if (section === 'listening') go('/teacher/listening');
+    else if (section === 'speaking') alert('Speaking Teacher UI는 준비 중입니다.');
+    else if (section === 'writing') alert('Writing Teacher UI는 준비 중입니다.');
+    else alert('알 수 없는 섹션입니다.');
+  };
 
   return (
-    <div
-      style={{
-        maxWidth: 720,
-        margin: '40px auto',
-        padding: 20,
-        border: '1px solid #e5e7eb',
-        borderRadius: 12,
-        background: '#fff',
-      }}
-    >
-      <h2>Home</h2>
-      <div style={{ display: 'grid', gap: 12 }}>
-        <div>
-          <label>
-            <strong>TPO SET</strong>
-          </label>
+    <div className="flex justify-center">
+      <div className="mt-10 w-full max-w-2xl rounded-xl border bg-white p-6 shadow-sm">
+        <h1 className="mb-1 text-lg font-semibold">TOEFL iBT 2026 – Admin Home</h1>
+        <p className="mb-6 text-sm text-neutral-600">
+          연습하고 싶은 영역과 모드를 선택한 뒤 <span className="font-medium">Start</span>를 눌러 주세요.
+        </p>
+
+        {/* TPO SET (지금은 형식용) */}
+        <div className="mb-4 space-y-1 text-sm">
+          <div className="font-medium text-neutral-800">TPO SET</div>
           <select
-            value={prefs.tpo}
-            onChange={(e) => setPrefs((p) => ({ ...p, tpo: e.target.value }))}
+            className="mt-1 w-60 rounded-md border px-3 py-1.5 text-sm"
+            value={tpoSet}
+            onChange={(e) => setTpoSet(e.target.value as 'tpo1' | 'tpo2')}
           >
-            {tpoOptions.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
+            <option value="tpo1">TPO SET 1 (Demo)</option>
+            <option value="tpo2">TPO SET 2 (Demo)</option>
           </select>
         </div>
 
-        <div>
-          <label>
-            <strong>SECTION</strong>
-          </label>
-          {(['reading', 'listening', 'speaking', 'writing'] as Section[]).map(
-            (s) => (
-              <label key={s} style={{ marginRight: 12 }}>
+        {/* SECTION 선택 */}
+        <div className="mb-4 space-y-1 text-sm">
+          <div className="font-medium text-neutral-800">SECTION</div>
+          <div className="flex flex-wrap gap-4">
+            {SECTIONS.map((s) => (
+              <label key={s.id} className="inline-flex items-center gap-1.5">
                 <input
                   type="radio"
                   name="section"
-                  value={s}
-                  checked={prefs.section === s}
-                  onChange={() => setPrefs((p) => ({ ...p, section: s }))}
-                />{' '}
-                {s}
+                  value={s.id}
+                  checked={section === s.id}
+                  onChange={() => setSection(s.id)}
+                  className="h-4 w-4"
+                />
+                <span>{s.label}</span>
               </label>
-            )
-          )}
+            ))}
+          </div>
         </div>
 
-        <div>
-          <label>
-            <strong>MODE</strong>
-          </label>
-          {(['study', 'test'] as Mode[]).map((m) => (
-            <label key={m} style={{ marginRight: 12 }}>
+        {/* MODE 선택 */}
+        <div className="mb-6 space-y-1 text-sm">
+          <div className="font-medium text-neutral-800">MODE</div>
+          <div className="flex flex-wrap gap-4">
+            <label className="inline-flex items-center gap-1.5">
               <input
                 type="radio"
                 name="mode"
-                value={m}
-                checked={prefs.mode === m}
-                onChange={() => setPrefs((p) => ({ ...p, mode: m }))}
-              />{' '}
-              {m}
+                value="study"
+                checked={mode === 'study'}
+                onChange={() => setMode('study')}
+                className="h-4 w-4"
+              />
+              <span>Study</span>
             </label>
-          ))}
+            <label className="inline-flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="mode"
+                value="test"
+                checked={mode === 'test'}
+                onChange={() => setMode('test')}
+                className="h-4 w-4"
+              />
+              <span>Test</span>
+            </label>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        {/* 버튼들 */}
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() =>
-              onStart({
-                tpo: prefs.tpo,
-                section: prefs.section,
-                mode: prefs.mode,
-              })
-            }
+            onClick={handleStart}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
           >
             Start
           </button>
           <button
             type="button"
-            onClick={() => onTeacher({ section: prefs.section })}
+            onClick={handleTeacherMode}
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
           >
-            Teacher Mode
+            Start Teacher Mode
           </button>
+
+          <span className="text-xs text-neutral-500">
+            * Legacy 버전은 왼쪽 사이드바의 Legacy 메뉴에서 들어갈 수 있습니다.
+          </span>
         </div>
       </div>
     </div>

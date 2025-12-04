@@ -1,128 +1,107 @@
 // apps/web/app/(protected)/reading-2026/study/page.tsx
-export const dynamic = 'force-dynamic';
+import { BookOpenCheck } from "lucide-react";
+import Link from "next/link";
+import { getServerSupabase } from "@/lib/supabase/server";
+import type { RReadingTest2026 } from "@/models/reading";
+import ReadingStudyClient from "./_client/ReadingStudyClient";
 
-import { getSupabaseServer } from '@/lib/supabaseServer';
-import ReadingAdaptiveRunner2026 from '@/components/reading/ReadingAdaptiveRunner2026';
-import type { RReadingTest2026 } from '@/models/reading';
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-type SearchParams = {
-  testId?: string;
-};
+export default async function Reading2026StudyPage() {
+  const supabase = await getServerSupabase();
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
-  const supabase = await getSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("reading_tests_2026")
+    .select("id,label,payload,exam_era,updated_at")
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (!user) {
-    return <div className="p-6">Please sign in.</div>;
+  if (error) {
+    console.error("Reading2026StudyPage load error", error);
   }
 
-  const testId = searchParams?.testId ?? 'reading-2026-demo-1';
+  if (!data?.payload) {
+    return (
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-8">
+        <header className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700">
+            <BookOpenCheck className="h-3.5 w-3.5" />
+            Reading 2026 · Study Mode
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900">
+            Reading 2026 – Study Mode
+          </h1>
+          <p className="mt-1 text-xs text-gray-600">
+            아직 설정된 Reading 2026 테스트가 없습니다. Admin에서 먼저 시험을
+            생성해 주세요.
+          </p>
+        </header>
 
-  // ---- 데모용 RReadingTest2026 객체 ----
-  // 타입을 완벽히 맞추는 게 목적이 아니라, 일단 화면을 돌려보는 게 목표라서
-  // TS가 추천하는 방식대로 `unknown` → `RReadingTest2026` 순서로 캐스팅.
-  const demoTest = ({
+        <div className="rounded-xl border bg-white p-4 text-xs text-gray-700 shadow-sm">
+          <p>
+            <Link
+              href="/admin/content/reading-2026"
+              className="font-semibold text-emerald-700 underline underline-offset-2"
+            >
+              Admin · Reading 2026
+            </Link>{" "}
+            화면으로 이동해서 JSON을 업로드하거나 기존 시험을 생성한 뒤,
+            다시 이 페이지로 돌아오면 Study 모드로 연습할 수 있습니다.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  const raw = data.payload as RReadingTest2026;
+
+  const test: RReadingTest2026 = {
+    ...raw,
     meta: {
-      id: testId,
-      label: '2026 Demo Reading',
-      // ExamEra 유니온에 정확한 값을 나중에 맞출 것. 지금은 데모라 any 느낌으로 우회.
-      examEra: '2026-demo',
+      ...(raw.meta ?? {}),
+      id: data.id,
+      label: data.label,
+      examEra:
+        (raw.meta?.examEra ??
+          "ibt_2026") as RReadingTest2026["meta"]["examEra"],
     },
-    modules: [
-      // ------- Stage 1 -------
-      {
-        id: 'stage1-module-1',
-        label: 'Stage 1 Module (demo)',
-        items: [
-          {
-            id: 'item1',
-            taskKind: 'academic_passage',
-            stage: 1,
-            passageHtml:
-              '<p>This is a short <strong>demo academic passage</strong> for the 2026 Reading runner.</p>',
-            questions: [
-              {
-                id: 'q1',
-                number: 1,
-                stem: 'According to the passage, what is the main purpose of this demo?',
-                choices: [
-                  {
-                    id: 'q1a',
-                    text: 'To test the adaptive runner UI.',
-                    isCorrect: true,
-                  },
-                  {
-                    id: 'q1b',
-                    text: 'To measure your real TOEFL score.',
-                  },
-                  {
-                    id: 'q1c',
-                    text: 'To explain academic research in detail.',
-                  },
-                  {
-                    id: 'q1d',
-                    text: 'To practice integrated writing.',
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-
-      // ------- Stage 2 -------
-      {
-        id: 'stage2-module-1',
-        label: 'Stage 2 Module (demo)',
-        items: [
-          {
-            id: 'item2',
-            taskKind: 'academic_passage',
-            stage: 2,
-            passageHtml:
-              '<p>This is a <em>Stage 2</em> demo passage for the 2026 Reading runner.</p>',
-            questions: [
-              {
-                id: 'q2',
-                number: 2,
-                stem: 'What happens when you finish this module?',
-                choices: [
-                  {
-                    id: 'q2a',
-                    text: 'onFinish is called with your scores.',
-                    isCorrect: true,
-                  },
-                  {
-                    id: 'q2b',
-                    text: 'The app closes automatically.',
-                  },
-                  {
-                    id: 'q2c',
-                    text: 'Nothing happens.',
-                  },
-                  {
-                    id: 'q2d',
-                    text: 'You start Listening automatically.',
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  } as unknown) as RReadingTest2026;
+  };
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <ReadingAdaptiveRunner2026 test={demoTest} />
-    </div>
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      {/* 헤더 */}
+      <header className="space-y-2">
+        <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700">
+          <BookOpenCheck className="h-3.5 w-3.5" />
+          Reading 2026 · Study Mode
+        </div>
+        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900">
+              {test.meta.label ?? "Reading 2026 – Practice"}
+            </h1>
+            <p className="mt-1 text-xs text-gray-600">
+              ETS Sampler처럼 한 번에 하나의 문제를 보면서 연습하는 모드입니다.
+            </p>
+          </div>
+          <div className="text-right text-[11px] text-gray-500">
+            <div>
+              Test ID:{" "}
+              <code className="rounded bg-gray-100 px-1 py-0.5 text-[10px]">
+                {test.meta.id}
+              </code>
+            </div>
+            <div>Exam Era: {test.meta.examEra}</div>
+          </div>
+        </div>
+      </header>
+
+      {/* 실제 Study Client */}
+      <section className="rounded-xl border bg-white p-4 shadow-sm">
+        <ReadingStudyClient test={test} />
+      </section>
+    </main>
   );
 }

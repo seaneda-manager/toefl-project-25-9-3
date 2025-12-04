@@ -1,60 +1,30 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@/app/*": [
-        "./app/*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@ui/*": [
-        "./components/ui/*"
-      ],
-      "@test/*": [
-        "./components/test/*"
-      ],
-      "@reading/*": [
-        "./components/reading/*"
-      ],
-      "@listening/*": [
-        "./components/listening/*"
-      ],
-      "@dashboard/*": [
-        "./components/dashboard/*"
-      ],
-      "@/lib/*": [
-        "./lib/*"
-      ],
-      "@/styles/*": [
-        "./styles/*"
-      ],
-      "@/types/*": [
-        "./app/types/*"
-      ],
-      // ✅ 추가: 서버 액션 경로
-      "@/actions/*": [
-        "./actions/*"
-      ],
+      "@/*": ["./*"],
+      "@/app/*": ["./app/*"],
+      "@/components/*": ["./components/*"],
+      "@ui/*": ["./components/ui/*"],
+      "@test/*": ["./components/test/*"],
+      "@reading/*": ["./components/reading/*"],
+      "@listening/*": ["./components/listening/*"],
+      "@dashboard/*": ["./components/dashboard/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/styles/*": ["./styles/*"],
+      "@/types/*": ["./app/types/*"],
+      "@/actions/*": ["./actions/*"],
+
       /* --- SSOT: reading --- */
-      "@/models/reading": [
-        "./models/reading/index.ts"
-      ],
-      "@/models/*": [
-        "./models/*"
-      ],
-      "@internal-types/*": [
-        "../../packages/types/src/*"
-      ]
+      "@/models/reading": ["./models/reading"],
+      "@/models/reading/*": ["./models/reading/*"],
+      "@/models/*": ["./models/*"],
+
+      "@internal-types/*": ["../../packages/types/src/*"]
     },
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -78,7 +48,5 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

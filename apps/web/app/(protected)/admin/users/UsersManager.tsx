@@ -20,6 +20,18 @@ type UsersResp = {
   total?: number;
 };
 
+const ROLE_LABEL: Record<Role, string> = {
+  student: '학생',
+  teacher: '선생님',
+  admin: '관리자',
+};
+
+const ROLE_BADGE_CLASS: Record<Role, string> = {
+  student: 'bg-blue-50 text-blue-700 ring-blue-100',
+  teacher: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  admin: 'bg-amber-50 text-amber-800 ring-amber-100',
+};
+
 export default function UsersManager() {
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState<string | undefined>(undefined);
@@ -35,7 +47,7 @@ export default function UsersManager() {
 
   const totalLabel = useMemo(() => {
     const t = data.total ?? data.items.length;
-    return t > 0 ? `Total ${t}` : '';
+    return t > 0 ? `Total ${t} users` : '';
   }, [data.total, data.items.length]);
 
   const buildURL = useCallback(
@@ -87,6 +99,7 @@ export default function UsersManager() {
     fetchList(undefined);
   };
 
+  // 검색어 변경 시 300ms 디바운스
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
@@ -108,6 +121,7 @@ export default function UsersManager() {
     setError(null);
     setToast(null);
 
+    // 낙관적 업데이트
     setData((d) => ({
       ...d,
       items: d.items.map((it) => (it.id === userId ? { ...it, role: newRole } : it)),
@@ -122,6 +136,7 @@ export default function UsersManager() {
       if (!res.ok) throw new Error(await res.text());
       setToast('권한이 저장되었습니다.');
     } catch (e: any) {
+      // 실패 시 롤백
       if (prev) {
         setData((d) => ({
           ...d,
@@ -143,16 +158,16 @@ export default function UsersManager() {
         </label>
         <select
           id={`role-${user.id}`}
-          className="rounded border px-2 py-1"
+          className="rounded border px-2 py-1 text-xs"
           value={value}
           onChange={(e) => setDraftRole((d) => ({ ...d, [user.id]: e.target.value as Role }))}
         >
-          <option value="student">student</option>
-          <option value="teacher">teacher</option>
-          <option value="admin">admin</option>
+          <option value="student">학생 (student)</option>
+          <option value="teacher">선생님 (teacher)</option>
+          <option value="admin">관리자 (admin)</option>
         </select>
         <button
-          className="rounded border px-3 py-1 disabled:opacity-50"
+          className="rounded border px-3 py-1 text-xs disabled:opacity-50"
           disabled={!!saving[user.id] || value === user.role}
           onClick={() => applyRole(user.id)}
           aria-busy={!!saving[user.id]}
@@ -174,37 +189,47 @@ export default function UsersManager() {
 
   return (
     <div className="space-y-4">
-      <form onSubmit={onSearch} className="flex items-center gap-2">
+      {/* 검색 영역 */}
+      <form onSubmit={onSearch} className="flex flex-wrap items-center gap-2">
         <input
-          className="flex-1 rounded border px-3 py-2"
-          placeholder="이름/이메일 검색"
+          className="min-w-[200px] flex-1 rounded border px-3 py-2 text-sm"
+          placeholder="이름 / 이메일 검색"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search users"
         />
-        <button className="rounded border px-4 py-2" disabled={loading}>
+        <button
+          type="submit"
+          className="rounded border px-4 py-2 text-sm disabled:opacity-60"
+          disabled={loading}
+        >
           Search
         </button>
       </form>
 
-      <div aria-live="polite" className="min-h-5">
-        {toast && <div className="text-sm text-green-600">{toast}</div>}
-        {error && <div className="text-sm text-red-600">{error}</div>}
+      {/* 토스트 / 에러 */}
+      <div aria-live="polite" className="min-h-5 text-xs">
+        {toast && <div className="text-green-600">{toast}</div>}
+        {error && <div className="text-red-600 whitespace-pre-wrap">{error}</div>}
       </div>
 
-      <div className="overflow-x-auto rounded border">
+      {/* 테이블 */}
+      <div className="overflow-x-auto rounded border bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-3 py-2 text-left">User</th>
-              <th className="px-3 py-2 text-left">Email</th>
-              <th className="px-3 py-2 text-left">Role</th>
-              <th className="px-3 py-2 text-left">Created</th>
-              <th className="px-3 py-2 text-left">Actions</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">User</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Email</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Role</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Created</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">
+                Change Role
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading && data.items.length === 0 ? (
+              // 스켈레톤 로딩
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-t">
                   <td className="px-3 py-3">
@@ -226,31 +251,59 @@ export default function UsersManager() {
               ))
             ) : data.items.length === 0 ? (
               <tr>
-                <td className="px-3 py-6" colSpan={5}>
+                <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={5}>
                   No users
                 </td>
               </tr>
             ) : (
-              data.items.map((u) => (
-                <tr key={u.id} className="border-t">
-                  <td className="px-3 py-2">{u.full_name ?? '-'}</td>
-                  <td className="px-3 py-2">{u.email ?? '-'}</td>
-                  <td className="px-3 py-2">{u.role}</td>
-                  <td className="px-3 py-2">
-                    {u.created_at ? new Date(u.created_at).toLocaleString() : '-'}
-                  </td>
-                  <td className="px-3 py-2">
-                    <RoleSelect user={u} />
-                  </td>
-                </tr>
-              ))
+              data.items.map((u) => {
+                const roleBadgeClass = ROLE_BADGE_CLASS[u.role];
+                return (
+                  <tr key={u.id} className="border-t">
+                    <td className="px-3 py-2 align-middle">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-neutral-800">
+                          {u.full_name ?? '-'}
+                        </span>
+                        <span className="text-xs text-neutral-500 truncate max-w-[220px]">
+                          {u.id}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <span className="text-sm text-neutral-800">{u.email ?? '-'}</span>
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <span
+                        className={[
+                          'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1',
+                          roleBadgeClass,
+                        ].join(' ')}
+                      >
+                        {ROLE_LABEL[u.role]} <span className="ml-1 text-[10px] opacity-70">
+                          ({u.role})
+                        </span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <span className="text-xs text-neutral-600">
+                        {u.created_at ? new Date(u.created_at).toLocaleString() : '-'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <RoleSelect user={u} />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-neutral-500">{totalLabel}</div>
+      {/* 페이지네이션 + 총 개수 */}
+      <div className="flex items-center justify-between text-xs text-neutral-600">
+        <div>{totalLabel}</div>
         <div className="flex items-center gap-2">
           <button
             className="rounded px-3 py-1 border disabled:opacity-50"
