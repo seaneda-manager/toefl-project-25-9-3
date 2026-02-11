@@ -2,92 +2,76 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+
+import PrescreenBoard from "@/components/vocab/PrescreenBoard";
+
 import { demoVocabWords } from "@/models/vocab-demo";
-import type {
-  PreScreenItem,
-  VocabWordCore,
-  PreScreenAnswer,
-  VocabSessionState,
-} from "@/models/vocab";
-import PreScreenBoard from "@/components/vocab/PreScreenBoard";
+import type { VocabWordCore } from "@/models/vocab";
+import type { PrescreenResult } from "@/models/vocab/session/prescreen";
+import type { VocabSessionState } from "@/models/vocab";
 
-function buildPreScreenItems(): {
-  items: PreScreenItem[];
-  vocabMap: Record<string, VocabWordCore>;
-} {
-  // 일단 예시: 오늘 단어 2개 + 전날 리뷰 1개
-  const [w1, w2, w3] = demoVocabWords;
+/* =========================================================
+ * adapter (demo → core)
+ * ======================================================= */
 
-  const items: PreScreenItem[] = [
-    { wordId: w1.id, text: w1.text, source: "todayNew" },
-    { wordId: w2.id, text: w2.text, source: "todayNew" },
-    { wordId: w3.id, text: w3.text, source: "yesterdayReview" },
-  ];
-
-  const vocabMap: Record<string, VocabWordCore> = {};
-  for (const w of demoVocabWords) {
-    vocabMap[w.id] = w;
-  }
-
-  return { items, vocabMap };
+function toVocabWordCore(w: any): VocabWordCore {
+  return {
+    id: w.id,
+    text: w.text,
+    lemma: w.text,
+    pos: w.pos ?? null,
+    is_function_word: false,
+    meanings_ko: w.meanings_ko ?? [],
+    meanings_en_simple: [],
+    examples_easy: [],
+    examples_hard: [],
+    frequency: null,
+    gradeBandMin: null,
+    gradeBandMax: null,
+    tags: [],
+  };
 }
 
 export default function VocabPreScreenPage() {
   const router = useRouter();
-  const { items, vocabMap } = buildPreScreenItems();
 
-  const handleFinish = (answers: PreScreenAnswer[]) => {
-    // 1) known / unknown 분리
-    const knownWordIds = answers
-      .filter((a) => a.result === "known")
-      .map((a) => a.wordId);
+  const words: VocabWordCore[] = useMemo(
+    () => demoVocabWords.map(toVocabWordCore),
+    [],
+  );
 
-    const unknownWordIds = answers
-      .filter((a) => a.result === "unknown")
-      .map((a) => a.wordId);
+  function handleFinish(result: PrescreenResult) {
+    const { knownWordIds, unknownWordIds } = result;
 
-    // 방어로직: 전부 known 또는 전부 unknown일 때 대비
     const todayWordIds =
       unknownWordIds.length > 0
         ? unknownWordIds
-        : knownWordIds.length > 0
-        ? knownWordIds
-        : items.map((i) => i.wordId);
+        : knownWordIds;
 
-    const sessionState: VocabSessionState = {
-      userId: "demo-user", // 나중에 supabase user.id로 교체
+    const session: VocabSessionState = {
+      userId: "demo-user",
       mode: "core",
       gradeBand: null,
-
       todayWordIds,
       knownWordIds,
       unknownWordIds,
-
       currentIndex: 0,
       recallQueue: [],
     };
 
-    // 2) sessionStorage에 저장
-    try {
-      sessionStorage.setItem(
-        "lingox_vocab_session",
-        JSON.stringify(sessionState),
-      );
-    } catch (e) {
-      console.error("Failed to save vocab session", e);
-    }
+    sessionStorage.setItem(
+      "lingox_vocab_session",
+      JSON.stringify(session),
+    );
 
-    // 3) 학습 페이지로 이동
     router.push("/vocab/learn");
-  };
+  }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-6">
-      <PreScreenBoard
-        items={items}
-        vocabMap={vocabMap}
-        onFinish={handleFinish}
-      />
-    </main>
+    <PrescreenBoard
+      words={words}
+      onFinish={handleFinish}
+    />
   );
 }

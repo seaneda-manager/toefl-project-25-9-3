@@ -201,6 +201,3 @@ create index if not exists idx_user_word_knowledge_user
 create index if not exists idx_user_word_knowledge_word
   on public.user_word_knowledge (word_id);
 
-alter table public.user_word_knowledge
-  add constraint chk_user_word_knowledge_percent
-  check (knowledge_percent >= 0 and knowledge_percent <= 100);
