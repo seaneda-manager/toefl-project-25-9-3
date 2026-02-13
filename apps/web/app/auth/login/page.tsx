@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { FormEvent } from "react";
 import { signInEmailPassword } from "@/actions/auth";
 
 export default function LoginPage() {
@@ -9,13 +10,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
     startTransition(async () => {
       try {
-        // ✅ FormData로 변환해서 액션에 넘기기
         const formData = new FormData();
         formData.append("email", email);
         formData.append("password", password);
@@ -28,6 +28,7 @@ export default function LoginPage() {
     });
   }
 
+  // ... 나머지 JSX 그대로
   return (
     <main className="mx-auto max-w-md px-6 py-10">
       <h1 className="text-2xl font-semibold mb-6">Sign In</h1>

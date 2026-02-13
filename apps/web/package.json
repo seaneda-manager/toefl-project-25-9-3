@@ -4,7 +4,8 @@
     "start": "next start -p 3000",
     "build": "next build",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "supabase:types": "powershell -NoProfile -Command \"cd ..\\..; supabase gen types typescript --linked --schema public | Out-File -Encoding utf8 apps\\\\web\\\\schema_public.types.ts\""
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
