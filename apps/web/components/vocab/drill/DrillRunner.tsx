@@ -1,4 +1,3 @@
-// apps/web/components/vocab/drill/DrillRunner.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -7,6 +6,7 @@ import type { DrillTask } from "./drill.types";
 import SentenceBlankDrill from "./SentenceBlankDrill";
 import CollocationDrill from "./CollocationDrill";
 import WordFormPickDrill from "./WordFormPickDrill";
+import StageScaffold from "@/components/common/stage/StageScaffold";
 
 type Props = {
   userId: string;
@@ -15,7 +15,6 @@ type Props = {
   mode?: "classic" | string;
 };
 
-// ✅ v1.0 (final): only these 4 blocks (runner view)
 const DRILL_TYPE_ORDER = ["SYNONYM", "WORD_FORM", "FILL_IN_THE_BLANKS", "COLLOCATION"] as const;
 type CanonDrillType = (typeof DRILL_TYPE_ORDER)[number];
 
@@ -23,20 +22,15 @@ function canonType(x: unknown) {
   const raw = String(x ?? "").trim().toUpperCase();
   if (!raw) return "";
 
-  // ✅ SSOT alias normalize (do NOT mutate original task.drillType)
   if (raw === "WORD_FORM_PICK") return "WORD_FORM";
   if (raw === "SENTENCE_BLANK") return "FILL_IN_THE_BLANKS";
-
-  // ✅ meaning-similar legacy name -> SYNONYM block
   if (raw === "MEANING_SIMILAR") return "SYNONYM";
 
-  // If upstream sometimes already sends canonical runner types:
   if (raw === "WORD_FORM") return "WORD_FORM";
   if (raw === "FILL_IN_THE_BLANKS") return "FILL_IN_THE_BLANKS";
   if (raw === "SYNONYM") return "SYNONYM";
   if (raw === "COLLOCATION") return "COLLOCATION";
 
-  // ❌ removed / not supported in runner
   if (raw === "MEANING_OPPOSITE") return "REMOVED:MEANING_OPPOSITE";
   if (raw === "LISTEN_ARRANGE") return "REMOVED:LISTEN_ARRANGE";
   if (raw === "SYLLABLE_ARRANGE") return "REMOVED:SYLLABLE_ARRANGE";
@@ -58,15 +52,6 @@ function countsByType(tasks: DrillTask[]) {
   return m;
 }
 
-/**
- * ✅ Hard guarantee: NEVER mix types on screen (block order enforced)
- * - Forces block order: SYNONYM -> WORD_FORM -> FILL_IN_THE_BLANKS -> COLLOCATION
- * - Keeps original relative order within each block
- * - Unknown/removed types appended at the end (visible for debugging upstream)
- *
- * ✅ IMPORTANT: we DO NOT mutate task.drillType.
- * Runner uses canonType(task.drillType) only for ordering & rendering.
- */
 function enforceStrictTypeBlocks(tasks: DrillTask[]) {
   const buckets = new Map<CanonDrillType, DrillTask[]>();
   const unknown: DrillTask[] = [];
@@ -78,11 +63,8 @@ function enforceStrictTypeBlocks(tasks: DrillTask[]) {
       continue;
     }
 
-    if (isSupportedCanon(dt)) {
-      buckets.set(dt, [...(buckets.get(dt) ?? []), t]);
-    } else {
-      unknown.push(t);
-    }
+    if (isSupportedCanon(dt)) buckets.set(dt, [...(buckets.get(dt) ?? []), t]);
+    else unknown.push(t);
   }
 
   const out: DrillTask[] = [];
@@ -106,7 +88,6 @@ function stableTaskSig(t: DrillTask) {
   return `${id}|${dt}|${wordId}|${variant}|${mode}|${metaKind}|${metaRel}`;
 }
 
-// lightweight string hash (djb2)
 function hashStr(s: string) {
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
@@ -118,14 +99,9 @@ function makeTasksKey(tasks: DrillTask[]) {
   return hashStr(joined);
 }
 
-/* ======================================================
- * Inline "SYNONYM block" Drill
- * - ✅ supports MeaningMcqSeed { prompt, stem, choices, answer, meta }
- * - ✅ supports legacy shapes too
- * - ✅ renders properly for:
- *   1) synonym MCQ (word -> synonym)
- *   2) meaning->word MCQ fallback (meta.kind === "MEANING_TO_WORD")
- * ====================================================== */
+/* =========================
+   Inline SYNONYM block
+   ========================= */
 
 function pickString(...xs: any[]) {
   for (const x of xs) {
@@ -156,10 +132,8 @@ function readMeaningMCQ(task: DrillTask) {
 
   const kind = pickString(meta?.kind, seed?.kind, "");
   const relation = pickString(meta?.relation, seed?.relation, "");
-
   const prompt = pickString(seed?.prompt, meta?.prompt, "");
 
-  // MeaningMcqSeed: stem is displayed
   const stem = pickString(seed?.stem, seed?.target, seed?.question, meta?.stem, meta?.target, meta?.question, "");
 
   const rawChoices =
@@ -174,43 +148,27 @@ function readMeaningMCQ(task: DrillTask) {
 
   const choices = uniqStrings(Array.isArray(rawChoices) ? rawChoices : []);
 
-  // answer can be text or index
   const correctText = pickString(seed?.answer, seed?.correct, meta?.answer, meta?.correct, seed?.key);
-  const correctIndex =
-    Number.isFinite(seed?.answerIndex) ? Number(seed?.answerIndex) :
-    Number.isFinite(seed?.correctIndex) ? Number(seed?.correctIndex) :
-    null;
+  const correctIndex = Number.isFinite(seed?.answerIndex)
+    ? Number(seed?.answerIndex)
+    : Number.isFinite(seed?.correctIndex)
+      ? Number(seed?.correctIndex)
+      : null;
 
   let answerIdx: number | null = null;
 
   if (choices.length) {
-    if (correctIndex !== null && correctIndex >= 0 && correctIndex < choices.length) {
-      answerIdx = correctIndex;
-    } else if (correctText) {
+    if (correctIndex !== null && correctIndex >= 0 && correctIndex < choices.length) answerIdx = correctIndex;
+    else if (correctText) {
       const i = choices.findIndex((c) => c.toLowerCase() === String(correctText).toLowerCase());
       if (i >= 0) answerIdx = i;
     }
   }
 
-  return {
-    kind,
-    relation,
-    prompt,
-    stem,
-    choices,
-    answerIdx,
-    meta,
-    debug: { seed, meta, t },
-  };
+  return { kind, relation, prompt, stem, choices, answerIdx, meta, debug: { seed, meta, t } };
 }
 
-function InlineSynonymDrill({
-  task,
-  onDone,
-}: {
-  task: DrillTask;
-  onDone: (isCorrect: boolean) => void;
-}) {
+function InlineSynonymDrill({ task, onDone }: { task: DrillTask; onDone: (isCorrect: boolean) => void }) {
   const { kind, relation, prompt, stem, choices, answerIdx, meta, debug } = useMemo(
     () => readMeaningMCQ(task),
     [task]
@@ -231,10 +189,9 @@ function InlineSynonymDrill({
     setPicked(i);
     setLocked(true);
     const ok = i === answerIdx!;
-    window.setTimeout(() => onDone(ok), 450);
+    window.setTimeout(() => onDone(ok), 380);
   }
 
-  // title & instruction
   const isMeaningToWord = String(kind).toUpperCase() === "MEANING_TO_WORD";
   const isSyn = String(relation).toLowerCase() === "synonym";
 
@@ -247,27 +204,19 @@ function InlineSynonymDrill({
         ? "Choose the closest synonym for:"
         : "Choose the best answer:");
 
-  const subHint =
-    !isMeaningToWord && meta?.meaningKo
-      ? `뜻: ${String(meta.meaningKo)}`
-      : "";
+  const subHint = !isMeaningToWord && meta?.meaningKo ? `뜻: ${String(meta.meaningKo)}` : "";
 
   if (!stem || choices.length < 2 || answerIdx === null) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
         <div className="font-semibold">{title} task seed is not usable</div>
-        <div className="mt-1 text-xs text-red-700">
-          seed에 stem + choices(또는 options) + answer(또는 answerIndex)가 필요합니다.
-        </div>
+        <div className="mt-1 text-xs text-rose-700">seed에 stem + choices + answer(또는 answerIndex)가 필요합니다.</div>
 
         <pre className="mt-3 max-h-64 overflow-auto rounded-lg border bg-white p-2 text-[11px] text-slate-700">
           {JSON.stringify(debug?.seed ?? debug, null, 2)}
         </pre>
 
-        <button
-          className="mt-3 w-full rounded-xl bg-black py-2 text-white"
-          onClick={() => onDone(false)}
-        >
+        <button className="mt-3 w-full rounded-xl bg-black py-2 text-white" onClick={() => onDone(false)} type="button">
           Skip this task
         </button>
       </div>
@@ -275,15 +224,17 @@ function InlineSynonymDrill({
   }
 
   return (
-    <div className="rounded-2xl border bg-white p-5">
-      <div className="text-xs font-semibold text-slate-500">{title}</div>
-
-      <div className="mt-1 text-lg font-semibold text-slate-900">
-        {instruction}{" "}
-        <span className="rounded-lg bg-slate-100 px-2 py-0.5 font-mono">{stem}</span>
+    <div className="mx-auto max-w-[860px]">
+      <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+        {title}
       </div>
 
-      {subHint ? <div className="mt-2 text-xs text-slate-500">{subHint}</div> : null}
+      <div className="mt-2 text-neutral-900 font-extrabold" style={{ fontSize: "clamp(16px, 2.0cqi, 24px)" }}>
+        {instruction}{" "}
+        <span className="rounded-xl bg-white/70 border border-black/10 px-3 py-1 font-mono">{stem}</span>
+      </div>
+
+      {subHint ? <div className="mt-2 text-neutral-600" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>{subHint}</div> : null}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {choices.slice(0, 6).map((c, i) => {
@@ -295,19 +246,24 @@ function InlineSynonymDrill({
                 ? "border-emerald-300 bg-emerald-50"
                 : isPicked
                   ? "border-rose-300 bg-rose-50"
-                  : "border-slate-200"
-              : "border-slate-200";
+                  : "border-black/10 bg-white/70"
+              : "border-black/10 bg-white/80";
 
           return (
             <button
               key={`${c}-${i}`}
               onClick={() => choose(i)}
               disabled={!canAnswer}
-              className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
-                canAnswer ? "hover:bg-slate-50" : "opacity-80"
-              } ${show}`}
+              className={[
+                "rounded-2xl border px-4 py-4 text-left transition",
+                canAnswer ? "hover:bg-white" : "opacity-80",
+                show,
+              ].join(" ")}
+              type="button"
             >
-              <div className="font-semibold text-slate-900">{c}</div>
+              <div className="font-extrabold text-neutral-900" style={{ fontSize: "clamp(14px, 1.7cqi, 18px)" }}>
+                {c}
+              </div>
               {locked && isAnswer ? (
                 <div className="mt-1 text-xs font-semibold text-emerald-700">Correct</div>
               ) : locked && isPicked && !isAnswer ? (
@@ -318,23 +274,29 @@ function InlineSynonymDrill({
         })}
       </div>
 
-      <div className="mt-4 text-xs text-slate-500">Tap one choice. Auto-advances.</div>
+      <div className="mt-4 text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+        Tap one choice. Auto-advances.
+      </div>
     </div>
   );
+}
+
+function humanType(dt: string) {
+  if (dt === "SYNONYM") return "Synonym";
+  if (dt === "WORD_FORM") return "Word Form";
+  if (dt === "FILL_IN_THE_BLANKS") return "Fill in the Blanks";
+  if (dt === "COLLOCATION") return "Collocation";
+  if (!dt) return "Unknown";
+  return dt;
 }
 
 export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "classic" }: Props) {
   const [index, setIndex] = useState(0);
   const finishedRef = useRef(false);
 
-  const normalizedTasks = useMemo(() => {
-    // currently same for all modes; keeping hook for future
-    return enforceStrictTypeBlocks(tasks ?? []);
-  }, [tasks, mode]);
-
+  const normalizedTasks = useMemo(() => enforceStrictTypeBlocks(tasks ?? []), [tasks, mode]);
   const tasksKey = useMemo(() => makeTasksKey(normalizedTasks), [normalizedTasks]);
 
-  // reset when content changes (not just reference)
   useEffect(() => {
     finishedRef.current = false;
     setIndex(0);
@@ -343,7 +305,6 @@ export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "
   const total = normalizedTasks.length;
   const current = useMemo(() => normalizedTasks[index] ?? null, [normalizedTasks, index]);
 
-  // debug (dev only)
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
 
@@ -387,70 +348,79 @@ export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "
     goNext();
   }
 
+  const dt = canonType((current as any)?.drillType);
+  const title = humanType(dt);
+
   if (!current) {
-    // IMPORTANT: do not hard-block user
     return (
-      <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
-        <div className="font-semibold">No drill tasks.</div>
-        <div className="mt-2 text-xs text-slate-500">
-          (Upstream에서 tasks를 못 만들었어요. 보통 word_forms/collocations가 비었거나, drillTypes가 SYNONYM/BLANK 없이 구성된 경우가 많습니다.)
-        </div>
-        <button
-          className="mt-4 w-full rounded-xl bg-black py-2 text-white"
-          onClick={() => finishOnce()}
+      <div className="h-full w-full">
+        <StageScaffold
+          stageKey="drill"
+          stageLabel="Drill"
+          title="Drill"
+          subtitle="No drill tasks were generated."
+          hint="Upstream may be missing word_forms/collocations, or drillTypes were not created."
+          primary={{ label: "Finish", onClick: finishOnce }}
+          align="center"
+          maxWidthClassName="max-w-[980px]"
         >
-          Finish
-        </button>
+          <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5 text-neutral-700 font-semibold">
+            No drill tasks.
+          </div>
+        </StageScaffold>
       </div>
     );
   }
 
-  const dt = canonType((current as any)?.drillType);
+  const hint = `Task ${Math.min(index + 1, Math.max(1, total))}/${Math.max(1, total)} • ${title}`;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between rounded-xl border bg-white px-4 py-3 text-sm">
-        <div className="font-semibold text-slate-900">Drill</div>
-        <div className="text-slate-600">
-          {Math.min(index + 1, Math.max(1, total))} / {Math.max(1, total)}{" "}
-          <span className="ml-2 rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
-            {dt || "UNKNOWN"}
-          </span>
+    <div className="h-full w-full">
+      <StageScaffold
+        stageKey="drill"
+        stageLabel="Drill"
+        title={title}
+        subtitle="Answer the question. It will auto-advance."
+        step={{ index: Math.min(index + 1, Math.max(1, total)), total: Math.max(1, total) }}
+        hint={hint}
+        secondary={{ label: "Skip", onClick: goNext, variant: "ghost" }}
+        align="center"
+        maxWidthClassName="max-w-[1020px]"
+      >
+        <div className="mx-auto max-w-[980px]">
+          {dt === "SYNONYM" ? (
+            <InlineSynonymDrill task={current} onDone={onDone} />
+          ) : dt === "WORD_FORM" ? (
+            <WordFormPickDrill task={current} onDone={onDone} />
+          ) : dt === "FILL_IN_THE_BLANKS" ? (
+            <SentenceBlankDrill task={current} onDone={onDone} />
+          ) : dt === "COLLOCATION" ? (
+            <CollocationDrill task={current} onDone={onDone} />
+          ) : (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
+              <div className="font-semibold">Unknown/removed drillType</div>
+              <div className="mt-1">
+                drillType(canon): <code className="font-mono">{dt || "(empty)"}</code>
+              </div>
+              <div className="mt-1 text-xs text-rose-700">
+                raw drillType: <code className="font-mono">{String((current as any)?.drillType ?? "")}</code>
+              </div>
+
+              <div className="mt-3 text-xs text-rose-700">
+                이 타입이 내려오면 buildBlockDrillTasksV1에서 아직 구 타입/미지원 타입을 만들고 있는 상태.
+              </div>
+
+              <pre className="mt-3 max-h-64 overflow-auto rounded-lg border bg-white p-2 text-[11px] text-slate-700">
+                {JSON.stringify(current, null, 2)}
+              </pre>
+
+              <button className="mt-3 w-full rounded-xl bg-black py-2 text-white" onClick={() => goNext()} type="button">
+                Skip this task
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-
-      {dt === "SYNONYM" ? (
-        <InlineSynonymDrill task={current} onDone={onDone} />
-      ) : dt === "WORD_FORM" ? (
-        <WordFormPickDrill task={current} onDone={onDone} />
-      ) : dt === "FILL_IN_THE_BLANKS" ? (
-        <SentenceBlankDrill task={current} onDone={onDone} />
-      ) : dt === "COLLOCATION" ? (
-        <CollocationDrill task={current} onDone={onDone} />
-      ) : (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
-          <div className="font-semibold">Unknown/removed drillType</div>
-          <div className="mt-1">
-            drillType(canon): <code className="font-mono">{dt || "(empty)"}</code>
-          </div>
-          <div className="mt-1 text-xs text-red-700">
-            raw drillType: <code className="font-mono">{String((current as any)?.drillType ?? "")}</code>
-          </div>
-
-          <div className="mt-3 text-xs text-red-700">
-            이 타입이 여기까지 내려오면 buildBlockDrillTasksV1에서 아직 구 타입/미지원 타입을 만들고 있는 상태임.
-            runner는 숨기지 않고 노출해서 upstream을 강제로 고치게 함.
-          </div>
-
-          <pre className="mt-3 max-h-64 overflow-auto rounded-lg border bg-white p-2 text-[11px] text-slate-700">
-            {JSON.stringify(current, null, 2)}
-          </pre>
-
-          <button className="mt-3 w-full rounded-xl bg-black py-2 text-white" onClick={() => goNext()}>
-            Skip this task
-          </button>
-        </div>
-      )}
+      </StageScaffold>
     </div>
   );
 }

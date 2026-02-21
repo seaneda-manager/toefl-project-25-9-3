@@ -2,11 +2,7 @@
 "use client";
 
 import { createBrowserClient } from "@/lib/supabase/client";
-import type {
-  SessionWord,
-  VocabExample,
-  VocabCollocation,
-} from "@/models/vocab/SessionWord";
+import type { SessionWord, VocabExample, VocabCollocation } from "@/models/vocab/SessionWord";
 
 type Params = {
   userId: string; // auth uid OR academy_students.id (tolerated) OR student_id(uuid)
@@ -44,14 +40,7 @@ function uniqKeepOrder(arr: string[]): string[] {
 }
 
 function pickWordId(row: any): string | null {
-  return (
-    row?.word_id ??
-    row?.vocab_word_id ??
-    row?.vocab_item_id ??
-    row?.item_id ??
-    row?.wordId ??
-    null
-  );
+  return row?.word_id ?? row?.vocab_word_id ?? row?.vocab_item_id ?? row?.item_id ?? row?.wordId ?? null;
 }
 
 function isPlaceholderMeaning(s: string) {
@@ -92,13 +81,10 @@ function splitToArray(v: unknown): string[] {
 
 /** ✅ examples are NOT meanings: allow commas inside sentence. */
 function splitExamples(v: unknown): string[] {
-  if (Array.isArray(v)) {
-    return v.map((x) => cleanStr(x)).filter(Boolean);
-  }
+  if (Array.isArray(v)) return v.map((x) => cleanStr(x)).filter(Boolean);
   if (typeof v === "string") {
     const s = cleanStr(v);
     if (!s) return [];
-    // Prefer newline; fallback to " | " or " ; " only.
     const byNewline = s.split(/\r?\n+/).map((x) => cleanStr(x)).filter(Boolean);
     if (byNewline.length > 1) return byNewline;
 
@@ -187,7 +173,6 @@ function uniqKeepOrderExamples(arr: VocabExample[]): VocabExample[] {
 function extractExamplesFromRow(row: any): VocabExample[] {
   if (!row) return [];
 
-  // 1) already structured: [{en, ko}]
   const direct = row.examples ?? row.vocab_examples ?? null;
   if (Array.isArray(direct) && direct.length > 0) {
     const mapped = direct
@@ -201,35 +186,31 @@ function extractExamplesFromRow(row: any): VocabExample[] {
     if (mapped.length) return uniqKeepOrderExamples(mapped);
   }
 
-  // 2) common raw fields
-  const enCandidates = [
-    row.examples_easy, // ✅ SSOT: words.examples_easy is ARRAY
-    row.examples_en,
-    row.example_en,
-    row.example,
-    row.examples,
-  ];
+  const enCandidates = [row.examples_easy, row.examples_en, row.example_en, row.example, row.examples];
   const koCandidates = [row.examples_ko, row.example_ko];
 
   let ens: string[] = [];
   for (const c of enCandidates) {
-    const arr = splitExamples(c);
-    if (arr.length) {
-      ens = arr;
-      break;
+    leading: {
+      const arr = splitExamples(c);
+      if (arr.length) {
+        ens = arr;
+        break leading;
+      }
     }
   }
 
   let kos: string[] = [];
   for (const c of koCandidates) {
-    const arr = splitExamples(c);
-    if (arr.length) {
-      kos = arr;
-      break;
+    leading2: {
+      const arr = splitExamples(c);
+      if (arr.length) {
+        kos = arr;
+        break leading2;
+      }
     }
   }
 
-  // try nested if nothing
   if (ens.length === 0) {
     const nested = row.words ?? row.word ?? row.vocab_word ?? null;
     if (nested) return extractExamplesFromRow(nested);
@@ -248,15 +229,10 @@ function extractExamplesFromRow(row: any): VocabExample[] {
   return uniqKeepOrderExamples(out);
 }
 
-/* ======================================================
- * Synonyms / Antonyms
- * ==================================================== */
-
 function extractSynonymsFromRow(row: any): string[] {
   if (!row) return [];
-
   const candidates = [
-    row.synonyms_en_simple, // ✅ SSOT: words.synonyms_en_simple (ARRAY or string)
+    row.synonyms_en_simple,
     row.synonyms,
     row.synonyms_en,
     row.synonym,
@@ -266,23 +242,19 @@ function extractSynonymsFromRow(row: any): string[] {
     row.similar_words,
     row.related_words,
   ];
-
   for (const c of candidates) {
     const arr = splitToArray(c);
     if (arr.length) return uniqKeepOrderStrings(arr);
   }
-
   const nested = row.words ?? row.word ?? row.vocab_word ?? null;
   if (nested) return extractSynonymsFromRow(nested);
-
   return [];
 }
 
 function extractAntonymsFromRow(row: any): string[] {
   if (!row) return [];
-
   const candidates = [
-    row.antonyms_terms, // ✅ SSOT: words.antonyms_terms (ARRAY)
+    row.antonyms_terms,
     row.antonyms,
     row.antonyms_en,
     row.antonym,
@@ -290,21 +262,17 @@ function extractAntonymsFromRow(row: any): string[] {
     row.opposites,
     row.opposite_words,
   ];
-
   for (const c of candidates) {
     const arr = splitToArray(c);
     if (arr.length) return uniqKeepOrderStrings(arr);
   }
-
   const nested = row.words ?? row.word ?? row.vocab_word ?? null;
   if (nested) return extractAntonymsFromRow(nested);
-
   return [];
 }
 
 /* ======================================================
- * Collocations (typed)
- * - words.collocations is jsonb (could be array or object)
+ * Collocations
  * ==================================================== */
 
 function hashId(s: string) {
@@ -371,7 +339,6 @@ function extractCollocationsFromRow(row: any, baseWord: string): VocabCollocatio
 
   const direct = row.collocations ?? row.vocab_collocations ?? null;
 
-  // 1) array of objects
   if (Array.isArray(direct) && direct.length > 0 && typeof direct[0] === "object") {
     const mapped = direct
       .map((x: any) => {
@@ -393,7 +360,6 @@ function extractCollocationsFromRow(row: any, baseWord: string): VocabCollocatio
     if (uniq.length) return uniq;
   }
 
-  // 2) jsonb object shape: { pairs: [...] } or { items: [...] }
   if (direct && typeof direct === "object" && !Array.isArray(direct)) {
     const arr = (direct.pairs ?? direct.items ?? direct.list ?? null) as any;
     if (Array.isArray(arr) && arr.length > 0) {
@@ -416,14 +382,7 @@ function extractCollocationsFromRow(row: any, baseWord: string): VocabCollocatio
     }
   }
 
-  // 3) string / array-of-strings
-  const candidates = [
-    row.collocations,
-    row.collocations_en,
-    row.collocation,
-    row.collocation_en,
-    row.phrases,
-  ];
+  const candidates = [row.collocations, row.collocations_en, row.collocation, row.collocation_en, row.phrases];
 
   let phrases: string[] = [];
   for (const c of candidates) {
@@ -447,27 +406,16 @@ function extractCollocationsFromRow(row: any, baseWord: string): VocabCollocatio
     const p = cleanStr(raw);
     if (!p) continue;
 
-    // base|right / right|base
     if (p.includes("|")) {
       const parts = p.split("|").map(cleanStr).filter(Boolean);
       if (parts.length === 2) {
         const [a, b] = parts;
         if (a && b && a.toLowerCase() === baseLower) {
-          out.push({
-            id: hashId(`${baseLower}|${b.toLowerCase()}`),
-            base,
-            right: stripArticles(b),
-            source: "db",
-          });
+          out.push({ id: hashId(`${baseLower}|${b.toLowerCase()}`), base, right: stripArticles(b), source: "db" });
           continue;
         }
         if (a && b && b.toLowerCase() === baseLower) {
-          out.push({
-            id: hashId(`${baseLower}|${a.toLowerCase()}`),
-            base,
-            right: stripArticles(a),
-            source: "db",
-          });
+          out.push({ id: hashId(`${baseLower}|${a.toLowerCase()}`), base, right: stripArticles(a), source: "db" });
           continue;
         }
       }
@@ -487,12 +435,7 @@ function extractCollocationsFromRow(row: any, baseWord: string): VocabCollocatio
     if (rtoks.length > 3) right = rtoks.slice(0, 3).join(" ");
     if (!right) continue;
 
-    out.push({
-      id: hashId(`${baseLower}|${right.toLowerCase()}`),
-      base,
-      right,
-      source: "db",
-    });
+    out.push({ id: hashId(`${baseLower}|${right.toLowerCase()}`), base, right, source: "db" });
   }
 
   return uniqKeepOrderCollocations(out);
@@ -526,74 +469,44 @@ async function resolveStudentIdFromUserId(supabase: any, userId: string): Promis
   const key = cleanStr(userId);
   if (!key) return null;
 
-  // 0) If already a student_id(uuid), prefer it when assignments exist
   if (isUuidLike(key)) {
-    const { data, error } = await supabase
-      .from("student_vocab_assignments")
-      .select("id")
-      .eq("student_id", key)
-      .limit(1);
-    if (!error && (data?.length ?? 0) > 0) return key;
-  }
-
-  // 1) academy_students.id direct
-  try {
-    const { data, error } = await supabase
-      .from("academy_students")
-      .select("id")
-      .eq("id", key)
-      .maybeSingle();
-    if (!error && data?.id) return String(data.id);
-  } catch {
-    // ignore if table not accessible
-  }
-
-  // 2) auth_user_id match
-  try {
-    const { data, error } = await supabase
-      .from("academy_students")
-      .select("id")
-      .eq("auth_user_id", key)
-      .maybeSingle();
-    if (!error && data?.id) return String(data.id);
-  } catch {
-    // ignore
-  }
-
-  // 3) legacy fallbacks
-  try {
-    const { data, error } = await supabase
-      .from("academy_students")
-      .select("id")
-      .eq("user_id", key)
-      .maybeSingle();
-    if (!error && data?.id) return String(data.id);
-  } catch {
-    // ignore
+    try {
+      const { data, error } = await supabase
+        .from("student_vocab_assignments")
+        .select("id")
+        .eq("student_id", key)
+        .limit(1);
+      if (!error && (data?.length ?? 0) > 0) return key;
+    } catch {
+      // ignore
+    }
   }
 
   try {
-    const { data, error } = await supabase
-      .from("academy_students")
-      .select("id")
-      .eq("profile_id", key)
-      .maybeSingle();
+    const { data, error } = await supabase.from("academy_students").select("id").eq("id", key).maybeSingle();
     if (!error && data?.id) return String(data.id);
-  } catch {
-    // ignore
-  }
+  } catch {}
+
+  try {
+    const { data, error } = await supabase.from("academy_students").select("id").eq("auth_user_id", key).maybeSingle();
+    if (!error && data?.id) return String(data.id);
+  } catch {}
+
+  try {
+    const { data, error } = await supabase.from("academy_students").select("id").eq("user_id", key).maybeSingle();
+    if (!error && data?.id) return String(data.id);
+  } catch {}
+
+  try {
+    const { data, error } = await supabase.from("academy_students").select("id").eq("profile_id", key).maybeSingle();
+    if (!error && data?.id) return String(data.id);
+  } catch {}
 
   return null;
 }
 
 async function fallbackWords(supabase: any): Promise<SessionWord[]> {
-  // minimal fallback so UI doesn't hard-stop
-  const { data, error } = await supabase
-    .from("words")
-    .select("*")
-    .order("frequency_score", { ascending: false })
-    .limit(7);
-
+  const { data, error } = await supabase.from("words").select("*").order("frequency_score", { ascending: false }).limit(7);
   if (error || !data) return [];
 
   return (data ?? [])
@@ -622,17 +535,16 @@ async function fallbackWords(supabase: any): Promise<SessionWord[]> {
 }
 
 export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
-  const supabase = createBrowserClient();
+  // ✅ 핵심: supabase client를 any로 끊어 deep type instantiation 방지
+  const supabase: any = createBrowserClient() as any;
 
   const userId = cleanStr(params.userId);
   if (!userId) return [];
 
   const todayISO = toISODateLocal(new Date());
 
-  // 0) student_id resolve (uuid)
   const studentId = await resolveStudentIdFromUserId(supabase, userId);
 
-  // 1) setId 결정
   let setId: string | null = cleanStr(params.setId ?? "") || null;
 
   if (!setId) {
@@ -641,7 +553,6 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
       return fallbackWords(supabase);
     }
 
-    // A) student_vocab_assignments (open + available)
     const { data: asgRows, error: asgErr } = await supabase
       .from("student_vocab_assignments")
       .select("id, set_id, available_at, assigned_at, day_index, completed_at, canceled_at")
@@ -660,7 +571,6 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
 
     setId = (asgRows?.[0]?.set_id as string | undefined) ?? null;
 
-    // B) fallback: vocab_set_assignments (manual assignment)
     if (!setId) {
       const { data: ms, error: msErr } = await supabase
         .from("vocab_set_assignments")
@@ -669,25 +579,16 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
         .order("assigned_at", { ascending: false })
         .limit(1);
 
-      if (!msErr) {
-        setId = (ms?.[0]?.set_id as string | undefined) ?? null;
-      }
+      if (!msErr) setId = (ms?.[0]?.set_id as string | undefined) ?? null;
     }
 
     if (!setId) {
-      console.warn("[loadSessionWords] no assignment set found", {
-        student_id: studentId,
-        todayISO,
-      });
+      console.warn("[loadSessionWords] no assignment set found", { student_id: studentId, todayISO });
       return fallbackWords(supabase);
     }
   }
 
-  // 2) vocab_set_items에서 wordIds (SSOT)
-  const { data: linkRowsRaw, error: linkErr } = await supabase
-    .from("vocab_set_items")
-    .select("*")
-    .eq("set_id", setId);
+  const { data: linkRowsRaw, error: linkErr } = await supabase.from("vocab_set_items").select("*").eq("set_id", setId);
 
   if (linkErr) {
     console.warn("[loadSessionWords] vocab_set_items query error", linkErr);
@@ -699,7 +600,6 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
     .map((r: any) => pickWordId(r))
     .filter((v: any): v is string => typeof v === "string" && v.length > 0);
 
-  // 레거시 쓰레기값(w1 같은 것) 방지: uuid만 통과
   const wordIds = uniqKeepOrder(idsRaw.filter((x) => isUuidLike(x)));
 
   if (wordIds.length === 0) {
@@ -711,18 +611,13 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
     return fallbackWords(supabase);
   }
 
-  // keep link rows for meaning fallback
   const linkRowByWordId = new Map<string, any>();
   for (const r of sorted) {
     const wid = pickWordId(r);
     if (wid && isUuidLike(wid) && !linkRowByWordId.has(wid)) linkRowByWordId.set(wid, r);
   }
 
-  // 3) words 로드
-  const { data: wordRows, error: wErr } = await supabase
-    .from("words")
-    .select("*")
-    .in("id", wordIds);
+  const { data: wordRows, error: wErr } = await supabase.from("words").select("*").in("id", wordIds);
 
   if (wErr) {
     console.warn("[loadSessionWords] words query error", wErr);
@@ -733,7 +628,7 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
   for (const w of wordRows ?? []) wMap.set(String((w as any).id), w);
 
   /* ======================================================
-   * 3.5) word_forms load (SSOT: word_id uuid)
+   * word_forms
    * ==================================================== */
 
   const wfSelect = `
@@ -749,13 +644,8 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
   let wordFormLookup: "by_word_id" | "by_lemma_fallback" | "none" = "none";
   let wordFormError: any = null;
 
-  // 1) by word_id
   {
-    const { data, error } = await supabase
-      .from("word_forms")
-      .select(wfSelect)
-      .in("word_id", wordIds);
-
+    const { data, error } = await supabase.from("word_forms").select(wfSelect).in("word_id", wordIds);
     if (error) {
       wordFormError = error;
       console.warn("[loadSessionWords] word_forms by word_id error:", error);
@@ -765,13 +655,9 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
     }
   }
 
-  // 2) fallback by lemma (only when no rows)
   if (wordFormRows.length === 0) {
     const lemmas = wordIds
-      .map((id) => {
-        const w = wMap.get(id);
-        return cleanStr(w?.lemma ?? w?.text ?? "");
-      })
+      .map((id) => cleanStr(wMap.get(id)?.lemma ?? wMap.get(id)?.text ?? ""))
       .filter(Boolean);
 
     const uniqL = Array.from(new Set(lemmas));
@@ -779,11 +665,7 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
     const q = Array.from(new Set([...uniqL, ...uniqLower])).filter(Boolean);
 
     if (q.length > 0) {
-      const { data, error } = await supabase
-        .from("word_forms")
-        .select(wfSelect)
-        .in("lemma", q);
-
+      const { data, error } = await supabase.from("word_forms").select(wfSelect).in("lemma", q);
       if (error) {
         wordFormError = error;
         console.warn("[loadSessionWords] word_forms by lemma error:", error);
@@ -812,7 +694,10 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
     wordFormError: wordFormError ? (wordFormError?.message ?? wordFormError) : null,
   });
 
-  // 4) meanings supplement from vocab_lexicon (optional)
+  /* ======================================================
+   * meanings supplement (vocab_lexicon)
+   * ==================================================== */
+
   const missingIds: string[] = [];
   const missingTexts: string[] = [];
 
@@ -834,55 +719,74 @@ export async function loadSessionWords(params: Params): Promise<SessionWord[]> {
   const lexByText = new Map<string, { meanings_ko: string[] }>();
 
   if (missingIds.length > 0) {
+    // 1) vocab_lexicon.word_id IN missingIds
     try {
-      const { data: lexRowsW } = await supabase
+      const res = (await supabase
         .from("vocab_lexicon")
         .select("word_id, meanings_ko")
-        .in("word_id", missingIds);
+        .in("word_id", missingIds)) as { data: any[] | null; error: any };
 
-      for (const r of lexRowsW ?? []) {
+      for (const r of res.data ?? []) {
         const k = cleanStr((r as any).word_id);
         if (!k) continue;
         lexById.set(k, { meanings_ko: splitToArray((r as any).meanings_ko) });
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
 
+    // 2) vocab_lexicon.id IN missingIds (schema tolerance)
     try {
-      const { data: lexRows } = await supabase
+      const res2 = (await supabase
         .from("vocab_lexicon")
         .select("id, meanings_ko")
-        .in("id", missingIds);
+        .in("id", missingIds)) as { data: any[] | null; error: any };
 
-      for (const r of lexRows ?? []) {
-        lexById.set(String((r as any).id), { meanings_ko: splitToArray((r as any).meanings_ko) });
+      for (const r of res2.data ?? []) {
+        const k = cleanStr((r as any).id);
+        if (!k) continue;
+        lexById.set(k, { meanings_ko: splitToArray((r as any).meanings_ko) });
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
 
+    // 3) match by text
     try {
       const uniqT = Array.from(new Set(missingTexts.map((t) => cleanStr(t)).filter(Boolean)));
       const q = Array.from(new Set([...uniqT, ...uniqT.map((t) => t.toLowerCase())])).filter(Boolean);
+
       if (q.length > 0) {
-        const { data: lexRows2 } = await supabase
+        const res3 = (await supabase
           .from("vocab_lexicon")
           .select("text, meanings_ko")
-          .in("text", q);
+          .in("text", q)) as { data: any[] | null; error: any };
 
-        for (const r of lexRows2 ?? []) {
-          const key = cleanStr((r as any).text).toLowerCase();
-          if (!key) continue;
-          lexByText.set(key, { meanings_ko: splitToArray((r as any).meanings_ko) });
+        const byText = new Map<string, string[]>();
+        for (const r of res3.data ?? []) {
+          const t = cleanStr((r as any).text).toLowerCase();
+          if (!t) continue;
+          const meanings = splitToArray((r as any).meanings_ko);
+          if (meanings.length === 0) continue;
+          byText.set(t, meanings);
+          lexByText.set(t, { meanings_ko: meanings });
+        }
+
+        for (let i = 0; i < missingIds.length; i++) {
+          const id = cleanStr(missingIds[i]);
+          if (!id) continue;
+          if (lexById.has(id)) continue;
+
+          const t = cleanStr(missingTexts[i]).toLowerCase();
+          const meanings = byText.get(t);
+          if (!meanings || meanings.length === 0) continue;
+
+          lexById.set(id, { meanings_ko: meanings });
         }
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  // 5) build SessionWord in original order
+  /* ======================================================
+   * build SessionWord in original order
+   * ==================================================== */
+
   const out: Array<SessionWord & { wordForm?: any; antonyms?: string[] }> = [];
 
   for (const wid of wordIds) {

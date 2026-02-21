@@ -3,14 +3,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { DrillTask } from "./drill.types";
 
-function cleanStr(v: unknown) {
-  return String(v ?? "").trim();
+function pickString(...xs: any[]) {
+  for (const x of xs) {
+    const s = String(x ?? "").trim();
+    if (s) return s;
+  }
+  return "";
 }
-function uniqStrings(xs: any[]) {
+
+function uniqStrings(arr: any[]) {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const x of xs ?? []) {
-    const s = cleanStr(x);
+  for (const x of arr ?? []) {
+    const s = String(x ?? "").trim();
     if (!s) continue;
     const k = s.toLowerCase();
     if (seen.has(k)) continue;
@@ -20,51 +25,96 @@ function uniqStrings(xs: any[]) {
   return out;
 }
 
-function readSeed(task: DrillTask) {
+function normalizeBlankSentence(s: string) {
+  if (!s) return "";
+  return s
+    .replace(/\{blank\}/gi, "____")
+    .replace(/\[blank\]/gi, "____")
+    .replace(/__+/g, "____")
+    .replace(/\(\s*blank\s*\)/gi, "____");
+}
+
+function resolveMCQ(task: DrillTask) {
   const t: any = task as any;
   const seed: any = t?.seed ?? {};
-  const meta: any = seed?.meta ?? t?.meta ?? {};
+  const meta: any = seed?.meta ?? {};
 
-  const sentence =
-    cleanStr(seed?.sentence) ||
-    cleanStr(seed?.blankedSentence) ||
-    cleanStr(seed?.stem) ||
-    cleanStr(seed?.prompt) ||
-    cleanStr(seed?.text) ||
-    "";
+  const prompt = pickString(seed?.prompt, meta?.prompt, "Choose the best word to fill the blank:");
+  const sentenceRaw = pickString(seed?.sentence, seed?.stem, seed?.question, meta?.sentence, meta?.stem, meta?.question, "");
+  const sentence = normalizeBlankSentence(sentenceRaw);
 
-  const rawChoices = seed?.choices ?? seed?.options ?? meta?.choices ?? meta?.options ?? seed?.items ?? [];
+  const rawChoices =
+    seed?.choices ??
+    seed?.options ??
+    seed?.items ??
+    meta?.choices ??
+    meta?.options ??
+    seed?.distractors ??
+    meta?.distractors ??
+    [];
+
   const choices = uniqStrings(Array.isArray(rawChoices) ? rawChoices : []);
 
-  const answerText = cleanStr(seed?.answer ?? seed?.correct ?? meta?.answer ?? meta?.correct ?? "");
-  const answerIndex =
-    Number.isFinite(seed?.answerIndex) ? Number(seed.answerIndex) :
-    Number.isFinite(seed?.correctIndex) ? Number(seed.correctIndex) :
+  const correctText = pickString(seed?.answer, seed?.correct, meta?.answer, meta?.correct, seed?.key);
+  const correctIndex =
+    Number.isFinite(seed?.answerIndex) ? Number(seed?.answerIndex) :
+    Number.isFinite(seed?.correctIndex) ? Number(seed?.correctIndex) :
     null;
 
-  let finalAnswerIdx: number | null = null;
-
+  let answerIdx: number | null = null;
   if (choices.length) {
-    if (answerIndex !== null && answerIndex >= 0 && answerIndex < choices.length) {
-      finalAnswerIdx = answerIndex;
-    } else if (answerText) {
-      const i = choices.findIndex((c) => c.toLowerCase() === answerText.toLowerCase());
-      if (i >= 0) finalAnswerIdx = i;
+    if (correctIndex !== null && correctIndex >= 0 && correctIndex < choices.length) answerIdx = correctIndex;
+    else if (correctText) {
+      const i = choices.findIndex((c) => c.toLowerCase() === String(correctText).toLowerCase());
+      if (i >= 0) answerIdx = i;
     }
   }
 
-  // If sentence has no blank marker, try to blank-out the answerText once.
-  let display = sentence;
-  if (display && !display.includes("___") && answerText) {
-    const re = new RegExp(`\\b${answerText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-    if (re.test(display)) display = display.replace(re, "___");
-  }
-  if (display && !display.includes("___")) {
-    // minimal safety: show blank at end
-    display = `${display} ___`;
-  }
+  return {
+    prompt,
+    sentence,
+    choices,
+    answerIdx,
+    debug: { seed, meta, t },
+  };
+}
 
-  return { sentence: display, choices, answerIdx: finalAnswerIdx, answerText, seed };
+function ChoiceButton({
+  label,
+  state,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  state: "idle" | "correct" | "wrong" | "dim";
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const cls =
+    state === "correct"
+      ? "border-emerald-300 bg-emerald-50"
+      : state === "wrong"
+        ? "border-rose-300 bg-rose-50"
+        : state === "dim"
+          ? "border-black/10 bg-white/60 opacity-70"
+          : "border-black/10 bg-white/80 hover:bg-white";
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        "rounded-2xl border px-4 py-4 text-left transition",
+        disabled ? "cursor-default" : "",
+        cls,
+      ].join(" ")}
+    >
+      <div className="font-extrabold text-neutral-900" style={{ fontSize: "clamp(14px, 1.7cqi, 18px)" }}>
+        {label}
+      </div>
+    </button>
+  );
 }
 
 export default function SentenceBlankDrill({
@@ -74,7 +124,7 @@ export default function SentenceBlankDrill({
   task: DrillTask;
   onDone: (isCorrect: boolean) => void;
 }) {
-  const { sentence, choices, answerIdx, answerText, seed } = useMemo(() => readSeed(task), [task]);
+  const { prompt, sentence, choices, answerIdx, debug } = useMemo(() => resolveMCQ(task), [task]);
 
   const [picked, setPicked] = useState<number | null>(null);
   const [locked, setLocked] = useState(false);
@@ -84,89 +134,94 @@ export default function SentenceBlankDrill({
     setLocked(false);
   }, [task]);
 
-  const usableMCQ = choices.length >= 2 && answerIdx !== null;
+  const canAnswer = !locked && choices.length >= 2 && answerIdx !== null;
 
   function choose(i: number) {
-    if (!usableMCQ || locked) return;
+    if (!canAnswer) return;
     setPicked(i);
     setLocked(true);
     const ok = i === answerIdx!;
-    window.setTimeout(() => onDone(ok), 450);
+    window.setTimeout(() => onDone(ok), 380);
   }
 
-  // fallback: free typing (if builder ever provides no choices)
-  const [typed, setTyped] = useState("");
-  useEffect(() => setTyped(""), [task]);
+  const usable = !!sentence && choices.length >= 2 && answerIdx !== null;
 
-  function submitTyped() {
-    if (locked) return;
-    const user = cleanStr(typed);
-    const ok = user && answerText ? user.toLowerCase() === answerText.toLowerCase() : false;
-    setLocked(true);
-    window.setTimeout(() => onDone(ok), 450);
+  if (!usable) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
+        <div className="font-semibold">FILL_IN_THE_BLANKS seed is not usable</div>
+        <div className="mt-1 text-xs text-rose-700">
+          seed에 sentence(or stem) + choices + answer(or answerIndex)가 필요합니다.
+        </div>
+        <pre className="mt-3 max-h-64 overflow-auto rounded-lg border bg-white p-2 text-[11px] text-slate-700">
+          {JSON.stringify(debug?.seed ?? debug, null, 2)}
+        </pre>
+        <button
+          type="button"
+          className="mt-3 w-full rounded-xl bg-black py-2 text-white"
+          onClick={() => onDone(false)}
+        >
+          Skip this task
+        </button>
+      </div>
+    );
   }
+
+  const prettySentence = sentence.includes("____") ? sentence : `${sentence} ____`;
 
   return (
-    <div className="rounded-2xl border bg-white p-5">
-      <div className="text-xs font-semibold text-slate-500">FILL IN THE BLANK</div>
-
-      <div className="mt-2 rounded-xl bg-slate-50 p-4 text-base font-semibold text-slate-900">
-        {sentence}
+    <div className="mx-auto max-w-[920px]">
+      <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+        Fill in the Blanks
       </div>
 
-      {usableMCQ ? (
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {choices.slice(0, 6).map((c, i) => {
-            const isPicked = picked === i;
-            const isAnswer = i === answerIdx;
-            const cls = locked
-              ? isAnswer
-                ? "border-emerald-300 bg-emerald-50"
+      <div className="mt-2 text-neutral-900 font-extrabold" style={{ fontSize: "clamp(16px, 2.0cqi, 24px)" }}>
+        {prompt}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-black/10 bg-white/75 px-5 py-5 text-left">
+        <div className="font-extrabold text-neutral-900" style={{ fontSize: "clamp(16px, 2.05cqi, 26px)" }}>
+          {prettySentence.split("____").map((part, idx) => (
+            <React.Fragment key={idx}>
+              <span>{part}</span>
+              {idx < prettySentence.split("____").length - 1 ? (
+                <span className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-3 py-1 mx-1 font-black">
+                  ____ 
+                </span>
+              ) : null}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {choices.slice(0, 6).map((c, i) => {
+          const isPicked = picked === i;
+          const isAns = i === answerIdx;
+          const state =
+            locked
+              ? isAns
+                ? "correct"
                 : isPicked
-                  ? "border-rose-300 bg-rose-50"
-                  : "border-slate-200"
-              : "border-slate-200 hover:bg-slate-50";
+                  ? "wrong"
+                  : "dim"
+              : "idle";
 
-            return (
-              <button
-                key={`${c}-${i}`}
-                className={`rounded-xl border px-4 py-3 text-left text-sm transition ${cls}`}
-                disabled={locked}
-                onClick={() => choose(i)}
-              >
-                <div className="font-semibold text-slate-900">{c}</div>
-                {locked && isAnswer ? (
-                  <div className="mt-1 text-xs font-semibold text-emerald-700">Correct</div>
-                ) : locked && isPicked && !isAnswer ? (
-                  <div className="mt-1 text-xs font-semibold text-rose-700">Incorrect</div>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="mt-4">
-          <div className="text-xs text-slate-500">No choices found. Type the answer.</div>
-          <div className="mt-2 flex gap-2">
-            <input
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2 text-sm"
-              placeholder="Type your answer"
+          return (
+            <ChoiceButton
+              key={`${c}-${i}`}
+              label={c}
+              state={state as any}
+              disabled={!canAnswer}
+              onClick={() => choose(i)}
             />
-            <button onClick={submitTyped} className="rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white">
-              OK
-            </button>
-          </div>
+          );
+        })}
+      </div>
 
-          <details className="mt-3 rounded-xl border bg-slate-50 p-3 text-xs text-slate-700">
-            <summary className="cursor-pointer font-semibold">Debug seed</summary>
-            <pre className="mt-2 max-h-56 overflow-auto rounded-lg border bg-white p-2 text-[11px]">
-              {JSON.stringify(seed, null, 2)}
-            </pre>
-          </details>
-        </div>
-      )}
+      <div className="mt-4 text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+        Tap one choice. Auto-advances.
+      </div>
     </div>
   );
 }

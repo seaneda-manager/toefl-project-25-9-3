@@ -1,8 +1,296 @@
+@import "../styles/theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 선택: 기본 바디 스타일 */
-html, body {
+html,
+body {
   height: 100%;
+}
+
+/* =========================================================
+   Global (PNG-free, Smart + Clean)
+   ========================================================= */
+
+body {
+  overflow-x: hidden;
+  background-image: none !important;
+
+  /* ✅ Outside background (clean global app feel) */
+  background-color: #f2f4f1;
+
+  color: var(--text-primary, #1c1c1c);
+}
+
+/* =========================================================
+   Focus Mode (Popup-style stage)
+   ========================================================= */
+
+:root {
+  --focus-accent: #f5d054;
+
+  /* ✅ 오버레이 밝은 톤 팔레트 */
+  --overlay-base: rgba(248, 249, 245, 1); /* 완전 불투명 */
+}
+
+/* ✅ focus-root(현재 레이아웃) + focus-overlay(레거시) 둘 다 지원 */
+.focus-root,
+.focus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: grid;
+  place-items: center;
+
+  padding: min(24px, 4vw);
+
+  background: var(--overlay-base) !important;
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* 레이아웃에 들어있는 focus-outside는 그냥 비워두는 용도 */
+.focus-outside {
+  display: none;
+}
+
+/* Centering wrapper (레이아웃에 있음) */
+.focus-stage-wrap {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+/* ✅ 학습기(스테이지): bg-base는 여기 */
+.focus-stage {
+  container-type: size;
+  position: relative;
+
+  max-width: 1536px;
+  max-height: 1024px;
+
+  width: min(92vw, calc(92vh * 3 / 2), 1536px);
+  aspect-ratio: 3 / 2;
+
+  border-radius: 28px;
+  overflow: hidden;
+
+  box-shadow:
+    0 0 0 2px rgba(245, 208, 84, 0.22),
+    0 18px 60px rgba(0, 0, 0, 0.25);
+
+  /* ✅ bg-base (없어도 보이게 fallback 컬러 추가) */
+  background-color: #eef2ea;
+  background-image: url("/lingox/ui/bg-base.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+
+  /* ✅ 기본 글자색이 흰색으로 오염되는 걸 방지 */
+  color: #111827;
+
+  filter: none !important;
+}
+
+/* 내부 콘텐츠 레이어 */
+.focus-stage-inner {
+  position: absolute;
+  inset: 0;
+  padding: 3cqi;
+  box-sizing: border-box;
+  filter: none !important;
+}
+
+/* =========================================================
+   Smart Energetic Feedback
+   ========================================================= */
+
+@keyframes correctPulse {
+  0% { box-shadow: 0 0 0 0 rgba(164, 240, 0, 0.55); }
+  100% { box-shadow: 0 0 0 24px rgba(164, 240, 0, 0); }
+}
+
+.correct {
+  animation: correctPulse 400ms ease-out;
+}
+
+@keyframes wrongShake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.wrong {
+  animation: wrongShake 300ms ease;
+}
+
+/* =========================================================
+   Legacy utility classes (kept, token-aligned)
+   ========================================================= */
+
+.stage-title {
+  position: absolute;
+  top: 5%;
+  left: 5%;
+
+  font-size: 5cqi;
+  font-weight: 800;
+
+  color: var(--brand-primary);
+  margin: 0;
+
+  /* ✅ more breathing room */
+  margin-bottom: 28px;
+}
+
+.dialog-box {
+  position: absolute;
+  bottom: 5%;
+  left: 5%;
+  width: 90cqi;
+  height: 20cqh;
+
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+
+  padding: 2cqi;
+  box-sizing: border-box;
+
+  font-size: 2.5cqi;
+  color: var(--text-primary);
+
+  border: 2px solid rgba(31, 111, 95, 0.22);
+}
+
+/* =========================================================
+   Buttons (Know / Not Yet baseline)
+   - If you already render buttons via Tailwind className, you can ignore these.
+   - Otherwise, this keeps legacy .stage-btn usable.
+   ========================================================= */
+
+.stage-btn {
+  position: absolute;
+  right: 5%;
+  bottom: 28%;
+
+  padding: 1cqi 3cqi;
+  font-size: 2cqi;
+
+  background-color: var(--brand-primary);
+  color: #ffffff;
+
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform var(--motion-fast) var(--ease-energetic),
+    box-shadow var(--motion-fast) var(--ease-energetic),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.stage-btn:hover {
+  transform: scale(1.05);
+  background-color: #258673;
+  box-shadow: 0 10px 22px rgba(31, 111, 95, 0.22);
+}
+
+.stage-btn:active {
+  transform: scale(0.95);
+}
+/* =========================================================
+   Lingo-X Action Buttons (Know / Not Yet) - v1
+   - fixed width by layout (flex-1)
+   - fashionable + addictive micro-interaction
+   ========================================================= */
+
+.lx-action-row {
+  width: min(520px, 92%);
+  margin: 0 auto;
+  display: flex;
+  gap: 16px;
+}
+
+.lx-btn {
+  flex: 1;
+  height: 56px;
+
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 16px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  transition:
+    transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 150ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.lx-btn:active {
+  transform: scale(0.96);
+}
+
+/* Primary: Know */
+.lx-btn-primary {
+  background: #1f6f5f;
+  color: #ffffff;
+  border: 1px solid #1f6f5f;
+  box-shadow: 0 8px 18px rgba(31, 111, 95, 0.18);
+}
+
+.lx-btn-primary:hover {
+  transform: scale(1.04);
+  background: #258673;
+  box-shadow: 0 12px 26px rgba(31, 111, 95, 0.26);
+}
+
+/* Secondary: Not Yet */
+.lx-btn-secondary {
+  background: #ffffff;
+  color: #1f6f5f;
+  border: 1px solid rgba(31, 111, 95, 0.55);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.lx-btn-secondary:hover {
+  transform: scale(1.04);
+  background: #1f6f5f;
+  color: #ffffff;
+  border-color: #1f6f5f;
+  box-shadow: 0 12px 24px rgba(31, 111, 95, 0.22);
+}
+
+/* Optional: subtle alertness ring on hover (very light) */
+.lx-btn:hover {
+  outline: 2px solid rgba(164, 240, 0, 0.25);
+  outline-offset: 2px;
+}
+/* ===== FIX: Not Yet button must NEVER be white-on-transparent ===== */
+.lx-btn-secondary {
+  background: #ffffff !important;
+  color: #1f6f5f !important;
+  border: 1px solid rgba(31, 111, 95, 0.55) !important;
+}
+
+/* hover reversal */
+.lx-btn-secondary:hover {
+  background: #1f6f5f !important;
+  color: #ffffff !important;
+  border-color: #1f6f5f !important;
 }

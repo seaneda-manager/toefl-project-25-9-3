@@ -1,38 +1,43 @@
-// apps/web/components/vocab/learning/learning.types.ts
+/* =========================
+   stage
+========================= */
 
-export type LearningExample =
-  | string
-  | {
-      en: string;
-      ko?: string | null;
-    };
+export type LearningStage =
+  | "INTRO"
+  | "CARD"
+  | "CHALLENGE"
+  | "COMPLETE";
+
+/* =========================
+   payload (UI core)
+   ✅ Learning UI에 필요한 필드만
+========================= */
 
 export type LearningWord = {
   id: string;
   text: string;
-
-  /** Korean meanings (primary for your current flow) */
   meanings_ko: string[];
 
-  /** Optional: simple English meanings */
-  meanings_en_simple?: string[];
+  // ✅ optional enrich (있으면 보여주고 없으면 무시)
+  phonetic?: string | null;
+  audioUrl?: string | null;
 
-  /** Optional: synonyms */
-  synonyms_en_simple?: string[];
+  // UI에서 쓰고 싶으면 기본 en-US
+  ttsLang?: string | null;
 
-  /**
-   * Examples can be:
-   * - string[]
-   * - { en, ko? }[]
-   * - mixed
-   * Keep flexible because DB / normalizers may differ.
-   */
-  examples?: LearningExample[];
+  // learning용: "대표 동의어 1~2개" (flattened)
+  synonyms_ko?: string[] | null;
 
-  /** Optional notes */
-  notes?: string | null;
+  // 대표 예문 1개
+  example_en?: string | null;
+  example_ko?: string | null;
+};
 
-  /** Optional POS / lemma (safe extras) */
-  pos?: string | null;
-  lemma?: string | null;
+/* =========================
+   result (SSOT)
+========================= */
+
+export type LearningResult = {
+  completedWordIds: string[];
+  weakWordIds: string[];
 };

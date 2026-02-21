@@ -1,146 +1,164 @@
-// apps/web/components/common/StageIntroScreen.tsx
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import PenguinMascot from "@/components/mascot/PenguinMascot";
+import { usePenguinMood } from "@/components/mascot/usePenguinMood";
 
 type Props = {
-  title?: React.ReactNode;
-  subtitle?: React.ReactNode;
-  description?: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  onDone: () => void;
 
-  /** optional body blocks */
-  bullets?: Array<string | React.ReactNode>;
-  children?: React.ReactNode;
-
-  /** primary/secondary */
-  primaryLabel?: string;
-  secondaryLabel?: string;
-  onPrimary?: () => void;
-  onSecondary?: () => void;
-
-  className?: string;
-  rightSlot?: React.ReactNode;
-
-  /** legacy tolerant names */
   ctaLabel?: string;
-  buttonLabel?: string;
-  actionLabel?: string;
-  onStart?: () => void;
-  onNext?: () => void;
-  onContinue?: () => void;
-  onClick?: () => void;
-
-  // allow any extra props from old code without TS errors
-  [key: string]: any;
+  autoMs?: number;
 };
 
-function pickFirstFn(...fns: Array<unknown>) {
-  for (const f of fns) if (typeof f === "function") return f as () => void;
-  return undefined;
-}
+export default function StageIntroScreen({
+  title,
+  subtitle,
+  onDone,
+  ctaLabel = "Start",
+  autoMs = 0,
+}: Props) {
+  const [msLeft, setMsLeft] = useState<number>(autoMs);
+  const p = usePenguinMood();
 
-function pickFirstStr(...xs: Array<unknown>) {
-  for (const x of xs) {
-    const s = String(x ?? "").trim();
-    if (s) return s;
-  }
-  return "";
-}
-
-export default function StageIntroScreen(props: Props) {
-  const {
-    title,
-    subtitle,
-    description,
-    bullets,
-    children,
-    className = "",
-    rightSlot,
-  } = props;
-
-  const primaryOnClick = useMemo(
-    () =>
-      pickFirstFn(
-        props.onPrimary,
-        props.onStart,
-        props.onContinue,
-        props.onNext,
-        props.onClick,
-      ),
-    [props.onPrimary, props.onStart, props.onContinue, props.onNext, props.onClick],
+  const showAuto = useMemo(
+    () => Number.isFinite(autoMs) && autoMs > 0,
+    [autoMs]
   );
 
-  const secondaryOnClick = useMemo(
-    () => pickFirstFn(props.onSecondary, props.onBack, props.onCancel),
-    [props.onSecondary, props.onBack, props.onCancel],
-  );
+  useEffect(() => {
+    if (!showAuto) return;
+    setMsLeft(autoMs);
 
-  const primaryText = useMemo(() => {
-    const s = pickFirstStr(
-      props.primaryLabel,
-      props.ctaLabel,
-      props.buttonLabel,
-      props.actionLabel,
-      props.cta,
-    );
-    return s || "Continue";
-  }, [props.primaryLabel, props.ctaLabel, props.buttonLabel, props.actionLabel, props.cta]);
+    const t = setInterval(() => {
+      setMsLeft((v) => Math.max(0, v - 250));
+    }, 250);
 
-  const secondaryText = useMemo(() => {
-    const s = pickFirstStr(props.secondaryLabel, props.backLabel, props.cancelLabel);
-    return s || "Back";
-  }, [props.secondaryLabel, props.backLabel, props.cancelLabel]);
+    return () => clearInterval(t);
+  }, [autoMs, showAuto]);
+
+  useEffect(() => {
+    if (!showAuto) return;
+    if (msLeft <= 0) {
+      p.success();
+      setTimeout(onDone, 400);
+    }
+  }, [msLeft, showAuto, onDone, p]);
+
+  const pct =
+    showAuto && autoMs > 0
+      ? Math.min(100, Math.max(0, (1 - msLeft / autoMs) * 100))
+      : 0;
 
   return (
-    <div className={`rounded-2xl border bg-white p-6 ${className}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          {subtitle ? (
-            <div className="text-xs font-semibold text-slate-500">{subtitle}</div>
-          ) : null}
-          {title ? (
-            <div className="mt-1 text-xl font-semibold text-slate-900">{title}</div>
-          ) : null}
-          {description ? (
-            <div className="mt-2 text-sm text-slate-600">{description}</div>
-          ) : null}
-        </div>
-        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+    <div
+      className="relative overflow-hidden rounded-[var(--lx-radius)] border p-8 sm:p-14"
+      style={{
+        background: "var(--lx-surface)",
+        borderColor: "var(--lx-border)",
+        boxShadow: "var(--lx-shadow)",
+      }}
+    >
+      {/* Pastel floating shapes */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -left-24 -top-24 h-72 w-72 rounded-full blur-3xl"
+          style={{ background: "var(--lx-secondary)", opacity: 0.25 }}
+        />
+        <div
+          className="absolute -right-28 -bottom-28 h-80 w-80 rounded-full blur-3xl"
+          style={{ background: "var(--lx-accent)", opacity: 0.25 }}
+        />
       </div>
 
-      {bullets && bullets.length ? (
-        <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-700">
-          {bullets.map((b, i) => (
-            <li key={i}>{b}</li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="relative text-center">
+        <div className="mx-auto max-w-3xl">
 
-      {children ? <div className="mt-4">{children}</div> : null}
+          {/* 🐧 Penguin */}
+          <div className="mb-10 flex justify-center">
+            <PenguinMascot
+              src="/assets/lingox/penguin.png"
+              mood={p.mood}
+              size={150}
+            />
+          </div>
 
-      {(primaryOnClick || secondaryOnClick) ? (
-        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {secondaryOnClick ? (
-            <button
-              onClick={secondaryOnClick}
-              className="rounded-xl border bg-white py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          {/* Title */}
+          <div
+            className="text-5xl font-extrabold tracking-tight sm:text-6xl"
+            style={{ color: "var(--lx-text)" }}
+          >
+            {title}
+          </div>
+
+          {/* Subtitle */}
+          {subtitle ? (
+            <div
+              className="mt-5 text-xl font-semibold sm:text-2xl"
+              style={{ color: "var(--lx-muted)" }}
             >
-              {secondaryText}
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {primaryOnClick ? (
-            <button
-              onClick={primaryOnClick}
-              className="rounded-xl bg-black py-2 text-sm font-semibold text-white hover:opacity-95"
-            >
-              {primaryText}
-            </button>
+              {subtitle}
+            </div>
           ) : null}
+
+          {/* Auto progress */}
+          {showAuto ? (
+            <div className="mt-8">
+              <div
+                className="h-3 w-full overflow-hidden rounded-full"
+                style={{ background: "rgba(0,0,0,0.05)" }}
+              >
+                <div
+                  className="h-full transition-all duration-200"
+                  style={{
+                    width: `${pct}%`,
+                    background: "var(--lx-accent)",
+                  }}
+                />
+              </div>
+              <div
+                className="mt-3 text-sm"
+                style={{ color: "var(--lx-muted)" }}
+              >
+                Auto starting…
+              </div>
+            </div>
+          ) : null}
+
+          {/* Buttons */}
+          <div className="mt-12 flex flex-wrap justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                p.success();
+                setTimeout(onDone, 350);
+              }}
+              className="rounded-3xl px-8 py-4 text-white transition active:scale-[0.98]"
+              style={{
+                background: "var(--lx-primary)",
+                boxShadow: "0 8px 24px rgba(91,140,255,0.25)",
+              }}
+            >
+              {ctaLabel}
+            </button>
+
+            <button
+              type="button"
+              onClick={onDone}
+              className="rounded-3xl px-8 py-4 transition active:scale-[0.98]"
+              style={{
+                background: "var(--lx-surface)",
+                border: "1px solid var(--lx-border)",
+                color: "var(--lx-text)",
+              }}
+            >
+              Continue
+            </button>
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

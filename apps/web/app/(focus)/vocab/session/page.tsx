@@ -3,6 +3,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
+import { usePenguinMood } from "@/components/mascot/usePenguinMood";
+
 import FocusModeWrapper from "@/components/common/FocusModeWrapper";
 import StageIntroScreen from "@/components/common/StageIntroScreen";
 
@@ -21,6 +23,8 @@ import type { DrillTask, DrillType } from "@/components/vocab/drill/drill.types"
 import { buildBlockDrillTasksV1, type WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
 
 import { createBrowserClient } from "@/lib/supabase/client";
+import StageBackground from "@/components/common/StageBackground";
+import MascotLayer from "@/components/common/MascotLayer";
 
 // ✅ server action (service-role)
 import { loadSessionWordsAction } from "./actions";
@@ -115,6 +119,30 @@ function PageShell({ children }: { children?: React.ReactNode }) {
     <div className="h-[calc(100vh-64px)] min-h-0">
       <div className="h-full min-h-0 overflow-y-auto">{children}</div>
     </div>
+  );
+}
+
+/* =========================================================
+ * CARD WRAPPER (✅ page-embedded card mode)
+ * ======================================================= */
+function CardWrap({
+  children,
+  className,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <FocusModeWrapper
+      variant="card"
+      panelWidthClass="max-w-xl"
+      className={className}
+      // card variant ignores these, but leaving for clarity
+      dim={false}
+      blur={false}
+    >
+      <div className="space-y-3">{children}</div>
+    </FocusModeWrapper>
   );
 }
 
@@ -265,10 +293,11 @@ type ShortcutParams = {
   setId: string;
   n: number; // dev-only
   seed: string; // dev-only
+  debug: string; // ✅ debug gating
 };
 
 function readShortcutParams(): ShortcutParams {
-  if (typeof window === "undefined") return { jump: "", only: "", setId: "", n: 0, seed: "" };
+  if (typeof window === "undefined") return { jump: "", only: "", setId: "", n: 0, seed: "", debug: "" };
   const sp = new URL(window.location.href).searchParams;
   const jump = (sp.get("jump") ?? "").trim().toUpperCase();
   const only = (sp.get("only") ?? "").trim().toUpperCase();
@@ -278,8 +307,9 @@ function readShortcutParams(): ShortcutParams {
   const n = Number.isFinite(Number(nRaw)) ? Math.max(0, Math.floor(Number(nRaw))) : 0;
 
   const seed = (sp.get("seed") ?? "").trim();
+  const debug = (sp.get("debug") ?? "").trim();
 
-  return { jump, only, setId, n, seed };
+  return { jump, only, setId, n, seed, debug };
 }
 
 function canonOnlyToDrillType(raw: string): DrillType | "" {
@@ -339,7 +369,7 @@ function synthesizeDevExamples(wordText: string): string[] {
 }
 
 /* =========================================================
- * ✅ WordMap Normalizer (prevents undefined fields dropping in JSON)
+ * ✅ WordMap Normalizer
  * ======================================================= */
 type WordMapExample = { en: string; ko: string | null };
 type WordMapCollocationPair = {
@@ -559,6 +589,7 @@ function collocationsToStrings(v: any): string[] {
 export default function VocabSessionPage() {
   const isDev = process.env.NODE_ENV !== "production";
   const supabase = useMemo(() => createBrowserClient(), []);
+  const penguin = usePenguinMood();
 
   const [stage, setStage] = useState<Stage>("LOADING");
 
@@ -582,7 +613,13 @@ export default function VocabSessionPage() {
   const shortcut = useMemo(() => readShortcutParams(), []);
   const onlyType = useMemo(() => canonOnlyToDrillType(shortcut.only), [shortcut.only]);
 
-  // ✅ DEV: create shell object early (so console never crashes)
+  // ✅ Debug visibility:
+  const showDebug = useMemo(() => {
+    if (!isDev) return false;
+    return String(shortcut.debug ?? "").trim() === "1";
+  }, [isDev, shortcut.debug]);
+
+  // ✅ DEV: create shell object early
   useEffect(() => {
     if (!isDev) return;
     if (typeof window === "undefined") return;
@@ -616,6 +653,13 @@ export default function VocabSessionPage() {
   useEffect(() => {
     console.log("[FLOW] /vocab/session page rendered");
   }, []);
+
+  useEffect(() => {
+    if (stage === "LOADING") penguin.setDefault();
+    if (stage === "PRESCREEN" || stage === "SPELLING") penguin.focus();
+    if (stage === "LEARNING" || stage === "SPEED_1" || stage === "SPEED_2" || stage === "DRILL") penguin.focus();
+    if (stage === "DONE") penguin.celebrate();
+  }, [stage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -713,7 +757,6 @@ export default function VocabSessionPage() {
         const loaded = Array.isArray((res as any).words) ? ((res as any).words as SessionWord[]) : [];
         const hasWords = loaded.length > 0;
 
-        // ✅ tolerate missing optional maps from action
         setWordFormsById((res as any).wordFormsByWordId ?? {});
         setWordExamplesById((res as any).wordExamplesByWordId ?? {});
         setWordCollocationsById((res as any).wordCollocationsByWordId ?? {});
@@ -760,10 +803,7 @@ export default function VocabSessionPage() {
           loadedCount: limited.words.length,
           firstWord: limited.words[0]?.text ?? null,
           usingFallback: false,
-          note: [
-            `loaded from DB${forcedSetId ? ` (forced setId=${forcedSetId})` : ""}`,
-            limited.note,
-          ]
+          note: [`loaded from DB${forcedSetId ? ` (forced setId=${forcedSetId})` : ""}`, limited.note]
             .filter(Boolean)
             .join(" / "),
           diag: (res as any).diag ?? null,
@@ -834,7 +874,6 @@ export default function VocabSessionPage() {
     return hasWF ? CORE_DRILL_ORDER : CORE_DRILL_ORDER.filter((t) => t !== "WORD_FORM_PICK");
   }, [wordFormsById]);
 
-  // ✅ precompute examples/collocations strings (debuggable + consistent)
   const exampleStringsById = useMemo(() => {
     const out: Record<string, string[]> = {};
     for (const id of allWordIds) {
@@ -872,7 +911,6 @@ export default function VocabSessionPage() {
     return out;
   }, [allWordIds, wordMap, wordCollocationsById]);
 
-  // ✅ DEV: keep ONE stable object and only assign fields (never replace)
   useEffect(() => {
     if (!isDev) return;
     if (typeof window === "undefined") return;
@@ -898,7 +936,6 @@ export default function VocabSessionPage() {
       wordExamplesById: wordExamplesById ?? {},
       wordCollocationsById: wordCollocationsById ?? {},
 
-      // aliases (avoid confusion)
       wordFormsByWordId: wordFormsById ?? {},
       wordExamplesByWordId: wordExamplesById ?? {},
       wordCollocationsByWordId: wordCollocationsById ?? {},
@@ -923,7 +960,7 @@ export default function VocabSessionPage() {
     collocationStringsById,
   ]);
 
-  // ✅ AUTO-REPAIR WORD_FORMS (client-side) when action returns thin rows
+  // ✅ AUTO-REPAIR WORD_FORMS
   useEffect(() => {
     if (!userId || userId === "__anon__" || userId === "__error__") return;
     if (!allWordIds || allWordIds.length === 0) return;
@@ -1085,9 +1122,7 @@ export default function VocabSessionPage() {
     const failed = (spellingResult as any)?.spellingFailedIds ?? [];
     const wrong = retryIds ?? [];
 
-    const core = uniq([...(unknown as string[]), ...(failed as string[]), ...(wrong as string[])])
-      .filter(Boolean)
-      .filter((id) => allWordIds.includes(id));
+    const core = uniq([...(unknown as string[]), ...(failed as string[]), ...(wrong as string[])]).filter(Boolean).filter((id) => allWordIds.includes(id));
 
     if (core.length >= MIN_DRILL_WORDS) return core;
 
@@ -1117,17 +1152,14 @@ export default function VocabSessionPage() {
       drillTypes: effectiveDrillOrder,
       shuffleWordsWithinEachBlock: false,
 
-      // ✅ SSOT providers
       getWordText,
       getWordForm,
       getWordExamples,
       getWordCollocations,
 
-      // ✅ backward compat
       getExamples: getWordExamples,
       getCollocations: getWordCollocations,
 
-      // ✅ synonyms/meaning (SYNONYM에 도움)
       getWordSynonyms: (id: string) => (((wordMap as any)?.[id]?.synonyms_en_simple ?? []) as any),
       getWordMeaningsKo: (id: string) => (((wordMap as any)?.[id]?.meanings_ko ?? []) as any),
     } as any);
@@ -1156,16 +1188,13 @@ export default function VocabSessionPage() {
         unknownWordIds: prescreenResult?.unknownWordIds ?? [],
         wordMap,
 
-        // ✅ include maps so /vocab/drill can render consistently
         wordFormsById: wordFormsById ?? {},
         exampleStringsById: exampleStringsById ?? {},
         collocationStringsById: collocationStringsById ?? {},
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionPayload));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -1191,208 +1220,195 @@ export default function VocabSessionPage() {
     setStage("DRILL_INTRO");
   }, [stage, allWordIds]);
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-  if (stage === "LOADING") {
-    return (
-      <PageShell>
-        <div className="mx-auto max-w-xl p-6 text-center text-slate-700">Loading session...</div>
-      </PageShell>
-    );
-  }
+  // ✅ stage renderer
+  const renderStage = () => {
+    const Debug = showDebug ? <DebugPanel info={debugInfo} /> : null;
 
-  if (stage === "PRESCREEN") {
-    if (prescreenWords.length === 0) {
-      return (
-        <PageShell>
-          <FocusModeWrapper>
-            <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-              <DebugPanel info={debugInfo} />
-
-              {loadError && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{loadError}</div>
-              )}
-
-              <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
-                <div className="text-lg font-semibold">No words found for this session</div>
-                <div className="mt-2 text-sm text-slate-500">DebugPanel.diag에서 linkTable/wordIdCount/resolvedSetId를 확인해줘.</div>
-
-                <button className="mt-4 w-full rounded-xl bg-black py-3 text-white" onClick={() => window.location.reload()}>
-                  Reload
-                </button>
-              </div>
-            </div>
-          </FocusModeWrapper>
-        </PageShell>
-      );
+    if (stage === "LOADING") {
+      return <div className="mx-auto max-w-xl p-6 text-center text-slate-700">Loading session...</div>;
     }
 
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
-
-            {process.env.NODE_ENV !== "production" && shortcut.n > 0 && (
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
-                DEV TEST MODE: n={shortcut.n} {shortcut.seed ? `(seed=${shortcut.seed})` : "(seed=auto)"}{" "}
-                <span className="text-indigo-500">| 새로고침해도 같은 샘플 유지하려면 seed=123 같이 쓰면 돼</span>
-              </div>
-            )}
+    if (stage === "PRESCREEN") {
+      if (prescreenWords.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
 
             {loadError && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{loadError}</div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                {loadError}
+              </div>
             )}
 
-            <PrescreenBoard
-              words={prescreenWords as any}
-              onFinish={(r: PrescreenResult) => {
-                setPrescreenResult(r);
+            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
+              <div className="text-lg font-semibold">No words found for this session</div>
+              <div className="mt-2 text-sm text-slate-500">
+                DebugPanel.diag에서 linkTable/wordIdCount/resolvedSetId를 확인해줘.
+              </div>
 
-                const knownCount = Array.isArray((r as any)?.knownWordIds) ? (r as any).knownWordIds.length : 0;
-
-                if (knownCount === 0) {
-                  setSpellingResult(makeEmptySpellingResult());
-                  setStage("SUMMARY");
-                  return;
-                }
-
-                setStage("SPELLING");
-              }}
-            />
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
-
-  if (stage === "SPELLING") {
-    if (!prescreenResult || spellingWords.length === 0) {
-      return (
-        <PageShell>
-          <FocusModeWrapper>
-            <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-              <DebugPanel info={debugInfo} />
-              <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">Preparing spelling...</div>
+              <button
+                className="mt-4 w-full rounded-xl bg-black py-3 text-white"
+                onClick={() => window.location.reload()}
+              >
+                Reload
+              </button>
             </div>
-          </FocusModeWrapper>
-        </PageShell>
-      );
-    }
+          </CardWrap>
+        );
+      }
 
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
-
-            <PrescreenSpellingBoard
-              words={spellingWords as any}
-              onFinish={(r: SpellingResult) => {
-                setSpellingResult(r);
-                setStage("SUMMARY");
-              }}
-            />
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
-
-  if (stage === "SUMMARY") {
-    if (!prescreenResult || !spellingResult) {
       return (
-        <PageShell>
-          <div className="mx-auto max-w-xl p-6 text-center text-slate-700">Preparing summary...</div>
-        </PageShell>
+        <CardWrap>
+          {Debug}
+
+          {process.env.NODE_ENV !== "production" && shortcut.n > 0 && (
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
+              DEV TEST MODE: n={shortcut.n} {shortcut.seed ? `(seed=${shortcut.seed})` : "(seed=auto)"}{" "}
+              <span className="text-indigo-500">| 새로고침해도 같은 샘플 유지하려면 seed=123 같이 쓰면 돼</span>
+            </div>
+          )}
+
+          {loadError && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              {loadError}
+            </div>
+          )}
+
+          <PrescreenBoard
+            words={prescreenWords as any}
+            onFinish={(r: PrescreenResult) => {
+              setPrescreenResult(r);
+
+              const knownCount = Array.isArray((r as any)?.knownWordIds) ? (r as any).knownWordIds.length : 0;
+
+              if (knownCount === 0) {
+                setSpellingResult(makeEmptySpellingResult());
+                setStage("SUMMARY");
+                return;
+              }
+
+              setStage("SPELLING");
+            }}
+          />
+        </CardWrap>
       );
     }
 
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
+    if (stage === "SPELLING") {
+      if (!prescreenResult || spellingWords.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">Preparing spelling...</div>
+          </CardWrap>
+        );
+      }
 
-            <SummaryScreen
-              prescreenResult={prescreenResult}
-              spellingResult={spellingResult}
-              onContinue={() => {
-                const base = prescreenResult.unknownWordIds
-                  .map((id: string) => allWords.find((w) => w.id === id))
-                  .filter(Boolean) as SessionWord[];
+      return (
+        <CardWrap>
+          {Debug}
 
-                const failed = (spellingResult as any).spellingFailedIds
-                  ? (spellingResult as any).spellingFailedIds
-                      .map((id: string) => allWords.find((w) => w.id === id))
-                      .filter(Boolean)
-                  : ([] as SessionWord[]);
-
-                const map = new Map<string, SessionWord>();
-                [...base, ...failed].forEach((w) => map.set(w.id, w));
-
-                setLearningWords([...map.values()]);
-                setStage(map.size === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
-              }}
-            />
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
-
-  if (stage === "LEARNING_INTRO") {
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
-            <StageIntroScreen title="Pay Attention!" subtitle="집중! 단어를 배워봅시다" onDone={() => setStage("LEARNING")} />
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
-
-  if (stage === "LEARNING") {
-  return (
-    <PageShell>
-      <FocusModeWrapper>
-        <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-          <DebugPanel info={debugInfo} />
-
-          <LearningRunner
-            words={learningWords} // ✅ 기존에 너가 만들어둔 LearningWord[] 변수명으로 바꿔
-            onFinish={() => setStage("SPEED_INTRO")} // ✅ 다음 단계로 넘기는 핸들러
+          <PrescreenSpellingBoard
+            words={spellingWords as any}
+            onFinish={(r: SpellingResult) => {
+              setSpellingResult(r);
+              setStage("SUMMARY");
+            }}
           />
-        </div>
-      </FocusModeWrapper>
-    </PageShell>
-  );
-}
+        </CardWrap>
+      );
+    }
 
+    if (stage === "SUMMARY") {
+      if (!prescreenResult || !spellingResult) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">Missing summary data.</div>
+          </CardWrap>
+        );
+      }
 
-  if (stage === "SPEED_INTRO") {
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
-            <StageIntroScreen title="Quick Check" subtitle="오늘 단어 전체를 빠르게 확인합니다" onDone={() => setStage("SPEED_1")} />
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
+      return (
+        <CardWrap>
+          {Debug}
 
-  if (stage === "SPEED_1") {
-  return (
-    <PageShell>
-      <FocusModeWrapper>
-        <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-          <DebugPanel info={debugInfo} />
+          <SummaryScreen
+            words={allWords}
+            prescreenMap={(() => {
+              const m: Record<string, any> = {};
+              for (const id of prescreenResult?.knownWordIds ?? []) m[id] = true;
+              for (const id of prescreenResult?.unknownWordIds ?? []) m[id] = false;
+              return m;
+            })()}
+            spellPassMap={(() => {
+              const m: Record<string, any> = {};
+              const failed = new Set<string>((spellingResult?.spellingFailedIds ?? []).filter(Boolean));
+              for (const id of prescreenResult?.knownWordIds ?? []) {
+                m[id] = failed.has(id) ? false : true;
+              }
+              return m;
+            })()}
+            onContinue={(payload: any) => {
+              if (payload?.xknowList && Array.isArray(payload.xknowList)) {
+                setLearningWords(payload.xknowList);
+                setStage(payload.xknowList.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
+                return;
+              }
 
+              const base = prescreenResult.unknownWordIds
+                .map((id: string) => allWords.find((w) => w.id === id))
+                .filter(Boolean) as SessionWord[];
+
+              const failedArr = (spellingResult as any).spellingFailedIds
+                ? (spellingResult as any).spellingFailedIds
+                    .map((id: string) => allWords.find((w) => w.id === id))
+                    .filter(Boolean)
+                : ([] as SessionWord[]);
+
+              const map = new Map<string, SessionWord>();
+              [...base, ...failedArr].forEach((w) => map.set(w.id, w));
+
+              const final = [...map.values()];
+              setLearningWords(final);
+              setStage(final.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
+            }}
+          />
+        </CardWrap>
+      );
+    }
+
+    if (stage === "LEARNING_INTRO") {
+      return (
+        <CardWrap>
+          {Debug}
+          <StageIntroScreen title="Pay Attention!" subtitle="집중! 단어를 배워봅시다" onDone={() => setStage("LEARNING")} />
+        </CardWrap>
+      );
+    }
+
+    if (stage === "LEARNING") {
+      return (
+        <CardWrap>
+          {Debug}
+          <LearningRunner words={learningPayload} onFinish={() => setStage("SPEED_INTRO")} />
+        </CardWrap>
+      );
+    }
+
+    if (stage === "SPEED_INTRO") {
+      return (
+        <CardWrap>
+          {Debug}
+          <StageIntroScreen title="Quick Check" subtitle="오늘 단어 전체를 빠르게 확인합니다" onDone={() => setStage("SPEED_1")} />
+        </CardWrap>
+      );
+    }
+
+    if (stage === "SPEED_1") {
+      return (
+        <CardWrap>
+          {Debug}
           <SpeedChallengeRunner
             userId={userId}
             questions={shuffleArray(speedQuestions)}
@@ -1402,219 +1418,209 @@ export default function VocabSessionPage() {
               setStage("SPEED_SUMMARY");
             }}
           />
-        </div>
-      </FocusModeWrapper>
-    </PageShell>
-  );
-}
+        </CardWrap>
+      );
+    }
 
-if (stage === "SPEED_2") {
-  return (
-    <PageShell>
-      <FocusModeWrapper>
-        <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-          <DebugPanel info={debugInfo} />
+    if (stage === "SPEED_2") {
+      if (!retrySpeedQuestions || retrySpeedQuestions.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+              No retry questions. Continue to Drill.
+            </div>
+            <button
+              type="button"
+              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
+              onClick={() => setStage("DRILL_INTRO")}
+            >
+              Continue
+            </button>
+          </CardWrap>
+        );
+      }
 
-          <SpeedChallengeRunner
-            userId={userId}
-            questions={shuffleArray(retrySpeedQuestions)}
-            tryIndex={2}
-            onFinish={() => setStage("DRILL_INTRO")}
-          />
-        </div>
-      </FocusModeWrapper>
-    </PageShell>
-  );
-}
-
-  if (stage === "SPEED_2") {
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
-            <div key={`speed-2-${allWordIdsKey}`}>
-              <SpeedChallengeRunner
+      return (
+        <CardWrap>
+          {Debug}
+          <div key={`speed-2-${retryIds.join(",") || "none"}`}>
+            <SpeedChallengeRunner
               userId={userId}
               questions={shuffleArray(retrySpeedQuestions)}
               tryIndex={2}
               onFinish={() => setStage("DRILL_INTRO")}
             />
           </div>
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
+        </CardWrap>
+      );
+    }
 
-  if (stage === "SPEED_SUMMARY" && speedResult) {
-  return (
-    <PageShell>
-      <FocusModeWrapper>
-        <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-          <DebugPanel info={debugInfo} />
+    if (stage === "SPEED_SUMMARY" && speedResult) {
+      const canRetry = retrySpeedQuestions.length > 0;
 
-          <div className="space-y-3 rounded-xl border p-4">
-            <div className="text-lg font-semibold">Quick Check Result</div>
+      return (
+        <CardWrap>
+          {Debug}
 
-            <pre className="max-h-64 overflow-auto rounded-lg bg-black/5 p-3 text-xs">
+          <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+            <div className="text-lg font-semibold text-white">Quick Check Result</div>
+
+            <pre className="max-h-64 overflow-auto rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
               {JSON.stringify(speedResult, null, 2)}
             </pre>
 
             <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded-lg border px-3 py-2 text-sm"
-                onClick={() => setStage("SPEED_2")}
-              >
-                Retry
-              </button>
+              {canRetry ? (
+                <button
+                  type="button"
+                  className="flex-1 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white"
+                  onClick={() => setStage("SPEED_2")}
+                >
+                  Retry
+                </button>
+              ) : null}
 
               <button
                 type="button"
-                className="rounded-lg bg-black px-3 py-2 text-sm text-white"
+                className="flex-1 rounded-lg bg-emerald-500/90 px-3 py-2 text-sm font-semibold text-black"
                 onClick={() => setStage("DRILL_INTRO")}
               >
                 Continue
               </button>
             </div>
+
+            {!canRetry ? <div className="text-xs text-white/50">No wrong words detected, skipping retry.</div> : null}
           </div>
-        </div>
-      </FocusModeWrapper>
-    </PageShell>
-  );
-}
+        </CardWrap>
+      );
+    }
 
-  if (stage === "DRILL_INTRO") {
-    const canDrill = drillTasks.length > 0;
+    if (stage === "DRILL_INTRO") {
+      const canDrill = drillTasks.length > 0;
+      const effectiveSetId = shortcut.setId || debugInfo?.assignmentSetId || "";
+      const setIdQS = effectiveSetId ? `&setId=${encodeURIComponent(effectiveSetId)}` : "";
 
-    const effectiveSetId = shortcut.setId || debugInfo?.assignmentSetId || "";
-    const setIdQS = effectiveSetId ? `&setId=${encodeURIComponent(effectiveSetId)}` : "";
+      const title =
+        onlyType === "SENTENCE_BLANK" ? "Fill in the Blank" : onlyType ? `Drill: ${onlyType}` : "Drill Time";
+      const subtitle =
+        onlyType === "SENTENCE_BLANK"
+          ? "SENTENCE_BLANK only (shortcut)"
+          : onlyType
+          ? `${onlyType} only (shortcut)`
+          : "이제 완전히 내 것으로 만듭니다";
 
-    const title = onlyType === "SENTENCE_BLANK" ? "Fill in the Blank" : onlyType ? `Drill: ${onlyType}` : "Drill Time";
-    const subtitle =
-      onlyType === "SENTENCE_BLANK"
-        ? "SENTENCE_BLANK only (shortcut)"
-        : onlyType
-        ? `${onlyType} only (shortcut)`
-        : "이제 완전히 내 것으로 만듭니다";
+      return (
+        <CardWrap>
+          {Debug}
 
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
+          {!canDrill && (
+            <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+              drillTasks가 비어있어서 Drill을 실행할 수 없어요.
+            </div>
+          )}
 
-            {!canDrill && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                drillTasks가 비어있어서 Drill을 실행할 수 없어요. (정상이라면 이 메시지는 거의 안 떠야 함)
-              </div>
-            )}
+          <StageIntroScreen
+            title={title}
+            subtitle={subtitle}
+            onDone={() => {
+              if (!canDrill) return;
+              setStage("DRILL");
+            }}
+          />
 
-            <StageIntroScreen
-              title={title}
-              subtitle={subtitle}
-              onDone={() => {
-                if (!canDrill) return;
-                setStage("DRILL");
-              }}
-            />
+          <button
+            disabled={!canDrill}
+            onClick={() => {
+              if (!canDrill) return;
+              seedOptionalDrillEntry();
+              window.location.href = "/vocab/drill";
+            }}
+            className={[
+              "w-full rounded-xl border py-3 text-sm",
+              canDrill ? "border-white/15 bg-white text-black" : "border-white/10 bg-white/10 text-white/40",
+            ].join(" ")}
+          >
+            (Debug) Optional Drill Page로 실행 (/vocab/drill)
+          </button>
 
+          <div className="grid grid-cols-2 gap-2">
             <button
-              disabled={!canDrill}
               onClick={() => {
-                if (!canDrill) return;
-                seedOptionalDrillEntry();
-                window.location.href = "/vocab/drill";
+                window.location.href = `/vocab/session?jump=DRILL&only=FILL_IN_THE_BLANKS${setIdQS}`;
               }}
-              className={["w-full rounded-xl border py-3 text-sm", canDrill ? "bg-white text-black" : "bg-gray-100 text-gray-400"].join(" ")}
+              className="w-full rounded-xl border border-white/15 bg-white py-3 text-sm text-black"
             >
-              (Debug) Optional Drill Page로 실행 (/vocab/drill)
+              Shortcut: Fill in the Blank
             </button>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  window.location.href = `/vocab/session?jump=DRILL&only=FILL_IN_THE_BLANKS${setIdQS}`;
-                }}
-                className="w-full rounded-xl border bg-white py-3 text-sm text-black"
-              >
-                Shortcut: Fill in the Blank
-              </button>
-
-              <button
-                onClick={() => {
-                  window.location.href = `/vocab/session?jump=DRILL${setIdQS}`;
-                }}
-                className="w-full rounded-xl border bg-white py-3 text-sm text-black"
-              >
-                Shortcut: Drill (all)
-              </button>
-            </div>
-
-            <div className="rounded-xl border bg-white p-3 text-xs text-slate-700">
-              <div className="font-semibold">Drill Policy Snapshot</div>
-              <div className="mt-1">targetWordIds: {drillTargetWordIds.length}</div>
-              <div>tasks: {drillTasks.length}</div>
-              <div className="text-slate-500">
-                order: {effectiveDrillOrder.join(" → ")}
-                {effectiveDrillOrder.includes("WORD_FORM_PICK") ? "" : " (WORD_FORM_PICK skipped: no word_forms)"}
-              </div>
-
-              <div className="mt-2 font-semibold">types:</div>
-              <pre className="mt-1 whitespace-pre-wrap rounded-lg border bg-slate-50 p-2 text-[11px] text-slate-700">
-                {JSON.stringify(countByDrillType(drillTasks), null, 2)}
-              </pre>
-
-              {shortcut.jump === "DRILL" && (
-                <div className="mt-1 text-indigo-600">
-                  shortcut: jump=DRILL {onlyType ? `/ only=${onlyType}` : shortcut.only ? `/ only=${shortcut.only}` : ""}{" "}
-                  {effectiveSetId ? `/ setId=${effectiveSetId}` : ""} {process.env.NODE_ENV !== "production" && shortcut.n > 0 ? `/ n=${shortcut.n}` : ""}{" "}
-                  {process.env.NODE_ENV !== "production" && shortcut.seed ? `/ seed=${shortcut.seed}` : ""}
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => {
+                window.location.href = `/vocab/session?jump=DRILL${setIdQS}`;
+              }}
+              className="w-full rounded-xl border border-white/15 bg-white py-3 text-sm text-black"
+            >
+              Shortcut: Drill (all)
+            </button>
           </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
 
-if (stage === "DRILL") {
-  const canDrill = drillTasks.length > 0;
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/80">
+            <div className="font-semibold">Drill Policy Snapshot</div>
+            <div className="mt-1">targetWordIds: {drillTargetWordIds.length}</div>
+            <div>tasks: {drillTasks.length}</div>
+            <div className="text-white/50">
+              order: {effectiveDrillOrder.join(" → ")}
+              {effectiveDrillOrder.includes("WORD_FORM_PICK") ? "" : " (WORD_FORM_PICK skipped: no word_forms)"}
+            </div>
 
-  if (!canDrill) {
-    return (
-      <PageShell>
-        <FocusModeWrapper>
-          <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-            <DebugPanel info={debugInfo} />
-            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
+            <div className="mt-2 font-semibold">types:</div>
+            <pre className="mt-1 whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-2 text-[11px] text-white/80">
+              {JSON.stringify(countByDrillType(drillTasks), null, 2)}
+            </pre>
+
+            {shortcut.jump === "DRILL" && (
+              <div className="mt-1 text-emerald-200">
+                shortcut: jump=DRILL {onlyType ? `/ only=${onlyType}` : shortcut.only ? `/ only=${shortcut.only}` : ""}{" "}
+                {effectiveSetId ? `/ setId=${effectiveSetId}` : ""}{" "}
+                {process.env.NODE_ENV !== "production" && shortcut.n > 0 ? `/ n=${shortcut.n}` : ""}{" "}
+                {process.env.NODE_ENV !== "production" && shortcut.seed ? `/ seed=${shortcut.seed}` : ""}{" "}
+                {showDebug ? "/ debug=1" : ""}
+              </div>
+            )}
+          </div>
+        </CardWrap>
+      );
+    }
+
+    if (stage === "DRILL") {
+      const canDrill = drillTasks.length > 0;
+
+      if (!canDrill) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
               Drill tasks are empty. (blocked to prevent auto-skip)
             </div>
-
             <button
-              className="w-full rounded-xl bg-black py-3 text-white"
+              type="button"
+              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
               onClick={() => setStage("DRILL_INTRO")}
             >
               Back
             </button>
-          </div>
-        </FocusModeWrapper>
-      </PageShell>
-    );
-  }
+          </CardWrap>
+        );
+      }
 
-  const DrillRunnerAny = DrillRunner as any;
+      const DrillRunnerAny = DrillRunner as any;
 
-  return (
-    <PageShell>
-      <FocusModeWrapper>
-        <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-4">
-          <DebugPanel info={debugInfo} />
+      return (
+        <CardWrap>
+          {Debug}
 
           {loadError && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-200">
               {loadError}
             </div>
           )}
@@ -1629,28 +1635,21 @@ if (stage === "DRILL") {
             onFinish={() => setStage("DONE")}
             onDone={() => setStage("DONE")}
           />
-        </div>
-      </FocusModeWrapper>
-    </PageShell>
-  );
-}
+        </CardWrap>
+      );
+    }
 
-if (stage === "DONE") {
-  return (
-    <PageShell>
-      <FocusModeWrapper>
-        <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-6">
-          <DebugPanel info={debugInfo} />
+    if (stage === "DONE") {
+      return (
+        <CardWrap className="py-10">
+          {Debug}
 
-          <div className="rounded-2xl border bg-white p-8 text-center text-black">
+          <div className="rounded-2xl border border-white/10 bg-white p-8 text-center text-black">
             <h2 className="text-2xl font-bold">Done ✅</h2>
             <div className="mt-2 text-sm text-slate-600">오늘 세션 완료!</div>
 
             <div className="mt-6 space-y-2">
-              <button
-                className="w-full rounded-xl bg-black py-3 text-white"
-                onClick={() => window.location.reload()}
-              >
+              <button className="w-full rounded-xl bg-black py-3 text-white" onClick={() => window.location.reload()}>
                 Restart
               </button>
 
@@ -1668,26 +1667,39 @@ if (stage === "DONE") {
               </button>
             </div>
           </div>
-        </div>
-      </FocusModeWrapper>
-    </PageShell>
-  );
-}
+        </CardWrap>
+      );
+    }
 
-/** Fallback (should never happen) */
-return (
-  <PageShell>
-    <FocusModeWrapper>
-      <div className="mx-auto w-full max-w-xl space-y-3 px-4 py-6">
-        <DebugPanel info={debugInfo} />
-        <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
+    return (
+      <CardWrap className="py-10">
+        {Debug}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
           Unknown stage: <code className="break-all">{stage}</code>
         </div>
-        <button className="w-full rounded-xl bg-black py-3 text-white" onClick={() => window.location.reload()}>
+        <button
+          className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
+          onClick={() => window.location.reload()}
+        >
           Reload
         </button>
-      </div>
-    </FocusModeWrapper>
-  </PageShell>
-);
+      </CardWrap>
+    );
+  };
+
+  return (
+    <PageShell>
+      {/* ✅ REMOVE THE HAZE:
+          - tintOpacity={0} disables gradient tint overlay
+          - showTitle={false} prevents top pill overlay
+          - showMascot={false} prevents double mascot (MascotLayer already renders)
+      */}
+     <StageBackground />
+
+
+      <MascotLayer stage={stage} mood={penguin.mood} />
+
+      <div className="relative z-10">{renderStage()}</div>
+    </PageShell>
+  );
 }

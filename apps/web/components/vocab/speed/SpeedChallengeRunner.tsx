@@ -1,18 +1,16 @@
-// apps/web/components/vocab/speed/SpeedChallengeRunner.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { SpeedAttemptResult, SpeedQuestion } from "@/models/vocab/speed.types";
+import StageScaffold from "@/components/common/stage/StageScaffold";
 
 type Props = {
   userId: string;
   questions?: SpeedQuestion[];
-  tryIndex?: number; // 1 or 2
+  tryIndex?: number;
   onFinish: (result: SpeedAttemptResult) => void;
-
-  /** Optional tuning */
-  secondsPerQuestion?: number; // default 6
-  minPassAccuracy?: number; // default 0.7
+  secondsPerQuestion?: number;
+  minPassAccuracy?: number;
 };
 
 function norm(s: unknown): string {
@@ -21,6 +19,14 @@ function norm(s: unknown): string {
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="h-9 px-4 rounded-full font-extrabold bg-white/90 border border-black/10 inline-flex items-center">
+      <span style={{ fontSize: "clamp(12px, 1.35cqi, 14px)" }}>{children}</span>
+    </div>
+  );
 }
 
 export default function SpeedChallengeRunner({
@@ -32,7 +38,6 @@ export default function SpeedChallengeRunner({
   minPassAccuracy = 0.7,
 }: Props) {
   const qs = useMemo(() => (Array.isArray(questions) ? questions : []).filter(Boolean), [questions]);
-
   const total = qs.length;
 
   const [index, setIndex] = useState(0);
@@ -48,7 +53,6 @@ export default function SpeedChallengeRunner({
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // reset when question set changes
   useEffect(() => {
     setIndex(0);
     setInput("");
@@ -59,12 +63,10 @@ export default function SpeedChallengeRunner({
     setTimeLeft(timeLimit);
   }, [qs, timeLimit]);
 
-  // focus input
   useEffect(() => {
     inputRef.current?.focus();
   }, [index]);
 
-  // if no questions, finish immediately
   useEffect(() => {
     if (total !== 0) return;
 
@@ -86,7 +88,6 @@ export default function SpeedChallengeRunner({
 
   const q = total > 0 ? qs[index] : null;
 
-  // timer per question
   useEffect(() => {
     if (!q) return;
     if (locked) return;
@@ -94,16 +95,12 @@ export default function SpeedChallengeRunner({
     setTimeLeft(timeLimit);
 
     const id = window.setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) return 0;
-        return t - 1;
-      });
+      setTimeLeft((t) => (t <= 1 ? 0 : t - 1));
     }, 1000);
 
     return () => window.clearInterval(id);
   }, [q?.id, locked, timeLimit]);
 
-  // when time runs out, auto mark wrong + advance
   useEffect(() => {
     if (!q) return;
     if (locked) return;
@@ -156,9 +153,13 @@ export default function SpeedChallengeRunner({
 
       const nextIndex = index + 1;
 
-      // compute next values safely
       const nextCorrect = isCorrect ? correctCount + 1 : correctCount;
-      const nextWrong = !isCorrect && wid ? (wrongWordIds.includes(wid) ? wrongWordIds : [...wrongWordIds, wid]) : wrongWordIds;
+      const nextWrong =
+        !isCorrect && wid
+          ? wrongWordIds.includes(wid)
+            ? wrongWordIds
+            : [...wrongWordIds, wid]
+          : wrongWordIds;
 
       if (nextIndex >= total) {
         finishNow(nextCorrect, nextWrong);
@@ -167,7 +168,7 @@ export default function SpeedChallengeRunner({
 
       setIndex(nextIndex);
       setLocked(false);
-    }, 450);
+    }, 380);
   }
 
   function onSubmit() {
@@ -183,74 +184,73 @@ export default function SpeedChallengeRunner({
 
   if (total === 0) return null;
 
-  const progressText = `${index + 1} / ${total}`;
   const accuracySoFar = index === 0 ? 0 : correctCount / index;
 
+  const topRight = (
+    <div className="flex items-center gap-2">
+      <Pill>
+        <span className={timeLeft <= 2 ? "text-rose-700" : "text-neutral-800"}>⏱ {timeLeft}s</span>
+      </Pill>
+      <Pill>Try {tryIndex}</Pill>
+    </div>
+  );
+
+  const hint = `Correct: ${correctCount} • Accuracy (so far): ${Math.round(accuracySoFar * 100)}% • Pass ≥ ${Math.round(
+    minPassAccuracy * 100
+  )}%`;
+
   return (
-    <div className="rounded-2xl border bg-white p-6">
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold text-slate-900">Speed Challenge</div>
-        <div className="text-xs text-slate-500">
-          Try {tryIndex} • {progressText}
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-xl border bg-slate-50 p-4">
-        <div className="text-xs text-slate-500">Prompt</div>
-        <div className="mt-1 text-lg font-bold text-slate-900">{q?.prompt ?? ""}</div>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <div>Type the word</div>
-          <div className={timeLeft <= 2 ? "text-red-600 font-semibold" : ""}>⏱ {timeLeft}s</div>
-        </div>
-
-        <input
-          ref={inputRef}
-          value={input}
-          disabled={locked}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onSubmit();
-          }}
-          className="w-full rounded-xl border px-4 py-3 text-base outline-none focus:ring-2 focus:ring-black/10"
-          placeholder="Type here..."
-          autoComplete="off"
-          spellCheck={false}
-        />
-
-        <button
-          onClick={onSubmit}
-          disabled={locked || norm(input).length === 0}
-          className={[
-            "w-full rounded-xl bg-black py-3 text-sm font-semibold text-white",
-            locked || norm(input).length === 0 ? "opacity-60" : "hover:opacity-95",
-          ].join(" ")}
-        >
-          Submit
-        </button>
-
-        {lastVerdict === "correct" && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-            ✅ Correct
+    <div className="h-full w-full">
+      <StageScaffold
+        stageKey="speed"
+        stageLabel="Speed Check"
+        title="Speed Check"
+        subtitle={`Type the correct word. ${timeLimit}s per question.`}
+        step={{ index: index + 1, total }}
+        topRight={topRight}
+        hint={hint}
+        primary={{ label: "Submit", onClick: onSubmit, disabled: locked || norm(input).length === 0 }}
+        align="center"
+        maxWidthClassName="max-w-[980px]"
+      >
+        <div className="mx-auto max-w-[780px] space-y-4">
+          <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5 text-left">
+            <div className="text-neutral-500 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+              Prompt
+            </div>
+            <div className="mt-2 text-neutral-900 font-extrabold" style={{ fontSize: "clamp(18px, 2.4cqi, 30px)" }}>
+              {q?.prompt ?? ""}
+            </div>
           </div>
-        )}
-        {lastVerdict === "wrong" && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-            ❌ Wrong <span className="text-red-700/80">(Answer: {q?.answer})</span>
-          </div>
-        )}
-      </div>
 
-      <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-        <div>
-          Correct: <span className="font-semibold text-slate-900">{correctCount}</span>
+          <input
+            ref={inputRef}
+            value={input}
+            disabled={locked}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSubmit();
+            }}
+            className="w-full rounded-2xl border border-black/10 bg-white/80 px-5 py-4 text-center font-extrabold outline-none focus:ring-2 focus:ring-black/10"
+            style={{ fontSize: "clamp(18px, 2.3cqi, 30px)" }}
+            placeholder="Type here..."
+            autoComplete="off"
+            spellCheck={false}
+          />
+
+          {lastVerdict === "correct" ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 font-bold">
+              ✅ Correct
+            </div>
+          ) : null}
+
+          {lastVerdict === "wrong" ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-800 font-bold">
+              ❌ Wrong <span className="opacity-80">(Answer: {q?.answer})</span>
+            </div>
+          ) : null}
         </div>
-        <div>
-          Accuracy (so far): <span className="font-semibold text-slate-900">{Math.round(accuracySoFar * 100)}%</span>
-        </div>
-      </div>
+      </StageScaffold>
     </div>
   );
 }

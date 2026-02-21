@@ -1,0 +1,36 @@
+:root {
+  /* Brand */
+  --lx-primary: #2f6bff;
+  --lx-secondary: #2fd6c5;
+  --lx-accent: #ffc84a;
+  --lx-danger: #ff6b7a;
+
+  /* UI */
+  --lx-bg: #eaf5ff;
+  --lx-surface: #ffffff;
+  --lx-border: rgba(47, 107, 255, 0.18);
+  --lx-text: #1f2a44;
+  --lx-muted: rgba(31, 42, 68, 0.6);
+
+  /* States */
+  --lx-success: #2ed47a;
+  --lx-hint: #ffcc66;
+  --lx-focus: #7c5cff;
+  --lx-info: #2fd6c5;
+
+  /* Focus overlay */
+  --lx-overlay: rgba(10, 20, 40, 0.55);
+}
+
+/* Focus preset (시험모드에서 body에 class 붙이면 테마 전환 가능) */
+.lx-theme-focus {
+  --lx-bg: #eef2ff;
+  --lx-accent: #7c5cff;
+  --lx-overlay: rgba(10, 20, 40, 0.6);
+}
+
+/* Reward preset */
+.lx-theme-reward {
+  --lx-bg: #fff3e6;
+  --lx-accent: #ffcc66;
+}
