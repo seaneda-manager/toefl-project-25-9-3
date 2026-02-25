@@ -411,6 +411,7 @@ export async function listVocabTracksAction(): Promise<ListVocabTracksResult> {
 /* =========================================================
  * Track + Day01~N Sets 생성 + vocab_track_sets 연결
  * - best effort: is_active=true 세팅 (컬럼 없으면 자동 fallback)
+ * - (옵션) recockStudents=true면 해당 트랙 학생 큐를 재정렬
  * ======================================================= */
 export async function createTrackAndSetsFromDaysJsonAction(params: {
   slug: string;
@@ -418,6 +419,10 @@ export async function createTrackAndSetsFromDaysJsonAction(params: {
   description?: string | null;
   daysJsonText: string;
   strict?: boolean;
+
+  /** OPTIONAL: after track sets update, recock students using this track */
+  recockStudents?: boolean;
+  recockQueueSize?: number;
 }) {
   const supabase = await getServerSupabase();
   await getUserOrThrow(supabase);
@@ -526,7 +531,22 @@ export async function createTrackAndSetsFromDaysJsonAction(params: {
     .update({ total_days: days.length } as any)
     .eq("id", trackId);
 
-  return { ok: true, trackId, totalDays: days.length, createdSets, missingAll };
+  // OPTIONAL: recock
+  const recockStudents = Boolean(params.recockStudents ?? false);
+  const recockQueueSize = clampInt(params.recockQueueSize ?? 3, 1, 20, 3);
+
+  let recockSummary: any = null;
+  if (recockStudents) {
+    // heavy mutation: require admin
+    await assertAdminOrThrow2(supabase);
+    recockSummary = await recockAllPlansForTrackAction({
+      trackId,
+      queueSize: recockQueueSize,
+      dryRun: false,
+    });
+  }
+
+  return { ok: true, trackId, totalDays: days.length, createdSets, missingAll, recockSummary };
 }
 
 /* =========================================================
@@ -786,11 +806,13 @@ export async function cancelStudentVocabAssignmentAction(params: {
   if (derr) throw new Error("delete failed");
 
   // rewind cursor to this day
-  await supabase
+  const u = await supabase
     .from("student_vocab_plans")
     .update({ cursor_day_index: dayIndex } as any)
     .eq("student_id", studentId)
     .eq("track_id", trackId);
+
+  if (u.error) throw new Error(`cursor rewind failed: ${u.error.message ?? ""}`);
 
   const ensureRes = await ensureCockedQueueForPlan(supabase, {
     studentId,
@@ -1129,6 +1151,135 @@ function chunkArr<T>(arr: T[], size: number): T[][] {
 }
 
 /* =========================================================
+ * ✅ Admin: Recock all plans for a track
+ * - Deletes NOT-started & NOT-completed assignments (so mapping changes reflect)
+ * - Rewinds cursor to earliest deleted day (so we don't skip)
+ * - Then recocks via ensureCockedQueueForPlan(auto)
+ * ======================================================= */
+export async function recockAllPlansForTrackAction(params: {
+  trackId: string;
+  queueSize?: number;
+  dryRun?: boolean;
+}) {
+  const supabase = await getServerSupabase();
+  await assertAdminOrThrow2(supabase);
+
+  const trackId = cleanStr(params.trackId);
+  if (!trackId) throw new Error("trackId is required");
+
+  const queueSize = clampInt(params.queueSize ?? 3, 1, 20, 3);
+  const dryRun = Boolean(params.dryRun ?? false);
+
+  const { data: plans, error: perr } = await supabase
+    .from("student_vocab_plans")
+    .select("student_id, track_id, cursor_day_index, start_day_index, is_enabled, is_paused")
+    .eq("track_id", trackId)
+    .limit(5000);
+
+  if (perr) throw new Error(`plan list failed: ${perr.message ?? ""}`);
+
+  const list = (plans as any[]) ?? [];
+  const results: any[] = [];
+
+  for (const chunk of chunkArr(list, 10)) {
+    const batch = await Promise.all(
+      chunk.map(async (p: any) => {
+        const studentId = String(p.student_id ?? "").trim();
+        if (!studentId) return { ok: false, reason: "NO_STUDENT_ID" };
+
+        let deletedCount = 0;
+        let minDeleted: number | null = null;
+        let rewoundTo: number | null = null;
+        let ensure: any = null;
+
+        if (!dryRun) {
+          // (1) delete stale queue items (not started, not completed)
+          const { data: deletedRows, error: derr } = await supabase
+            .from("student_vocab_assignments")
+            .delete()
+            .eq("student_id", studentId)
+            .eq("track_id", trackId)
+            .is("started_at", null)
+            .is("completed_at", null)
+            .select("day_index");
+
+          if (derr) {
+            return {
+              ok: false,
+              studentId,
+              reason: "DELETE_FAILED",
+              note: derr.message ?? "",
+            };
+          }
+
+          const del = (deletedRows as any[]) ?? [];
+          deletedCount = del.length;
+          if (deletedCount > 0) {
+            minDeleted = Math.min(...del.map((r: any) => Number(r.day_index)));
+          }
+
+          // (2) rewind cursor so we don’t skip deleted days
+          if (minDeleted != null && Number.isFinite(minDeleted)) {
+            const currentCursor = clampInt(p.cursor_day_index ?? minDeleted, 1, 9999, minDeleted);
+            const newCursor = Math.min(currentCursor, minDeleted);
+
+            const { error: uerr } = await supabase
+              .from("student_vocab_plans")
+              .update({ cursor_day_index: newCursor } as any)
+              .eq("student_id", studentId)
+              .eq("track_id", trackId);
+
+            if (uerr) {
+              return {
+                ok: false,
+                studentId,
+                reason: "CURSOR_REWIND_FAILED",
+                note: uerr.message ?? "",
+              };
+            }
+            rewoundTo = newCursor;
+          }
+
+          // (3) recock using the SSOT engine
+          ensure = await ensureCockedQueueForPlan(supabase, {
+            studentId,
+            trackId,
+            mode: "auto",
+            queueSize,
+          });
+        }
+
+        return {
+          ok: true,
+          studentId,
+          deletedCount,
+          minDeleted,
+          rewoundTo,
+          ensure,
+          dryRun,
+        };
+      }),
+    );
+
+    results.push(...batch);
+  }
+
+  const okCount = results.filter((r) => r?.ok).length;
+  const failCount = results.length - okCount;
+
+  return {
+    ok: true,
+    trackId,
+    queueSize,
+    dryRun,
+    totalPlans: results.length,
+    okCount,
+    failCount,
+    results,
+  };
+}
+
+/* =========================================================
  * Admin: Single Active Track (hide duplicates)
  * - if is_active column missing: returns ok:false + reason
  * ======================================================= */
@@ -1420,6 +1571,7 @@ export async function repairNeungyulTracksAction(params?: {
     ensureResults: ensureResults.slice(0, 50),
   };
 }
+
 /* =========================================================
  * Admin: Sync imported Day sets -> vocab_track_sets
  *
@@ -1428,6 +1580,7 @@ export async function repairNeungyulTracksAction(params?: {
  * - vocab_track_sets upsert (track_id, day_index)
  * - 빈 set(아이템 0개)은 스킵/리포트
  * - is_active 컬럼이 있으면 true로 켜줌 (best-effort)
+ * - (옵션) recockStudents=true면 해당 트랙 학생 큐를 재정렬
  * ======================================================= */
 
 function parseDayIndexFromSetTitle(title: string): number | null {
@@ -1480,6 +1633,10 @@ export async function syncImportedDaySetsToTrackAction(params: {
 
   /** if true: only report, no mutation */
   dryRun?: boolean;
+
+  /** OPTIONAL: after upsert, recock students using this track */
+  recockStudents?: boolean;
+  recockQueueSize?: number;
 }) {
   const supabase = await getServerSupabase();
   await assertAdminOrThrow2(supabase);
@@ -1533,7 +1690,8 @@ export async function syncImportedDaySetsToTrackAction(params: {
           .select("id")
           .single();
 
-        if (r2.error || !(r2.data as any)?.id) throw new Error(`track create failed: ${r2.error?.message ?? ""}`);
+        if (r2.error || !(r2.data as any)?.id)
+          throw new Error(`track create failed: ${r2.error?.message ?? ""}`);
         trackId = String((r2.data as any).id);
       } else {
         throw new Error(`track create failed: ${r1.error?.message ?? ""}`);
@@ -1657,6 +1815,19 @@ export async function syncImportedDaySetsToTrackAction(params: {
     }
   }
 
+  // OPTIONAL: recock
+  const recockStudents = Boolean(params.recockStudents ?? false);
+  const recockQueueSize = clampInt(params.recockQueueSize ?? 3, 1, 20, 3);
+
+  let recockSummary: any = null;
+  if (!dryRun && recockStudents) {
+    recockSummary = await recockAllPlansForTrackAction({
+      trackId,
+      queueSize: recockQueueSize,
+      dryRun: false,
+    });
+  }
+
   return {
     ok: true as const,
     dryRun,
@@ -1676,5 +1847,7 @@ export async function syncImportedDaySetsToTrackAction(params: {
 
     unparsableCount: unparsable.length,
     unparsable: unparsable.slice(0, 30),
+
+    recockSummary,
   };
 }

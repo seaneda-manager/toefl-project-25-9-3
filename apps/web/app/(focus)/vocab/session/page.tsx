@@ -20,10 +20,12 @@ import type { SpeedQuestion, SpeedAttemptResult } from "@/models/vocab/speed.typ
 
 import DrillRunner from "@/components/vocab/drill/DrillRunner";
 import type { DrillTask, DrillType } from "@/components/vocab/drill/drill.types";
-import { buildBlockDrillTasksV1, type WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
+import {
+  buildBlockDrillTasksV1,
+  type WordFormRowLike,
+} from "@/lib/vocab/drill/buildBlockDrillTasksV1";
 
 import { createBrowserClient } from "@/lib/supabase/client";
-import StageBackground from "@/components/common/StageBackground";
 import MascotLayer from "@/components/common/MascotLayer";
 
 // ✅ server action (service-role)
@@ -49,7 +51,12 @@ const SPEED_DRILL_KEY = "pendingDrillTasks";
  * (LISTEN_ARRANGE moved to Homework)
  * ======================================================= */
 const DRILL_TASKS_VERSION = "drill-v1.0-2026-01-28";
-const CORE_DRILL_ORDER: DrillType[] = ["SYNONYM", "WORD_FORM_PICK", "SENTENCE_BLANK", "COLLOCATION"];
+const CORE_DRILL_ORDER: DrillType[] = [
+  "SYNONYM",
+  "WORD_FORM_PICK",
+  "SENTENCE_BLANK",
+  "COLLOCATION",
+];
 const MIN_DRILL_WORDS = 6;
 
 /** ✅ Ensure we always fetch FULL word_forms columns when repairing */
@@ -72,7 +79,15 @@ const WORD_FORMS_SELECT = [
 
 function hasAnyWordFormValue(wf: any): boolean {
   if (!wf) return false;
-  const keys = ["noun_form", "adj_form", "adv_form", "ed_adj_form", "verb_3rd", "verb_past", "verb_pp"];
+  const keys = [
+    "noun_form",
+    "adj_form",
+    "adv_form",
+    "ed_adj_form",
+    "verb_3rd",
+    "verb_past",
+    "verb_pp",
+  ];
   for (const k of keys) {
     const v = typeof wf?.[k] === "string" ? wf[k].trim() : "";
     if (v) return true;
@@ -121,31 +136,68 @@ function PageShell({ children }: { children?: React.ReactNode }) {
     </div>
   );
 }
-
 /* =========================================================
- * CARD WRAPPER (✅ page-embedded card mode)
+ * STAGE WRAP (SSOT)
+ * - FocusModeWrapper는 card variant로 유지 (안정)
+ * - 반드시 lx-panel-wrap 구조를 여기서 1번만 보장
  * ======================================================= */
-function CardWrap({
+function StageWrap({
   children,
   className,
+  wrapClassName,
 }: {
   children?: React.ReactNode;
   className?: string;
+  wrapClassName?: string;
 }) {
   return (
     <FocusModeWrapper
       variant="card"
-      panelWidthClass="max-w-xl"
-      className={className}
-      // card variant ignores these, but leaving for clarity
+      panelWidthClass="w-full max-w-none"
+      className={[
+        "text-slate-900",
+        "!bg-transparent !shadow-none !border-0 !p-0",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       dim={false}
       blur={false}
     >
-      <div className="space-y-3">{children}</div>
+      <div className={["lx-panel-wrap", wrapClassName].filter(Boolean).join(" ")}>
+        {children}
+      </div>
     </FocusModeWrapper>
   );
 }
 
+/* ✅ 기존 코드에서 CardWrap을 쓰고 있다면 그대로 살리기 (alias) */
+const CardWrap = StageWrap;
+
+/* =========================================================
+ * STAGE PANEL
+ * - StageWrap이 이미 lx-panel-wrap을 제공하므로
+ *   여기서는 StageIntroScreen만 반환 (wrapper 중복 방지)
+ * ======================================================= */
+function StagePanel({
+  badge,
+  title,
+  subtitle,
+  hint,
+  children,
+}: {
+  badge?: React.ReactNode;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  hint?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <StageIntroScreen badge={badge} title={title} subtitle={subtitle} hint={hint}>
+      {children}
+    </StageIntroScreen>
+  );
+}
 /* =========================================================
  * DEBUG PANEL
  * ======================================================= */
@@ -167,27 +219,36 @@ function DebugPanel({ info }: { info: DebugInfo | null }) {
 
   return (
     <details className="rounded-xl border bg-slate-50 p-3 text-xs text-slate-700">
-      <summary className="cursor-pointer font-semibold">Debug (session loader)</summary>
+      <summary className="cursor-pointer font-semibold">
+        Debug (session loader)
+      </summary>
 
       <div className="mt-2 space-y-1">
         <div>
           userId: <code className="break-all">{info.userId}</code>
         </div>
         <div>
-          academyStudentId: <code className="break-all">{info.academyStudentId ?? "(none)"}</code>
+          academyStudentId:{" "}
+          <code className="break-all">{info.academyStudentId ?? "(none)"}</code>
         </div>
         <div>
-          assignmentId: <code className="break-all">{info.assignmentId ?? "(none)"}</code>
+          assignmentId:{" "}
+          <code className="break-all">{info.assignmentId ?? "(none)"}</code>
         </div>
         <div>
-          set_id: <code className="break-all">{info.assignmentSetId ?? "(none)"}</code>
+          set_id:{" "}
+          <code className="break-all">{info.assignmentSetId ?? "(none)"}</code>
         </div>
         <div>assigned_at: {info.assignedAt ?? "(none)"}</div>
         <div>loadedCount: {info.loadedCount}</div>
         <div>firstWord: {info.firstWord ?? "(none)"}</div>
         <div>
           usingFallback:{" "}
-          <span className={info.usingFallback ? "text-red-600" : "text-emerald-700"}>{String(info.usingFallback)}</span>
+          <span
+            className={info.usingFallback ? "text-red-600" : "text-emerald-700"}
+          >
+            {String(info.usingFallback)}
+          </span>
         </div>
         {info.note && <div className="text-amber-700">note: {info.note}</div>}
         {info.diag && (
@@ -239,7 +300,10 @@ function countByDrillType(tasks: DrillTask[]) {
  * - tasks grouped by drillType (order fixed)
  * - within each drillType: shuffle only inside the group
  */
-function enforceTypeBlocksAndShuffle(tasks: DrillTask[], typeOrder: DrillType[]): DrillTask[] {
+function enforceTypeBlocksAndShuffle(
+  tasks: DrillTask[],
+  typeOrder: DrillType[],
+): DrillTask[] {
   const byType = new Map<DrillType, DrillTask[]>();
 
   for (const t of tasks) {
@@ -297,14 +361,17 @@ type ShortcutParams = {
 };
 
 function readShortcutParams(): ShortcutParams {
-  if (typeof window === "undefined") return { jump: "", only: "", setId: "", n: 0, seed: "", debug: "" };
+  if (typeof window === "undefined")
+    return { jump: "", only: "", setId: "", n: 0, seed: "", debug: "" };
   const sp = new URL(window.location.href).searchParams;
   const jump = (sp.get("jump") ?? "").trim().toUpperCase();
   const only = (sp.get("only") ?? "").trim().toUpperCase();
   const setId = (sp.get("setId") ?? "").trim();
 
   const nRaw = (sp.get("n") ?? sp.get("limit") ?? "").trim();
-  const n = Number.isFinite(Number(nRaw)) ? Math.max(0, Math.floor(Number(nRaw))) : 0;
+  const n = Number.isFinite(Number(nRaw))
+    ? Math.max(0, Math.floor(Number(nRaw)))
+    : 0;
 
   const seed = (sp.get("seed") ?? "").trim();
   const debug = (sp.get("debug") ?? "").trim();
@@ -347,12 +414,20 @@ function seededShuffle<T>(arr: T[], seedInt: number): T[] {
   return shuffleArray(arr, rnd);
 }
 
-function applyDevWordLimit(words: SessionWord[], shortcut: ShortcutParams, contextKey: string) {
+function applyDevWordLimit(
+  words: SessionWord[],
+  shortcut: ShortcutParams,
+  contextKey: string,
+) {
   if (process.env.NODE_ENV === "production") return { words, note: "" };
   const n = shortcut.n;
   if (!n || n <= 0) return { words, note: "" };
 
-  const seedKey = shortcut.seed?.trim() ? shortcut.seed.trim() : contextKey ? contextKey : "default";
+  const seedKey = shortcut.seed?.trim()
+    ? shortcut.seed.trim()
+    : contextKey
+      ? contextKey
+      : "default";
   const seedInt = hashStringToInt(seedKey);
 
   const shuffled = seededShuffle(words, seedInt);
@@ -365,7 +440,10 @@ function applyDevWordLimit(words: SessionWord[], shortcut: ShortcutParams, conte
 function synthesizeDevExamples(wordText: string): string[] {
   const w = String(wordText ?? "").trim();
   if (!w) return [];
-  return [`We need to ${w} the plan before tomorrow.`, `The ${w} of this change could be significant.`];
+  return [
+    `We need to ${w} the plan before tomorrow.`,
+    `The ${w} of this change could be significant.`,
+  ];
 }
 
 /* =========================================================
@@ -438,7 +516,9 @@ function normalizeExamples(v: any): WordMapExample[] {
   if (first && typeof first === "object") {
     return (v as any[])
       .map((x) => {
-        const en = cleanStr(x?.en ?? x?.sentence_en ?? x?.sentence ?? x?.example ?? "");
+        const en = cleanStr(
+          x?.en ?? x?.sentence_en ?? x?.sentence ?? x?.example ?? "",
+        );
         const ko = cleanStr(x?.ko ?? x?.sentence_ko ?? x?.meaning_ko ?? "");
         if (!en) return null;
         return { en, ko: ko || null };
@@ -502,7 +582,11 @@ function normalizeCollocations(v: any): {
         const mk = cleanStr(x?.meaning_ko ?? x?.meaningKo ?? "");
         const rel = cleanStr(x?.relation ?? x?.type ?? x?.kind ?? "");
         const score =
-          typeof x?.score === "number" ? x.score : Number.isFinite(Number(x?.score)) ? Number(x?.score) : null;
+          typeof x?.score === "number"
+            ? x.score
+            : Number.isFinite(Number(x?.score))
+              ? Number(x?.score)
+              : null;
 
         return {
           id: id || null,
@@ -526,7 +610,9 @@ function normalizeCollocations(v: any): {
     if (!p) return { collocations: [one], collocation_pairs: [] };
     return {
       collocations: [`${p.base}|${p.right}`],
-      collocation_pairs: [{ id: null, base: p.base, right: p.right, meaning_ko: null, relation: null, score: null }],
+      collocation_pairs: [
+        { id: null, base: p.base, right: p.right, meaning_ko: null, relation: null, score: null },
+      ],
     };
   }
 
@@ -534,7 +620,9 @@ function normalizeCollocations(v: any): {
 }
 
 function pickId(w: any): string {
-  return cleanStr(w?.id ?? w?.word_id ?? w?.wordId ?? w?.vocab_word_id ?? w?.vocab_item_id ?? "");
+  return cleanStr(
+    w?.id ?? w?.word_id ?? w?.wordId ?? w?.vocab_word_id ?? w?.vocab_item_id ?? "",
+  );
 }
 
 function pickText(w: any): string {
@@ -586,15 +674,19 @@ function collocationsToStrings(v: any): string[] {
 /* =========================================================
  * PAGE
  * ======================================================= */
-export default function VocabSessionPage() {
+  export default function VocabSessionPage() {
   const isDev = process.env.NODE_ENV !== "production";
   const supabase = useMemo(() => createBrowserClient(), []);
   const penguin = usePenguinMood();
 
   const [stage, setStage] = useState<Stage>("LOADING");
 
-  const [prescreenResult, setPrescreenResult] = useState<PrescreenResult | null>(null);
-  const [spellingResult, setSpellingResult] = useState<SpellingResult | null>(null);
+  const [prescreenResult, setPrescreenResult] = useState<PrescreenResult | null>(
+    null,
+  );
+  const [spellingResult, setSpellingResult] = useState<SpellingResult | null>(
+    null,
+  );
 
   const [learningWords, setLearningWords] = useState<SessionWord[]>([]);
   const [speedResult, setSpeedResult] = useState<SpeedAttemptResult | null>(null);
@@ -602,16 +694,25 @@ export default function VocabSessionPage() {
   const [userId, setUserId] = useState<string>("__anon__");
 
   const [allWords, setAllWords] = useState<SessionWord[]>([]);
-  const [wordFormsById, setWordFormsById] = useState<Record<string, WordFormRowLike>>({});
+  const [wordFormsById, setWordFormsById] = useState<
+    Record<string, WordFormRowLike>
+  >({});
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
-  const [wordExamplesById, setWordExamplesById] = useState<Record<string, any>>({});
-  const [wordCollocationsById, setWordCollocationsById] = useState<Record<string, any>>({});
+  const [wordExamplesById, setWordExamplesById] = useState<Record<string, any>>(
+    {},
+  );
+  const [wordCollocationsById, setWordCollocationsById] = useState<
+    Record<string, any>
+  >({});
 
   const shortcut = useMemo(() => readShortcutParams(), []);
-  const onlyType = useMemo(() => canonOnlyToDrillType(shortcut.only), [shortcut.only]);
+  const onlyType = useMemo(
+    () => canonOnlyToDrillType(shortcut.only),
+    [shortcut.only],
+  );
 
   // ✅ Debug visibility:
   const showDebug = useMemo(() => {
@@ -657,7 +758,13 @@ export default function VocabSessionPage() {
   useEffect(() => {
     if (stage === "LOADING") penguin.setDefault();
     if (stage === "PRESCREEN" || stage === "SPELLING") penguin.focus();
-    if (stage === "LEARNING" || stage === "SPEED_1" || stage === "SPEED_2" || stage === "DRILL") penguin.focus();
+    if (
+      stage === "LEARNING" ||
+      stage === "SPEED_1" ||
+      stage === "SPEED_2" ||
+      stage === "DRILL"
+    )
+      penguin.focus();
     if (stage === "DONE") penguin.celebrate();
   }, [stage]);
 
@@ -697,7 +804,12 @@ export default function VocabSessionPage() {
 
           if (shortcut.jump === "DRILL") {
             setPrescreenResult(
-              (prev) => prev ?? ({ knownWordIds: [], unknownWordIds: limited.words.map((w) => w.id) } as any),
+              (prev) =>
+                prev ??
+                ({
+                  knownWordIds: [],
+                  unknownWordIds: limited.words.map((w) => w.id),
+                } as any),
             );
             setSpellingResult((prev) => prev ?? makeEmptySpellingResult());
             setStage("DRILL_INTRO");
@@ -734,7 +846,9 @@ export default function VocabSessionPage() {
             firstWord: limited.words[0]?.text ?? null,
             usingFallback: true,
             note: [
-              `${(res as any)?.error ?? "LOAD_FAILED"} / ${(res as any)?.note ?? ""}${forcedSetId ? ` / setId=${forcedSetId}` : ""}`,
+              `${(res as any)?.error ?? "LOAD_FAILED"} / ${(res as any)?.note ?? ""}${
+                forcedSetId ? ` / setId=${forcedSetId}` : ""
+              }`,
               limited.note,
             ]
               .filter(Boolean)
@@ -744,7 +858,12 @@ export default function VocabSessionPage() {
 
           if (shortcut.jump === "DRILL") {
             setPrescreenResult(
-              (prev) => prev ?? ({ knownWordIds: [], unknownWordIds: limited.words.map((w) => w.id) } as any),
+              (prev) =>
+                prev ??
+                ({
+                  knownWordIds: [],
+                  unknownWordIds: limited.words.map((w) => w.id),
+                } as any),
             );
             setSpellingResult((prev) => prev ?? makeEmptySpellingResult());
             setStage("DRILL_INTRO");
@@ -754,7 +873,9 @@ export default function VocabSessionPage() {
           return;
         }
 
-        const loaded = Array.isArray((res as any).words) ? ((res as any).words as SessionWord[]) : [];
+        const loaded = Array.isArray((res as any).words)
+          ? ((res as any).words as SessionWord[])
+          : [];
         const hasWords = loaded.length > 0;
 
         setWordFormsById((res as any).wordFormsByWordId ?? {});
@@ -774,12 +895,16 @@ export default function VocabSessionPage() {
             loadedCount: 0,
             firstWord: null,
             usingFallback: false,
-            note: `LOADED_OK_BUT_EMPTY / ${(res as any).note ?? ""}${forcedSetId ? ` / setId=${forcedSetId}` : ""}`,
+            note: `LOADED_OK_BUT_EMPTY / ${(res as any).note ?? ""}${
+              forcedSetId ? ` / setId=${forcedSetId}` : ""
+            }`,
             diag: (res as any).diag ?? null,
           });
 
           if (shortcut.jump === "DRILL") {
-            setPrescreenResult((prev) => prev ?? ({ knownWordIds: [], unknownWordIds: [] } as any));
+            setPrescreenResult(
+              (prev) => prev ?? ({ knownWordIds: [], unknownWordIds: [] } as any),
+            );
             setSpellingResult((prev) => prev ?? makeEmptySpellingResult());
             setStage("DRILL_INTRO");
           } else {
@@ -788,7 +913,9 @@ export default function VocabSessionPage() {
           return;
         }
 
-        const contextKey = String((res as any).assignmentId ?? (res as any).setId ?? forcedSetId ?? id);
+        const contextKey = String(
+          (res as any).assignmentId ?? (res as any).setId ?? forcedSetId ?? id,
+        );
         const limited = applyDevWordLimit(loaded, shortcut, contextKey);
 
         setAllWords(limited.words);
@@ -803,7 +930,10 @@ export default function VocabSessionPage() {
           loadedCount: limited.words.length,
           firstWord: limited.words[0]?.text ?? null,
           usingFallback: false,
-          note: [`loaded from DB${forcedSetId ? ` (forced setId=${forcedSetId})` : ""}`, limited.note]
+          note: [
+            `loaded from DB${forcedSetId ? ` (forced setId=${forcedSetId})` : ""}`,
+            limited.note,
+          ]
             .filter(Boolean)
             .join(" / "),
           diag: (res as any).diag ?? null,
@@ -811,7 +941,12 @@ export default function VocabSessionPage() {
 
         if (shortcut.jump === "DRILL") {
           setPrescreenResult(
-            (prev) => prev ?? ({ knownWordIds: [], unknownWordIds: limited.words.map((w: any) => w.id) } as any),
+            (prev) =>
+              prev ??
+              ({
+                knownWordIds: [],
+                unknownWordIds: limited.words.map((w: any) => w.id),
+              } as any),
           );
           setSpellingResult((prev) => prev ?? makeEmptySpellingResult());
           setStage("DRILL_INTRO");
@@ -844,7 +979,12 @@ export default function VocabSessionPage() {
 
         if (shortcut.jump === "DRILL") {
           setPrescreenResult(
-            (prev) => prev ?? ({ knownWordIds: [], unknownWordIds: limited.words.map((w) => w.id) } as any),
+            (prev) =>
+              prev ??
+              ({
+                knownWordIds: [],
+                unknownWordIds: limited.words.map((w) => w.id),
+              } as any),
           );
           setSpellingResult((prev) => prev ?? makeEmptySpellingResult());
           setStage("DRILL_INTRO");
@@ -862,11 +1002,16 @@ export default function VocabSessionPage() {
   /* =========================================================
      DERIVED
   ========================================================= */
-  const allWordIds = useMemo(() => allWords.map((w) => w.id).filter(Boolean), [allWords]);
+  const allWordIds = useMemo(
+    () => allWords.map((w) => w.id).filter(Boolean),
+    [allWords],
+  );
   const allWordIdsKey = useMemo(() => allWordIds.join(","), [allWordIds]);
 
   const wordMap = useMemo(() => {
-    return Object.fromEntries(allWords.map((w: any) => [w.id, normalizeSessionWordForMap(w)]));
+    return Object.fromEntries(
+      allWords.map((w: any) => [w.id, normalizeSessionWordForMap(w)]),
+    );
   }, [allWords]);
 
   const effectiveDrillOrder: DrillType[] = useMemo(() => {
@@ -975,7 +1120,10 @@ export default function VocabSessionPage() {
     wfRepairKeyRef.current = repairKey;
 
     (async () => {
-      const { data, error } = await supabase.from("word_forms").select(WORD_FORMS_SELECT).in("word_id", allWordIds);
+      const { data, error } = await supabase
+        .from("word_forms")
+        .select(WORD_FORMS_SELECT)
+        .in("word_id", allWordIds);
 
       const fetched = Array.isArray(data) ? data : [];
       const fetchedValid = fetched.filter(hasAnyWordFormValue);
@@ -1103,8 +1251,8 @@ export default function VocabSessionPage() {
     const r: string[] = Array.isArray(anyResult.retryWordIds)
       ? anyResult.retryWordIds
       : Array.isArray(speedResult.wrongWordIds)
-      ? speedResult.wrongWordIds
-      : [];
+        ? speedResult.wrongWordIds
+        : [];
     return r;
   }, [speedResult]);
 
@@ -1122,7 +1270,9 @@ export default function VocabSessionPage() {
     const failed = (spellingResult as any)?.spellingFailedIds ?? [];
     const wrong = retryIds ?? [];
 
-    const core = uniq([...(unknown as string[]), ...(failed as string[]), ...(wrong as string[])]).filter(Boolean).filter((id) => allWordIds.includes(id));
+    const core = uniq([...(unknown as string[]), ...(failed as string[]), ...(wrong as string[])])
+      .filter(Boolean)
+      .filter((id) => allWordIds.includes(id));
 
     if (core.length >= MIN_DRILL_WORDS) return core;
 
@@ -1132,7 +1282,8 @@ export default function VocabSessionPage() {
   }, [shortcut.jump, prescreenResult, spellingResult, retryIds, allWordIds]);
 
   const drillTasks: DrillTask[] = useMemo(() => {
-    const getWordText = (id: string) => ((wordMap as any)?.[id]?.text ? String((wordMap as any)[id].text) : "");
+    const getWordText = (id: string) =>
+      (wordMap as any)?.[id]?.text ? String((wordMap as any)[id].text) : "";
 
     const getWordForm = (id: string) => {
       const v = (wordFormsById as any)?.[id];
@@ -1169,7 +1320,15 @@ export default function VocabSessionPage() {
 
     if (onlyType) return deduped.filter((t) => (t.drillType as any) === onlyType);
     return deduped;
-  }, [drillTargetWordIds, effectiveDrillOrder, onlyType, wordMap, wordFormsById, exampleStringsById, collocationStringsById]);
+  }, [
+    drillTargetWordIds,
+    effectiveDrillOrder,
+    onlyType,
+    wordMap,
+    wordFormsById,
+    exampleStringsById,
+    collocationStringsById,
+  ]);
 
   function seedOptionalDrillEntry(tasksOverride?: DrillTask[]) {
     const tasksToStore = tasksOverride ?? drillTasks;
@@ -1220,486 +1379,473 @@ export default function VocabSessionPage() {
     setStage("DRILL_INTRO");
   }, [stage, allWordIds]);
 
-  // ✅ stage renderer
-  const renderStage = () => {
-    const Debug = showDebug ? <DebugPanel info={debugInfo} /> : null;
+// ✅ stage renderer
+const renderStage = () => {
+  const Debug = showDebug ? <DebugPanel info={debugInfo} /> : null;
 
-    if (stage === "LOADING") {
-      return <div className="mx-auto max-w-xl p-6 text-center text-slate-700">Loading session...</div>;
-    }
+  const exitToHome = () => {
+    try {
+      sessionStorage.removeItem(SPEED_DRILL_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    window.location.href = "/home";
+  };
 
-    if (stage === "PRESCREEN") {
-      if (prescreenWords.length === 0) {
-        return (
-          <CardWrap>
-            {Debug}
+  if (stage === "LOADING") {
+    return (
+      <StageWrap>
+        {Debug}
+        <StageIntroScreen
+          badge="Info"
+          title="Loading session..."
+          subtitle="Preparing today's words"
+          hint={loadError ? loadError : "Please wait a moment."}
+          primaryLabel="Reload"
+          secondaryLabel="Exit"
+          onPrimary={() => window.location.reload()}
+          onSecondary={exitToHome}
+        />
+      </StageWrap>
+    );
+  }
 
-            {loadError && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                {loadError}
-              </div>
-            )}
-
-            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
-              <div className="text-lg font-semibold">No words found for this session</div>
-              <div className="mt-2 text-sm text-slate-500">
-                DebugPanel.diag에서 linkTable/wordIdCount/resolvedSetId를 확인해줘.
-              </div>
-
-              <button
-                className="mt-4 w-full rounded-xl bg-black py-3 text-white"
-                onClick={() => window.location.reload()}
-              >
-                Reload
-              </button>
-            </div>
-          </CardWrap>
-        );
-      }
-
-      return (
-        <CardWrap>
-          {Debug}
-
-          {process.env.NODE_ENV !== "production" && shortcut.n > 0 && (
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
-              DEV TEST MODE: n={shortcut.n} {shortcut.seed ? `(seed=${shortcut.seed})` : "(seed=auto)"}{" "}
-              <span className="text-indigo-500">| 새로고침해도 같은 샘플 유지하려면 seed=123 같이 쓰면 돼</span>
-            </div>
-          )}
-
-          {loadError && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              {loadError}
-            </div>
-          )}
-
-          <PrescreenBoard
-            words={prescreenWords as any}
-            onFinish={(r: PrescreenResult) => {
-              setPrescreenResult(r);
-
-              const knownCount = Array.isArray((r as any)?.knownWordIds) ? (r as any).knownWordIds.length : 0;
-
-              if (knownCount === 0) {
-                setSpellingResult(makeEmptySpellingResult());
-                setStage("SUMMARY");
-                return;
-              }
-
-              setStage("SPELLING");
-            }}
+  if (stage === "PRESCREEN") {
+  if (prescreenWords.length === 0) {
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Prescreen"
+            title="No words found"
+            subtitle="This session has 0 words."
+            hint={loadError ? loadError : "Check assignment / set contents."}
+            primaryLabel="Reload"
+            secondaryLabel="Exit"
+            onPrimary={() => window.location.reload()}
+            onSecondary={exitToHome}
           />
-        </CardWrap>
-      );
-    }
+        </div>
+      </StageWrap>
+    );
+  }
 
-    if (stage === "SPELLING") {
-      if (!prescreenResult || spellingWords.length === 0) {
-        return (
-          <CardWrap>
-            {Debug}
-            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">Preparing spelling...</div>
-          </CardWrap>
-        );
-      }
+  // ✅ 핵심: PrescreenBoard가 이미 자기 패널(lx-panel)을 만들기 때문에,
+  // 여기서는 StagePanel(=또 다른 lx-panel)을 만들지 않는다.
+  return (
+    <StageWrap>
+      {Debug}
 
-      return (
-        <CardWrap>
-          {Debug}
+      {process.env.NODE_ENV !== "production" && shortcut.n > 0 && (
+        <div className="mx-auto mb-3 w-[min(900px,96%)] rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
+          DEV TEST MODE: n={shortcut.n}{" "}
+          {shortcut.seed ? `(seed=${shortcut.seed})` : "(seed=auto)"}{" "}
+          <span className="text-indigo-500">| seed=123 처럼 주면 샘플 고정됨</span>
+        </div>
+      )}
 
-          <PrescreenSpellingBoard
-            words={spellingWords as any}
-            onFinish={(r: SpellingResult) => {
-              setSpellingResult(r);
+      {loadError && (
+        <div className="mx-auto mb-3 w-[min(900px,96%)] rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          {loadError}
+        </div>
+      )}
+
+      {/* ✅ board의 패널을 중앙 배치만 해줌 */}
+      <div className="lx-panel-wrap">
+        <PrescreenBoard
+          words={prescreenWords as any}
+          onFinish={(r: PrescreenResult) => {
+            setPrescreenResult(r);
+
+            const knownCount = Array.isArray((r as any)?.knownWordIds)
+              ? (r as any).knownWordIds.length
+              : 0;
+
+            if (knownCount === 0) {
+              setSpellingResult(makeEmptySpellingResult());
               setStage("SUMMARY");
-            }}
+              return;
+            }
+
+            setStage("SPELLING");
+          }}
+        />
+      </div>
+    </StageWrap>
+  );
+}
+
+if (stage === "SPELLING") {
+  if (!prescreenResult || spellingWords.length === 0) {
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Spelling"
+            title="Preparing spelling..."
+            subtitle="Setting up the next step"
+            primaryLabel="Continue"
+            secondaryLabel="Back"
+            onPrimary={() => setStage("SUMMARY")}
+            onSecondary={() => setStage("PRESCREEN")}
           />
-        </CardWrap>
-      );
-    }
+        </div>
+      </StageWrap>
+    );
+  }
 
-    if (stage === "SUMMARY") {
-      if (!prescreenResult || !spellingResult) {
-        return (
-          <CardWrap>
-            {Debug}
-            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">Missing summary data.</div>
-          </CardWrap>
-        );
-      }
+  // ✅ 핵심: PrescreenSpellingBoard가 이미 패널(lx-panel)을 만들면
+  // 바깥에서 StagePanel(또 다른 lx-panel)을 만들지 않는다.
+  return (
+    <StageWrap>
+      {Debug}
 
+      {loadError && (
+        <div className="mx-auto mb-3 w-[min(900px,96%)] rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          {loadError}
+        </div>
+      )}
+
+      <div className="lx-panel-wrap">
+        <PrescreenSpellingBoard
+          words={spellingWords as any}
+          onFinish={(r: SpellingResult) => {
+            setSpellingResult(r);
+            setStage("SUMMARY");
+          }}
+        />
+      </div>
+    </StageWrap>
+  );
+}
+
+  if (stage === "SUMMARY") {
+    if (!prescreenResult || !spellingResult) {
       return (
-        <CardWrap>
+        <StageWrap>
           {Debug}
-
-          <SummaryScreen
-            words={allWords}
-            prescreenMap={(() => {
-              const m: Record<string, any> = {};
-              for (const id of prescreenResult?.knownWordIds ?? []) m[id] = true;
-              for (const id of prescreenResult?.unknownWordIds ?? []) m[id] = false;
-              return m;
-            })()}
-            spellPassMap={(() => {
-              const m: Record<string, any> = {};
-              const failed = new Set<string>((spellingResult?.spellingFailedIds ?? []).filter(Boolean));
-              for (const id of prescreenResult?.knownWordIds ?? []) {
-                m[id] = failed.has(id) ? false : true;
-              }
-              return m;
-            })()}
-            onContinue={(payload: any) => {
-              if (payload?.xknowList && Array.isArray(payload.xknowList)) {
-                setLearningWords(payload.xknowList);
-                setStage(payload.xknowList.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
-                return;
-              }
-
-              const base = prescreenResult.unknownWordIds
-                .map((id: string) => allWords.find((w) => w.id === id))
-                .filter(Boolean) as SessionWord[];
-
-              const failedArr = (spellingResult as any).spellingFailedIds
-                ? (spellingResult as any).spellingFailedIds
-                    .map((id: string) => allWords.find((w) => w.id === id))
-                    .filter(Boolean)
-                : ([] as SessionWord[]);
-
-              const map = new Map<string, SessionWord>();
-              [...base, ...failedArr].forEach((w) => map.set(w.id, w));
-
-              const final = [...map.values()];
-              setLearningWords(final);
-              setStage(final.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
-            }}
-          />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "LEARNING_INTRO") {
-      return (
-        <CardWrap>
-          {Debug}
-          <StageIntroScreen title="Pay Attention!" subtitle="집중! 단어를 배워봅시다" onDone={() => setStage("LEARNING")} />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "LEARNING") {
-      return (
-        <CardWrap>
-          {Debug}
-          <LearningRunner words={learningPayload} onFinish={() => setStage("SPEED_INTRO")} />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_INTRO") {
-      return (
-        <CardWrap>
-          {Debug}
-          <StageIntroScreen title="Quick Check" subtitle="오늘 단어 전체를 빠르게 확인합니다" onDone={() => setStage("SPEED_1")} />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_1") {
-      return (
-        <CardWrap>
-          {Debug}
-          <SpeedChallengeRunner
-            userId={userId}
-            questions={shuffleArray(speedQuestions)}
-            tryIndex={1}
-            onFinish={(r) => {
-              setSpeedResult(r);
-              setStage("SPEED_SUMMARY");
-            }}
-          />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_2") {
-      if (!retrySpeedQuestions || retrySpeedQuestions.length === 0) {
-        return (
-          <CardWrap>
-            {Debug}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-              No retry questions. Continue to Drill.
-            </div>
-            <button
-              type="button"
-              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
-              onClick={() => setStage("DRILL_INTRO")}
-            >
-              Continue
-            </button>
-          </CardWrap>
-        );
-      }
-
-      return (
-        <CardWrap>
-          {Debug}
-          <div key={`speed-2-${retryIds.join(",") || "none"}`}>
-            <SpeedChallengeRunner
-              userId={userId}
-              questions={shuffleArray(retrySpeedQuestions)}
-              tryIndex={2}
-              onFinish={() => setStage("DRILL_INTRO")}
+          <div className="lx-panel-wrap">
+            <StageIntroScreen
+              badge="Summary"
+              title="Missing summary data"
+              subtitle="Try restarting the session."
+              primaryLabel="Restart"
+              secondaryLabel="Exit"
+              onPrimary={() => window.location.reload()}
+              onSecondary={exitToHome}
             />
           </div>
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_SUMMARY" && speedResult) {
-      const canRetry = retrySpeedQuestions.length > 0;
-
-      return (
-        <CardWrap>
-          {Debug}
-
-          <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
-            <div className="text-lg font-semibold text-white">Quick Check Result</div>
-
-            <pre className="max-h-64 overflow-auto rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
-              {JSON.stringify(speedResult, null, 2)}
-            </pre>
-
-            <div className="flex gap-2">
-              {canRetry ? (
-                <button
-                  type="button"
-                  className="flex-1 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white"
-                  onClick={() => setStage("SPEED_2")}
-                >
-                  Retry
-                </button>
-              ) : null}
-
-              <button
-                type="button"
-                className="flex-1 rounded-lg bg-emerald-500/90 px-3 py-2 text-sm font-semibold text-black"
-                onClick={() => setStage("DRILL_INTRO")}
-              >
-                Continue
-              </button>
-            </div>
-
-            {!canRetry ? <div className="text-xs text-white/50">No wrong words detected, skipping retry.</div> : null}
-          </div>
-        </CardWrap>
-      );
-    }
-
-    if (stage === "DRILL_INTRO") {
-      const canDrill = drillTasks.length > 0;
-      const effectiveSetId = shortcut.setId || debugInfo?.assignmentSetId || "";
-      const setIdQS = effectiveSetId ? `&setId=${encodeURIComponent(effectiveSetId)}` : "";
-
-      const title =
-        onlyType === "SENTENCE_BLANK" ? "Fill in the Blank" : onlyType ? `Drill: ${onlyType}` : "Drill Time";
-      const subtitle =
-        onlyType === "SENTENCE_BLANK"
-          ? "SENTENCE_BLANK only (shortcut)"
-          : onlyType
-          ? `${onlyType} only (shortcut)`
-          : "이제 완전히 내 것으로 만듭니다";
-
-      return (
-        <CardWrap>
-          {Debug}
-
-          {!canDrill && (
-            <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
-              drillTasks가 비어있어서 Drill을 실행할 수 없어요.
-            </div>
-          )}
-
-          <StageIntroScreen
-            title={title}
-            subtitle={subtitle}
-            onDone={() => {
-              if (!canDrill) return;
-              setStage("DRILL");
-            }}
-          />
-
-          <button
-            disabled={!canDrill}
-            onClick={() => {
-              if (!canDrill) return;
-              seedOptionalDrillEntry();
-              window.location.href = "/vocab/drill";
-            }}
-            className={[
-              "w-full rounded-xl border py-3 text-sm",
-              canDrill ? "border-white/15 bg-white text-black" : "border-white/10 bg-white/10 text-white/40",
-            ].join(" ")}
-          >
-            (Debug) Optional Drill Page로 실행 (/vocab/drill)
-          </button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                window.location.href = `/vocab/session?jump=DRILL&only=FILL_IN_THE_BLANKS${setIdQS}`;
-              }}
-              className="w-full rounded-xl border border-white/15 bg-white py-3 text-sm text-black"
-            >
-              Shortcut: Fill in the Blank
-            </button>
-
-            <button
-              onClick={() => {
-                window.location.href = `/vocab/session?jump=DRILL${setIdQS}`;
-              }}
-              className="w-full rounded-xl border border-white/15 bg-white py-3 text-sm text-black"
-            >
-              Shortcut: Drill (all)
-            </button>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/80">
-            <div className="font-semibold">Drill Policy Snapshot</div>
-            <div className="mt-1">targetWordIds: {drillTargetWordIds.length}</div>
-            <div>tasks: {drillTasks.length}</div>
-            <div className="text-white/50">
-              order: {effectiveDrillOrder.join(" → ")}
-              {effectiveDrillOrder.includes("WORD_FORM_PICK") ? "" : " (WORD_FORM_PICK skipped: no word_forms)"}
-            </div>
-
-            <div className="mt-2 font-semibold">types:</div>
-            <pre className="mt-1 whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-2 text-[11px] text-white/80">
-              {JSON.stringify(countByDrillType(drillTasks), null, 2)}
-            </pre>
-
-            {shortcut.jump === "DRILL" && (
-              <div className="mt-1 text-emerald-200">
-                shortcut: jump=DRILL {onlyType ? `/ only=${onlyType}` : shortcut.only ? `/ only=${shortcut.only}` : ""}{" "}
-                {effectiveSetId ? `/ setId=${effectiveSetId}` : ""}{" "}
-                {process.env.NODE_ENV !== "production" && shortcut.n > 0 ? `/ n=${shortcut.n}` : ""}{" "}
-                {process.env.NODE_ENV !== "production" && shortcut.seed ? `/ seed=${shortcut.seed}` : ""}{" "}
-                {showDebug ? "/ debug=1" : ""}
-              </div>
-            )}
-          </div>
-        </CardWrap>
-      );
-    }
-
-    if (stage === "DRILL") {
-      const canDrill = drillTasks.length > 0;
-
-      if (!canDrill) {
-        return (
-          <CardWrap>
-            {Debug}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
-              Drill tasks are empty. (blocked to prevent auto-skip)
-            </div>
-            <button
-              type="button"
-              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
-              onClick={() => setStage("DRILL_INTRO")}
-            >
-              Back
-            </button>
-          </CardWrap>
-        );
-      }
-
-      const DrillRunnerAny = DrillRunner as any;
-
-      return (
-        <CardWrap>
-          {Debug}
-
-          {loadError && (
-            <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-              {loadError}
-            </div>
-          )}
-
-          <DrillRunnerAny
-            userId={userId}
-            tasks={drillTasks}
-            wordMap={wordMap}
-            wordFormsById={wordFormsById}
-            exampleStringsById={exampleStringsById}
-            collocationStringsById={collocationStringsById}
-            onFinish={() => setStage("DONE")}
-            onDone={() => setStage("DONE")}
-          />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "DONE") {
-      return (
-        <CardWrap className="py-10">
-          {Debug}
-
-          <div className="rounded-2xl border border-white/10 bg-white p-8 text-center text-black">
-            <h2 className="text-2xl font-bold">Done ✅</h2>
-            <div className="mt-2 text-sm text-slate-600">오늘 세션 완료!</div>
-
-            <div className="mt-6 space-y-2">
-              <button className="w-full rounded-xl bg-black py-3 text-white" onClick={() => window.location.reload()}>
-                Restart
-              </button>
-
-              <button
-                className="w-full rounded-xl border bg-white py-3 text-black"
-                onClick={() => {
-                  try {
-                    sessionStorage.removeItem(SPEED_DRILL_KEY);
-                    sessionStorage.removeItem(STORAGE_KEY);
-                  } catch {}
-                  window.location.href = "/home";
-                }}
-              >
-                Exit (Home)
-              </button>
-            </div>
-          </div>
-        </CardWrap>
+        </StageWrap>
       );
     }
 
     return (
-      <CardWrap className="py-10">
+      <StageWrap>
         {Debug}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
-          Unknown stage: <code className="break-all">{stage}</code>
-        </div>
-        <button
-          className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
-          onClick={() => window.location.reload()}
+        <StagePanel
+          badge="Summary"
+          title="Summary"
+          subtitle="What to learn today"
+          hint="Unknown + spelling-failed words go to Learning."
         >
-          Reload
-        </button>
-      </CardWrap>
+          <div className="mt-6">
+            <SummaryScreen
+              words={allWords}
+              prescreenMap={(() => {
+                const m: Record<string, any> = {};
+                for (const id of prescreenResult?.knownWordIds ?? []) m[id] = true;
+                for (const id of prescreenResult?.unknownWordIds ?? []) m[id] = false;
+                return m;
+              })()}
+              spellPassMap={(() => {
+                const m: Record<string, any> = {};
+                const failed = new Set<string>(
+                  (spellingResult?.spellingFailedIds ?? []).filter(Boolean),
+                );
+                for (const id of prescreenResult?.knownWordIds ?? []) {
+                  m[id] = failed.has(id) ? false : true;
+                }
+                return m;
+              })()}
+              onContinue={(payload: any) => {
+                if (payload?.xknowList && Array.isArray(payload.xknowList)) {
+                  setLearningWords(payload.xknowList);
+                  setStage(payload.xknowList.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
+                  return;
+                }
+
+                const base = prescreenResult.unknownWordIds
+                  .map((id: string) => allWords.find((w) => w.id === id))
+                  .filter(Boolean) as SessionWord[];
+
+                const failedArr = (spellingResult as any).spellingFailedIds
+                  ? (spellingResult as any).spellingFailedIds
+                      .map((id: string) => allWords.find((w) => w.id === id))
+                      .filter(Boolean)
+                  : ([] as SessionWord[]);
+
+                const map = new Map<string, SessionWord>();
+                [...base, ...failedArr].forEach((w) => map.set(w.id, w));
+
+                const final = [...map.values()];
+                setLearningWords(final);
+                setStage(final.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
+              }}
+            />
+          </div>
+        </StagePanel>
+      </StageWrap>
     );
-  };
+  }
+
+  if (stage === "LEARNING_INTRO") {
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Info"
+            title="Pay Attention!"
+            subtitle="집중! 단어를 배워봅시다"
+            primaryLabel="Start"
+            secondaryLabel="Skip"
+            onPrimary={() => setStage("LEARNING")}
+            onSecondary={() => setStage("SPEED_INTRO")}
+          />
+        </div>
+      </StageWrap>
+    );
+  }
+
+  if (stage === "LEARNING") {
+    return (
+      <StageWrap>
+        {Debug}
+        <LearningRunner words={learningPayload} onFinish={() => setStage("SPEED_INTRO")} />
+      </StageWrap>
+    );
+  }
+
+  if (stage === "SPEED_INTRO") {
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Info"
+            title="Quick Check"
+            subtitle="오늘 단어 전체를 빠르게 확인합니다"
+            primaryLabel="Start"
+            secondaryLabel="Back"
+            onPrimary={() => setStage("SPEED_1")}
+            onSecondary={() => setStage(learningWords.length > 0 ? "LEARNING" : "SUMMARY")}
+          />
+        </div>
+      </StageWrap>
+    );
+  }
+
+  if (stage === "SPEED_1") {
+    return (
+      <StageWrap>
+        {Debug}
+        <SpeedChallengeRunner
+          userId={userId}
+          questions={shuffleArray(speedQuestions)}
+          tryIndex={1}
+          onFinish={(r) => {
+            setSpeedResult(r);
+            setStage("SPEED_SUMMARY");
+          }}
+        />
+      </StageWrap>
+    );
+  }
+
+  if (stage === "SPEED_2") {
+    if (!retrySpeedQuestions || retrySpeedQuestions.length === 0) {
+      return (
+        <StageWrap>
+          {Debug}
+          <div className="lx-panel-wrap">
+            <StageIntroScreen
+              badge="Info"
+              title="No retry questions"
+              subtitle="Continue to Drill."
+              primaryLabel="Continue"
+              secondaryLabel="Back"
+              onPrimary={() => setStage("DRILL_INTRO")}
+              onSecondary={() => setStage("SPEED_SUMMARY")}
+            />
+          </div>
+        </StageWrap>
+      );
+    }
+
+    return (
+      <StageWrap>
+        {Debug}
+        <div key={`speed-2-${retryIds.join(",") || "none"}`}>
+          <SpeedChallengeRunner
+            userId={userId}
+            questions={shuffleArray(retrySpeedQuestions)}
+            tryIndex={2}
+            onFinish={() => setStage("DRILL_INTRO")}
+          />
+        </div>
+      </StageWrap>
+    );
+  }
+
+  if (stage === "SPEED_SUMMARY" && speedResult) {
+    const canRetry = retrySpeedQuestions.length > 0;
+
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Info"
+            title="Quick Check Result"
+            subtitle={canRetry ? "Retry available" : "No wrong words detected"}
+            primaryLabel={canRetry ? "Retry" : "Continue"}
+            secondaryLabel={canRetry ? "Continue" : "Restart"}
+            onPrimary={() => (canRetry ? setStage("SPEED_2") : setStage("DRILL_INTRO"))}
+            onSecondary={() => (canRetry ? setStage("DRILL_INTRO") : window.location.reload())}
+          >
+            <pre className="max-h-64 overflow-auto rounded-lg border border-slate-200 bg-slate-900 p-3 text-xs text-slate-50">
+              {JSON.stringify(speedResult, null, 2)}
+            </pre>
+          </StageIntroScreen>
+        </div>
+      </StageWrap>
+    );
+  }
+
+  if (stage === "DRILL_INTRO") {
+    const canDrill = drillTasks.length > 0;
+
+    const title =
+      onlyType === "SENTENCE_BLANK"
+        ? "Fill in the Blank"
+        : onlyType
+          ? `Drill: ${onlyType}`
+          : "Drill Time";
+
+    const subtitle =
+      onlyType === "SENTENCE_BLANK"
+        ? "SENTENCE_BLANK only (shortcut)"
+        : onlyType
+          ? `${onlyType} only (shortcut)`
+          : "이제 완전히 내 것으로 만듭니다";
+
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Info"
+            title={title}
+            subtitle={subtitle}
+            hint={!canDrill ? "drillTasks가 비어있어서 Drill을 실행할 수 없어요." : undefined}
+            primaryLabel="Start"
+            secondaryLabel="Back"
+            onPrimary={() => {
+              if (!canDrill) return;
+              setStage("DRILL");
+            }}
+            onSecondary={() => setStage("SPEED_SUMMARY")}
+          >
+            <div className="mt-6" />
+          </StageIntroScreen>
+        </div>
+      </StageWrap>
+    );
+  }
+
+  if (stage === "DRILL") {
+    const canDrill = drillTasks.length > 0;
+
+    if (!canDrill) {
+      return (
+        <StageWrap>
+          {Debug}
+          <div className="lx-panel-wrap">
+            <StageIntroScreen
+              badge="Info"
+              title="Drill tasks are empty"
+              subtitle="Blocked to prevent auto-skip."
+              primaryLabel="Back"
+              secondaryLabel="Exit"
+              onPrimary={() => setStage("DRILL_INTRO")}
+              onSecondary={exitToHome}
+            />
+          </div>
+        </StageWrap>
+      );
+    }
+
+    const DrillRunnerAny = DrillRunner as any;
+
+    return (
+      <StageWrap>
+        {Debug}
+        <DrillRunnerAny
+          userId={userId}
+          tasks={drillTasks}
+          wordMap={wordMap}
+          wordFormsById={wordFormsById}
+          exampleStringsById={exampleStringsById}
+          collocationStringsById={collocationStringsById}
+          onFinish={() => setStage("DONE")}
+          onDone={() => setStage("DONE")}
+        />
+      </StageWrap>
+    );
+  }
+
+  if (stage === "DONE") {
+    return (
+      <StageWrap>
+        {Debug}
+        <div className="lx-panel-wrap">
+          <StageIntroScreen
+            badge="Done"
+            title="Done ✅"
+            subtitle="오늘 세션 완료!"
+            primaryLabel="Restart"
+            secondaryLabel="Exit"
+            onPrimary={() => window.location.reload()}
+            onSecondary={exitToHome}
+          />
+        </div>
+      </StageWrap>
+    );
+  }
 
   return (
-    <PageShell>
-      {/* ✅ REMOVE THE HAZE:
-          - tintOpacity={0} disables gradient tint overlay
-          - showTitle={false} prevents top pill overlay
-          - showMascot={false} prevents double mascot (MascotLayer already renders)
-      */}
-     <StageBackground />
-
-
-      <MascotLayer stage={stage} mood={penguin.mood} />
-
-      <div className="relative z-10">{renderStage()}</div>
-    </PageShell>
+    <StageWrap>
+      {Debug}
+      <div className="lx-panel-wrap">
+        <StageIntroScreen
+          badge="Info"
+          title="Unknown stage"
+          subtitle={String(stage)}
+          primaryLabel="Reload"
+          secondaryLabel="Exit"
+          onPrimary={() => window.location.reload()}
+          onSecondary={exitToHome}
+        />
+      </div>
+    </StageWrap>
   );
-}
+}; // ✅ renderStage 닫힘
+
+return (
+  <PageShell>
+    <MascotLayer stage={stage} mood={penguin.mood} />
+    <div className="relative z-10 text-slate-900">{renderStage()}</div>
+  </PageShell>
+);
+} // ✅ VocabSessionPage 닫힘

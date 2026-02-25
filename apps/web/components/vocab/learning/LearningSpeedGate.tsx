@@ -97,10 +97,6 @@ export default function LearningSpeedGate({
     setIdx(next);
   }
 
-  function markWrong(wordId: string) {
-    setWrongIds((prev) => (prev.includes(wordId) ? prev : [...prev, wordId]));
-  }
-
   function checkTyped() {
     if (!current || locked) return;
     setLocked(true);
@@ -135,9 +131,13 @@ export default function LearningSpeedGate({
     return Array.from(new Set(all));
   }, [current, questions]);
 
+  // ✅ 공통 패널 클래스: "StageFrame/StageScaffold가 크기를 결정" → 여기선 감옥 금지
+  const panelClass =
+    "w-full space-y-4 rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm";
+
   if (!current) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
+      <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
         Speed check 준비 중…
       </div>
     );
@@ -153,7 +153,7 @@ export default function LearningSpeedGate({
         : "text-slate-400";
 
   return (
-    <div className="mx-auto max-w-xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm">
+    <div className={panelClass}>
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold text-slate-700">Quick Check</div>
         <div className="text-xs text-slate-500">

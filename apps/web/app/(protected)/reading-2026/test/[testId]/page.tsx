@@ -5,23 +5,23 @@ import type { RReadingTest2026 } from "@/models/reading";
 import ReadingTestRunnerClient from "./_client/ReadingTestRunnerClient";
 
 type Props = {
-  params: { testId: string };
+  params: Promise<{ testId: string }>;
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function Reading2026TestPage({ params }: Props) {
+  const { testId } = await params;
+
   const supabase = await getServerSupabase();
 
   const { data, error } = await supabase
     .from("reading_tests_2026")
     .select("id,label,payload")
-    .eq("id", params.testId)
+    .eq("id", testId)
     .maybeSingle();
 
-  if (error || !data) {
-    notFound();
-  }
+  if (error || !data) notFound();
 
   const payload = data.payload as RReadingTest2026;
 

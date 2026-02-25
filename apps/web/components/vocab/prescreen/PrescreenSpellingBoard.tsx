@@ -1,173 +1,156 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { SpellingResult } from "@/models/vocab/session/spelling";
-import StageScaffold from "@/components/common/stage/StageScaffold";
+import StageIntroScreen from "@/components/common/StageIntroScreen";
 
-type WordItem = {
+type Word = {
   id: string;
   text: string;
   meanings_ko?: string[];
 };
 
-type Props = {
-  words: WordItem[];
-  onFinish: (r: SpellingResult) => void;
+type SpellingResult = {
+  spellingFailedIds: string[];
 };
 
-function clean(s: unknown) {
-  return String(s ?? "").trim();
+function safeWords(v: any): Word[] {
+  return Array.isArray(v) ? (v as Word[]).filter(Boolean) : [];
 }
 
-export default function PrescreenSpellingBoard({ words, onFinish }: Props) {
-  const list = useMemo(
-    () => (Array.isArray(words) ? words.filter((w) => w?.id && w?.text) : []),
-    [words]
-  );
+function norm(s: string) {
+  return String(s ?? "").trim().toLowerCase();
+}
 
-  const [idx, setIdx] = useState(0);
+export default function PrescreenSpellingBoard({
+  words,
+  onFinish,
+}: {
+  words: Word[];
+  onFinish: (r: SpellingResult) => void;
+}) {
+  const list = useMemo(() => safeWords(words), [words]);
+  const total = list.length;
+
+  const [i, setI] = useState(0);
   const [value, setValue] = useState("");
-  const [miss, setMiss] = useState(0);
-  const [reveal, setReveal] = useState(false);
+  const [failedIds, setFailedIds] = useState<string[]>([]);
+  const [shake, setShake] = useState(false);
+  const [pulse, setPulse] = useState(false);
 
-  const finishedRef = useRef(false);
-  const failedRef = useRef<string[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const cur = list[idx];
+  const cur = list[i] ?? null;
+  const answer = cur?.text ?? "";
+  const meaning = (cur?.meanings_ko ?? []).filter(Boolean).slice(0, 2);
 
-  useEffect(() => {
-    if (list.length === 0 && !finishedRef.current) {
-      finishedRef.current = true;
-      onFinish({ spellingFailedIds: [] } as any);
-    }
-  }, [list.length, onFinish]);
+  const done = (nextFailed: string[]) => onFinish({ spellingFailedIds: nextFailed });
 
-  useEffect(() => {
-    if (!cur) return;
-    const t = setTimeout(() => inputRef.current?.focus(), 80);
-    return () => clearTimeout(t);
-  }, [idx, cur?.id]);
+  const goNext = (nextFailed: string[]) => {
+    const nextIndex = i + 1;
+    if (nextIndex >= total) return done(nextFailed);
 
-  if (!cur) return null;
-
-  const hintKo = clean(cur.meanings_ko?.[0] ?? "") || "(뜻 미입력)";
-  const answer = clean(cur.text);
-
-  function markFailedOnce(wordId: string) {
-    if (!failedRef.current.includes(wordId)) failedRef.current.push(wordId);
-  }
-
-  function goNext() {
+    setI(nextIndex);
     setValue("");
-    setMiss(0);
-    setReveal(false);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
 
-    const next = idx + 1;
-    if (next >= list.length) {
-      if (!finishedRef.current) {
-        finishedRef.current = true;
-        onFinish({ spellingFailedIds: failedRef.current } as any);
-      }
-      return;
-    }
-    setIdx(next);
-  }
+  const markFailAndNext = () => {
+    if (!cur?.id) return;
+    const nextFailed = failedIds.includes(cur.id) ? failedIds : [...failedIds, cur.id];
+    setFailedIds(nextFailed);
+    goNext(nextFailed);
+  };
 
-  function submit() {
-    if (!answer) return;
+  const submit = () => {
+    if (!cur?.id) return;
 
-    const typed = clean(value).toLowerCase();
-    const ok = typed === answer.toLowerCase();
+    const ok = norm(value) === norm(answer);
 
     if (ok) {
-      goNext();
+      setPulse(true);
+      window.setTimeout(() => setPulse(false), 280);
+      goNext(failedIds);
       return;
     }
 
-    const nextMiss = miss + 1;
-    setMiss(nextMiss);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 260);
 
-    if (nextMiss >= 2) {
-      markFailedOnce(cur.id);
-      setReveal(true);
-      return;
-    }
+    if (!failedIds.includes(cur.id)) setFailedIds((p) => [...p, cur.id]);
+  };
 
-    setValue("");
-    setTimeout(() => inputRef.current?.focus(), 30);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submit();
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        markFailAndNext();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i, value, answer, failedIds, cur?.id]);
+
+  if (!list.length) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 text-center text-slate-700">
+          No words found for Spelling Check.
+        </div>
+      </div>
+    );
   }
-
-  function iDontKnow() {
-    markFailedOnce(cur.id);
-    setReveal(true);
-  }
-
-  const hint =
-    reveal ? "Marked as spelling-failed. Continue to the next word." : miss > 0 ? `Try again (${miss}/2)` : "Press Enter to submit.";
-
-  const primary = reveal
-    ? { label: "Next", onClick: goNext }
-    : { label: "Check", onClick: submit, disabled: clean(value).length === 0 };
-
-  const secondary = !reveal ? { label: "I don't know", onClick: iDontKnow, variant: "ghost" as const } : undefined;
 
   return (
-    <div className="h-full w-full">
-      <StageScaffold
-        stageKey="spelling"
-        stageLabel="Spelling Check"
-        title="Type the spelling"
-        subtitle="Type the word that matches the meaning. Two attempts."
-        step={{ index: idx + 1, total: list.length }}
-        hint={hint}
-        primary={primary}
-        secondary={secondary}
-        align="center"
-      >
-        <div className="mx-auto max-w-[720px] space-y-5">
-          <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-4">
-            <div className="text-neutral-700 font-extrabold" style={{ fontSize: "clamp(16px, 2.2cqi, 26px)" }}>
-              {hintKo}
+    <div className="lx-panel-wrap">
+      <div className={[shake ? "wrong" : "", pulse ? "correct" : ""].join(" ")}>
+        <StageIntroScreen
+          badge={
+            <>
+              Spelling Check {i + 1}/{total}{" "}
+              <span className="text-slate-500">(Enter to submit · Esc to skip)</span>
+            </>
+          }
+          title="Type the spelling"
+          subtitle={meaning.length ? `Meaning: ${meaning.join(" / ")}` : "Meaning not available"}
+          hint={
+            <div>
+              <div className="font-extrabold">Type the correct spelling.</div>
+              <div className="mt-1 text-sm font-semibold text-slate-600">
+                Press <b>Enter</b> to submit. Press <b>Esc</b> to skip (counts as failed).
+              </div>
             </div>
-            <div className="mt-2 text-neutral-500" style={{ fontSize: "clamp(12px, 1.4cqi, 14px)" }}>
-              Meaning hint (Korean)
+          }
+          primaryLabel="Submit"
+          secondaryLabel="Not sure"
+          onPrimary={submit}
+          onSecondary={markFailAndNext}
+        >
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+            <input
+              ref={inputRef}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="Type here..."
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <div className="mt-3 text-xs font-semibold text-slate-500">
+              Failed so far: <span className="text-slate-700">{failedIds.length}</span>
             </div>
           </div>
-
-          {!reveal ? (
-            <div className="space-y-3">
-              <div className="relative">
-                <input
-                  ref={inputRef}
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && submit()}
-                  className="w-full rounded-2xl border border-black/10 bg-white/80 px-5 py-4 text-center font-extrabold outline-none focus:ring-2 focus:ring-black/10"
-                  placeholder="Type here..."
-                  style={{ fontSize: "clamp(18px, 2.3cqi, 30px)" }}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                />
-              </div>
-
-              <div className="text-neutral-600" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                {miss === 0 ? "One typo allowed. Second miss reveals the answer." : "Careful. One more miss reveals the answer."}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-6">
-              <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                Answer
-              </div>
-              <div className="mt-1 font-black text-[#5D8E93]" style={{ fontSize: "clamp(28px, 4.2cqi, 54px)" }}>
-                {answer || "—"}
-              </div>
-            </div>
-          )}
-        </div>
-      </StageScaffold>
+        </StageIntroScreen>
+      </div>
     </div>
   );
 }

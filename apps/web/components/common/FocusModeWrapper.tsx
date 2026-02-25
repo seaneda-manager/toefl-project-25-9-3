@@ -1,128 +1,79 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React from "react";
 
-type AnyProps = Record<string, any>;
-
-type Props = AnyProps & {
+type Props = {
   children: React.ReactNode;
-
-  /** 열림/닫힘: 기존 코드 호환용 (enabled/isOpen/open 중 아무거나 써도 됨) */
-  enabled?: boolean;
-  isOpen?: boolean;
-  open?: boolean;
-
-  /** backdrop 클릭 또는 ESC로 닫고 싶을 때 */
-  onClose?: () => void;
-  closeOnBackdrop?: boolean;
-  closeOnEsc?: boolean;
-
-  /** 추가 클래스 */
-  overlayClassName?: string;
-  stageClassName?: string;
+  className?: string;
+  panelWidthClass?: string;
+  dim?: boolean;
+  blur?: boolean;
+  variant?: "overlay" | "card" | string;
+  tone?: "dark" | "light";
 };
 
 export default function FocusModeWrapper({
   children,
-  enabled,
-  isOpen,
-  open,
-  onClose,
-  closeOnBackdrop = false,
-  closeOnEsc = false,
-  overlayClassName = "",
-  stageClassName = "",
+  className,
+  panelWidthClass,
+  dim = true,
+  blur = true,
+  variant = "overlay",
+  tone = "dark",
 }: Props) {
-  const isActive = useMemo(() => {
-    const v = isOpen ?? open ?? enabled;
-    return v === undefined ? true : Boolean(v);
-  }, [enabled, isOpen, open]);
+  // card mode (embedded)
+  if (variant === "card") {
+    return (
+      <div className={["mx-auto w-full md:w-[66%]", panelWidthClass ?? "max-w-[980px]"].join(" ")}>
+        <div
+          className={[
+            "rounded-3xl border border-slate-200 bg-white p-6 shadow-sm",
+            "text-slate-900",
+            className ?? "",
+          ].join(" ")}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
 
-  // body scroll lock
-  useEffect(() => {
-    if (!isActive) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isActive]);
+  // overlay mode (focus stage)
+  // ✅ SSOT: StageFrame padding만 조절하면 전체 StageCard 면적이 같이 변함
+  const framePx = "px-[clamp(24px,2.6vw,72px)]";
+  const framePy = "py-[clamp(20px,2.4vh,68px)]";
 
-  // ESC close
-  useEffect(() => {
-    if (!isActive || !closeOnEsc || !onClose) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isActive, closeOnEsc, onClose]);
-
-  if (!isActive) return <>{children}</>;
+  // 디버그 프레임(흰 테두리) 보고 싶으면 true
+  const DEBUG_FRAME = true;
 
   return (
-    <>
-      {/* ✅ blur/흐림 전부 강제 OFF (CSS의 !important도 이김) */}
-      <style jsx global>{`
-        .focus-overlay {
-          backdrop-filter: none !important;
-          -webkit-backdrop-filter: none !important;
-          filter: none !important;
-        }
-        .focus-overlay::before,
-        .focus-overlay::after {
-          backdrop-filter: none !important;
-          -webkit-backdrop-filter: none !important;
-          filter: none !important;
-        }
-        .focus-stage,
-        .focus-stage-inner {
-          filter: none !important;
-          backdrop-filter: none !important;
-          -webkit-backdrop-filter: none !important;
-        }
-        /* 혹시 부모에 blur 걸려있는 케이스까지 대비 */
-        body,
-        body * {
-          -webkit-font-smoothing: antialiased;
-        }
-      `}</style>
+    <div
+      className="focus-root fixed inset-0 z-[60]"
+      data-tone={tone}
+      data-dim={String(Boolean(dim))}
+      data-blur={String(Boolean(blur))}
+    >
+      <div className="focus-stage-wrap h-full w-full grid place-items-center px-[clamp(10px,2vw,24px)] py-[clamp(10px,2vh,24px)]">
+        {/* 보드(초록 bg) 크게 + 비율 유지 */}
+        <div className="relative w-[min(96vw,1600px)] aspect-[3/2]">
+          <div className={["focus-stage absolute inset-0 overflow-hidden", className ?? ""].join(" ")}>
+            <div className="focus-stage-inner relative h-full w-full">
+              {/* ===== StageFrame (SSOT) ===== */}
+              <div className={["absolute inset-0", framePx, framePy].join(" ")}>
+                {/* ✅ 핵심: children의 “바로 아래 루트”를 무조건 프레임 100%로 늘림 */}
+                <div className="h-full w-full min-h-0 min-w-0 [&>*]:h-full [&>*]:w-full [&>*]:min-h-0 [&>*]:min-w-0">
+                  {children}
+                </div>
 
-      <div
-        className={`focus-overlay ${overlayClassName}`}
-        style={{
-          // ✅ "뿌연 막" 느낌 제거: overlay 자체를 투명하게 (필요하면 숫자만 조절)
-          background: "transparent",
-        }}
-        onMouseDown={(e) => {
-          if (!closeOnBackdrop || !onClose) return;
-          if (e.target === e.currentTarget) onClose();
-        }}
-        role="presentation"
-      >
-        <div
-          className={`focus-stage ${stageClassName}`}
-          style={{
-            // ✅ stage도 혹시 blur/filter 먹는 것 방지
-            filter: "none",
-            backdropFilter: "none",
-            WebkitBackdropFilter: "none",
-          }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="focus-stage-inner"
-            style={{
-              filter: "none",
-              backdropFilter: "none",
-              WebkitBackdropFilter: "none",
-            }}
-          >
-            {children}
+                {DEBUG_FRAME ? (
+                  <div className="pointer-events-none absolute inset-0 rounded-[28px] border-[4px] border-white/80" />
+                ) : null}
+              </div>
+              {/* ============================ */}
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

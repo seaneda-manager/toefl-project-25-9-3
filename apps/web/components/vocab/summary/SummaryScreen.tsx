@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import StageScaffold from "@/components/common/stage/StageScaffold";
+import StageIntroScreen from "@/components/common/StageIntroScreen";
 
 type AnyProps = Record<string, any>;
 
@@ -35,6 +35,19 @@ function asBool(v: any): boolean | null {
   if (v === 0) return false;
 
   return null;
+}
+
+function uniqByWordId(list: any[]) {
+  const out: any[] = [];
+  const seen = new Set<string>();
+  for (const w of list) {
+    const id = getId(w);
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(w);
+  }
+  return out;
 }
 
 function gridClassForCount(count: number) {
@@ -78,7 +91,7 @@ export default function SummaryScreen(props: AnyProps) {
         props.allWords,
         props.sessionWords,
         props.results?.words,
-        props.result?.words
+        props.result?.words,
       ) ?? [];
     return safeList(list);
   }, [props.words, props.items, props.allWords, props.sessionWords, props.results, props.result]);
@@ -91,7 +104,7 @@ export default function SummaryScreen(props: AnyProps) {
       props.knowMap,
       props.knownMap,
       props.prescreenChoices,
-      props.prescreen
+      props.prescreen,
     ) ?? null;
 
   const spellPassMap =
@@ -101,10 +114,11 @@ export default function SummaryScreen(props: AnyProps) {
       props.spellMap,
       props.spellingMap,
       props.spellcheckMap,
-      props.spellCheckMap
+      props.spellCheckMap,
     ) ?? null;
 
-  const { spellFailedList, knowCount, spellFailedCount } = useMemo(() => {
+  const { unknownList, spellFailedList, knowCount, unknownCount, spellFailedCount, learnList } = useMemo(() => {
+    const unknown: any[] = [];
     const failed: any[] = [];
     let kCount = 0;
 
@@ -115,86 +129,148 @@ export default function SummaryScreen(props: AnyProps) {
       const prescreenKnown = asBool(prescreenMap ? prescreenMap[id] : null);
       const spellPass = asBool(spellPassMap ? spellPassMap[id] : null);
 
-      const isKnownFromSpeed = prescreenKnown === true;
-      if (isKnownFromSpeed) kCount++;
+      const isKnown = prescreenKnown === true;
+      const isUnknown = prescreenKnown === false;
 
-      const isSpellFailed = isKnownFromSpeed && spellPass !== true;
+      if (isKnown) kCount++;
+      if (isUnknown) unknown.push(w);
+
+      // spellingFail only matters for known words
+      const isSpellFailed = isKnown && spellPass !== true;
       if (isSpellFailed) failed.push(w);
     }
 
+    const uniqUnknown = uniqByWordId(unknown);
+    const uniqFailed = uniqByWordId(failed);
+
+    // ✅ 핵심: Learning 대상은 unknown + spellFailed 합집합
+    const learn = uniqByWordId([...uniqUnknown, ...uniqFailed]);
+
     return {
-      spellFailedList: failed,
+      unknownList: uniqUnknown,
+      spellFailedList: uniqFailed,
       knowCount: kCount,
-      spellFailedCount: failed.length,
+      unknownCount: uniqUnknown.length,
+      spellFailedCount: uniqFailed.length,
+      learnList: learn,
     };
   }, [words, prescreenMap, spellPassMap]);
 
-  const grid = gridClassForCount(spellFailedCount);
+  const gridUnknown = gridClassForCount(unknownCount);
+  const gridFailed = gridClassForCount(spellFailedCount);
 
-  const nextPayload = useMemo(
+  const nextPayloadStudy = useMemo(
     () => ({
-      spellFailedList,
-      spellFailedCount,
       knowCount,
-      xknowList: spellFailedList,
+      unknownCount,
+      spellFailedCount,
+      unknownList,
+      spellFailedList,
+      xknowList: learnList, // ✅ FIX: 반드시 이걸로!
     }),
-    [spellFailedList, spellFailedCount, knowCount]
+    [knowCount, unknownCount, spellFailedCount, unknownList, spellFailedList, learnList],
   );
 
-  function fireNext() {
+  const nextPayloadSkip = useMemo(
+    () => ({
+      knowCount,
+      unknownCount,
+      spellFailedCount,
+      unknownList,
+      spellFailedList,
+      xknowList: [], // skip learning
+    }),
+    [knowCount, unknownCount, spellFailedCount, unknownList, spellFailedList],
+  );
+
+  function fireNext(payload: any) {
     if (!onNext) return;
-    try {
-      (onNext as any)(nextPayload);
-      return;
-    } catch {}
-    try {
-      (onNext as any)();
-    } catch {}
+    (onNext as any)(payload); // ✅ 여기선 try/catch로 삼키지 말자 (문제 있으면 바로 드러나게)
   }
 
-  const hint = `Speed KNOW: ${knowCount} • Spell failed: ${spellFailedCount}`;
+  const hint = `Not Yet: ${unknownCount} • Spell failed: ${spellFailedCount} • Know: ${knowCount}`;
 
   return (
-    <div className="h-full w-full">
-      <StageScaffold
-        stageKey="summary"
-        stageLabel="Summary"
+    <div className="lx-panel-wrap">
+      <StageIntroScreen
+        badge={`Summary  (Keyboard supported)`}
         title="Summary"
         subtitle="These words will be studied in the Learning stage."
-        hint={hint}
-        primary={onNext ? { label: "Continue", onClick: fireNext } : undefined}
-        align="left"
-        maxWidthClassName="max-w-[980px]"
+        hint={
+          <div>
+            <div className="font-extrabold">{hint}</div>
+            <div className="mt-1 text-sm font-semibold text-slate-600">
+              Continue = go to Learning with (Not Yet + Spell failed).
+            </div>
+          </div>
+        }
+        primaryLabel="Continue"
+        secondaryLabel="Skip Learning"
+        onPrimary={() => fireNext(nextPayloadStudy)}
+        onSecondary={() => fireNext(nextPayloadSkip)}
       >
-        {spellFailedCount === 0 ? (
-          <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5 text-neutral-700 font-semibold">
-            No spelling failures ✅
+        {learnList.length === 0 ? (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-slate-700 font-semibold">
+            Nothing to study ✅
+            <div className="mt-2 text-sm text-slate-500">You can skip Learning and go straight to Speed.</div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <div className="font-extrabold text-neutral-900">
-                Spell Check Failed <span className="ml-2 text-neutral-500 font-bold">({spellFailedCount})</span>
-              </div>
-              <div className="text-neutral-500 text-sm font-semibold">Listed below</div>
-            </div>
+          <div className="mt-4 space-y-6">
+            {/* Unknown */}
+            {unknownCount > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="font-extrabold text-slate-900">
+                    Not Yet <span className="ml-2 text-slate-500 font-bold">({unknownCount})</span>
+                  </div>
+                  <div className="text-slate-500 text-sm font-semibold">From Prescreen</div>
+                </div>
 
-            <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-4">
-              <ul className={grid.list}>
-                {spellFailedList.map((w, i) => (
-                  <li
-                    key={`${getId(w) || getText(w) || "f"}-${i}`}
-                    className={grid.item}
-                    title={getText(w) || ""}
-                  >
-                    {getText(w) || "—"}
-                  </li>
-                ))}
-              </ul>
-            </div>
+                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                  <ul className={gridUnknown.list}>
+                    {unknownList.map((w, idx) => (
+                      <li
+                        key={`${getId(w) || getText(w) || "u"}-${idx}`}
+                        className={gridUnknown.item}
+                        title={getText(w) || ""}
+                      >
+                        {getText(w) || "—"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Spell failed */}
+            {spellFailedCount > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="font-extrabold text-slate-900">
+                    Spell Check Failed{" "}
+                    <span className="ml-2 text-slate-500 font-bold">({spellFailedCount})</span>
+                  </div>
+                  <div className="text-slate-500 text-sm font-semibold">From Spelling</div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                  <ul className={gridFailed.list}>
+                    {spellFailedList.map((w, idx) => (
+                      <li
+                        key={`${getId(w) || getText(w) || "f"}-${idx}`}
+                        className={gridFailed.item}
+                        title={getText(w) || ""}
+                      >
+                        {getText(w) || "—"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
-      </StageScaffold>
+      </StageIntroScreen>
     </div>
   );
 }

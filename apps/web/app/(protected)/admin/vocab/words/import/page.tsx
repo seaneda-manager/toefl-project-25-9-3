@@ -8,9 +8,9 @@ export default function AdminVocabWordsImportPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-bold">단어 Bulk Import (JSON)</h1>
+        <h1 className="text-xl font-bold">단어 Bulk Import</h1>
         <p className="text-sm text-gray-600">
-          WordCreatePayload[] 형태의 JSON 배열을 붙여넣고 한 번에 단어를 등록합니다.
+          JSON 업로드(파일/붙여넣기) 또는 Raw list로 단어를 등록합니다.
         </p>
       </header>
 
@@ -22,61 +22,116 @@ export default function AdminVocabWordsImportPage() {
 
             console.log("VOCAB IMPORT RESULT", result);
 
-            // 간단하게는 성공/실패에 따라 콘솔 + alert
-            // (나중에 toast / result 페이지로 개선 가능)
-            if (!result.ok) {
-              // 실패해도 redirect는 시켜주고, 콘솔에서 상세 확인
-              throw new Error(
-                `Import 실패: total=${result.total}, success=${result.successCount}, failures=${result.failureCount}`,
-              );
+            if (!result?.ok) {
+              throw new Error("Import 실패 (result.ok=false)");
             }
 
-            // 성공 시 리스트 페이지로 돌려보내기 (경로는 상황에 맞게 수정)
-            redirect("/(protected)/admin/vocab/words");
+            // result shape: { ok, batchId, total, inserted, updated, skipped, ... }
+            // 필요하면 querystring에 batchId 달아도 됨
+            redirect("/admin/vocab/words");
           }}
-          className="space-y-4"
+          className="space-y-5"
         >
-          <label className="block text-sm font-medium text-gray-700">
-            JSON 배열
-          </label>
-          <textarea
-            name="jsonText"
-            rows={16}
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm font-mono"
-            placeholder={`예시:
+          {/* meta fields */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700">sourceLabel</span>
+              <input
+                name="sourceLabel"
+                placeholder="e.g. 능률보카_어원편_Day01"
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700">maxItems</span>
+              <input
+                name="maxItems"
+                type="number"
+                min={1}
+                max={2000}
+                defaultValue={500}
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700">note</span>
+              <input
+                name="note"
+                placeholder="optional"
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+
+          {/* file upload */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              JSON file (optional)
+            </label>
+            <input
+              name="file"
+              type="file"
+              accept="application/json,.json"
+              className="block w-full text-sm"
+            />
+            <p className="text-xs text-gray-500">
+              파일이 있으면 파일이 1순위로 처리됩니다.
+            </p>
+          </div>
+
+          {/* json textarea */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">
+              JSON 배열 (optional)
+            </label>
+            <textarea
+              name="json"
+              rows={14}
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm font-mono"
+              placeholder={`예시:
 
 [
   {
     "text": "abandon",
-    "lemma": "abandon",
-    "pos": "v.",
-    "is_function_word": false,
     "meanings_ko": ["버리다", "포기하다"],
     "meanings_en_simple": ["to leave completely", "to give up completely"],
     "examples_easy": ["He abandoned the car on the road."],
-    "examples_normal": [],
     "derived_terms": ["abandonment"],
-    "difficulty": 3,
-    "frequency_score": 0.75,
-    "notes": "",
-    "gradeBands": ["K7_9", "K10_12"],
-    "sources": [],
-    "semanticTagIds": [],
-    "grammarHints": []
+    "synonyms_en_simple": ["leave", "quit"]
   }
 ]`}
-          />
+            />
+            <p className="text-xs text-gray-500">
+              ⚠️ JSON이 유효하지 않으면 Raw list로 자동 fallback 처리됩니다.
+            </p>
+          </div>
 
-          <p className="text-xs text-gray-500">
-            ⚠️ JSON이 유효하지 않으면 import가 실패합니다. 한 번에 수십~수백 개까지 올릴 수
-            있습니다.
-          </p>
+          {/* raw fallback */}
+          <details className="rounded-md border bg-gray-50 p-3">
+            <summary className="cursor-pointer text-sm font-medium text-gray-700">
+              Raw list (optional, fallback)
+            </summary>
+            <div className="mt-3 space-y-1">
+              <label className="block text-sm font-medium text-gray-700">raw</label>
+              <textarea
+                name="raw"
+                rows={10}
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm font-mono"
+                placeholder={`예:
+abandon - 버리다, 포기하다
+complete - 완성하다, 마무리하다
+...`}
+              />
+              <p className="text-xs text-gray-500">
+                parseRawToWordEntries 규칙에 맞춰 파싱됩니다.
+              </p>
+            </div>
+          </details>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="reset"
-              className="rounded-md border px-4 py-2 text-sm text-gray-700"
-            >
+            <button type="reset" className="rounded-md border px-4 py-2 text-sm text-gray-700">
               초기화
             </button>
             <button

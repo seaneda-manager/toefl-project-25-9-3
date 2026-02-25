@@ -123,7 +123,10 @@ function PageShell({ children }: { children?: React.ReactNode }) {
 }
 
 /* =========================================================
- * CARD WRAPPER (✅ page-embedded card mode)
+ * CARD WRAPPER (✅ stage-like card mode)
+ * - keep FocusModeWrapper variant="card" (known working)
+ * - remove max-w + remove extra big white card
+ * - enforce lx-panel-wrap as the immediate wrapper
  * ======================================================= */
 function CardWrap({
   children,
@@ -135,13 +138,21 @@ function CardWrap({
   return (
     <FocusModeWrapper
       variant="card"
-      panelWidthClass="max-w-xl"
-      className={className}
-      // card variant ignores these, but leaving for clarity
+      // ✅ max-w 제거 (이게 초록 bg 대비 학습기가 작아지는 1순위)
+      panelWidthClass="max-w-none w-full"
+      // ✅ 바깥 “큰 흰 박스”가 있다면 여기서 투명화로 눌러버림
+      className={[
+        "text-slate-900",
+        "!bg-transparent !shadow-none !border-0 !p-0",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       dim={false}
       blur={false}
     >
-      <div className="space-y-3">{children}</div>
+      {/* ✅ 네가 요구한 구조의 핵심: wrap은 항상 lx-panel-wrap */}
+      <div className="lx-panel-wrap">{children}</div>
     </FocusModeWrapper>
   );
 }

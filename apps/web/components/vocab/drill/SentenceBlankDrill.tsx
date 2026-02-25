@@ -170,7 +170,7 @@ export default function SentenceBlankDrill({
   const prettySentence = sentence.includes("____") ? sentence : `${sentence} ____`;
 
   return (
-    <div className="mx-auto max-w-[920px]">
+    <div className="w-full h-full">
       <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
         Fill in the Blanks
       </div>

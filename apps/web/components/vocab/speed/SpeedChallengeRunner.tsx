@@ -195,9 +195,9 @@ export default function SpeedChallengeRunner({
     </div>
   );
 
-  const hint = `Correct: ${correctCount} • Accuracy (so far): ${Math.round(accuracySoFar * 100)}% • Pass ≥ ${Math.round(
-    minPassAccuracy * 100
-  )}%`;
+  const hint = `Correct: ${correctCount} • Accuracy (so far): ${Math.round(
+    accuracySoFar * 100
+  )}% • Pass ≥ ${Math.round(minPassAccuracy * 100)}%`;
 
   return (
     <div className="h-full w-full">
@@ -211,9 +211,8 @@ export default function SpeedChallengeRunner({
         hint={hint}
         primary={{ label: "Submit", onClick: onSubmit, disabled: locked || norm(input).length === 0 }}
         align="center"
-        maxWidthClassName="max-w-[980px]"
       >
-        <div className="mx-auto max-w-[780px] space-y-4">
+        <div className="w-full space-y-4">
           <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5 text-left">
             <div className="text-neutral-500 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
               Prompt

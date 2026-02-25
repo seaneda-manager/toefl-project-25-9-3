@@ -224,7 +224,7 @@ function InlineSynonymDrill({ task, onDone }: { task: DrillTask; onDone: (isCorr
   }
 
   return (
-    <div className="mx-auto max-w-[860px]">
+    <div className="w-full h-full">
       <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
         {title}
       </div>
@@ -362,7 +362,7 @@ export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "
           hint="Upstream may be missing word_forms/collocations, or drillTypes were not created."
           primary={{ label: "Finish", onClick: finishOnce }}
           align="center"
-          maxWidthClassName="max-w-[980px]"
+          
         >
           <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5 text-neutral-700 font-semibold">
             No drill tasks.
@@ -385,9 +385,9 @@ export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "
         hint={hint}
         secondary={{ label: "Skip", onClick: goNext, variant: "ghost" }}
         align="center"
-        maxWidthClassName="max-w-[1020px]"
+        
       >
-        <div className="mx-auto max-w-[980px]">
+        <div className="w-full h-full">
           {dt === "SYNONYM" ? (
             <InlineSynonymDrill task={current} onDone={onDone} />
           ) : dt === "WORD_FORM" ? (

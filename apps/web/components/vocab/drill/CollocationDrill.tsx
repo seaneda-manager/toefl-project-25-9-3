@@ -167,7 +167,7 @@ export default function CollocationDrill({
       : "Choose the best collocation:";
 
   return (
-    <div className="mx-auto max-w-[920px]">
+    <div className="w-full h-full">
       <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
         Collocation
       </div>

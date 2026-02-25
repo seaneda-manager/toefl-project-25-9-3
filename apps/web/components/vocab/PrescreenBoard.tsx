@@ -1,82 +1,100 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
-import StageScaffold from "@/components/common/StageScaffold";
+import React, { useEffect, useMemo, useState } from "react";
+import StageIntroScreen from "@/components/common/StageIntroScreen";
 
-type AnyProps = Record<string, any>;
+type Word = {
+  id: string;
+  text: string;
+  meanings_ko?: string[];
+};
 
-function pickFirst<T>(...candidates: any[]): T | null {
-  for (const c of candidates) if (c !== undefined && c !== null) return c as T;
-  return null;
+type PrescreenResult = {
+  knownWordIds: string[];
+  unknownWordIds: string[];
+};
+
+function safeWords(v: any): Word[] {
+  return Array.isArray(v) ? (v as Word[]).filter(Boolean) : [];
 }
 
-function safeCall(fn: any, argSets: any[][]) {
-  if (typeof fn !== "function") return false;
-  for (const args of argSets) {
-    try {
-      fn(...args);
-      return true;
-    } catch {}
-  }
-  return false;
-}
+export default function PrescreenBoard({
+  words,
+  onFinish,
+}: {
+  words: Word[];
+  onFinish: (r: PrescreenResult) => void;
+}) {
+  const list = useMemo(() => safeWords(words), [words]);
 
-function getWordText(word: any) {
-  return String(word?.text ?? word?.lemma ?? word?.target ?? word ?? "").trim();
-}
+  const [i, setI] = useState(0);
+  const [known, setKnown] = useState<string[]>([]);
+  const [unknown, setUnknown] = useState<string[]>([]);
 
-export default function PrescreenBoard(props: AnyProps) {
-  const wordObj =
-    pickFirst<any>(props.word, props.currentWord, props.item, props.question?.word, props.question) ?? null;
+  const cur = list[i] ?? null;
+  const total = list.length;
 
-  const wordText = useMemo(() => getWordText(wordObj), [wordObj]);
+  const commit = (isKnown: boolean) => {
+    if (!cur?.id) return;
 
-  const index = pickFirst<number>(props.index, props.currentIndex, props.i, props.progressIndex) ?? 0;
-  const total = pickFirst<number>(props.total, props.count, props.totalCount, props.progressTotal) ?? 0;
+    const id = cur.id;
 
-  const onAnswer = props.onAnswer ?? props.onSelect ?? props.onResponse ?? props.onResult ?? null;
-  const onKnow = props.onKnow ?? props.onYes ?? props.onKnown ?? null;
-  const onDontKnow = props.onDontKnow ?? props.onNo ?? props.onUnknown ?? null;
+    if (isKnown) setKnown((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    else setUnknown((prev) => (prev.includes(id) ? prev : [...prev, id]));
 
-  const handle = (known: boolean) => {
-    return (
-      safeCall(known ? onKnow : onDontKnow, [[known], []]) ||
-      safeCall(onAnswer, [
-        [known],
-        [{ known }],
-        [{ value: known ? "KNOW" : "DONT_KNOW", known }],
-        [known ? "KNOW" : "DONT_KNOW"],
-        [],
-      ])
-    );
+    const nextIndex = i + 1;
+
+    if (nextIndex >= total) {
+      const knownIds = isKnown ? (known.includes(id) ? known : [...known, id]) : known;
+      const unknownIds = !isKnown ? (unknown.includes(id) ? unknown : [...unknown, id]) : unknown;
+
+      onFinish({ knownWordIds: knownIds, unknownWordIds: unknownIds });
+      return;
+    }
+
+    setI(nextIndex);
   };
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") handle(false);
-      if (e.key === "ArrowRight") handle(true);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "1") commit(true);
+      if (e.key === "2") commit(false);
+      if (e.key === "Enter") commit(true);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wordText, onAnswer, onKnow, onDontKnow]);
+  }, [i, cur?.id, total, known, unknown]);
+
+  if (!list.length) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 text-center text-slate-700">
+          No words found for Prescreen.
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <StageScaffold
-      stageKey="PRESCREEN"
-      stageLabel="Know / Not Yet"
-      step={total > 0 ? { index: index + 1, total } : null}
-      title={wordText || "—"}
-      subtitle="Do you know this word?"
-      hint="← Not Yet   •   → Know"
-      secondary={{ label: "Not Yet", onClick: () => handle(false), variant: "ghost" }}
-      primary={{ label: "Know", onClick: () => handle(true) }}
-      align="center"
-      maxWidthClassName="max-w-[880px]"
-    >
-      <div className="text-[14px] font-semibold text-neutral-600">
-        Choose one. (Keyboard supported)
-      </div>
-    </StageScaffold>
+    <div className="lx-panel-wrap">
+      <StageIntroScreen
+        badge={`Know / Not Yet  ${i + 1}/${total}`}
+        title={cur?.text ?? "Word"}
+        subtitle="Do you know this word?"
+        hint={
+          <div>
+            <div className="font-extrabold">Choose one.</div>
+            <div className="mt-1 text-sm font-semibold text-slate-600">
+              Press <b>1</b> for Know, <b>2</b> for Not Yet.
+            </div>
+          </div>
+        }
+        primaryLabel="Know"
+        secondaryLabel="Not Yet"
+        onPrimary={() => commit(true)}
+        onSecondary={() => commit(false)}
+      />
+    </div>
   );
 }

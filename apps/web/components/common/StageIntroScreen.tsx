@@ -1,162 +1,117 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import PenguinMascot from "@/components/mascot/PenguinMascot";
-import { usePenguinMood } from "@/components/mascot/usePenguinMood";
+import React, { useEffect } from "react";
 
 type Props = {
-  title: string;
-  subtitle?: string;
-  onDone: () => void;
+  badge?: React.ReactNode;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  hint?: React.ReactNode;
 
-  ctaLabel?: string;
-  autoMs?: number;
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  onPrimary?: () => void;
+  onSecondary?: () => void;
+
+  // legacy
+  doneLabel?: string;
+  onDone?: () => void;
+
+  children?: React.ReactNode;
 };
 
+function isTypingTarget(el: EventTarget | null) {
+  const node = el as HTMLElement | null;
+  if (!node) return false;
+  const tag = node.tagName?.toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return true;
+  if ((node as any).isContentEditable) return true;
+  return false;
+}
+
 export default function StageIntroScreen({
+  badge,
   title,
   subtitle,
+  hint,
+  primaryLabel,
+  secondaryLabel,
+  onPrimary,
+  onSecondary,
+  doneLabel,
   onDone,
-  ctaLabel = "Start",
-  autoMs = 0,
+  children,
 }: Props) {
-  const [msLeft, setMsLeft] = useState<number>(autoMs);
-  const p = usePenguinMood();
-
-  const showAuto = useMemo(
-    () => Number.isFinite(autoMs) && autoMs > 0,
-    [autoMs]
-  );
-
   useEffect(() => {
-    if (!showAuto) return;
-    setMsLeft(autoMs);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return;
 
-    const t = setInterval(() => {
-      setMsLeft((v) => Math.max(0, v - 250));
-    }, 250);
+      if (e.key === "1" && onPrimary) onPrimary();
+      if (e.key === "2" && onSecondary) onSecondary();
 
-    return () => clearInterval(t);
-  }, [autoMs, showAuto]);
+      if (e.key === "Enter") {
+        if (onPrimary) onPrimary();
+        else if (onDone) onDone();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onPrimary, onSecondary, onDone]);
 
-  useEffect(() => {
-    if (!showAuto) return;
-    if (msLeft <= 0) {
-      p.success();
-      setTimeout(onDone, 400);
-    }
-  }, [msLeft, showAuto, onDone, p]);
-
-  const pct =
-    showAuto && autoMs > 0
-      ? Math.min(100, Math.max(0, (1 - msLeft / autoMs) * 100))
-      : 0;
+  const showTwo = Boolean(primaryLabel && secondaryLabel && (onPrimary || onSecondary));
+  const showOne = Boolean(!showTwo && onDone);
 
   return (
-    <div
-      className="relative overflow-hidden rounded-[var(--lx-radius)] border p-8 sm:p-14"
-      style={{
-        background: "var(--lx-surface)",
-        borderColor: "var(--lx-border)",
-        boxShadow: "var(--lx-shadow)",
-      }}
-    >
-      {/* Pastel floating shapes */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -left-24 -top-24 h-72 w-72 rounded-full blur-3xl"
-          style={{ background: "var(--lx-secondary)", opacity: 0.25 }}
-        />
-        <div
-          className="absolute -right-28 -bottom-28 h-80 w-80 rounded-full blur-3xl"
-          style={{ background: "var(--lx-accent)", opacity: 0.25 }}
-        />
-      </div>
-
-      <div className="relative text-center">
-        <div className="mx-auto max-w-3xl">
-
-          {/* 🐧 Penguin */}
-          <div className="mb-10 flex justify-center">
-            <PenguinMascot
-              src="/assets/lingox/penguin.png"
-              mood={p.mood}
-              size={150}
-            />
-          </div>
-
-          {/* Title */}
-          <div
-            className="text-5xl font-extrabold tracking-tight sm:text-6xl"
-            style={{ color: "var(--lx-text)" }}
-          >
-            {title}
-          </div>
-
-          {/* Subtitle */}
-          {subtitle ? (
-            <div
-              className="mt-5 text-xl font-semibold sm:text-2xl"
-              style={{ color: "var(--lx-muted)" }}
-            >
-              {subtitle}
+    <div className="lx-panel rounded-[28px] border border-slate-200 bg-white/95 shadow-sm text-slate-900">
+      {/* ✅ 스케일 래퍼(전체 내용이 창 크기 변화에 비례해서 같이 줄고 늘어남) */}
+      <div className="lx-panel-content">
+        <div className="lx-panel-scroll">
+          {/* ✅ 헤더: 중첩 패널일 때 CSS로 숨길 수 있게 class를 분리 */}
+          <div className="lx-panel-header p-8 pb-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-extrabold text-slate-900">
+              {badge ?? "Info"}
+              <span className="text-slate-500">(Keyboard supported)</span>
             </div>
-          ) : null}
 
-          {/* Auto progress */}
-          {showAuto ? (
-            <div className="mt-8">
-              <div
-                className="h-3 w-full overflow-hidden rounded-full"
-                style={{ background: "rgba(0,0,0,0.05)" }}
-              >
-                <div
-                  className="h-full transition-all duration-200"
-                  style={{
-                    width: `${pct}%`,
-                    background: "var(--lx-accent)",
-                  }}
-                />
+            {title ? (
+              <div className="mt-6 text-[clamp(28px,3cqi,56px)] font-extrabold leading-tight text-slate-900">
+                {title}
               </div>
-              <div
-                className="mt-3 text-sm"
-                style={{ color: "var(--lx-muted)" }}
-              >
-                Auto starting…
+            ) : null}
+
+            {subtitle ? (
+              <div className="mt-2 text-[clamp(14px,1.5cqi,20px)] font-semibold text-slate-600">
+                {subtitle}
+              </div>
+            ) : null}
+
+            {hint ? (
+              <div className="mt-4 text-sm font-semibold text-slate-700">{hint}</div>
+            ) : null}
+          </div>
+
+          {/* body */}
+          {children ? <div className="px-8 pb-6">{children}</div> : null}
+
+          {/* actions */}
+          {showTwo ? (
+            <div className="px-8 pb-8">
+              <div className="flex gap-4">
+                <button type="button" className="lx-btn lx-btn-primary" onClick={onPrimary}>
+                  {primaryLabel} <span className="ml-2 opacity-80">(1)</span>
+                </button>
+                <button type="button" className="lx-btn lx-btn-secondary" onClick={onSecondary}>
+                  {secondaryLabel} <span className="ml-2 opacity-70">(2)</span>
+                </button>
               </div>
             </div>
+          ) : showOne ? (
+            <div className="px-8 pb-8">
+              <button type="button" className="lx-btn lx-btn-primary w-full" onClick={onDone}>
+                {doneLabel ?? "Continue"} <span className="ml-2 opacity-80">(Enter)</span>
+              </button>
+            </div>
           ) : null}
-
-          {/* Buttons */}
-          <div className="mt-12 flex flex-wrap justify-center gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                p.success();
-                setTimeout(onDone, 350);
-              }}
-              className="rounded-3xl px-8 py-4 text-white transition active:scale-[0.98]"
-              style={{
-                background: "var(--lx-primary)",
-                boxShadow: "0 8px 24px rgba(91,140,255,0.25)",
-              }}
-            >
-              {ctaLabel}
-            </button>
-
-            <button
-              type="button"
-              onClick={onDone}
-              className="rounded-3xl px-8 py-4 transition active:scale-[0.98]"
-              style={{
-                background: "var(--lx-surface)",
-                border: "1px solid var(--lx-border)",
-                color: "var(--lx-text)",
-              }}
-            >
-              Continue
-            </button>
-          </div>
         </div>
       </div>
     </div>

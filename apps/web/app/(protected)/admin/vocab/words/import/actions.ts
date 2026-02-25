@@ -1,3 +1,4 @@
+// apps/web/app/(protected)/admin/vocab/words/import/actions.ts
 "use server";
 
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -16,11 +17,9 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-// helpers: treat "empty" for json/array-ish fields
 function isEmptyJsonArray(v: any): boolean {
   if (!v) return true;
   if (Array.isArray(v)) return v.length === 0;
-  // supabase can return json as object/unknown
   try {
     if (typeof v === "string") {
       const t = v.trim();
@@ -36,21 +35,91 @@ function asArrayOrEmpty(v: any): any[] {
   return Array.isArray(v) ? v : [];
 }
 
-export async function importVocabWordsListAction(params: {
-  raw: string;
+function asArrayOrParsed(v: any): any[] {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    const t = v.trim();
+    if (!t) return [];
+    try {
+      const parsed = JSON.parse(t);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function coerceSynonyms(v: any): string {
+  if (Array.isArray(v)) return v.map((x) => cleanStr(x)).filter(Boolean).join("; ");
+  return cleanStr(v);
+}
+
+type WordEntryLike = {
+  text: string;
+  meanings_ko?: any[];
+  meanings_en_simple?: any[];
+  examples_easy?: any[];
+  examples_normal?: any[];
+  derived_terms?: any[];
+  difficulty?: any;
+  frequency_score?: any;
+  synonyms_en_simple?: any;
+};
+
+function normalizeJsonEntries(json: any): WordEntryLike[] {
+  const base: any[] =
+    Array.isArray(json)
+      ? json
+      : Array.isArray(json?.items)
+        ? json.items
+        : Array.isArray(json?.words)
+          ? json.words
+          : Array.isArray(json?.data)
+            ? json.data
+            : [];
+
+  const out: WordEntryLike[] = [];
+  for (const raw of base) {
+    if (!raw) continue;
+
+    const text = cleanStr(
+      raw.text ?? raw.word ?? raw.lemma ?? raw.target ?? raw.term ?? raw.value
+    );
+    if (!text) continue;
+
+    out.push({
+      text,
+      meanings_ko: asArrayOrParsed(
+        raw.meanings_ko ?? raw.meaningsKo ?? raw.ko ?? raw.korean_meanings
+      ),
+      meanings_en_simple: asArrayOrParsed(
+        raw.meanings_en_simple ?? raw.meaningsEnSimple ?? raw.en ?? raw.english_meanings
+      ),
+      examples_easy: asArrayOrParsed(raw.examples_easy ?? raw.examplesEasy ?? raw.examples),
+      examples_normal: asArrayOrParsed(raw.examples_normal ?? raw.examplesNormal),
+      derived_terms: asArrayOrParsed(raw.derived_terms ?? raw.derivedTerms),
+      difficulty: raw.difficulty ?? null,
+      frequency_score: raw.frequency_score ?? raw.frequencyScore ?? null,
+      synonyms_en_simple: raw.synonyms_en_simple ?? raw.synonymsEnSimple ?? raw.synonyms ?? null,
+    });
+  }
+  return out;
+}
+
+async function runImport(params: {
+  entries: WordEntryLike[];
   sourceLabel?: string | null;
   note?: string | null;
   maxItems?: number;
 }) {
   const supabase = await getServerSupabase();
 
-  const raw = String(params.raw ?? "");
   const sourceLabel = params.sourceLabel ?? null;
   const note = params.note ?? null;
   const maxItems = Math.min(Math.max(params.maxItems ?? 500, 1), 2000);
 
-  // ✅ word + meanings_ko 함께 파싱
-  const entriesAll = parseRawToWordEntries(raw);
+  const entriesAll = params.entries ?? [];
   const entries = entriesAll.slice(0, maxItems);
 
   const {
@@ -59,7 +128,6 @@ export async function importVocabWordsListAction(params: {
   } = await supabase.auth.getUser();
   if (uerr || !user) throw new Error("로그인이 필요합니다.");
 
-  // batch 생성
   const { data: batch, error: berr } = await supabase
     .from("vocab_import_batches")
     .insert({
@@ -83,6 +151,7 @@ export async function importVocabWordsListAction(params: {
       .from("vocab_import_batches")
       .update({ inserted_count: 0, skipped_count: 0 })
       .eq("id", batchId);
+
     return {
       ok: true,
       batchId,
@@ -95,7 +164,6 @@ export async function importVocabWordsListAction(params: {
     };
   }
 
-  // 기존 단어(text_norm) 조회
   const norms = entries.map((e) => normText(e.text)).filter(Boolean);
 
   type ExistingWordRow = {
@@ -116,7 +184,7 @@ export async function importVocabWordsListAction(params: {
     const { data: existingRows, error: exerr } = await supabase
       .from("words")
       .select(
-        "id, text_norm, meanings_ko, meanings_en_simple, examples_easy, examples_normal, derived_terms, synonyms_en_simple, notes",
+        "id, text_norm, meanings_ko, meanings_en_simple, examples_easy, examples_normal, derived_terms, synonyms_en_simple, notes"
       )
       .in("text_norm", part);
 
@@ -163,25 +231,19 @@ export async function importVocabWordsListAction(params: {
 
     const existing = existingByNorm.get(text_norm);
 
-    // ✅ 이미 존재하면: "스킵"하되, 비어있는 필드만 채우는 patch update
     if (existing) {
       const patch: Record<string, any> = {};
 
-      // meanings_ko: 기존이 비어있고, 들어온 값이 있으면 채움
-      const incomingKo = Array.isArray((entry as any).meanings_ko) ? (entry as any).meanings_ko : [];
+      const incomingKo = asArrayOrEmpty((entry as any).meanings_ko);
       if (isEmptyJsonArray(existing.meanings_ko) && incomingKo.length > 0) {
         patch.meanings_ko = incomingKo;
       }
 
-      // (옵션) meanings_en_simple도 entry에 있다면 동일 로직으로 추가 가능
-      const incomingEn = Array.isArray((entry as any).meanings_en_simple)
-        ? (entry as any).meanings_en_simple
-        : [];
+      const incomingEn = asArrayOrEmpty((entry as any).meanings_en_simple);
       if (isEmptyJsonArray(existing.meanings_en_simple) && incomingEn.length > 0) {
         patch.meanings_en_simple = incomingEn;
       }
 
-      // examples_easy / examples_normal
       const incomingEasy = asArrayOrEmpty((entry as any).examples_easy);
       if (isEmptyJsonArray(existing.examples_easy) && incomingEasy.length > 0) {
         patch.examples_easy = incomingEasy;
@@ -192,19 +254,19 @@ export async function importVocabWordsListAction(params: {
         patch.examples_normal = incomingNormal;
       }
 
-      // derived_terms
       const incomingDerived = asArrayOrEmpty((entry as any).derived_terms);
       if (isEmptyJsonArray(existing.derived_terms) && incomingDerived.length > 0) {
         patch.derived_terms = incomingDerived;
       }
 
-      // synonyms_en_simple (string column일 가능성이 커서 string로만)
-      const incomingSyn = cleanStr((entry as any).synonyms_en_simple);
-      if ((!existing.synonyms_en_simple || String(existing.synonyms_en_simple).trim() === "") && incomingSyn) {
+      const incomingSyn = coerceSynonyms((entry as any).synonyms_en_simple);
+      if (
+        (!existing.synonyms_en_simple || String(existing.synonyms_en_simple).trim() === "") &&
+        incomingSyn
+      ) {
         patch.synonyms_en_simple = incomingSyn;
       }
 
-      // notes: 기존 notes가 비어있으면 safeNotes 넣기 (덮어쓰지 않음)
       if (!existing.notes || !String(existing.notes).trim()) {
         patch.notes = safeNotes;
       }
@@ -214,17 +276,14 @@ export async function importVocabWordsListAction(params: {
         if (!uperr) {
           updated++;
           updatedIds.push(existing.id);
-          // 메모리 맵도 갱신 (다음 entry에서 같은 단어 또 나오면 불필요 update 방지)
           existingByNorm.set(text_norm, { ...existing, ...patch } as any);
         }
       }
 
-      // "insert"는 아니므로 skipped로 잡음
       skipped++;
       continue;
     }
 
-    // ✅ 없으면 새로 insert (여기서만 batch_items 기록해서 Undo 안전)
     const { data: inserted, error: ierr } = await supabase
       .from("words")
       .insert({
@@ -233,10 +292,8 @@ export async function importVocabWordsListAction(params: {
         pos: "other",
         is_function_word: false,
 
-        meanings_ko: Array.isArray((entry as any).meanings_ko) ? (entry as any).meanings_ko : [],
-        meanings_en_simple: Array.isArray((entry as any).meanings_en_simple)
-          ? (entry as any).meanings_en_simple
-          : [],
+        meanings_ko: asArrayOrEmpty((entry as any).meanings_ko),
+        meanings_en_simple: asArrayOrEmpty((entry as any).meanings_en_simple),
 
         examples_easy: asArrayOrEmpty((entry as any).examples_easy),
         examples_normal: asArrayOrEmpty((entry as any).examples_normal),
@@ -244,7 +301,7 @@ export async function importVocabWordsListAction(params: {
 
         difficulty: (entry as any).difficulty ?? null,
         frequency_score: (entry as any).frequency_score ?? null,
-        synonyms_en_simple: cleanStr((entry as any).synonyms_en_simple) || null,
+        synonyms_en_simple: coerceSynonyms((entry as any).synonyms_en_simple) || null,
         notes: safeNotes,
       })
       .select("id, text_norm")
@@ -258,7 +315,6 @@ export async function importVocabWordsListAction(params: {
     const wordId = String((inserted as any).id);
     insertedIds.push(wordId);
 
-    // ✅ undo 안전: "이번 batch로 새로 생성된 단어"만 기록
     const { error: logErr } = await supabase.from("vocab_import_batch_items").insert({
       batch_id: batchId,
       word_id: wordId,
@@ -270,18 +326,15 @@ export async function importVocabWordsListAction(params: {
       throw new Error("import log 저장 실패 (vocab_import_batch_items)");
     }
 
-    // map 갱신
     existingByNorm.set(text_norm, {
       id: wordId,
       text_norm,
-      meanings_ko: Array.isArray((entry as any).meanings_ko) ? (entry as any).meanings_ko : [],
-      meanings_en_simple: Array.isArray((entry as any).meanings_en_simple)
-        ? (entry as any).meanings_en_simple
-        : [],
+      meanings_ko: asArrayOrEmpty((entry as any).meanings_ko),
+      meanings_en_simple: asArrayOrEmpty((entry as any).meanings_en_simple),
       examples_easy: asArrayOrEmpty((entry as any).examples_easy),
       examples_normal: asArrayOrEmpty((entry as any).examples_normal),
       derived_terms: asArrayOrEmpty((entry as any).derived_terms),
-      synonyms_en_simple: cleanStr((entry as any).synonyms_en_simple) || null,
+      synonyms_en_simple: coerceSynonyms((entry as any).synonyms_en_simple) || null,
       notes: safeNotes,
     } as any);
   }
@@ -303,4 +356,102 @@ export async function importVocabWordsListAction(params: {
     insertedIds,
     updatedIds,
   };
+}
+
+export async function importVocabWordsListAction(params: {
+  raw: string;
+  sourceLabel?: string | null;
+  note?: string | null;
+  maxItems?: number;
+}) {
+  const raw = String(params.raw ?? "");
+  const entriesAll = parseRawToWordEntries(raw) as any[];
+  const entries = entriesAll.map((e: any) => ({
+    text: cleanStr(e?.text ?? e?.word ?? e?.lemma ?? ""),
+    meanings_ko: asArrayOrEmpty(e?.meanings_ko),
+    meanings_en_simple: asArrayOrEmpty(e?.meanings_en_simple),
+    examples_easy: asArrayOrEmpty(e?.examples_easy),
+    examples_normal: asArrayOrEmpty(e?.examples_normal),
+    derived_terms: asArrayOrEmpty(e?.derived_terms),
+    difficulty: e?.difficulty ?? null,
+    frequency_score: e?.frequency_score ?? null,
+    synonyms_en_simple: e?.synonyms_en_simple ?? null,
+  })) as WordEntryLike[];
+
+  return runImport({
+    entries,
+    sourceLabel: params.sourceLabel ?? null,
+    note: params.note ?? null,
+    maxItems: params.maxItems,
+  });
+}
+
+/**
+ * ✅ Server Action for <form action=...>
+ * canonical keys:
+ * - file, json, raw, sourceLabel, note, maxItems
+ * accepts legacy:
+ * - jsonText, source_label, max_items, payload, data
+ */
+export async function importWordsFromJsonForm(...args: any[]) {
+  const formData: FormData | undefined =
+    args?.[0] instanceof FormData
+      ? (args[0] as FormData)
+      : args?.[1] instanceof FormData
+        ? (args[1] as FormData)
+        : undefined;
+
+  if (!formData) {
+    throw new Error("Invalid form submission (missing FormData).");
+  }
+
+  const sourceLabel =
+    cleanStr(formData.get("sourceLabel") ?? formData.get("source_label") ?? formData.get("label")) ||
+    null;
+
+  const note = cleanStr(formData.get("note")) || null;
+
+  const maxItemsRaw = cleanStr(formData.get("maxItems") ?? formData.get("max_items") ?? formData.get("limit"));
+  const maxItems = maxItemsRaw ? Number.parseInt(maxItemsRaw, 10) : undefined;
+
+  // 1) file upload (most reliable)
+  const fileAny = formData.get("file") as any;
+  if (fileAny && typeof fileAny.text === "function" && typeof fileAny.size === "number" && fileAny.size > 0) {
+    const text = await fileAny.text();
+    const parsed = JSON.parse(text);
+    const entries = normalizeJsonEntries(parsed);
+    return runImport({ entries, sourceLabel, note, maxItems });
+  }
+
+  // 2) json textarea
+  const jsonText = cleanStr(
+    formData.get("json") ??
+      formData.get("jsonText") ?? // legacy from older page.tsx
+      formData.get("payload") ??
+      formData.get("data")
+  );
+
+  if (jsonText) {
+    try {
+      const parsed = JSON.parse(jsonText);
+      const entries = normalizeJsonEntries(parsed);
+      return runImport({ entries, sourceLabel, note, maxItems });
+    } catch {
+      return importVocabWordsListAction({
+        raw: jsonText,
+        sourceLabel,
+        note,
+        maxItems,
+      });
+    }
+  }
+
+  // 3) raw fallback
+  const raw = cleanStr(formData.get("raw"));
+  return importVocabWordsListAction({
+    raw,
+    sourceLabel,
+    note,
+    maxItems,
+  });
 }
