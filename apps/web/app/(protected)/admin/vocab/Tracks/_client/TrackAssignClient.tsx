@@ -1,14 +1,8 @@
-// apps/web/app/(protected)/admin/vocab/tracks/_client/TracksAssignClient.tsx
+// apps/web/app/(protected)/admin/vocab/Tracks/_client/TrackAssignClient.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
-import type {
-  StudentLite,
-  TrackLite,
-  AssignmentLite,
-  StudentPlanLite,
-  StudentBreakLite,
-} from "../actions";
+import React, { useEffect, useMemo, useState } from "react";
+import type { StudentLite, TrackLite, AssignmentLite, StudentPlanLite, StudentBreakLite } from "../actions";
 
 import {
   createStudentVocabPlanAction,
@@ -50,7 +44,7 @@ function WeekBtn({
   );
 }
 
-export default function TracksAssignClient({
+export default function TrackAssignClient({
   initialStudents,
   initialTracks,
 }: {
@@ -69,14 +63,20 @@ export default function TracksAssignClient({
     });
   }, [q, initialStudents]);
 
-  const [studentId, setStudentId] = useState<string>(students?.[0]?.id ?? "");
+  const [studentId, setStudentId] = useState<string>(initialStudents?.[0]?.id ?? "");
   const [trackId, setTrackId] = useState<string>(initialTracks?.[0]?.id ?? "");
+
+  useEffect(() => {
+    if (!studentId && initialStudents?.[0]?.id) setStudentId(initialStudents[0].id);
+    if (!trackId && initialTracks?.[0]?.id) setTrackId(initialTracks[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialStudents, initialTracks]);
 
   const [startDateISO, setStartDateISO] = useState<string>(todayISO());
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [maxActiveSets, setMaxActiveSets] = useState<number>(1);
   const [startDayIndex, setStartDayIndex] = useState<number>(1);
-  const [cursorDayIndex, setCursorDayIndex] = useState<number | "">( "");
+  const [cursorDayIndex, setCursorDayIndex] = useState<number | "">("");
   const [queueSize, setQueueSize] = useState<number>(3);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [pausedReason, setPausedReason] = useState<string>("");
@@ -87,9 +87,7 @@ export default function TracksAssignClient({
   const [plan, setPlan] = useState<StudentPlanLite | null>(null);
   const [breaks, setBreaks] = useState<StudentBreakLite[]>([]);
   const [queue, setQueue] = useState<AssignmentLite[]>([]);
-  const [stats, setStats] = useState<{ todayISO?: string; unlocked?: number; total?: number; maxActive?: number }>(
-    {}
-  );
+  const [stats, setStats] = useState<{ todayISO?: string; unlocked?: number; total?: number; maxActive?: number }>({});
 
   function toggleWeekday(n: number) {
     setWeekdays((prev) => {
@@ -109,6 +107,7 @@ export default function TracksAssignClient({
         setMsg(`❌ ${res.error}`);
         return;
       }
+
       setPlan(res.plan);
       setBreaks(res.breaks ?? []);
       setQueue(res.queue ?? []);
@@ -118,6 +117,7 @@ export default function TracksAssignClient({
         total: res.queueCount,
         maxActive: res.maxActive,
       });
+
       setMsg("✅ Loaded");
     } finally {
       setBusy(false);
@@ -135,7 +135,7 @@ export default function TracksAssignClient({
 
     setBusy(true);
     try {
-      const res = await createStudentVocabPlanAction({
+      await createStudentVocabPlanAction({
         studentId,
         trackId,
         startDateISO,
@@ -150,7 +150,6 @@ export default function TracksAssignClient({
 
       setMsg("✅ Plan saved (and queue ensured)");
       await loadPlan();
-      return res;
     } catch (e: any) {
       setMsg(`❌ ${e?.message ?? "failed"}`);
     } finally {
@@ -164,10 +163,9 @@ export default function TracksAssignClient({
 
     setBusy(true);
     try {
-      const res = await ensureCockedQueueAdminAction({ studentId, trackId, queueSize });
+      await ensureCockedQueueAdminAction({ studentId, trackId, queueSize });
       setMsg("✅ Queue ensured");
       await loadPlan();
-      return res;
     } catch (e: any) {
       setMsg(`❌ ${e?.message ?? "failed"}`);
     } finally {
@@ -181,10 +179,9 @@ export default function TracksAssignClient({
 
     setBusy(true);
     try {
-      const res = await assignNextSetNowAction({ studentId, trackId });
+      await assignNextSetNowAction({ studentId, trackId });
       setMsg("✅ Assigned 1 set for today");
       await loadPlan();
-      return res;
     } catch (e: any) {
       setMsg(`❌ ${e?.message ?? "failed"}`);
     } finally {
@@ -196,10 +193,9 @@ export default function TracksAssignClient({
     setMsg("");
     setBusy(true);
     try {
-      const res = await cancelStudentVocabAssignmentAction({ assignmentId, queueSize });
+      await cancelStudentVocabAssignmentAction({ assignmentId, queueSize });
       setMsg("✅ Canceled");
       await loadPlan();
-      return res;
     } catch (e: any) {
       setMsg(`❌ ${e?.message ?? "failed"}`);
     } finally {
@@ -212,7 +208,9 @@ export default function TracksAssignClient({
       <div className="flex items-center justify-between gap-3">
         <div className="text-lg font-extrabold">Assign / Plan / Queue</div>
         <div className="text-xs text-slate-500">
-          {stats.todayISO ? `Today: ${stats.todayISO} · Unlocked ${stats.unlocked}/${stats.total} · Cap ${stats.maxActive}` : null}
+          {stats.todayISO
+            ? `Today: ${stats.todayISO} · Unlocked ${stats.unlocked}/${stats.total} · Cap ${stats.maxActive}`
+            : null}
         </div>
       </div>
 
@@ -225,6 +223,7 @@ export default function TracksAssignClient({
             onChange={(e) => setQ(e.target.value)}
             placeholder="name / login_id / uuid"
           />
+
           <div className="mt-2">
             <div className="text-xs font-bold text-slate-600">Student</div>
             <select
@@ -323,12 +322,7 @@ export default function TracksAssignClient({
           </div>
 
           <div className="mt-3 flex items-center gap-2">
-            <input
-              id="pause"
-              type="checkbox"
-              checked={isPaused}
-              onChange={(e) => setIsPaused(e.target.checked)}
-            />
+            <input id="pause" type="checkbox" checked={isPaused} onChange={(e) => setIsPaused(e.target.checked)} />
             <label htmlFor="pause" className="text-sm font-bold text-slate-700">
               Pause plan
             </label>
@@ -343,12 +337,7 @@ export default function TracksAssignClient({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={loadPlan}
-          disabled={busy}
-          className="h-11 px-4 rounded-2xl border font-extrabold"
-        >
+        <button type="button" onClick={loadPlan} disabled={busy} className="h-11 px-4 rounded-2xl border font-extrabold">
           Load
         </button>
         <button
@@ -367,27 +356,18 @@ export default function TracksAssignClient({
         >
           Ensure queue
         </button>
-        <button
-          type="button"
-          onClick={assignNow}
-          disabled={busy}
-          className="h-11 px-4 rounded-2xl border font-extrabold"
-        >
+        <button type="button" onClick={assignNow} disabled={busy} className="h-11 px-4 rounded-2xl border font-extrabold">
           Assign 1 now
         </button>
       </div>
 
       {msg ? <div className="text-sm font-extrabold">{msg}</div> : null}
 
-      {/* Plan snapshot */}
       <div className="rounded-2xl border bg-slate-50 p-4">
         <div className="text-sm font-extrabold">Current plan</div>
-        <pre className="mt-2 text-xs whitespace-pre-wrap">
-          {JSON.stringify(plan, null, 2)}
-        </pre>
+        <pre className="mt-2 text-xs whitespace-pre-wrap">{JSON.stringify(plan, null, 2)}</pre>
       </div>
 
-      {/* Breaks */}
       {breaks.length ? (
         <div className="rounded-2xl border bg-slate-50 p-4">
           <div className="text-sm font-extrabold">Breaks</div>
@@ -395,7 +375,6 @@ export default function TracksAssignClient({
         </div>
       ) : null}
 
-      {/* Queue */}
       <div className="rounded-2xl border bg-white p-4">
         <div className="text-sm font-extrabold">Queue (active assignments)</div>
 
@@ -438,6 +417,7 @@ export default function TracksAssignClient({
                 ))}
               </tbody>
             </table>
+
             <div className="mt-2 text-xs text-slate-500">
               * Cancel은 started/completed 되기 전 assignment만 가능 (actions.ts 로직 그대로)
             </div>

@@ -2,7 +2,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
 type Props = {
-  params: { testId: string };
+  params: Promise<{ testId: string }>;
 };
 
 type ResultRow = {
@@ -17,24 +17,24 @@ type ResultRow = {
 export const dynamic = "force-dynamic";
 
 export default async function Reading2026ResultsPage({ params }: Props) {
+  const { testId } = await params;
+
   const supabase = await getServerSupabase();
 
   // 테스트 정보
   const { data: test, error: testError } = await supabase
     .from("reading_tests_2026")
     .select("id,label")
-    .eq("id", params.testId)
+    .eq("id", testId)
     .maybeSingle();
 
-  if (testError || !test) {
-    notFound();
-  }
+  if (testError || !test) notFound();
 
   // 결과 목록
   const { data: results, error: resError } = await supabase
     .from("reading_results_2026")
     .select("id,user_id,total_questions,finished_at,created_at,answers")
-    .eq("test_id", params.testId)
+    .eq("test_id", testId)
     .order("created_at", { ascending: false });
 
   const rows: ResultRow[] = (results ?? []) as any;
@@ -49,9 +49,7 @@ export default async function Reading2026ResultsPage({ params }: Props) {
       </header>
 
       {resError && (
-        <p className="text-sm text-red-600">
-          Failed to load results: {resError.message}
-        </p>
+        <p className="text-sm text-red-600">Failed to load results: {resError.message}</p>
       )}
 
       <table className="w-full text-sm border-collapse">
@@ -65,9 +63,7 @@ export default async function Reading2026ResultsPage({ params }: Props) {
         </thead>
         <tbody>
           {rows.map((r) => {
-            const answeredCount = (r.answers ?? []).filter(
-              (a) => a.chosenChoiceId !== null
-            ).length;
+            const answeredCount = (r.answers ?? []).filter((a) => a.chosenChoiceId !== null).length;
 
             return (
               <tr key={r.id} className="border-b">
@@ -87,10 +83,7 @@ export default async function Reading2026ResultsPage({ params }: Props) {
 
           {rows.length === 0 && (
             <tr>
-              <td
-                colSpan={4}
-                className="px-2 py-6 text-center text-sm text-gray-500"
-              >
+              <td colSpan={4} className="px-2 py-6 text-center text-sm text-gray-500">
                 No results yet.
               </td>
             </tr>

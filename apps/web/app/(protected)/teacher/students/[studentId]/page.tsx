@@ -62,12 +62,13 @@ function getTrendIcon(trend: Trend) {
 }
 
 type PageProps = {
-  params: { studentId: string };
+  params: Promise<{ studentId: string }>;
 };
 
 export default async function TeacherStudentDetailPage({ params }: PageProps) {
+  const { studentId } = await params;
+
   const supabase = await getServerSupabase();
-  const studentId = params.studentId;
 
   // 1) 학생 프로필 가져오기 (profiles)
   const { data: profile, error: profileError } = await supabase
@@ -95,10 +96,10 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
   const safeReading = readingRows ?? [];
 
   const testResults: TestResult[] = safeReading.map((r) => ({
-    id: r.id,
-    label: r.label ?? "Reading 2026 Test",
-    date: r.finished_at ? r.finished_at.slice(0, 10) : "날짜 정보 없음",
-    totalQuestions: r.total_questions ?? null,
+    id: (r as any).id,
+    label: (r as any).label ?? "Reading 2026 Test",
+    date: (r as any).finished_at ? String((r as any).finished_at).slice(0, 10) : "날짜 정보 없음",
+    totalQuestions: (r as any).total_questions ?? null,
   }));
 
   const latestTest = testResults[0];
@@ -140,9 +141,7 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
         <div className="flex flex-col justify-between gap-3 rounded-xl border bg-white p-4 shadow-sm md:flex-row md:items-center">
           <div className="space-y-1">
             <div className="text-xs font-semibold text-gray-500">Student Profile</div>
-            <h1 className="text-xl font-bold tracking-tight text-gray-900">
-              {student.name}
-            </h1>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900">{student.name}</h1>
             <div className="text-xs text-gray-600">
               {student.school} · {student.grade} · {student.levelLabel}
             </div>
@@ -159,13 +158,10 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
                   <CalendarDays className="h-3 w-3" />
                   <span>최근 Reading 시험</span>
                 </div>
-                <div className="mt-1 text-xs font-semibold text-gray-900">
-                  {latestTest.label}
-                </div>
+                <div className="mt-1 text-xs font-semibold text-gray-900">{latestTest.label}</div>
                 <div className="mt-1 text-[11px] text-gray-600">
                   {latestTest.date}
-                  {latestTest.totalQuestions !== null &&
-                    ` · 문항 수 ${latestTest.totalQuestions}문항`}
+                  {latestTest.totalQuestions !== null && ` · 문항 수 ${latestTest.totalQuestions}문항`}
                 </div>
               </div>
 
@@ -174,9 +170,7 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
                   <BarChart2 className="h-3 w-3" />
                   <span>다음 목표</span>
                 </div>
-                <p className="mt-1 max-w-xs text-[11px] text-gray-700">
-                  {student.nextGoal}
-                </p>
+                <p className="mt-1 max-w-xs text-[11px] text-gray-700">{student.nextGoal}</p>
               </div>
             </div>
           )}
@@ -189,15 +183,12 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
         <section className="space-y-3 lg:col-span-2">
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-emerald-600" />
-            <h2 className="text-sm font-semibold text-gray-800">
-              최근 Reading 2026 시험 히스토리
-            </h2>
+            <h2 className="text-sm font-semibold text-gray-800">최근 Reading 2026 시험 히스토리</h2>
           </div>
 
           {testResults.length === 0 ? (
             <div className="rounded-xl border border-dashed bg-gray-50 p-3 text-xs text-gray-600">
-              아직 Reading 2026 시험 기록이 없습니다. 시험이 쌓이면 이곳에 자동으로
-              표시됩니다.
+              아직 Reading 2026 시험 기록이 없습니다. 시험이 쌓이면 이곳에 자동으로 표시됩니다.
             </div>
           ) : (
             <div className="space-y-2">
@@ -207,12 +198,8 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
                   className="flex flex-col gap-2 rounded-xl border bg-white p-3 text-xs shadow-sm md:flex-row md:items-center md:justify-between"
                 >
                   <div className="space-y-1">
-                    <div className="text-[11px] font-medium text-gray-500">
-                      {t.date} · Reading
-                    </div>
-                    <div className="text-sm font-semibold text-gray-900">
-                      {t.label}
-                    </div>
+                    <div className="text-[11px] font-medium text-gray-500">{t.date} · Reading</div>
+                    <div className="text-sm font-semibold text-gray-900">{t.label}</div>
                     <p className="text-[11px] text-gray-600">
                       {t.totalQuestions !== null
                         ? `총 ${t.totalQuestions}문항 · 세부 문항별 분석은 추후 리포트 화면에서 제공 예정입니다.`
@@ -234,15 +221,11 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
             </h2>
             <div className="mt-2 space-y-2 text-xs">
               <div>
-                <div className="text-[11px] font-medium text-gray-500">
-                  현재 지도 포인트
-                </div>
+                <div className="text-[11px] font-medium text-gray-500">현재 지도 포인트</div>
                 <p className="mt-1 text-gray-700">{student.currentFocus}</p>
               </div>
               <div className="mt-2 border-t pt-2">
-                <div className="text-[11px] font-medium text-gray-500">
-                  다음 목표
-                </div>
+                <div className="text-[11px] font-medium text-gray-500">다음 목표</div>
                 <p className="mt-1 text-gray-700">{student.nextGoal}</p>
               </div>
             </div>
@@ -255,13 +238,12 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
             </h2>
             {weaknesses.length === 0 ? (
               <div className="mt-2 rounded-lg border border-dashed bg-gray-50 p-3 text-[11px] text-gray-600">
-                아직 영역별 약점 데이터가 없습니다.  
+                아직 영역별 약점 데이터가 없습니다.
+                <br />
                 나중에 RLSP/내신/TOEFL 결과와 연결해서 자동으로 생성할 수 있습니다.
               </div>
             ) : (
-              <ul className="mt-2 space-y-2 text-xs">
-                {/* 향후 DB 연결 시 map 추가 */}
-              </ul>
+              <ul className="mt-2 space-y-2 text-xs">{/* 향후 DB 연결 시 map 추가 */}</ul>
             )}
           </div>
         </section>
@@ -276,8 +258,9 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
             영역별 약점 & 수업 플랜 (Coming Soon)
           </h2>
           <div className="rounded-xl border border-dashed bg-white p-3 text-xs text-gray-600">
-            나중에 이 영역에는 문법/구문/Reading/Listening/Speaking/Writing 별로
-            약점과 구체적인 수업 플랜을 보여줄 수 있습니다.  
+            나중에 이 영역에는 문법/구문/Reading/Listening/Speaking/Writing 별로 약점과 구체적인 수업 플랜을
+            보여줄 수 있습니다.
+            <br />
             현재는 DB 스키마 설계 후 연동 예정입니다.
           </div>
         </section>
@@ -292,21 +275,17 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
           <div className="space-y-2 text-xs">
             {notes.length === 0 && (
               <div className="rounded-xl border border-dashed bg-gray-50 p-3 text-[11px] text-gray-600">
-                아직 등록된 메모가 없습니다.  
-                수업 중 느낀 점, 학부모와의 대화, 학생 자기 코멘트를 기록할 수 있는
-                별도 테이블을 만든 뒤 이 영역에 연결할 예정입니다.
+                아직 등록된 메모가 없습니다.
+                <br />
+                수업 중 느낀 점, 학부모와의 대화, 학생 자기 코멘트를 기록할 수 있는 별도 테이블을 만든 뒤 이
+                영역에 연결할 예정입니다.
               </div>
             )}
 
             {notes.map((n) => (
-              <article
-                key={n.id}
-                className="rounded-xl border bg-white p-3 text-xs shadow-sm"
-              >
+              <article key={n.id} className="rounded-xl border bg-white p-3 text-xs shadow-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-[11px] font-medium text-gray-500">
-                    {n.date}
-                  </div>
+                  <div className="text-[11px] font-medium text-gray-500">{n.date}</div>
                   <div className="text-[11px] font-semibold text-gray-700">
                     {n.author}
                     <span className="ml-1 text-[10px] text-gray-500">
@@ -322,12 +301,10 @@ export default async function TeacherStudentDetailPage({ params }: PageProps) {
           </div>
 
           <div className="rounded-xl border border-dashed bg-white p-3 text-xs text-gray-600">
-            <div className="text-[11px] font-semibold text-gray-800">
-              메모 추가 (Coming Soon)
-            </div>
+            <div className="text-[11px] font-semibold text-gray-800">메모 추가 (Coming Soon)</div>
             <p className="mt-1 text-[11px]">
-              추후 이 영역에 간단한 메모 입력 폼을 넣어서, 선생님이 바로 기록하고
-              저장할 수 있도록 Supabase 테이블과 연결할 예정입니다.
+              추후 이 영역에 간단한 메모 입력 폼을 넣어서, 선생님이 바로 기록하고 저장할 수 있도록 Supabase
+              테이블과 연결할 예정입니다.
             </p>
           </div>
         </section>

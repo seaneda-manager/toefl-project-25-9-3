@@ -183,12 +183,14 @@ async function ensureCockedQueueForPlan(
 
     if (cursor > totalDays) {
       // update cursor (end) and stop
-      await supabase
-        .from("student_vocab_plans")
-        .update({ cursor_day_index: cursor } as any)
-        .eq("student_id", studentId)
-        .eq("track_id", trackId);
-      break;
+      const uEnd = await supabase
+      .from("student_vocab_plans")
+      .update({ cursor_day_index: cursor } as any)
+      .eq("student_id", studentId)
+      .eq("track_id", trackId);
+
+    if (uEnd.error) throw new Error(`cursor update failed(end): ${uEnd.error.message ?? ""}`);
+    break;
     }
 
     // skip completed
@@ -249,27 +251,50 @@ async function ensureCockedQueueForPlan(
     } as any;
 
     const { data: inserted, error: insErr } = await supabase
-      .from("student_vocab_assignments")
-      .insert(payload)
-      .select("id")
-      .single();
+  .from("student_vocab_assignments")
+  .insert(payload)
+  .select("id, available_at, completed_at")
+  .single();
 
-    if (insErr || !(inserted as any)?.id) {
-      return {
-        assigned: false,
-        reason: "INSERT_FAILED",
-        todayISO,
-        todayWeekday,
-        queueSize,
-        queueCount,
-        unlockedCount,
-        maxActive,
-        cursor,
-        startDay,
-        trackIdUsed,
-        note: insErr?.message ?? "unknown",
-      };
+if (insErr || !(inserted as any)?.id) {
+  const code = String((insErr as any)?.code ?? "");
+
+  // concurrent duplicate insert -> treat as already queued, move on
+  if (code === "23505") {
+    const { data: exist } = await supabase
+      .from("student_vocab_assignments")
+      .select("id, available_at, completed_at")
+      .eq("student_id", studentId)
+      .eq("track_id", trackIdUsed)
+      .eq("day_index", cursor)
+      .maybeSingle();
+
+    if ((exist as any)?.id && !(exist as any)?.completed_at) {
+      const a = String((exist as any).available_at ?? "");
+      queueCount++;
+      if (a && a <= todayISO) unlockedCount++;
+      if (a && a > lastAvailISO) lastAvailISO = a;
+      activeDays.add(cursor);
+      cursor++;
+      continue;
     }
+  }
+
+  return {
+    assigned: false,
+    reason: "INSERT_FAILED",
+    todayISO,
+    todayWeekday,
+    queueSize,
+    queueCount,
+    unlockedCount,
+    maxActive,
+    cursor,
+    startDay,
+    trackIdUsed,
+    note: insErr?.message ?? "unknown",
+  };
+}
 
     assignedCount++;
     queueCount++;
@@ -288,11 +313,13 @@ async function ensureCockedQueueForPlan(
   }
 
   // persist cursor (so next call continues)
-  await supabase
-    .from("student_vocab_plans")
-    .update({ cursor_day_index: cursor } as any)
-    .eq("student_id", studentId)
-    .eq("track_id", trackId);
+  const u2 = await supabase
+  .from("student_vocab_plans")
+  .update({ cursor_day_index: cursor } as any)
+  .eq("student_id", studentId)
+  .eq("track_id", trackId);
+
+if (u2.error) throw new Error(`cursor update failed: ${u2.error.message ?? ""}`);
 
   return {
     assigned: assignedCount > 0,

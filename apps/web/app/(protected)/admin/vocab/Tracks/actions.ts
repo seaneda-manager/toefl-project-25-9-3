@@ -2,7 +2,7 @@
 "use server";
 
 import { getServerSupabase } from "@/lib/supabase/server";
-import { createVocabSetFromRawAction } from "@/app/(protected)/admin/vocab/sets/new/actions";
+import { createVocabSetFromRawAction } from "../sets/new/actions";
 
 import {
   syncTrackFromExistingDaySetsAction as _syncTrackFromExistingDaySetsAction,
@@ -1193,7 +1193,6 @@ export async function recockAllPlansForTrackAction(params: {
         let ensure: any = null;
 
         if (!dryRun) {
-          // (1) delete stale queue items (not started, not completed)
           const { data: deletedRows, error: derr } = await supabase
             .from("student_vocab_assignments")
             .delete()
@@ -1204,21 +1203,13 @@ export async function recockAllPlansForTrackAction(params: {
             .select("day_index");
 
           if (derr) {
-            return {
-              ok: false,
-              studentId,
-              reason: "DELETE_FAILED",
-              note: derr.message ?? "",
-            };
+            return { ok: false, studentId, reason: "DELETE_FAILED", note: derr.message ?? "" };
           }
 
           const del = (deletedRows as any[]) ?? [];
           deletedCount = del.length;
-          if (deletedCount > 0) {
-            minDeleted = Math.min(...del.map((r: any) => Number(r.day_index)));
-          }
+          if (deletedCount > 0) minDeleted = Math.min(...del.map((r: any) => Number(r.day_index)));
 
-          // (2) rewind cursor so we don’t skip deleted days
           if (minDeleted != null && Number.isFinite(minDeleted)) {
             const currentCursor = clampInt(p.cursor_day_index ?? minDeleted, 1, 9999, minDeleted);
             const newCursor = Math.min(currentCursor, minDeleted);
@@ -1240,7 +1231,6 @@ export async function recockAllPlansForTrackAction(params: {
             rewoundTo = newCursor;
           }
 
-          // (3) recock using the SSOT engine
           ensure = await ensureCockedQueueForPlan(supabase, {
             studentId,
             trackId,
@@ -1249,15 +1239,7 @@ export async function recockAllPlansForTrackAction(params: {
           });
         }
 
-        return {
-          ok: true,
-          studentId,
-          deletedCount,
-          minDeleted,
-          rewoundTo,
-          ensure,
-          dryRun,
-        };
+        return { ok: true, studentId, deletedCount, minDeleted, rewoundTo, ensure, dryRun };
       }),
     );
 
@@ -1267,16 +1249,7 @@ export async function recockAllPlansForTrackAction(params: {
   const okCount = results.filter((r) => r?.ok).length;
   const failCount = results.length - okCount;
 
-  return {
-    ok: true,
-    trackId,
-    queueSize,
-    dryRun,
-    totalPlans: results.length,
-    okCount,
-    failCount,
-    results,
-  };
+  return { ok: true, trackId, queueSize, dryRun, totalPlans: results.length, okCount, failCount, results };
 }
 
 /* =========================================================

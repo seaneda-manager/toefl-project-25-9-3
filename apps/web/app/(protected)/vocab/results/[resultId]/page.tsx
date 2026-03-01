@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
 
 type PageProps = {
-  params: { resultId: string };
+  params: Promise<{ resultId: string }>;
 };
 
 type RawAnswers = {
@@ -21,6 +21,8 @@ type RawAnswers = {
 export const dynamic = "force-dynamic";
 
 export default async function VocabExamResultDetailPage({ params }: PageProps) {
+  const { resultId } = await params;
+
   const supabase = await getServerSupabase();
 
   const {
@@ -38,16 +40,14 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
   const { data: result, error } = await supabase
     .from("vocab_exam_results")
     .select("*")
-    .eq("id", params.resultId)
+    .eq("id", resultId)
     .maybeSingle();
 
   if (error) {
     console.error("Failed to load vocab_exam_result:", error);
     return (
       <main className="mx-auto max-w-3xl px-4 py-6">
-        <p className="text-sm text-red-600">
-          결과를 불러오는 중 오류가 발생했습니다.
-        </p>
+        <p className="text-sm text-red-600">결과를 불러오는 중 오류가 발생했습니다.</p>
       </main>
     );
   }
@@ -60,9 +60,7 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
   if (result.user_id && result.user_id !== user.id) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-6">
-        <p className="text-sm text-gray-500">
-          이 결과에 접근할 권한이 없습니다.
-        </p>
+        <p className="text-sm text-gray-500">이 결과에 접근할 권한이 없습니다.</p>
       </main>
     );
   }
@@ -78,9 +76,7 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
       {/* 상단 요약 영역 */}
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">단어 시험 결과 상세</h1>
-        <p className="text-xs text-gray-500">
-          {createdAt.toLocaleString("ko-KR")} 에 응시한 시험입니다.
-        </p>
+        <p className="text-xs text-gray-500">{createdAt.toLocaleString("ko-KR")} 에 응시한 시험입니다.</p>
       </header>
 
       {/* 점수 요약 카드 */}
@@ -88,29 +84,19 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p>
-              정확도{" "}
-              <span className="text-lg font-bold">
-                {result.rate_auto}%
-              </span>
+              정확도 <span className="text-lg font-bold">{result.rate_auto}%</span>
             </p>
             <p className="mt-1 text-xs">
-              정답 {result.correct_auto} / 총{" "}
-              {result.total_questions} 문항
+              정답 {result.correct_auto} / 총 {result.total_questions} 문항
             </p>
           </div>
 
           <div className="text-xs text-emerald-900">
             <p>
-              모드:{" "}
-              <span className="font-semibold">
-                {result.mode ?? "core"}
-              </span>
+              모드: <span className="font-semibold">{result.mode ?? "core"}</span>
             </p>
             <p>
-              코스(GradeBand):{" "}
-              <span className="font-semibold">
-                {result.grade_band ?? "-"}
-              </span>
+              코스(GradeBand): <span className="font-semibold">{result.grade_band ?? "-"}</span>
             </p>
           </div>
         </div>
@@ -118,20 +104,14 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
 
       {/* 개별 문항 / 응답 로그 */}
       <section className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-        <h2 className="mb-3 text-sm font-semibold text-gray-800">
-          문항별 응답 기록
-        </h2>
+        <h2 className="mb-3 text-sm font-semibold text-gray-800">문항별 응답 기록</h2>
 
         {answers.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            저장된 응답 기록이 없습니다.
-          </p>
+          <p className="text-sm text-gray-500">저장된 응답 기록이 없습니다.</p>
         ) : (
           <div className="space-y-3">
             {answers.map((a, idx) => {
-              const meta = questionsMeta.find(
-                (q) => q.id === a.questionId,
-              );
+              const meta = questionsMeta.find((q) => q.id === a.questionId);
               const qTypeLabel =
                 meta?.type === "WORD_TO_MEANING"
                   ? "단어 → 뜻"
@@ -150,22 +130,15 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
                     <span className="font-semibold">
                       Q{idx + 1}. {qTypeLabel}
                     </span>
-                    <span className="text-[10px] text-gray-400">
-                      ID: {a.questionId}
-                    </span>
+                    <span className="text-[10px] text-gray-400">ID: {a.questionId}</span>
                   </div>
 
                   <div className="mt-1">
                     <p className="text-[11px] text-gray-600">
-                      내가 쓴 답:{" "}
-                      <span className="font-semibold">
-                        {a.answer}
-                      </span>
+                      내가 쓴 답: <span className="font-semibold">{a.answer}</span>
                     </p>
                     {a.translationKo && (
-                      <p className="mt-1 text-[11px] text-gray-500">
-                        한국어 해석: {a.translationKo}
-                      </p>
+                      <p className="mt-1 text-[11px] text-gray-500">한국어 해석: {a.translationKo}</p>
                     )}
                   </div>
 
@@ -177,9 +150,8 @@ export default async function VocabExamResultDetailPage({ params }: PageProps) {
         )}
 
         <p className="mt-4 text-[10px] text-gray-400">
-          ※ 현재는 학생이 작성한 응답 로그 위주로 보여줍니다.  
-          나중에 정답/오답 정보, 틀린 단어만 모아서 리뷰하는 화면으로 확장할 수
-          있어요.
+          ※ 현재는 학생이 작성한 응답 로그 위주로 보여줍니다. 나중에 정답/오답 정보, 틀린 단어만 모아서
+          리뷰하는 화면으로 확장할 수 있어요.
         </p>
       </section>
     </main>

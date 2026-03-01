@@ -10,12 +10,7 @@ import type {
   RQuestion,
   RChoice,
 } from "@/models/reading";
-import {
-  ArrowLeft,
-  FileQuestion,
-  BookOpen,
-  AlertCircle,
-} from "lucide-react";
+import { ArrowLeft, FileQuestion, BookOpen, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -64,19 +59,19 @@ function buildFlatQuestions(test: RReadingTest2026): FlatQuestion[] {
 }
 
 type PageProps = {
-  params: { resultId: string };
+  params: Promise<{ resultId: string }>;
 };
 
-export default async function StudentReadingReviewDetailPage({
-  params,
-}: PageProps) {
+export default async function StudentReadingReviewDetailPage({ params }: PageProps) {
+  const { resultId } = await params;
+
   const supabase = await getServerSupabase();
 
   // 1) 결과 로드
   const { data: resultRow, error: resultError } = await supabase
     .from("reading_results_2026")
     .select("id,test_id,user_id,total_questions,finished_at,answers")
-    .eq("id", params.resultId)
+    .eq("id", resultId)
     .maybeSingle();
 
   if (resultError) {
@@ -144,12 +139,10 @@ export default async function StudentReadingReviewDetailPage({
               {testRow.label ?? "Reading Test"}
             </h1>
             <p className="text-[11px] text-gray-600">
-              Result ID:{" "}
-              <span className="font-mono text-gray-700">{resultRow.id}</span>
+              Result ID: <span className="font-mono text-gray-700">{resultRow.id}</span>
             </p>
             <p className="text-[11px] text-gray-600">
-              Test ID:{" "}
-              <span className="font-mono text-gray-700">{testRow.id}</span>
+              Test ID: <span className="font-mono text-gray-700">{testRow.id}</span>
             </p>
           </div>
 
@@ -163,8 +156,7 @@ export default async function StudentReadingReviewDetailPage({
               {resultRow.total_questions ?? flatQuestions.length} 문항
             </div>
             <p className="mt-1 text-[11px] text-gray-500">
-              V1: 내가 선택한 보기만 표시합니다. 정답/해설 연동은 이후 단계에서
-              추가 예정입니다.
+              V1: 내가 선택한 보기만 표시합니다. 정답/해설 연동은 이후 단계에서 추가 예정입니다.
             </p>
           </div>
         </div>
@@ -178,6 +170,7 @@ export default async function StudentReadingReviewDetailPage({
             <BookOpen className="h-4 w-4 text-emerald-600" />
             <span>Passage (첫 지문 미리보기)</span>
           </div>
+
           {flatQuestions.length === 0 ? (
             <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-xs text-gray-600">
               <AlertCircle className="h-4 w-4 text-gray-400" />
@@ -221,16 +214,12 @@ export default async function StudentReadingReviewDetailPage({
                       <div className="font-semibold text-gray-900">
                         Q{q.number}. {q.stem}
                       </div>
-                      <div className="text-[10px] text-gray-500">
-                        Question ID: {q.id}
-                      </div>
+                      <div className="text-[10px] text-gray-500">Question ID: {q.id}</div>
                     </div>
 
                     <div className="mt-2 space-y-1">
                       {q.choices.map((c, idx) => {
-                        const letter = String.fromCharCode(
-                          "A".charCodeAt(0) + idx
-                        );
+                        const letter = String.fromCharCode("A".charCodeAt(0) + idx);
                         const isChosen = c.id === chosenId;
 
                         return (
@@ -243,9 +232,7 @@ export default async function StudentReadingReviewDetailPage({
                                 : "border-gray-200 bg-gray-50 text-gray-800",
                             ].join(" ")}
                           >
-                            <span className="mt-0.5 text-[11px] font-semibold">
-                              {letter}.
-                            </span>
+                            <span className="mt-0.5 text-[11px] font-semibold">{letter}.</span>
                             <span className="text-[11px]">{c.text}</span>
                           </div>
                         );
