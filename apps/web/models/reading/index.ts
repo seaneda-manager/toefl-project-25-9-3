@@ -32,7 +32,7 @@ export {
   type RQuestion,
   type RPassage,
   type RSet,
-};
+  };
 
 /** -----------------------------
  *  Helpers (공용)
@@ -396,3 +396,4 @@ export interface RReadingTest2026 {
   meta: RReadingTestMeta; // examEra === 'ibt_2026' 여야 함
   modules: [RReadingModule, RReadingModule]; // [Stage1, Stage2]
 }
+export * from "./naesin";
