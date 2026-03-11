@@ -1,4 +1,3 @@
-// apps/web/components/reading/runner/TestRunnerV2.tsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,25 +9,23 @@ import {
   submitReadingAnswer,
   finishReadingSession,
 } from "@/actions/reading";
+import {
+  startNaesinReadingSession,
+  submitNaesinReadingAnswer,
+  finishNaesinReadingSession,
+} from "@/actions/naesinReading";
 import { getRunnerProfile, type ReadingRunnerProfile } from "./runnerProfiles";
 
 type Props = {
   passage: RPassage;
-
-  // server에서 미리 만든 세션이 있으면 사용
   sessionId?: string;
-
-  // 새로 세션 만들 때 사용
   setId?: string;
-
-  // ✅ new
   profileId?: string;
   initialPicked?: Record<string, string | string[]>;
-
-  // legacy
   mode?: "study" | "exam" | "review" | "test";
   gateFirst?: boolean;
-
+  backend?: "legacy" | "naesin";
+  finishRedirectPath?: string | null;
   onFinishAction?: (sessionId: string | number) => void;
 };
 
@@ -53,6 +50,18 @@ function asSelArray(v: unknown): string[] {
   return [];
 }
 
+function getActionError(res: unknown, fallback: string): string {
+  if (
+    res &&
+    typeof res === "object" &&
+    "error" in res &&
+    typeof (res as { error?: unknown }).error === "string"
+  ) {
+    return (res as { error: string }).error;
+  }
+  return fallback;
+}
+
 export default function TestRunnerV2({
   passage,
   sessionId,
@@ -61,12 +70,18 @@ export default function TestRunnerV2({
   initialPicked,
   mode,
   gateFirst,
+  backend = "legacy",
+  finishRedirectPath,
   onFinishAction,
 }: Props) {
   const profile: ReadingRunnerProfile = useMemo(() => {
-    if (profileId) return getRunnerProfile(profileId);
-    if (mode === "review") return getRunnerProfile("toefl_review");
-    return getRunnerProfile("toefl_test");
+    try {
+      if (profileId) return getRunnerProfile(profileId);
+      if (mode === "review") return getRunnerProfile("toefl_review");
+      return getRunnerProfile("toefl_test");
+    } catch {
+      return getRunnerProfile("toefl_test");
+    }
   }, [profileId, mode]);
 
   const needsSession = profile.enableSubmit !== false;
@@ -101,15 +116,28 @@ export default function TestRunnerV2({
         setIsStarting(true);
         setStartError(null);
 
-        const res = await startReadingSession({
-          setId,
-          passageId: String(passage.id),
-          mode: mode ?? "test",
-          profileId,
-        });
+        const res =
+          backend === "naesin"
+            ? await startNaesinReadingSession({
+              setId,
+              mode: mode ?? "test",
+              profileId,
+            })
+            : await startReadingSession({
+              setId,
+              passageId: String(passage.id),
+              mode: mode ?? "test",
+              profileId,
+            });
 
-        if (!res?.ok || !res?.sessionId || String(res.sessionId).startsWith("local-")) {
-          throw new Error(res?.error || "Failed to create DB reading session");
+        if (
+          !res ||
+          res.ok !== true ||
+          !("sessionId" in res) ||
+          !res.sessionId ||
+          String(res.sessionId).startsWith("local-")
+        ) {
+          throw new Error(getActionError(res, "Failed to create DB reading session"));
         }
 
         if (!active) return;
@@ -127,7 +155,7 @@ export default function TestRunnerV2({
     return () => {
       active = false;
     };
-  }, [sessionId, needsSession, setId, passage.id, mode, profileId]);
+  }, [backend, sessionId, needsSession, setId, passage.id, mode, profileId]);
 
   const effectiveGateFirst = typeof gateFirst === "boolean" ? gateFirst : profile.gateFirst;
   const [gateDone, setGateDone] = useState(!effectiveGateFirst);
@@ -168,30 +196,36 @@ export default function TestRunnerV2({
 
   return (
     <RunnerCore
+      backend={backend}
       profile={profile}
       passage={passage}
       sessionId={activeSessionId}
       onFinishAction={onFinishAction}
       contentStr={contentStr}
       initialPicked={initialPicked}
+      finishRedirectPath={finishRedirectPath}
     />
   );
 }
 
 function RunnerCore({
+  backend,
   profile,
   passage,
   sessionId,
   onFinishAction,
   contentStr,
   initialPicked,
+  finishRedirectPath,
 }: {
+  backend: "legacy" | "naesin";
   profile: ReadingRunnerProfile;
   passage: RPassage;
   sessionId: string | null;
   onFinishAction?: (sessionId: string | number) => void;
   contentStr: string;
   initialPicked?: Record<string, string | string[]>;
+  finishRedirectPath?: string | null;
 }) {
   const qs = (passage?.questions ?? []) as RQuestion[];
   const total = qs.length;
@@ -268,27 +302,50 @@ function RunnerCore({
 
     if (isSummary) {
       if (selArr.length !== selectionCount) return;
-      const res = await submitReadingAnswer({
-        sessionId,
-        questionId: qKey,
-        choiceId: selArr.join("|"),
-        elapsedMs: tick(),
-      });
-      if (!res?.ok) throw new Error(res?.error || "Failed to save answer");
+
+      const res =
+        backend === "naesin"
+          ? await submitNaesinReadingAnswer({
+            sessionId,
+            questionId: qKey,
+            choiceId: selArr.join("|"),
+            elapsedMs: tick(),
+          })
+          : await submitReadingAnswer({
+            sessionId,
+            questionId: qKey,
+            choiceId: selArr.join("|"),
+            elapsedMs: tick(),
+          });
+
+      if (res?.ok !== true) {
+        throw new Error(getActionError(res, "Failed to save answer"));
+      }
       return;
     }
 
     const cid = typeof picked[qKey] === "string" ? (picked[qKey] as string) : "";
     if (!cid) return;
 
-    const res = await submitReadingAnswer({
-      sessionId,
-      questionId: qKey,
-      choiceId: cid,
-      elapsedMs: tick(),
-    });
-    if (!res?.ok) throw new Error(res?.error || "Failed to save answer");
-  }, [profile.enableSubmit, qKey, isSummary, selArr, selectionCount, sessionId, picked, tick]);
+    const res =
+      backend === "naesin"
+        ? await submitNaesinReadingAnswer({
+          sessionId,
+          questionId: qKey,
+          choiceId: cid,
+          elapsedMs: tick(),
+        })
+        : await submitReadingAnswer({
+          sessionId,
+          questionId: qKey,
+          choiceId: cid,
+          elapsedMs: tick(),
+        });
+
+    if (res?.ok !== true) {
+      throw new Error(getActionError(res, "Failed to save answer"));
+    }
+  }, [backend, profile.enableSubmit, qKey, isSummary, selArr, selectionCount, sessionId, picked, tick]);
 
   const checkNow = useCallback(async () => {
     if (!profile.revealAfterCheck) return;
@@ -335,8 +392,15 @@ function RunnerCore({
 
       if (profile.enableSubmit) {
         if (!sessionId) throw new Error("Missing sessionId");
-        const res = await finishReadingSession({ sessionId });
-        if (!res?.ok) throw new Error(res?.error || "Failed to finish reading session");
+
+        const res =
+          backend === "naesin"
+            ? await finishNaesinReadingSession({ sessionId })
+            : await finishReadingSession({ sessionId });
+
+        if (res?.ok !== true) {
+          throw new Error(getActionError(res, "Failed to finish reading session"));
+        }
       }
 
       if (onFinishAction) {
@@ -345,6 +409,11 @@ function RunnerCore({
       }
 
       if (typeof window !== "undefined") {
+        if (typeof finishRedirectPath === "string" && finishRedirectPath.length > 0) {
+          window.location.href = finishRedirectPath;
+          return;
+        }
+
         const sid = encodeURIComponent(sessionId ?? "");
         const pid = encodeURIComponent(profile.id);
         window.location.href = `/reading/review/${sid}?profileId=${pid}&view=runner`;
@@ -355,7 +424,7 @@ function RunnerCore({
     } finally {
       setIsFinishing(false);
     }
-  }, [profile.enableSubmit, profile.id, sessionId, onFinishAction]);
+  }, [backend, profile.enableSubmit, profile.id, sessionId, onFinishAction, finishRedirectPath]);
 
   const next = async () => {
     if (!qKey) return;
