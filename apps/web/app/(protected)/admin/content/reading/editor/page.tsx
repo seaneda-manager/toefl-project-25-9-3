@@ -1,5 +1,6 @@
+// apps/web/app/(protected)/admin/content/reading/editor/page.tsx
 import { redirect } from "next/navigation";
 
-export default function ReadingContentEditorPage() {
-  redirect("/reading/admin");
+export default function AdminContentReadingEditorPage() {
+  redirect("/admin/content/new/json");
 }
