@@ -17,14 +17,14 @@ export function TeacherSideNav({ section }: { section: Section }) {
           { href: '/teacher/admin/logs', label: 'Logs' },
           { href: '/teacher/admin/settings', label: 'Settings' },
         ]
-      : [
-          { href: '/teacher/content', label: 'Overview' },
-          { href: '/teacher/content/reading/editor', label: 'Reading Editor' },
-          { href: '/teacher/content/listening/editor', label: 'Listening Editor' },
-          { href: '/teacher/content/speaking/editor', label: 'Speaking Editor' },
-          { href: '/teacher/content/writing/editor', label: 'Writing Editor' },
-          { href: '/teacher/content/vocab/editor', label: 'Vocab Editor' },
-          { href: '/teacher/content/grammar/editor', label: 'Grammar Editor' },
+            : [
+          { href: '/content', label: 'Overview' },
+          { href: '/reading/admin', label: 'Reading Editor' },
+          { href: '/content/listening/editor', label: 'Listening Editor' },
+          { href: '/content/speaking/editor', label: 'Speaking Editor' },
+          { href: '/content/writing/editor', label: 'Writing Editor' },
+          { href: '/content/vocab/editor', label: 'Vocab Editor' },
+          { href: '/content/grammar/editor', label: 'Grammar Editor' },
         ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
@@ -47,8 +47,3 @@ export function TeacherSideNav({ section }: { section: Section }) {
     </aside>
   );
 }
-
-
-
-
-

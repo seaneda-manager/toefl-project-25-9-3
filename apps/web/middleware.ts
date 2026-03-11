@@ -3,7 +3,29 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PROTECTED_PREFIXES = ["/home", "/learn", "/dashboard", "/admin"] as const;
+/**
+ * ✅ 보호가 필요한 prefix들
+ * - /toefl, /lingox는 "정확히 그 경로"만 public entry로 두고
+ *   그 아래(/toefl/*, /lingox/*)는 protected로 처리한다.
+ */
+const PROTECTED_PREFIXES = [
+  "/home",
+  "/learn",
+  "/dashboard",
+  "/admin",
+
+  // existing app routes (likely behind auth)
+  "/reading",
+  "/listening",
+  "/speaking",
+  "/writing",
+  "/vocab",
+
+  // product roots (subpaths protected; exact entry is public)
+  "/toefl",
+  "/lingox",
+] as const;
+
 const AUTH_ROUTES = [
   "/auth/login",
   "/auth/signup",
@@ -11,12 +33,12 @@ const AUTH_ROUTES = [
   "/auth/update-password",
   "/auth/update-password/callback",
 ];
+
 const PUBLIC_FILE = /\.(.*)$/;
 const DEV_ALLOW = process.env.NEXT_PUBLIC_LEGACY_ALLOW === "1";
 
 // --- copy cookies from one response to another ---
 function applySupabaseCookies(from: NextResponse, to: NextResponse) {
-  // NextResponse.cookies.getAll() 로 받은 쿠키들을 그대로 복사
   for (const cookie of from.cookies.getAll()) {
     to.cookies.set(cookie);
   }
@@ -40,15 +62,22 @@ function normalizePath(raw?: string | null) {
   return s;
 }
 
+function isPublicProductEntry(pathname: string) {
+  // ✅ These two entry pages must stay public
+  return pathname === "/toefl" || pathname === "/lingox";
+}
+
 function isProtected(pathname: string) {
+  // ✅ keep product entry public
+  if (isPublicProductEntry(pathname)) return false;
+
   return PROTECTED_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
+    (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 }
+
 function isAuthRoute(pathname: string) {
-  return AUTH_ROUTES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
-  );
+  return AUTH_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 export async function middleware(req: NextRequest) {
@@ -92,7 +121,7 @@ export async function middleware(req: NextRequest) {
           } catch {}
         },
       },
-    }
+    },
   );
 
   const {
@@ -113,10 +142,7 @@ export async function middleware(req: NextRequest) {
   if (isAuthRoute(pathname) && isAuthed) {
     const nextRaw = url.searchParams.get("next");
     const safeTarget = normalizePath(nextRaw ?? "/home");
-    const redirectRes = NextResponse.redirect(
-      new URL(safeTarget, req.url),
-      307
-    );
+    const redirectRes = NextResponse.redirect(new URL(safeTarget, req.url), 307);
     return applySupabaseCookies(baseRes, redirectRes);
   }
 

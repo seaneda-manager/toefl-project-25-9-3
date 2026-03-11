@@ -36,23 +36,22 @@ export default async function AdminLayout({
           Admin Dashboard
         </Link>
 
-        <nav className="text-sm flex gap-3 items-center">
-          <Link href="/admin">대시보드</Link>
-          <Link href="/admin/content/new/json">JSON 업로드</Link>
-          <Link href="/admin/content/new/form">폼 입력</Link>
-          <Link href="/admin/content/list">콘텐츠 목록</Link>
-          <Link href="/admin/reports">리포트</Link>
+        <nav className="flex items-center gap-3 text-sm">
+          <Link href="/admin">Dashboard</Link>
+          <Link href="/admin/content/new/json">JSON Upload</Link>
+          <Link href="/reading/admin">Manual Editor</Link>
+          <Link href="/admin/content/list">Content List</Link>
+          <Link href="/admin/reports">Reports</Link>
           <Link href="/admin/users" className="font-medium">
-            사용자 관리
+            Users
           </Link>
 
-          {/* 👉 추가: 고급 리딩 에디터(A–F) 바로가기 */}
           <Link
-            href="/content/reading/editor"
+            href="/reading/admin"
             className="ml-4 inline-flex items-center rounded-md border px-2.5 py-1 hover:bg-gray-50"
-            title="Advanced Editor (A–F choices)"
+            title="Advanced Editor (A-F choices)"
           >
-            Advanced Editor (A–F)
+            Advanced Editor (A-F)
           </Link>
         </nav>
       </header>
