@@ -25,7 +25,7 @@ export default async function Page({
 
   const supabase = await getSupabaseServer();
 
-  // ???쒕꽕由??쒓굅 + .single() ??????⑥뼵
+ // NOTE: handle the .single() result safely here.
   const { data, error } = await supabase
     .rpc('listening_review_score', { p_session_id: sessionId })
     .single();
