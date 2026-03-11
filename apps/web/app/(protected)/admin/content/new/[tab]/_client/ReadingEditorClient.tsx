@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createNaesinReadingSetAction } from "@/actions/naesinReadingAdmin";
 import type { NaesinReadingCreatePayload } from "@/lib/reading/naesin-payload";
@@ -54,14 +54,37 @@ const SAMPLE_PAYLOAD: NaesinReadingCreatePayload = {
   ],
 };
 
-export default function ReadingEditorClient() {
+type Props = {
+  initialPayload?: NaesinReadingCreatePayload;
+  initialSetId?: string;
+  loadError?: string | null;
+};
+
+export default function ReadingEditorClient({
+  initialPayload,
+  initialSetId,
+  loadError,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [rawJson, setRawJson] = useState(() =>
-    JSON.stringify(SAMPLE_PAYLOAD, null, 2),
+  const defaultPayload = initialPayload ?? SAMPLE_PAYLOAD;
+
+  const defaultJson = useMemo(
+    () => JSON.stringify(defaultPayload, null, 2),
+    [defaultPayload],
   );
-  const [error, setError] = useState<string>("");
+
+  const [rawJson, setRawJson] = useState(defaultJson);
+  const [error, setError] = useState<string>(loadError ?? "");
   const [success, setSuccess] = useState<string>("");
+
+  useEffect(() => {
+    setRawJson(defaultJson);
+  }, [defaultJson]);
+
+  useEffect(() => {
+    setError(loadError ?? "");
+  }, [loadError]);
 
   const parsedPreview = useMemo(() => {
     try {
@@ -88,9 +111,9 @@ export default function ReadingEditorClient() {
     }
   }
 
-  function handleResetSample() {
-    setRawJson(JSON.stringify(SAMPLE_PAYLOAD, null, 2));
-    setError("");
+  function handleReset() {
+    setRawJson(defaultJson);
+    setError(loadError ?? "");
     setSuccess("");
   }
 
@@ -127,6 +150,13 @@ export default function ReadingEditorClient() {
 
   return (
     <div className="space-y-4">
+      {initialSetId && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+          Loaded existing Naesin set: <span className="font-semibold">{initialSetId}</span>.
+          Current Save action creates a new copy.
+        </div>
+      )}
+
       <div className="rounded-xl border bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
@@ -141,11 +171,11 @@ export default function ReadingEditorClient() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={handleResetSample}
+              onClick={handleReset}
               className="rounded-lg border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               disabled={isPending}
             >
-              Sample
+              {initialPayload ? "Reload Loaded" : "Sample"}
             </button>
 
             <button
@@ -163,7 +193,11 @@ export default function ReadingEditorClient() {
               className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               disabled={isPending}
             >
-              {isPending ? "Saving..." : "Save"}
+              {isPending
+                ? "Saving..."
+                : initialSetId
+                  ? "Save as New Copy"
+                  : "Save"}
             </button>
           </div>
         </div>
