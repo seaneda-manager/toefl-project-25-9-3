@@ -33,7 +33,7 @@ type StrictPassage = {
 type ClientRunnerProps = {
   passage: RPassage | StrictPassage;   // ?좎뿰?섍쾶 諛쏅릺 ?꾨옒?먯꽌 蹂댁젙
   sessionId: string;
-  /** ?꾨즺 ???곸쐞濡??몄뀡ID ?꾨떖 */
+  /** Pass the section ID when the current section is completed. */
   onFinishAction?: (sessionId: string | number) => void; // ???대쫫 ?듭씪
 };
 

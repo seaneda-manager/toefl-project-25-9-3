@@ -1,50 +1,166 @@
 // apps/web/components/reading/runner/TestRunnerV2.tsx
-'use client';
+"use client";
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { RPassage, RQuestion } from '@/models/reading';
-import PassagePane from '@/components/reading/PassagePane';
-import SkimGate from '@/components/reading/SkimGate';
-import { submitReadingAnswer, finishReadingSession } from '@/actions/reading';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RPassage, RQuestion } from "@/models/reading";
+import PassagePane from "@/components/reading/PassagePane";
+import SkimGate from "@/components/reading/SkimGate";
+import {
+  startReadingSession,
+  submitReadingAnswer,
+  finishReadingSession,
+} from "@/actions/reading";
+import { getRunnerProfile, type ReadingRunnerProfile } from "./runnerProfiles";
 
 type Props = {
   passage: RPassage;
-  sessionId: string;
-  mode?: 'study' | 'exam' | 'review' | 'test';
+
+  // server에서 미리 만든 세션이 있으면 사용
+  sessionId?: string;
+
+  // 새로 세션 만들 때 사용
+  setId?: string;
+
+  // ✅ new
+  profileId?: string;
+  initialPicked?: Record<string, string | string[]>;
+
+  // legacy
+  mode?: "study" | "exam" | "review" | "test";
   gateFirst?: boolean;
+
   onFinishAction?: (sessionId: string | number) => void;
 };
 
 function viewMeta(q?: RQuestion) {
   const summary = (q?.meta?.summary ?? {}) as {
-    candidates?: string[];
-    correct?: number[];
     selectionCount?: number;
   };
-  const insertion = (q?.meta?.insertion ?? {}) as {
-    anchors?: Array<string | number>;
-    correctIndex?: number;
+  return { summary };
+}
+
+function getExplain(q?: RQuestion): { explanation?: string; clue_quote?: string } {
+  const m = (q?.meta ?? {}) as any;
+  return {
+    explanation: typeof m?.explanation === "string" ? m.explanation : undefined,
+    clue_quote: typeof m?.clue_quote === "string" ? m.clue_quote : undefined,
   };
-  const pronoun = (q?.meta?.pronoun_ref ?? {}) as {
-    pronoun?: string;
-    referents?: string[];
-    correctIndex?: number;
-  };
-  return { summary, insertion, pronoun };
+}
+
+function asSelArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String).filter(Boolean);
+  if (typeof v === "string" && v) return [v];
+  return [];
 }
 
 export default function TestRunnerV2({
   passage,
   sessionId,
-  gateFirst = true,
+  setId,
+  profileId,
+  initialPicked,
+  mode,
+  gateFirst,
   onFinishAction,
 }: Props) {
-  const [gateDone, setGateDone] = useState(!gateFirst);
+  const profile: ReadingRunnerProfile = useMemo(() => {
+    if (profileId) return getRunnerProfile(profileId);
+    if (mode === "review") return getRunnerProfile("toefl_review");
+    return getRunnerProfile("toefl_test");
+  }, [profileId, mode]);
+
+  const needsSession = profile.enableSubmit !== false;
+
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(sessionId ?? null);
+  const [isStarting, setIsStarting] = useState(needsSession && !sessionId);
+  const [startError, setStartError] = useState<string | null>(null);
+
+  const didStartRef = useRef(false);
+
+  useEffect(() => {
+    if (sessionId) {
+      setActiveSessionId(sessionId);
+      setIsStarting(false);
+      setStartError(null);
+      return;
+    }
+
+    if (!needsSession) {
+      setIsStarting(false);
+      setStartError(null);
+      return;
+    }
+
+    if (didStartRef.current) return;
+    didStartRef.current = true;
+
+    let active = true;
+
+    (async () => {
+      try {
+        setIsStarting(true);
+        setStartError(null);
+
+        const res = await startReadingSession({
+          setId,
+          passageId: String(passage.id),
+          mode: mode ?? "test",
+          profileId,
+        });
+
+        if (!res?.ok || !res?.sessionId || String(res.sessionId).startsWith("local-")) {
+          throw new Error(res?.error || "Failed to create DB reading session");
+        }
+
+        if (!active) return;
+        setActiveSessionId(String(res.sessionId));
+      } catch (e: any) {
+        console.error("[TestRunnerV2] failed to start reading session", e);
+        if (!active) return;
+        setActiveSessionId(null);
+        setStartError(String(e?.message || e || "Failed to create reading session"));
+      } finally {
+        if (active) setIsStarting(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [sessionId, needsSession, setId, passage.id, mode, profileId]);
+
+  const effectiveGateFirst = typeof gateFirst === "boolean" ? gateFirst : profile.gateFirst;
+  const [gateDone, setGateDone] = useState(!effectiveGateFirst);
 
   const contentStr = useMemo(
-    () => (Array.isArray(passage.paragraphs) ? passage.paragraphs.join('\n\n') : ''),
+    () => (Array.isArray(passage.paragraphs) ? passage.paragraphs.join("\n\n") : ""),
     [passage.paragraphs],
   );
+
+  if (isStarting) {
+    return (
+      <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+        Starting reading session...
+      </div>
+    );
+  }
+
+  if (startError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        Failed to start reading session.
+        <div className="mt-2 text-xs text-red-600">{startError}</div>
+      </div>
+    );
+  }
+
+  if (needsSession && !activeSessionId) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        Reading session is missing.
+      </div>
+    );
+  }
 
   if (!gateDone) {
     return <SkimGate content={contentStr} onUnlockAction={() => setGateDone(true)} />;
@@ -52,29 +168,34 @@ export default function TestRunnerV2({
 
   return (
     <RunnerCore
+      profile={profile}
       passage={passage}
-      sessionId={sessionId}
+      sessionId={activeSessionId}
       onFinishAction={onFinishAction}
       contentStr={contentStr}
+      initialPicked={initialPicked}
     />
   );
 }
 
 function RunnerCore({
+  profile,
   passage,
   sessionId,
   onFinishAction,
   contentStr,
+  initialPicked,
 }: {
+  profile: ReadingRunnerProfile;
   passage: RPassage;
-  sessionId: string;
+  sessionId: string | null;
   onFinishAction?: (sessionId: string | number) => void;
   contentStr: string;
+  initialPicked?: Record<string, string | string[]>;
 }) {
   const qs = (passage?.questions ?? []) as RQuestion[];
   const total = qs.length;
 
-  // 인덱스는 네비게이션 시에만 클램프
   const [idx, setIdx] = useState(0);
   const clamp = useCallback(
     (i: number) => Math.min(Math.max(0, i), Math.max(0, total - 1)),
@@ -82,21 +203,28 @@ function RunnerCore({
   );
 
   const [showText, setShowText] = useState(false);
-  const [picked, setPicked] = useState<Record<string, string | string[]>>({});
+  const [picked, setPicked] = useState<Record<string, string | string[]>>(initialPicked ?? {});
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const q = total > 0 ? qs[clamp(idx)] : undefined;
-  const qKey = q ? String(q.id) : '';
-  const isSummary = q?.type === 'summary';
+  const qKey = q ? String(q.id) : "";
+  const isSummary = q?.type === "summary";
   const selectionCount = Math.max(1, Number(viewMeta(q).summary.selectionCount ?? 2) || 2);
 
-  const getSelArray = useCallback((): string[] => {
+  const selArr = useMemo(() => {
     if (!qKey) return [];
-    const v = picked[qKey];
-    return Array.isArray(v) ? v : typeof v === 'string' && v ? [v] : [];
-  }, [qKey, picked]);
+    return asSelArray(picked[qKey]);
+  }, [picked, qKey]);
+
+  const isReadOnly = profile.enableSubmit === false;
+  const isLocked = !!(qKey && checked[qKey] && profile.lockAfterCheck);
 
   const toggle = useCallback(
     (qid: string, cid: string) => {
+      if (isReadOnly || isLocked) return;
+
       setPicked((s) => {
         const cur = s[qid];
         if (isSummary) {
@@ -111,16 +239,16 @@ function RunnerCore({
         }
         return s[qid] === cid ? s : { ...s, [qid]: cid };
       });
+
+      if (profile.revealAfterCheck) {
+        setChecked((m) => ({ ...m, [qid]: false }));
+      }
+
+      setActionError(null);
     },
-    [isSummary, selectionCount],
+    [isReadOnly, isLocked, isSummary, selectionCount, profile.revealAfterCheck],
   );
 
-  const canNext = useMemo(() => {
-    if (!qKey) return false;
-    return isSummary ? getSelArray().length === selectionCount : !!picked[qKey];
-  }, [qKey, isSummary, selectionCount, picked, getSelArray]);
-
-  // 렌더 중 impure 호출 금지 → 최초 0으로 세팅 후 tick()에서만 Date.now() 사용
   const lastTickRef = useRef<number>(0);
   const tick = useCallback(() => {
     const now = Date.now();
@@ -134,65 +262,149 @@ function RunnerCore({
   }, []);
 
   const submitOne = useCallback(async () => {
+    if (!profile.enableSubmit) return;
     if (!qKey) return;
+    if (!sessionId) throw new Error("Missing sessionId");
 
     if (isSummary) {
-      const arr = getSelArray();
-      if (arr.length === 0) return;
-      await submitReadingAnswer({
+      if (selArr.length !== selectionCount) return;
+      const res = await submitReadingAnswer({
         sessionId,
         questionId: qKey,
-        choiceId: arr.join('|'),
+        choiceId: selArr.join("|"),
         elapsedMs: tick(),
       });
+      if (!res?.ok) throw new Error(res?.error || "Failed to save answer");
       return;
     }
 
-    const cid = picked[qKey] as string | undefined;
+    const cid = typeof picked[qKey] === "string" ? (picked[qKey] as string) : "";
     if (!cid) return;
 
-    await submitReadingAnswer({
+    const res = await submitReadingAnswer({
       sessionId,
       questionId: qKey,
       choiceId: cid,
       elapsedMs: tick(),
     });
-  }, [qKey, picked, sessionId, isSummary, getSelArray, tick]);
+    if (!res?.ok) throw new Error(res?.error || "Failed to save answer");
+  }, [profile.enableSubmit, qKey, isSummary, selArr, selectionCount, sessionId, picked, tick]);
 
-  // ✅ React Compiler 경고 회피: 수동 메모이제이션 제거
-  const goPrev = () => setIdx((i) => clamp(i - 1));
+  const checkNow = useCallback(async () => {
+    if (!profile.revealAfterCheck) return;
+    if (!qKey) return;
 
-  // ✅ React Compiler 경고 회피: 수동 메모이제이션 제거
+    if (isSummary) {
+      if (selArr.length !== selectionCount) {
+        alert(`Please select exactly ${selectionCount} choices.`);
+        return;
+      }
+    } else {
+      const cid = typeof picked[qKey] === "string" ? (picked[qKey] as string) : "";
+      if (!cid) {
+        alert("Please select an answer first.");
+        return;
+      }
+    }
+
+    try {
+      setActionError(null);
+      await submitOne();
+      setChecked((m) => ({ ...m, [qKey]: true }));
+    } catch (e: any) {
+      console.error("[TestRunnerV2] checkNow failed", e);
+      setActionError(String(e?.message || e || "Failed to save answer"));
+    }
+  }, [profile.revealAfterCheck, qKey, isSummary, selArr, selectionCount, picked, submitOne]);
+
+  const canProceed = useMemo(() => {
+    if (!qKey) return false;
+    const hasAnswer = isSummary
+      ? selArr.length === selectionCount
+      : typeof picked[qKey] === "string" && !!picked[qKey];
+    if (!hasAnswer) return false;
+    if (profile.revealAfterCheck) return !!checked[qKey];
+    return true;
+  }, [qKey, isSummary, selectionCount, selArr, picked, profile.revealAfterCheck, checked]);
+
+  const isLast = clamp(idx) >= total - 1;
+
+  const doFinish = useCallback(async () => {
+    try {
+      setActionError(null);
+
+      if (profile.enableSubmit) {
+        if (!sessionId) throw new Error("Missing sessionId");
+        const res = await finishReadingSession({ sessionId });
+        if (!res?.ok) throw new Error(res?.error || "Failed to finish reading session");
+      }
+
+      if (onFinishAction) {
+        onFinishAction(sessionId ?? "");
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        const sid = encodeURIComponent(sessionId ?? "");
+        const pid = encodeURIComponent(profile.id);
+        window.location.href = `/reading/review/${sid}?profileId=${pid}&view=runner`;
+      }
+    } catch (e: any) {
+      console.error("[TestRunnerV2] doFinish failed", e);
+      setActionError(String(e?.message || e || "Failed to finish reading session"));
+    } finally {
+      setIsFinishing(false);
+    }
+  }, [profile.enableSubmit, profile.id, sessionId, onFinishAction]);
+
   const next = async () => {
     if (!qKey) return;
-    if (!canNext) {
-      alert(
-        isSummary
-          ? `Please select exactly ${selectionCount} choices.`
-          : 'Please select an answer before continuing.',
-      );
+
+    if (!profile.revealAfterCheck) {
+      const hasAnswer = isSummary
+        ? selArr.length === selectionCount
+        : typeof picked[qKey] === "string" && !!picked[qKey];
+
+      if (!hasAnswer && profile.enableSubmit) {
+        alert(isSummary ? `Please select exactly ${selectionCount} choices.` : "Please select an answer.");
+        return;
+      }
+
+      if (hasAnswer) {
+        try {
+          setActionError(null);
+          await submitOne();
+        } catch (e: any) {
+          console.error("[TestRunnerV2] next submit failed", e);
+          setActionError(String(e?.message || e || "Failed to save answer"));
+          return;
+        }
+      }
+    } else {
+      if (!canProceed) return;
+    }
+
+    setShowText(false);
+
+    if (!isLast) {
+      setIdx((i) => clamp(i + 1));
       return;
     }
-    await submitOne();
-    setShowText(false);
-    setIdx((i) => {
-      if (i < total - 1) return clamp(i + 1);
-      return i;
-    });
-    // 마지막 문제면 세션 종료
-    if (clamp(idx + 1) === idx) {
-      await finishReadingSession({ sessionId });
-      onFinishAction?.(sessionId);
-    }
+
+    setIsFinishing(true);
+    await doFinish();
   };
 
-  const selArr = getSelArray();
-  const remaining = isSummary ? selectionCount - selArr.length : 0;
+  const goPrev = () => {
+    if (!profile.allowPrev) return;
+    setShowText(false);
+    setIdx((i) => clamp(i - 1));
+  };
 
   if (total === 0) {
     return (
       <div className="rounded-xl border p-4 text-sm">
-        No questions available. (passage: <b>{passage?.title ?? 'untitled'}</b>)
+        No questions available. (passage: <b>{passage?.title ?? "untitled"}</b>)
       </div>
     );
   }
@@ -202,7 +414,7 @@ function RunnerCore({
     return (
       <div className="p-6">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm text-neutral-500">Summary question — Full Text View</div>
+          <div className="text-sm text-neutral-500">{profile.label} · Full Text</div>
           <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(false)}>
             View Questions
           </button>
@@ -220,95 +432,170 @@ function RunnerCore({
     );
   }
 
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(320px, 1fr) minmax(420px, 1.4fr)',
-        gap: '1.5rem',
-        alignItems: 'start',
-      }}
-    >
-      <div style={{ order: 1, minWidth: 0 }}>
-        <div className="flex items-center justify-between text-sm text-neutral-500">
-          <div>
-            Question {q?.number ?? clamp(idx) + 1} / {total}{' '}
-            <span className="ml-2 rounded bg-purple-600/20 px-2 py-0.5 text-[11px] text-purple-300">
-              Runner V2
-            </span>
-          </div>
-          {isSummary && (
-            <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(true)}>
-              View Text
-            </button>
-          )}
+  const isToeflLayout = profile.layout === "toefl";
+  const remaining = isSummary ? selectionCount - selArr.length : 0;
+  const { explanation, clue_quote } = getExplain(q);
+
+  const QuestionPane = (
+    <div style={{ minWidth: 0 }}>
+      <div className="flex items-center justify-between text-sm text-neutral-500">
+        <div>
+          Question {q?.number ?? clamp(idx) + 1} / {total}{" "}
+          <span className="ml-2 rounded bg-emerald-600/15 px-2 py-0.5 text-[11px] text-emerald-300">
+            {profile.label}
+          </span>
         </div>
-
-        <h2 className="mt-2 text-lg font-semibold">{q?.stem ?? ''}</h2>
         {isSummary && (
-          <div className="mt-1 text-xs text-neutral-500">
-            Select <b>{selectionCount}</b> choices. (Remaining: {remaining})
-          </div>
+          <button type="button" className="rounded border px-3 py-1" onClick={() => setShowText(true)}>
+            View Text
+          </button>
         )}
+      </div>
 
-        <ul className="mt-3 space-y-2">
-          {(q?.choices ?? []).map((c: any, i: number) => {
-            const checked = isSummary ? selArr.includes(c.id) : picked[qKey] === c.id;
-            return (
-              <li key={c.id}>
-                <label
-                  className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 hover:bg-white/5 ${
-                    checked ? 'ring-2 ring-purple-400/50' : ''
-                  }`}
-                >
-                  <input
-                    type={isSummary ? 'checkbox' : 'radio'}
-                    name={`q-${qKey || 'none'}`}
-                    className="mt-1"
-                    checked={checked}
-                    onChange={() => qKey && toggle(qKey, c.id)}
-                    aria-label={`Choice ${i + 1}`}
-                  />
-                  <span className="leading-7">{c.text}</span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
+      <h2 className="mt-2 text-lg font-semibold">{q?.stem ?? ""}</h2>
+      {isSummary ? (
+        <div className="mt-1 text-xs text-neutral-500">
+          Select <b>{selectionCount}</b> choices. (Remaining: {remaining})
+        </div>
+      ) : null}
 
-        <div className="mt-4 flex justify-between">
+      <ul className="mt-3 space-y-2">
+        {(q?.choices ?? []).map((c: any, i: number) => {
+          const cid = String(c.id);
+          const pickedNow = isSummary ? selArr.includes(cid) : picked[qKey] === cid;
+          const correctFlag = typeof c?.isCorrect === "boolean" ? !!c.isCorrect : null;
+
+          const ring =
+            profile.showCorrectness && pickedNow && correctFlag !== null
+              ? correctFlag
+                ? "ring-2 ring-emerald-400/60"
+                : "ring-2 ring-red-400/60"
+              : pickedNow
+                ? "ring-2 ring-emerald-400/40"
+                : "";
+
+          return (
+            <li key={cid}>
+              <label
+                className={[
+                  "flex cursor-pointer items-start gap-2 rounded-xl border p-3",
+                  ring,
+                  isLocked ? "opacity-90" : "hover:bg-white/5",
+                ].join(" ")}
+              >
+                <input
+                  type={isSummary ? "checkbox" : "radio"}
+                  name={`q-${qKey || "none"}`}
+                  className="mt-1"
+                  checked={pickedNow}
+                  disabled={isReadOnly || isLocked}
+                  onChange={() => qKey && toggle(qKey, cid)}
+                  aria-label={`Choice ${i + 1}`}
+                />
+                <span className="leading-7">
+                  {c.text}
+                  {profile.showCorrectness && correctFlag !== null ? (
+                    <span className="ml-2 text-xs text-neutral-400">
+                      {correctFlag ? "(correct)" : "(wrong)"}
+                    </span>
+                  ) : null}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+
+      {profile.revealAfterCheck ? (
+        <div className="mt-4 flex items-center justify-between gap-3">
           <button
             type="button"
             className="rounded border px-4 py-2"
-            disabled={clamp(idx) === 0}
-            onClick={() => setIdx((i) => clamp(i - 1))}
+            onClick={checkNow}
+            disabled={!qKey || !!checked[qKey] || isReadOnly}
           >
-            Prev
-          </button>
-          <button
-            type="button"
-            className={`rounded border px-4 py-2 ${canNext ? '' : 'cursor-not-allowed opacity-50'}`}
-            onClick={next}
-            disabled={!canNext}
-          >
-            {clamp(idx) < total - 1 ? 'Next' : 'Finish'}
+            {checked[qKey] ? "Checked" : "Check"}
           </button>
         </div>
-      </div>
+      ) : null}
 
-      <div
-        style={{
-          order: 2,
-          position: 'sticky',
-          top: '1rem',
-          height: 'calc(100vh - 2rem)',
-          overflow: 'auto',
-        }}
-      >
-        <div className="rounded-2xl border p-4">
-          {q ? <PassagePane content={contentStr} q={q} /> : null}
+      {actionError ? (
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {actionError}
         </div>
+      ) : null}
+
+      {profile.showExplanation ? (
+        <div className="mt-4 rounded-xl border bg-white/50 p-4 text-sm">
+          {clue_quote ? (
+            <div className="mb-3">
+              <div className="text-xs font-semibold text-neutral-500">Clue</div>
+              <div className="mt-1 whitespace-pre-wrap leading-6">{clue_quote}</div>
+            </div>
+          ) : null}
+          {explanation ? (
+            <div>
+              <div className="text-xs font-semibold text-neutral-500">Explanation</div>
+              <div className="mt-1 whitespace-pre-wrap leading-6">{explanation}</div>
+            </div>
+          ) : (
+            <div className="text-neutral-500">No explanation provided.</div>
+          )}
+        </div>
+      ) : null}
+
+      <div className="mt-4 flex justify-between">
+        <button
+          type="button"
+          className="rounded border px-4 py-2"
+          disabled={!profile.allowPrev || clamp(idx) === 0}
+          onClick={goPrev}
+        >
+          Prev
+        </button>
+        <button
+          type="button"
+          className={[
+            "rounded border px-4 py-2",
+            profile.revealAfterCheck && !canProceed ? "cursor-not-allowed opacity-50" : "",
+          ].join(" ")}
+          onClick={next}
+          disabled={(profile.revealAfterCheck ? !canProceed : false) || isFinishing}
+        >
+          {isFinishing ? "Finishing..." : isLast ? "Finish" : "Next"}
+        </button>
       </div>
+    </div>
+  );
+
+  const PassageStickyPane = (
+    <div style={{ position: "sticky", top: "1rem", height: "calc(100vh - 2rem)", overflow: "auto" }}>
+      <div className="rounded-2xl border p-4">{q ? <PassagePane content={contentStr} q={q} /> : null}</div>
+    </div>
+  );
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: isToeflLayout
+          ? "minmax(420px, 1.4fr) minmax(320px, 1fr)"
+          : "minmax(320px, 1fr) minmax(420px, 1.4fr)",
+        gap: "1.5rem",
+        alignItems: "start",
+      }}
+    >
+      {isToeflLayout ? (
+        <>
+          {PassageStickyPane}
+          {QuestionPane}
+        </>
+      ) : (
+        <>
+          {QuestionPane}
+          {PassageStickyPane}
+        </>
+      )}
     </div>
   );
 }
