@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createNaesinReadingSetAction } from "@/actions/naesinReadingAdmin";
+import {
+  createNaesinReadingSetAction,
+  updateNaesinReadingSetAction,
+} from "@/actions/naesinReadingAdmin";
 import type { NaesinReadingCreatePayload } from "@/lib/reading/naesin-payload";
 
 const SAMPLE_PAYLOAD: NaesinReadingCreatePayload = {
@@ -127,19 +130,26 @@ export default function ReadingEditorClient({
     }
 
     startTransition(async () => {
-      const result = await createNaesinReadingSetAction(parsedPreview.value);
+      const result = initialSetId
+        ? await updateNaesinReadingSetAction(initialSetId, parsedPreview.value)
+        : await createNaesinReadingSetAction(parsedPreview.value);
 
       if (result.ok === false) {
         setError(result.error);
         return;
       }
 
-      setSuccess(`Saved. setId: ${result.setId}`);
+      setSuccess(
+        initialSetId
+          ? `Updated. setId: ${result.setId}`
+          : `Saved. setId: ${result.setId}`,
+      );
+
       router.refresh();
 
       setTimeout(() => {
-        router.push("/admin/content/list");
-      }, 800);
+        router.push(`/admin/content/new/json?setId=${result.setId}`);
+      }, 600);
     });
   }
 
@@ -152,8 +162,8 @@ export default function ReadingEditorClient({
     <div className="space-y-4">
       {initialSetId && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-          Loaded existing Naesin set: <span className="font-semibold">{initialSetId}</span>.
-          Current Save action creates a new copy.
+          Loaded existing Naesin set:{" "}
+          <span className="font-semibold">{initialSetId}</span>
         </div>
       )}
 
@@ -193,11 +203,7 @@ export default function ReadingEditorClient({
               className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               disabled={isPending}
             >
-              {isPending
-                ? "Saving..."
-                : initialSetId
-                  ? "Save as New Copy"
-                  : "Save"}
+              {isPending ? "Saving..." : initialSetId ? "Update" : "Save"}
             </button>
           </div>
         </div>
