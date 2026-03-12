@@ -243,7 +243,7 @@ export default async function Page({
           profileId="lingox_ms"
           backend="naesin"
           mode="test"
-          finishRedirectPath="/admin/content/list"
+          finishRedirectPath="/lingox/reading/ms/review/:sessionId"
         />
       </div>
     );

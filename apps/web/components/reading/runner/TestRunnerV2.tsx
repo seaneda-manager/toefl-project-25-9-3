@@ -410,7 +410,8 @@ function RunnerCore({
 
       if (typeof window !== "undefined") {
         if (typeof finishRedirectPath === "string" && finishRedirectPath.length > 0) {
-          window.location.href = finishRedirectPath;
+          const sid = encodeURIComponent(sessionId ?? "");
+          window.location.href = finishRedirectPath.replace(":sessionId", sid);
           return;
         }
 
