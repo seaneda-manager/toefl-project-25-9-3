@@ -164,7 +164,8 @@ $$;
 -- 4) review RPCs (score + rows)
 --    - uses latest answer per question (distinct on)
 -- =========================================================
-create or replace function public.reading_review_score(
+drop function if exists public.reading_review_score(uuid);
+create function public.reading_review_score(
   session_id uuid
 ) returns table(total integer, correct integer)
 language sql
@@ -188,7 +189,8 @@ where s.user_id = auth.uid()
   and (s.passage_id is null or q.passage_id = s.passage_id);
 $$;
 
-create or replace function public.reading_review_rows(
+drop function if exists public.reading_review_rows(uuid);
+create function public.reading_review_rows(
   session_id uuid
 ) returns table(
   q_no integer,
