@@ -8,6 +8,7 @@
     "supabase:types": "powershell -NoProfile -Command \"cd ..\\..; supabase gen types typescript --linked --schema public | Out-File -Encoding utf8 apps\\\\web\\\\schema_public.types.ts\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.99.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.80.0",
     "clsx": "^2.1.1",

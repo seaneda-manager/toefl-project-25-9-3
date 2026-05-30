@@ -1,30 +1,52 @@
 // apps/web/lib/authServer.ts
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+
+import { getServerSupabase } from '@/lib/supabase/server';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
-export async function getSupabaseServer() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) { return cookieStore.get(name)?.value; },
-        set() {}, remove() {},
-      }
-    }
-  );
+function normalizeRole(value: unknown): UserRole {
+  if (value === 'teacher' || value === 'admin') return value;
+  return 'student';
 }
 
+/**
+ * 🔐 Auth SSOT
+ * - user: 인증된 사용자 (서버 검증됨) → 신뢰 기준
+ * - session: 로그인 상태/redirect 제어용
+ */
+export async function getAuthContext() {
+  const supabase = await getServerSupabase();
+
+  // ✅ 인증된 사용자 (권장)
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  // ⚙️ 세션 (로그인 여부 체크용)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const role = normalizeRole(user?.user_metadata?.role);
+
+  return {
+    supabase,
+    user,
+    session,
+    role,
+    isAuthenticated: !!user && !userError,
+  };
+}
+
+/**
+ * 🔁 레거시 호환 (기존 코드 안 깨지게)
+ */
 export async function getSessionAndRole() {
-  const supabase = await getSupabaseServer();
-  const { data: { session } } = await supabase.auth.getSession();
-  const role = (session?.user?.user_metadata?.role ?? 'student') as UserRole;
-  return { session, role, supabase };
+  const ctx = await getAuthContext();
+  return {
+    session: ctx.session,
+    role: ctx.role,
+    supabase: ctx.supabase,
+  };
 }
-
-
-
-
