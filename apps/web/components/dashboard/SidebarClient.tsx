@@ -170,6 +170,16 @@ export default function SidebarClient({ role }: Props) {
           href: '/admin/naesin/scopes/new',
           label: '새 범위 만들기',
         },
+        {
+          section: 'Lingo-X Naesin',
+          href: '/admin/hi-naesin/passages',
+          label: 'Hi-내신 지문 목록',
+        },
+        {
+          section: 'Lingo-X Naesin',
+          href: '/admin/hi-naesin/passages/new',
+          label: 'Hi-내신 지문 등록',
+        },
 
         { section: 'Lingo-X Junior', label: 'Junior Hub (soon)', disabled: true },
         { section: 'Lingo-X Junior', label: 'Junior Content (soon)', disabled: true },
