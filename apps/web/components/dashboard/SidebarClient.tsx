@@ -178,7 +178,12 @@ export default function SidebarClient({ role }: Props) {
         {
           section: 'Lingo-X Naesin',
           href: '/admin/hi-naesin/passages/new',
-          label: 'Hi-내신 지문 등록',
+          label: 'Hi-내신 단건 등록',
+        },
+        {
+          section: 'Lingo-X Naesin',
+          href: '/admin/hi-naesin/passages/bulk-new',
+          label: 'Hi-내신 챕터 일괄 등록',
         },
 
         { section: 'Lingo-X Junior', label: 'Junior Hub (soon)', disabled: true },

@@ -10,6 +10,7 @@ type SearchParams = Promise<{
   source_type?: string;
   grade?: string;
   q?: string;
+  bulk?: string;
 }>;
 
 export default async function HiNaesinPassageListPage({
@@ -44,6 +45,7 @@ export default async function HiNaesinPassageListPage({
   }
 
   const rows = (data ?? []) as HiNaesinPassageRow[];
+  const bulkCount = sp.bulk ? Number(sp.bulk) : null;
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -57,13 +59,27 @@ export default async function HiNaesinPassageListPage({
             고등 내신 지문 라이브러리 — 모의고사 · 교과서 · 외부교재
           </p>
         </div>
-        <Link
-          href="/admin/hi-naesin/passages/new"
-          className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50 self-start"
-        >
-          + 새 지문 등록
-        </Link>
+        <div className="flex gap-2 self-start">
+          <Link
+            href="/admin/hi-naesin/passages/bulk-new"
+            className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+          >
+            + 챕터별 일괄 등록
+          </Link>
+          <Link
+            href="/admin/hi-naesin/passages/new"
+            className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
+          >
+            + 단건 등록
+          </Link>
+        </div>
       </header>
+
+      {bulkCount !== null && bulkCount > 0 && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm text-emerald-800">
+          ✓ 지문 {bulkCount}개가 등록됐습니다. 각 지문을 클릭해서 Drill을 추가하세요.
+        </div>
+      )}
 
       {/* 필터 */}
       <section className="rounded-2xl border bg-white p-4">
