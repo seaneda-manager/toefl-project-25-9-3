@@ -1,0 +1,84 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+type Props = {
+  formId: string;
+};
+
+export default function ScopeBulkSelectionToolbar({ formId }: Props) {
+  const selectAllId = useMemo(() => `${formId}-select-all`, [formId]);
+  const [counts, setCounts] = useState({ selected: 0, total: 0 });
+
+  useEffect(() => {
+    const selector = `input[type="checkbox"][form="${formId}"][name="scope_ids"]`;
+
+    const sync = () => {
+      const boxes = Array.from(
+        document.querySelectorAll<HTMLInputElement>(selector),
+      );
+
+      const total = boxes.length;
+      const selected = boxes.filter((box) => box.checked).length;
+
+      setCounts({ selected, total });
+
+      const master = document.getElementById(selectAllId) as HTMLInputElement | null;
+      if (!master) return;
+
+      master.checked = total > 0 && selected === total;
+      master.indeterminate = selected > 0 && selected < total;
+    };
+
+    const boxes = Array.from(
+      document.querySelectorAll<HTMLInputElement>(selector),
+    );
+
+    boxes.forEach((box) => box.addEventListener("change", sync));
+    sync();
+
+    return () => {
+      boxes.forEach((box) => box.removeEventListener("change", sync));
+    };
+  }, [formId, selectAllId]);
+
+  const handleToggleAll = (checked: boolean) => {
+    const selector = `input[type="checkbox"][form="${formId}"][name="scope_ids"]`;
+    const boxes = Array.from(
+      document.querySelectorAll<HTMLInputElement>(selector),
+    );
+
+    boxes.forEach((box) => {
+      box.checked = checked;
+    });
+
+    setCounts({
+      selected: checked ? boxes.length : 0,
+      total: boxes.length,
+    });
+
+    const master = document.getElementById(selectAllId) as HTMLInputElement | null;
+    if (master) {
+      master.checked = checked;
+      master.indeterminate = false;
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
+        <input
+          id={selectAllId}
+          type="checkbox"
+          className="h-4 w-4 rounded border-neutral-300"
+          onChange={(e) => handleToggleAll(e.currentTarget.checked)}
+        />
+        <span>전체 선택</span>
+      </label>
+
+      <div className="text-sm text-neutral-500">
+        선택 {counts.selected} / 전체 {counts.total}
+      </div>
+    </div>
+  );
+}

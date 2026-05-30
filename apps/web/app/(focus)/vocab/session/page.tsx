@@ -358,11 +358,12 @@ type ShortcutParams = {
   n: number; // dev-only
   seed: string; // dev-only
   debug: string; // ✅ debug gating
+  prescriptionId: string;
 };
 
 function readShortcutParams(): ShortcutParams {
   if (typeof window === "undefined")
-    return { jump: "", only: "", setId: "", n: 0, seed: "", debug: "" };
+    return { jump: "", only: "", setId: "", n: 0, seed: "", debug: "", prescriptionId: "" };
   const sp = new URL(window.location.href).searchParams;
   const jump = (sp.get("jump") ?? "").trim().toUpperCase();
   const only = (sp.get("only") ?? "").trim().toUpperCase();
@@ -375,8 +376,9 @@ function readShortcutParams(): ShortcutParams {
 
   const seed = (sp.get("seed") ?? "").trim();
   const debug = (sp.get("debug") ?? "").trim();
+  const prescriptionId = (sp.get("prescriptionId") ?? sp.get("prescription_id") ?? "").trim();
 
-  return { jump, only, setId, n, seed, debug };
+  return { jump, only, setId, n, seed, debug, prescriptionId };
 }
 
 function canonOnlyToDrillType(raw: string): DrillType | "" {
@@ -445,6 +447,7 @@ function synthesizeDevExamples(wordText: string): string[] {
     `The ${w} of this change could be significant.`,
   ];
 }
+
 
 /* =========================================================
  * ✅ WordMap Normalizer
@@ -674,7 +677,7 @@ function collocationsToStrings(v: any): string[] {
 /* =========================================================
  * PAGE
  * ======================================================= */
-  export default function VocabSessionPage() {
+export default function VocabSessionPage() {
   const isDev = process.env.NODE_ENV !== "production";
   const supabase = useMemo(() => createBrowserClient(), []);
   const penguin = usePenguinMood();
@@ -729,6 +732,7 @@ function collocationsToStrings(v: any): string[] {
 
   // ✅ prevent infinite repair loop
   const wfRepairKeyRef = useRef<string>("");
+  const prescriptionDoneRef = useRef(false);
 
   // ✅ cache-bust old pending tasks when drill policy changes
   useEffect(() => {
@@ -1067,6 +1071,7 @@ function collocationsToStrings(v: any): string[] {
         stage,
         userId,
         updatedAt: new Date().toISOString(),
+        prescriptionId: shortcut.prescriptionId || null,
         allWords: allWords.length,
         wordMapKeys: Object.keys(wordMap ?? {}).length,
         examplesKeys: Object.keys(wordExamplesById ?? {}).length,
@@ -1378,6 +1383,37 @@ function collocationsToStrings(v: any): string[] {
     setSpellingResult((prev) => prev ?? makeEmptySpellingResult());
     setStage("DRILL_INTRO");
   }, [stage, allWordIds]);
+
+  const finishDrillSession = async () => {
+  const prescriptionId = shortcut.prescriptionId;
+
+  if (prescriptionId && !prescriptionDoneRef.current) {
+    prescriptionDoneRef.current = true;
+
+    try {
+     
+    } catch (e: any) {
+      prescriptionDoneRef.current = false;
+      setDebugInfo((prev) =>
+        prev
+          ? {
+              ...prev,
+              diag: {
+                ...(prev.diag ?? {}),
+                prescriptionDone: {
+                  ok: false,
+                  prescriptionId,
+                  error: String(e?.message ?? e),
+                },
+              },
+            }
+          : prev,
+      );
+    }
+  }
+
+  setStage("DONE");
+};
 
 // ✅ stage renderer
 const renderStage = () => {
@@ -1798,8 +1834,8 @@ if (stage === "SPELLING") {
           wordFormsById={wordFormsById}
           exampleStringsById={exampleStringsById}
           collocationStringsById={collocationStringsById}
-          onFinish={() => setStage("DONE")}
-          onDone={() => setStage("DONE")}
+          onFinish={finishDrillSession}
+          onDone={finishDrillSession}
         />
       </StageWrap>
     );

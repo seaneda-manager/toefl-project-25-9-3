@@ -2,9 +2,10 @@
 import { notFound, redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 
-type Props = { params: { setId: string } };
+type Props = { params: Promise<{ setId: string }> };
 
-export default async function ReadingStudyPage({ params }: Props) {
+export default async function ReadingStudyPage({ params: paramsPromise }: Props) {
+  const { setId } = await paramsPromise;
   const supabase = await getSupabaseServer();
 
   const {
@@ -15,7 +16,7 @@ export default async function ReadingStudyPage({ params }: Props) {
   const { data: set, error } = await supabase
     .from('reading_sets')
     .select('id, title, passage_html')
-    .eq('id', params.setId)
+    .eq('id', setId)
     .maybeSingle();
 
   if (error || !set) notFound();
@@ -23,7 +24,7 @@ export default async function ReadingStudyPage({ params }: Props) {
   const { data: questions } = await supabase
     .from('reading_questions')
     .select('id, number, stem, choices')
-    .eq('set_id', params.setId)
+    .eq('set_id', setId)
     .order('number', { ascending: true });
 
   return (
@@ -51,7 +52,7 @@ export default async function ReadingStudyPage({ params }: Props) {
           const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/reading-2026/study/submit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ setId: params.setId, answers }),
+            body: JSON.stringify({ setId: setId, answers }),
           });
 
           if (!res.ok) {

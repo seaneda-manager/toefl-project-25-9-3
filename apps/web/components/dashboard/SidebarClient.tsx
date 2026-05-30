@@ -1,4 +1,3 @@
-// components/dashboard/SidebarClient.tsx
 'use client';
 
 import Link from 'next/link';
@@ -9,10 +8,24 @@ import { ChevronRight } from 'lucide-react';
 type Role = 'student' | 'teacher' | 'admin';
 type Props = { role: Role };
 
+type NavSection =
+  | 'Student'
+  | 'Main'
+  | 'Teacher'
+  | 'System'
+  | 'Admin'
+  | 'Lingo-X TOEFL'
+  | 'Lingo-X Naesin'
+  | 'Lingo-X Junior'
+  | 'Lingo-X Voca'
+  | 'Content'
+  | 'Teacher Tools';
+
 type NavItem = {
-  section: 'Student' | 'Main' | 'Teacher' | 'System';
-  href: string;
+  section: NavSection;
   label: string;
+  href?: string;
+  disabled?: boolean;
 };
 
 const LEGACY_ITEMS = [
@@ -22,7 +35,6 @@ const LEGACY_ITEMS = [
   { href: '/writing', label: 'Writing (Legacy)' },
 ];
 
-// 경로 정규화: 슬래시/route group 처리
 function normalizePath(s: string | null | undefined) {
   if (!s) return '/';
   let clean = s.split('?')[0];
@@ -37,6 +49,24 @@ function normalizePath(s: string | null | undefined) {
   return clean;
 }
 
+function getCollapsedSectionLabel(section: string) {
+  const map: Record<string, string> = {
+    Student: 'S',
+    Main: 'M',
+    Teacher: 'T',
+    System: 'Sys',
+    Admin: 'A',
+    'Lingo-X TOEFL': 'TF',
+    'Lingo-X Naesin': 'N',
+    'Lingo-X Junior': 'J',
+    'Lingo-X Voca': 'V',
+    Content: 'C',
+    'Teacher Tools': 'TT',
+  };
+
+  return map[section] ?? section.slice(0, 1);
+}
+
 export default function SidebarClient({ role }: Props) {
   const pathnameRaw = usePathname() || '/';
   const pathname = normalizePath(pathnameRaw);
@@ -47,16 +77,28 @@ export default function SidebarClient({ role }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     if (role === 'admin') {
       return {
-        Student: false,
-        Main: true,
-        Teacher: false,
+        Admin: true,
+        'Lingo-X TOEFL': true,
+        'Lingo-X Naesin': true,
+        'Lingo-X Junior': true,
+        'Lingo-X Voca': true,
+        Content: true,
+        'Teacher Tools': true,
         System: true,
       };
     }
+
+    if (role === 'teacher') {
+      return {
+        Main: true,
+        Teacher: true,
+        System: true,
+      };
+    }
+
     return {
       Student: true,
       Main: true,
-      Teacher: true,
       System: true,
     };
   });
@@ -68,7 +110,9 @@ export default function SidebarClient({ role }: Props) {
     }));
   };
 
-  const isActive = (href: string) => {
+  const isActive = (href?: string) => {
+    if (!href) return false;
+
     const cur = pathname;
     const tgt = normalizePath(href);
 
@@ -80,10 +124,8 @@ export default function SidebarClient({ role }: Props) {
     return false;
   };
 
-  // 🔍 시험 화면 여부 (-study / -test / -adaptive-demo / demo 같이)
   const isExamRoute = useMemo(() => {
     const p = normalizePath(pathnameRaw);
-
     const examPattern = /(study|test|adaptive-demo|demo)/;
 
     return (
@@ -91,81 +133,114 @@ export default function SidebarClient({ role }: Props) {
       (/\/listening-2026\//.test(p) && examPattern.test(p)) ||
       (/\/speaking-2026\//.test(p) && examPattern.test(p)) ||
       (/\/writing-2026\//.test(p) && examPattern.test(p)) ||
-      // ✅ VOCA도 study/test는 시험 화면으로 취급
       (/\/voca\//.test(p) && examPattern.test(p))
     );
   }, [pathnameRaw]);
 
-  const items = useMemo<NavItem[]>(
-    () => [
-      // 🔹 Student 영역 (student + admin)
-      ...(role === 'student' || role === 'admin'
-        ? ([
-            { section: 'Student', href: '/student', label: 'Student Home' },
-            { section: 'Student', href: '/student/tests', label: 'My Tests' },
-            { section: 'Student', href: '/student/review', label: 'Review' },
-            { section: 'Student', href: '/student/progress', label: 'Progress' },
-            { section: 'Student', href: '/student/homework', label: 'Homework' },
-            { section: 'Student', href: '/student/perks', label: 'Perks (soon)' },
-          ] as const)
-        : []),
+  const items = useMemo<NavItem[]>(() => {
+    if (role === 'admin') {
+      return [
+        { section: 'Admin', href: '/admin', label: 'Admin Home' },
 
-      // 🔹 Main 공용 영역
+        {
+          section: 'Lingo-X TOEFL',
+          href: '/admin/content/reading-2026/new',
+          label: 'Reading 2026 Editor',
+        },
+        {
+          section: 'Lingo-X TOEFL',
+          href: '/admin/content/listening-2026/new',
+          label: 'Listening 2026 Editor',
+        },
+        {
+          section: 'Lingo-X TOEFL',
+          href: '/admin/content/writing-2026/new',
+          label: 'Writing 2026 Editor',
+        },
+
+        { section: 'Lingo-X Naesin', href: '/admin/naesin', label: '내신 허브' },
+        {
+          section: 'Lingo-X Naesin',
+          href: '/admin/naesin/scopes',
+          label: '시험 범위 관리',
+        },
+        {
+          section: 'Lingo-X Naesin',
+          href: '/admin/naesin/scopes/new',
+          label: '새 범위 만들기',
+        },
+
+        { section: 'Lingo-X Junior', label: 'Junior Hub (soon)', disabled: true },
+        { section: 'Lingo-X Junior', label: 'Junior Content (soon)', disabled: true },
+
+        { section: 'Lingo-X Voca', href: '/voca/admin', label: 'VOCA Admin' },
+
+        {
+          section: 'Content',
+          href: '/admin/content/new?kind=reading',
+          label: 'New Reading Set',
+        },
+        {
+          section: 'Content',
+          href: '/admin/content/list?kind=reading',
+          label: 'Reading Set List',
+        },
+        {
+          section: 'Content',
+          href: '/admin/content/new?kind=listening',
+          label: 'New Listening Set',
+        },
+        {
+          section: 'Content',
+          href: '/admin/content/list?kind=listening',
+          label: 'Listening Set List',
+        },
+
+        { section: 'Teacher Tools', href: '/teacher/home', label: 'Teacher Home' },
+        { section: 'Teacher Tools', href: '/teacher/tasks', label: '할 일 관리' },
+        { section: 'Teacher Tools', href: '/teacher/students', label: '학생 관리' },
+        {
+          section: 'Teacher Tools',
+          href: '/teacher/home-mock',
+          label: 'Teacher Home (Mock)',
+        },
+
+        { section: 'System', href: '/admin/landing', label: 'Landing Editor' },
+        { section: 'System', href: '/settings', label: 'Settings' },
+      ];
+    }
+
+    if (role === 'teacher') {
+      return [
+        { section: 'Main', href: '/home', label: 'Home' },
+        { section: 'Main', href: '/voca/study', label: 'VOCA – Study' },
+
+        { section: 'Teacher', href: '/teacher/home', label: 'Teacher Home' },
+        { section: 'Teacher', href: '/teacher/tasks', label: '할 일 관리' },
+        { section: 'Teacher', href: '/teacher/students', label: '학생 관리' },
+        { section: 'Teacher', href: '/teacher/home-mock', label: 'Teacher Home (Mock)' },
+
+        { section: 'System', href: '/settings', label: 'Settings' },
+      ];
+    }
+
+    return [
+      { section: 'Student', href: '/student', label: 'Student Home' },
+      { section: 'Student', href: '/student/tests', label: 'My Tests' },
+      { section: 'Student', href: '/student/review', label: 'Review' },
+      { section: 'Student', href: '/student/progress', label: 'Progress' },
+      { section: 'Student', href: '/student/homework', label: 'Homework' },
+
       { section: 'Main', href: '/home', label: 'Home' },
       { section: 'Main', href: '/reading-2026/study', label: 'Reading 2026 – Study' },
       { section: 'Main', href: '/listening-2026/study', label: 'Listening 2026 – Study' },
       { section: 'Main', href: '/speaking-2026/study', label: 'Speaking 2026 – Study' },
       { section: 'Main', href: '/writing-2026/study', label: 'Writing 2026 – Study' },
-      // ✅ VOCA Study 입구
       { section: 'Main', href: '/voca/study', label: 'VOCA – Study' },
 
-      // 🔹 Teacher 영역 (teacher + admin)
-      ...(role === 'teacher' || role === 'admin'
-        ? ([
-            { section: 'Teacher', href: '/teacher/home', label: 'Teacher Home' },
-            { section: 'Teacher', href: '/teacher/tasks', label: '할 일 관리' },
-            { section: 'Teacher', href: '/teacher/students', label: '학생 관리' },
-            { section: 'Teacher', href: '/teacher/home-mock', label: 'Teacher Home (Mock)' },
-            // ✅ VOCA Admin 입구 (경로는 /voca/admin 그대로 사용)
-            { section: 'Teacher', href: '/voca/admin', label: 'VOCA Admin' },
-          ] as const)
-        : []),
-
-      // 🔹 System 영역
-      ...(role === 'admin'
-        ? ([
-            { section: 'System', href: '/admin', label: 'Admin Panel' },
-            { section: 'System', href: '/admin/landing', label: 'Landing Editor' },
-
-            // ✅ 여기부터 새 Editor 입구들
-            {
-              section: 'System',
-              href: '/admin/content/reading-2026/new',
-              label: 'Reading 2026 Editor',
-            },
-            {
-              section: 'System',
-              href: '/admin/content/listening-2026/new',
-              label: 'Listening 2026 Editor',
-            },
-            {
-              section: 'System',
-              href: '/admin/content/writing-2026/new',
-              label: 'Writing 2026 Editor',
-            },
-            // Speaking Editor 생기면 여기에 추가:
-            // {
-            //   section: 'System',
-            //   href: '/admin/content/speaking-2026/new',
-            //   label: 'Speaking 2026 Editor',
-            // },
-
-            { section: 'System', href: '/settings', label: 'Settings' },
-          ] as const)
-        : ([{ section: 'System', href: '/settings', label: 'Settings' }] as const)),
-    ],
-    [role],
-  );
+      { section: 'System', href: '/settings', label: 'Settings' },
+    ];
+  }, [role]);
 
   const groups = useMemo(() => {
     const map = new Map<string, NavItem[]>();
@@ -177,14 +252,12 @@ export default function SidebarClient({ role }: Props) {
     return [...map.entries()] as [string, NavItem[]][];
   }, [items]);
 
-  // 🔔 헤더에서 'toggle-sidebar' 이벤트 받으면 collapse 토글
   useEffect(() => {
     const handler = () => setCollapsed((v) => !v);
     document.addEventListener('toggle-sidebar', handler);
     return () => document.removeEventListener('toggle-sidebar', handler);
   }, []);
 
-  // 📌 시험 화면 들어갈 때 최초 자동으로 접어두기
   useEffect(() => {
     if (isExamRoute) {
       setCollapsed(true);
@@ -195,7 +268,7 @@ export default function SidebarClient({ role }: Props) {
     ? isExamRoute
       ? 'w-0 border-0'
       : 'w-14'
-    : 'w-60';
+    : 'w-64';
 
   return (
     <div
@@ -220,17 +293,17 @@ export default function SidebarClient({ role }: Props) {
                 onClick={() => !collapsed && toggleSection(section)}
                 className={[
                   'flex w-full items-center justify-between px-4 pb-2',
-                  !collapsed ? 'hover:bg-emerald-50 rounded-md py-2 -mx-1' : '',
+                  !collapsed ? 'rounded-md py-2 -mx-1 hover:bg-emerald-50' : '',
                 ].join(' ')}
               >
                 <span
                   className={[
                     collapsed
-                      ? 'text-xs text-emerald-800 font-semibold'
-                      : 'text-sm text-emerald-900 font-semibold',
+                      ? 'text-[11px] font-semibold text-emerald-800'
+                      : 'text-sm font-semibold text-emerald-900',
                   ].join(' ')}
                 >
-                  {collapsed ? section[0] : section}
+                  {collapsed ? getCollapsedSectionLabel(section) : section}
                 </span>
                 {!collapsed && (
                   <span className="text-base text-emerald-800">
@@ -241,8 +314,36 @@ export default function SidebarClient({ role }: Props) {
 
               {showItems && (
                 <ul>
-                  {list.map((it) => {
+                  {list.map((it, itemIdx) => {
                     const active = isActive(it.href);
+
+                    if (it.disabled || !it.href) {
+                      return (
+                        <li key={`${section}-${it.label}-${itemIdx}`}>
+                          <div
+                            className={[
+                              'flex items-center rounded-lg px-4 py-2.5 text-left text-sm',
+                              collapsed ? 'justify-center' : 'justify-between',
+                              'border-l-2 border-transparent text-neutral-400',
+                            ].join(' ')}
+                          >
+                            {!collapsed && (
+                              <>
+                                <span className="truncate">{it.label}</span>
+                                <span className="text-[10px] text-neutral-300">soon</span>
+                              </>
+                            )}
+
+                            {collapsed && (
+                              <span
+                                aria-hidden
+                                className="h-1.5 w-6 rounded-full bg-neutral-200"
+                              />
+                            )}
+                          </div>
+                        </li>
+                      );
+                    }
 
                     const linkClasses = [
                       'group flex items-center rounded-lg px-4 py-2.5 text-left text-sm transition',
@@ -250,7 +351,7 @@ export default function SidebarClient({ role }: Props) {
                       collapsed ? 'justify-center' : 'justify-between',
                       'border-l-2',
                       active
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-600 font-semibold'
+                        ? 'border-emerald-300 bg-emerald-50 font-semibold text-emerald-600'
                         : 'border-transparent text-neutral-800',
                     ].join(' ');
 
@@ -263,7 +364,6 @@ export default function SidebarClient({ role }: Props) {
                           data-active={active ? 'true' : 'false'}
                           className={linkClasses}
                         >
-                          {/* 펼쳐진 상태 */}
                           {!collapsed && (
                             <>
                               <span className="truncate">{it.label}</span>
@@ -278,7 +378,6 @@ export default function SidebarClient({ role }: Props) {
                             </>
                           )}
 
-                          {/* 접힌 상태: 작은 바만 표시 */}
                           {collapsed && (
                             <span
                               aria-hidden
@@ -298,7 +397,6 @@ export default function SidebarClient({ role }: Props) {
           );
         })}
 
-        {/* 🔹 Legacy 섹션 */}
         <div className="mt-6 border-t border-neutral-200 pt-3">
           <button
             type="button"
@@ -306,7 +404,7 @@ export default function SidebarClient({ role }: Props) {
             className={[
               'flex w-full items-center justify-between rounded-lg px-4 py-2',
               'text-sm font-semibold text-emerald-900',
-              'hover:bg-emerald-50 transition',
+              'transition hover:bg-emerald-50',
             ].join(' ')}
           >
             <span>{collapsed ? 'L' : 'Legacy'}</span>
@@ -327,7 +425,7 @@ export default function SidebarClient({ role }: Props) {
                   'hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/70',
                   'border-l-2',
                   active
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-600 font-semibold'
+                    ? 'border-emerald-300 bg-emerald-50 font-semibold text-emerald-600'
                     : 'border-transparent text-neutral-800',
                 ].join(' ');
 
