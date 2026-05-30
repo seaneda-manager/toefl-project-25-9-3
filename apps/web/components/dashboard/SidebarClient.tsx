@@ -133,7 +133,8 @@ export default function SidebarClient({ role }: Props) {
       (/\/listening-2026\//.test(p) && examPattern.test(p)) ||
       (/\/speaking-2026\//.test(p) && examPattern.test(p)) ||
       (/\/writing-2026\//.test(p) && examPattern.test(p)) ||
-      (/\/voca\//.test(p) && examPattern.test(p))
+      (/\/voca\//.test(p) && examPattern.test(p)) ||
+      /\/hi-naesin\/drill\//.test(p)
     );
   }, [pathnameRaw]);
 
@@ -226,6 +227,8 @@ export default function SidebarClient({ role }: Props) {
 
     return [
       { section: 'Student', href: '/student', label: 'Student Home' },
+      { section: 'Student', href: '/hi-naesin/passages', label: '내신 Drill' },
+      { section: 'Student', href: '/vocab/session', label: '단어 학습' },
       { section: 'Student', href: '/student/tests', label: 'My Tests' },
       { section: 'Student', href: '/student/review', label: 'Review' },
       { section: 'Student', href: '/student/progress', label: 'Progress' },

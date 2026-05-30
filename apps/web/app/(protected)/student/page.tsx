@@ -249,7 +249,7 @@ export default async function StudentPage() {
         </Link>
 
         <Link
-          href="/student?program=naesin"
+          href="/hi-naesin/passages"
           className="group block rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <p className="text-sm font-semibold text-emerald-700">
@@ -259,10 +259,10 @@ export default async function StudentPage() {
             내신 Reading / Drill
           </h2>
           <p className="mt-2 text-sm text-slate-500">
-            내신 추천 학습과 독해 드릴을 확인합니다.
+            지문을 선택해서 해석·작문·문법 드릴을 시작하세요.
           </p>
           <div className="mt-4 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white group-hover:bg-slate-800">
-            들어가기
+            지문 목록 보기
           </div>
         </Link>
       </section>
