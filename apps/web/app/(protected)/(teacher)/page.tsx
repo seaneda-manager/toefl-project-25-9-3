@@ -1,8 +1,9 @@
-// apps/web/app/(protected)/(teacher)/page.tsx
-import { redirect } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
-  redirect('/teacher/content');
+  const router = useRouter();
+  useEffect(() => { router.replace('/teacher/content'); }, [router]);
+  return null;
 }
