@@ -1,1 +1,138 @@
-// apps/web/types/types-listening.ts import type { RSet, RQuestion, RChoice, RPassage } from '@/models/reading/zod'; // legacy compatibility export type Mode = 'study' | 'test'; /** Choice (legacy-compatible field names) */ export interface ListeningChoice { id: string; text: string; /** Support both legacy and normalized correctness flags */ correct?: boolean; is_correct?: boolean; } /** Legacy alias */ export type LChoice = ListeningChoice; /** Question (legacy-compatible field names) */ export interface ListeningQuestion { id: string; number?: number; /** Support both prompt and stem */ prompt?: string; stem?: string; choices: ListeningChoice[]; meta?: Record<string, unknown>; } /** Legacy alias */ export type LQuestion = ListeningQuestion; /** Track (legacy-compatible field names) */ export interface ListeningTrack { id: string; title?: string; /** Audio URL: legacy uses audio_url, newer code uses audioUrl */ audioUrl: string; // preferred field audio_url?: string; // legacy field name /** Optional timing info */ timeLimitSec?: number; durationSec?: number; questions: ListeningQuestion[]; } /* ===================== Helpers (field access / compatibility) ===================== */ /** Return the question text from prompt/stem */ export function getQuestionText(q: ListeningQuestion): string { const txt = q.prompt ?? q.stem ?? ''; return typeof txt === 'string' ? txt.trim() : ''; } /** Return the audio URL from either audio_url or audioUrl */ export function getAudioUrl(t: ListeningTrack): string { return (t.audioUrl ?? t.audio_url ?? '').trim(); } /** Check whether a choice is marked correct */ export function isChoiceCorrect(q: ListeningQuestion, choiceId: string): boolean { const c = q.choices.find((x) => x.id === choiceId); return !!(c && (c.is_correct === true || c.correct === true)); } /** Check whether the question has at least one correct choice */ export function hasAnyCorrectChoice(q: ListeningQuestion): boolean { return q.choices.some((c) => c.is_correct === true || c.correct === true); } /* ===================== Normalizers ===================== */ /** * Normalize listening data into a strict shape. * UI / runner code should read from the normalized shape * instead of branching on legacy field-name differences. */ export type NormalizedListeningChoice = Readonly<{ id: string; text: string; /** Normalized correctness flag (always true/false) */ is_correct: boolean; }>; export type NormalizedListeningQuestion = Readonly<{ id: string; number: number; // normalized question number text: string; // merged prompt/stem text choices: NormalizedListeningChoice[]; meta?: Record<string, unknown>; }>; export type NormalizedListeningTrack = Readonly<{ id: string; title?: string; audioUrl: string; // normalized from audioUrl / audio_url timeLimitSec?: number; durationSec?: number; questions: NormalizedListeningQuestion[]; }>; /** Normalize a choice */ export function normalizeChoice(c: ListeningChoice): NormalizedListeningChoice { return { id: String(c.id), text: String(c.text ?? '').trim(), is_correct: c.is_correct === true || c.correct === true, }; } /** Normalize a question and ensure number/text are stable */ export function normalizeQuestion( q: ListeningQuestion, fallbackNumber?: number ): NormalizedListeningQuestion { const number = typeof q.number === 'number' && Number.isFinite(q.number) && q.number > 0 ? Math.trunc(q.number) : Math.max(1, Math.trunc(fallbackNumber ?? 0)); const text = getQuestionText(q); return { id: String(q.id), number, text, choices: (q.choices ?? []).map(normalizeChoice), meta: q.meta, }; } /** Normalize a track and normalize all nested questions */ export function normalizeTrack(t: ListeningTrack): NormalizedListeningTrack { const audio = getAudioUrl(t); const qs = (t.questions ?? []).map((qq, i) => normalizeQuestion(qq, typeof qq.number === 'number' ? qq.number : i + 1) ); return { id: String(t.id), title: t.title, audioUrl: audio, timeLimitSec: t.timeLimitSec, durationSec: t.durationSec, questions: qs, }; } /** Normalize a list of tracks */ export function normalizeTracks(ts: ListeningTrack[]): NormalizedListeningTrack[] { return (ts ?? []).map(normalizeTrack); } /* ============================================================ Play Consume API normalization helpers (used by listening-sample/page.tsx and related callers) ============================================================ */ export type ConsumePlayRow = Readonly<{ id?: string; sessionId: string; playsAllowed: number; playsUsed: number; remaining: number; }>; export type ConsumePlayResponse = | { ok: true; data: ConsumePlayRow } | { ok: false; error: string }; /** Normalize both snake_case and camelCase API response shapes */ export function normalizeConsumePlayRow(input: any): ConsumePlayRow { if (!input) { return { sessionId: '', playsAllowed: 0, playsUsed: 0, remaining: 0 }; } const sessionId = input.sessionId ?? input.session_id ?? ''; const playsAllowed = input.playsAllowed ?? input.plays_allowed ?? 0; const playsUsed = input.playsUsed ?? input.plays_used ?? 0; const remaining = input.remaining ?? Math.max(0, Number(playsAllowed) - Number(playsUsed)); return { id: input.id ? String(input.id) : undefined, sessionId: String(sessionId), playsAllowed: Number(playsAllowed), playsUsed: Number(playsUsed), remaining: Number(remaining), }; }
+// apps/web/types/types-listening.ts
+
+export type Mode = 'study' | 'test';
+
+export interface ListeningChoice {
+  id: string;
+  text: string;
+  correct?: boolean;
+  is_correct?: boolean;
+}
+export type LChoice = ListeningChoice;
+
+export interface ListeningQuestion {
+  id: string;
+  number?: number;
+  prompt?: string;
+  stem?: string;
+  choices: ListeningChoice[];
+  meta?: Record<string, unknown>;
+}
+export type LQuestion = ListeningQuestion;
+
+export interface ListeningTrack {
+  id: string;
+  title?: string;
+  audioUrl: string;
+  audio_url?: string;
+  timeLimitSec?: number;
+  durationSec?: number;
+  questions: ListeningQuestion[];
+}
+
+export function getQuestionText(q: ListeningQuestion): string {
+  const txt = q.prompt ?? q.stem ?? '';
+  return typeof txt === 'string' ? txt.trim() : '';
+}
+
+export function getAudioUrl(t: ListeningTrack): string {
+  return (t.audioUrl ?? t.audio_url ?? '').trim();
+}
+
+export function isChoiceCorrect(q: ListeningQuestion, choiceId: string): boolean {
+  const c = q.choices.find((x) => x.id === choiceId);
+  return !!(c && (c.is_correct === true || c.correct === true));
+}
+
+export function hasAnyCorrectChoice(q: ListeningQuestion): boolean {
+  return q.choices.some((c) => c.is_correct === true || c.correct === true);
+}
+
+export type NormalizedListeningChoice = Readonly<{
+  id: string;
+  text: string;
+  is_correct: boolean;
+}>;
+
+export type NormalizedListeningQuestion = Readonly<{
+  id: string;
+  number: number;
+  text: string;
+  choices: NormalizedListeningChoice[];
+  meta?: Record<string, unknown>;
+}>;
+
+export type NormalizedListeningTrack = Readonly<{
+  id: string;
+  title?: string;
+  audioUrl: string;
+  timeLimitSec?: number;
+  durationSec?: number;
+  questions: NormalizedListeningQuestion[];
+}>;
+
+export function normalizeChoice(c: ListeningChoice): NormalizedListeningChoice {
+  return {
+    id: String(c.id),
+    text: String(c.text ?? '').trim(),
+    is_correct: c.is_correct === true || c.correct === true,
+  };
+}
+
+export function normalizeQuestion(q: ListeningQuestion, fallbackNumber?: number): NormalizedListeningQuestion {
+  const number =
+    typeof q.number === 'number' && Number.isFinite(q.number) && q.number > 0
+      ? Math.trunc(q.number)
+      : Math.max(1, Math.trunc(fallbackNumber ?? 0));
+  return {
+    id: String(q.id),
+    number,
+    text: getQuestionText(q),
+    choices: (q.choices ?? []).map(normalizeChoice),
+    meta: q.meta,
+  };
+}
+
+export function normalizeTrack(t: ListeningTrack): NormalizedListeningTrack {
+  return {
+    id: String(t.id),
+    title: t.title,
+    audioUrl: getAudioUrl(t),
+    timeLimitSec: t.timeLimitSec,
+    durationSec: t.durationSec,
+    questions: (t.questions ?? []).map((q, i) =>
+      normalizeQuestion(q, typeof q.number === 'number' ? q.number : i + 1),
+    ),
+  };
+}
+
+export function normalizeTracks(ts: ListeningTrack[]): NormalizedListeningTrack[] {
+  return (ts ?? []).map(normalizeTrack);
+}
+
+export type ConsumePlayRow = Readonly<{
+  id?: string;
+  sessionId: string;
+  playsAllowed: number;
+  playsUsed: number;
+  remaining: number;
+}>;
+
+export type ConsumePlayResponse =
+  | { ok: true; data: ConsumePlayRow }
+  | { ok: false; error: string };
+
+export function normalizeConsumePlayRow(input: any): ConsumePlayRow {
+  if (!input) return { sessionId: '', playsAllowed: 0, playsUsed: 0, remaining: 0 };
+  const sessionId = input.sessionId ?? input.session_id ?? '';
+  const playsAllowed = input.playsAllowed ?? input.plays_allowed ?? 0;
+  const playsUsed = input.playsUsed ?? input.plays_used ?? 0;
+  const remaining = input.remaining ?? Math.max(0, Number(playsAllowed) - Number(playsUsed));
+  return {
+    id: input.id ? String(input.id) : undefined,
+    sessionId: String(sessionId),
+    playsAllowed: Number(playsAllowed),
+    playsUsed: Number(playsUsed),
+    remaining: Number(remaining),
+  };
+}
