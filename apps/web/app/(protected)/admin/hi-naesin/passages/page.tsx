@@ -119,89 +119,145 @@ export default async function HiNaesinPassageListPage({
         </form>
       </section>
 
-      {/* 목록 */}
-      <section className="overflow-hidden rounded-2xl border bg-white">
-        <div className="border-b px-4 py-3 text-sm font-semibold text-neutral-900">
-          지문 {rows.length}개
+      {/* 목록 — 출처별 그룹 */}
+      {rows.length === 0 ? (
+        <div className="rounded-2xl border border-dashed p-12 text-center text-sm text-neutral-400">
+          등록된 지문이 없습니다.
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-neutral-600">
-              <tr className="[&>th]:px-4 [&>th]:py-3">
-                <th>제목 / 정보</th>
-                <th>출처</th>
-                <th>학년</th>
-                <th>Drill</th>
-                <th>변형문제</th>
-                <th>공개</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const hint = buildHint(row);
-                return (
-                  <tr key={row.id} className="border-t [&>td]:px-4 [&>td]:py-3">
-                    <td>
-                      <div className="font-medium text-neutral-900">
-                        {row.title ?? '(제목 없음)'}
-                      </div>
-                      <div className="mt-0.5 text-xs text-neutral-500">{hint}</div>
-                    </td>
-                    <td>{sourceTypeLabel(row.source_type as never)}</td>
-                    <td>{gradeLabel(row.grade as never)}</td>
-                    <td>
-                      <span className="text-xs text-neutral-400">—</span>
-                    </td>
-                    <td>
-                      <span className="text-xs text-neutral-400">—</span>
-                    </td>
-                    <td>
-                      <form action={toggleHiNaesinPassagePublishedAction}>
-                        <input type="hidden" name="id" value={row.id} />
-                        <input
-                          type="hidden"
-                          name="is_published"
-                          value={String(!row.is_published)}
-                        />
-                        <button
-                          type="submit"
-                          className={[
-                            'rounded-full border px-3 py-1 text-xs',
-                            row.is_published
-                              ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                              : 'border-neutral-300 bg-neutral-50 text-neutral-600',
-                          ].join(' ')}
-                        >
-                          {row.is_published ? '공개' : '비공개'}
-                        </button>
-                      </form>
-                    </td>
-                    <td>
-                      <Link
-                        href={`/admin/hi-naesin/passages/${row.id}/edit`}
-                        className="rounded-lg border px-3 py-1 text-xs hover:bg-neutral-50"
-                      >
-                        편집
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-              {rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-10 text-center text-sm text-neutral-500"
-                  >
-                    등록된 지문이 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      ) : (
+        <div className="space-y-6">
+          {(['mock_exam', 'textbook', 'external_book'] as const)
+            .map((src) => ({
+              src,
+              items: rows.filter((r) => r.source_type === src),
+            }))
+            .filter(({ items }) => items.length > 0)
+            .map(({ src, items }) => {
+              const srcBadge =
+                src === 'mock_exam'
+                  ? 'border-sky-200 bg-sky-50 text-sky-700'
+                  : src === 'textbook'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-violet-200 bg-violet-50 text-violet-700';
+
+              // 교과서/외부교재는 교재명으로 한 번 더 그룹핑
+              const subGroups: { label: string; items: HiNaesinPassageRow[] }[] = [];
+              if (src === 'mock_exam') {
+                // 연도+월로 그룹
+                const map = new Map<string, HiNaesinPassageRow[]>();
+                for (const r of items) {
+                  const key = [r.exam_year, r.exam_month ? `${r.exam_month}월` : null]
+                    .filter(Boolean).join(' ') || '기타';
+                  if (!map.has(key)) map.set(key, []);
+                  map.get(key)!.push(r);
+                }
+                for (const [label, groupItems] of map) {
+                  subGroups.push({ label, items: groupItems });
+                }
+              } else if (src === 'textbook') {
+                const map = new Map<string, HiNaesinPassageRow[]>();
+                for (const r of items) {
+                  const key = [r.textbook_name, r.unit_label].filter(Boolean).join(' / ') || '기타';
+                  if (!map.has(key)) map.set(key, []);
+                  map.get(key)!.push(r);
+                }
+                for (const [label, groupItems] of map) {
+                  subGroups.push({ label, items: groupItems });
+                }
+              } else {
+                const map = new Map<string, HiNaesinPassageRow[]>();
+                for (const r of items) {
+                  const key = [r.book_name, r.book_unit].filter(Boolean).join(' / ') || '기타';
+                  if (!map.has(key)) map.set(key, []);
+                  map.get(key)!.push(r);
+                }
+                for (const [label, groupItems] of map) {
+                  subGroups.push({ label, items: groupItems });
+                }
+              }
+
+              return (
+                <section key={src} className="overflow-hidden rounded-2xl border bg-white">
+                  {/* 출처 헤더 */}
+                  <div className="flex items-center gap-2 border-b bg-neutral-50 px-4 py-3">
+                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${srcBadge}`}>
+                      {sourceTypeLabel(src)}
+                    </span>
+                    <span className="text-sm text-neutral-400">{items.length}개 지문</span>
+                  </div>
+
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-neutral-50/50 text-left text-neutral-500">
+                      <tr className="[&>th]:px-4 [&>th]:py-2 border-b">
+                        <th>제목 / 정보</th>
+                        <th>학년</th>
+                        <th>공개</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {subGroups.map(({ label, items: groupItems }) => (
+                        <>
+                          {/* 서브 그룹 헤더 (교재명/연도) */}
+                          {subGroups.length > 1 && (
+                            <tr key={`sub-${label}`} className="bg-neutral-50/60 border-t">
+                              <td colSpan={4} className="px-4 py-2 text-xs font-semibold text-neutral-500">
+                                {label}
+                              </td>
+                            </tr>
+                          )}
+                          {groupItems.map((row) => {
+                            const hint = buildHint(row);
+                            return (
+                              <tr key={row.id} className="border-t hover:bg-neutral-50/40 [&>td]:px-4 [&>td]:py-3">
+                                <td>
+                                  <div className="font-medium text-neutral-900">
+                                    {row.title ?? hint}
+                                  </div>
+                                  {row.title && (
+                                    <div className="mt-0.5 text-xs text-neutral-400">{hint}</div>
+                                  )}
+                                </td>
+                                <td className="text-xs text-neutral-500">
+                                  {gradeLabel(row.grade as never)}
+                                </td>
+                                <td>
+                                  <form action={toggleHiNaesinPassagePublishedAction}>
+                                    <input type="hidden" name="id" value={row.id} />
+                                    <input type="hidden" name="is_published" value={String(!row.is_published)} />
+                                    <button
+                                      type="submit"
+                                      className={[
+                                        'rounded-full border px-3 py-1 text-xs',
+                                        row.is_published
+                                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                          : 'border-neutral-200 bg-neutral-50 text-neutral-500',
+                                      ].join(' ')}
+                                    >
+                                      {row.is_published ? '공개' : '비공개'}
+                                    </button>
+                                  </form>
+                                </td>
+                                <td>
+                                  <Link
+                                    href={`/admin/hi-naesin/passages/${row.id}/edit`}
+                                    className="rounded-lg border px-3 py-1 text-xs hover:bg-neutral-50"
+                                  >
+                                    편집
+                                  </Link>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              );
+            })}
         </div>
-      </section>
+      )}
     </main>
   );
 }
