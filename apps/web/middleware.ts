@@ -13,6 +13,11 @@ const PROTECTED_PREFIXES = [
   "/learn",
   "/dashboard",
   "/admin",
+  "/teacher",
+  "/student",
+  "/hi-naesin",
+  "/settings",
+  "/profile",
 
   // existing app routes (likely behind auth)
   "/reading",
@@ -152,6 +157,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|assets/|teacher/|legacy/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|assets/|legacy/).*)",
   ],
 };

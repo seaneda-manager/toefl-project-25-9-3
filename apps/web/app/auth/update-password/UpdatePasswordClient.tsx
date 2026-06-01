@@ -56,7 +56,7 @@ export default function UpdatePasswordClient() {
         if (typeof window !== "undefined") window.location.href = "/";
       }, 1200);
     } catch (e: any) {
-      setErr(e?.message ?? "占쏙옙橘占싫?占쏙옙占쏙옙 占쏙옙 占쏙옙占쏙옙占쏙옙 占쌩삼옙占쌩쏙옙占싹댐옙.");
+      setErr(e?.message ?? "비밀번호 재설정 占쏙옙 占쏙옙占쏙옙占쏙옙 占쌩삼옙占쌩쏙옙占싹댐옙.");
     } finally {
       setLoading(false);
     }
@@ -64,12 +64,12 @@ export default function UpdatePasswordClient() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <h1 className="text-2xl font-semibold mb-6">占쏙옙橘占싫?占쏙옙占쏙옙</h1>
+      <h1 className="text-2xl font-semibold mb-6">비밀번호 재설정</h1>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="pw" className="block text-sm mb-1">
-            占쏙옙 占쏙옙橘占싫?
+            새 비밀번호
           </label>
           <input
             id="pw"
@@ -78,14 +78,14 @@ export default function UpdatePasswordClient() {
             className="w-full rounded-md border px-3 py-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="8占쏙옙 占싱삼옙, 占쏙옙占쏙옙+占쏙옙占쏙옙 占쏙옙占쏙옙"
+            placeholder="8자 이상, 영문+숫자 포함"
             required
           />
         </div>
 
         <div>
           <label htmlFor="pw2" className="block text-sm mb-1">
-            占쏙옙 占쏙옙橘占싫?확占쏙옙
+            새 비밀번호 확인
           </label>
           <input
             id="pw2"
@@ -94,7 +94,7 @@ export default function UpdatePasswordClient() {
             className="w-full rounded-md border px-3 py-2"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            placeholder="占쌕쏙옙 占쏙옙 占쏙옙 占쌉뤄옙"
+            placeholder="비밀번호를 한 번 더 입력"
             required
           />
         </div>
@@ -104,7 +104,7 @@ export default function UpdatePasswordClient() {
           disabled={!canSubmit}
           className="w-full rounded-md border px-3 py-2 disabled:opacity-50"
         >
-          {loading ? "占쏙옙占쏙옙 占쌩∽옙" : "占쏙옙橘占싫?占쏙옙占쏙옙"}
+          {loading ? "저장 중…" : "비밀번호 재설정"}
         </button>
 
         {msg && (

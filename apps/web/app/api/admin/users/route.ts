@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   // ?ш린??profiles(email, full_name, created_at, role) 而щ읆???덈떎怨?媛??
   let query = supabase
     .from("profiles")
-    .select("id, email, full_name, role, created_at", { count: "exact" })
+    .select("id, email, full_name, role, program, created_at", { count: "exact" })
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE + 1);
 

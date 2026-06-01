@@ -13,9 +13,10 @@ type Params = Promise<{ sessionId: string }>;
 type SearchParams = Promise<{ type?: string; step?: string }>;
 
 // ── 블록 순서 (고정) ──────────────────────────────────────
-const TYPE_ORDER = ['translation', 'fill_blank', 'writing', 'grammar_choice'] as const;
+const TYPE_ORDER = ['vocab', 'translation', 'fill_blank', 'writing', 'grammar_choice'] as const;
 
 const DRILL_LABEL: Record<string, string> = {
+  vocab:          '단어',
   translation:    '해석',
   fill_blank:     '빈칸 넣기',
   writing:        '작문',
@@ -24,6 +25,7 @@ const DRILL_LABEL: Record<string, string> = {
 };
 
 const DRILL_INSTRUCTION: Record<string, string> = {
+  vocab:          '영어 단어의 우리말 뜻을 입력하세요.',
   translation:    '영어 문장을 보고 우리말로 해석하세요.',
   fill_blank:     '빈칸(____) 에 알맞은 영어 단어를 입력하세요.',
   writing:        '주어진 우리말 문장을 영어로 작문하세요.',
@@ -190,7 +192,7 @@ export default async function HiNaesinDrillPage({
   const isAnswered = response !== null;
 
   // ── 자기채점 / 다음 버튼 여부 ─────────────────────────
-  const isSelfCheckType = currentType === 'translation' || currentType === 'writing';
+  const isSelfCheckType = currentType === 'translation' || currentType === 'writing' || currentType === 'vocab';
   const needsSelfCheck  = isSelfCheckType && isAnswered && response?.is_correct === null;
   const showNextButton  = isSelfCheckType && isAnswered && response?.is_correct !== null;
 
@@ -263,6 +265,13 @@ export default async function HiNaesinDrillPage({
         )}
         {currentType === 'writing' && (
           <WritingDrill
+            drill={drill} sessionId={sessionId}
+            type={currentType} step={step} typeTotal={typeTotal} nextType={nextType}
+            isAnswered={isAnswered} response={response}
+          />
+        )}
+        {currentType === 'vocab' && (
+          <VocabDrill
             drill={drill} sessionId={sessionId}
             type={currentType} step={step} typeTotal={typeTotal} nextType={nextType}
             isAnswered={isAnswered} response={response}
@@ -558,6 +567,59 @@ function WritingDrill({ drill, sessionId, type, step, isAnswered, response }: Dr
               {response.feedback_text}
             </div>
           )}
+        </>
+      )}
+    </>
+  );
+}
+
+function VocabDrill({ drill, sessionId, type, step, typeTotal, nextType, isAnswered, response }: DrillProps) {
+  const p = drill.payload as { word: string; meaningKo: string; exampleSentence?: string };
+  const isCorrect = response?.is_correct;
+
+  return (
+    <>
+      {/* 단어 카드 */}
+      <div className="flex flex-col items-center gap-2 rounded-2xl bg-neutral-900 px-6 py-8 text-center">
+        <span className="text-xs font-medium uppercase tracking-widest text-neutral-400">단어</span>
+        <span className="text-3xl font-bold text-white">{p.word}</span>
+      </div>
+
+      {p.exampleSentence && (
+        <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-2.5 text-xs text-neutral-500 leading-relaxed">
+          <span className="font-medium text-neutral-400">예문 · </span>{p.exampleSentence}
+        </div>
+      )}
+
+      {!isAnswered ? (
+        <form action={submitDrillAnswerAction.bind(null, sessionId, drill.id, type, step)}>
+          <input type="hidden" name="drill_type"  value="vocab" />
+          <input type="hidden" name="answer_ko"   value={p.meaningKo} />
+          <input
+            name="response_text"
+            placeholder="한국어 뜻을 입력하세요."
+            autoComplete="off"
+            className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-neutral-300"
+            required
+          />
+          <button type="submit" className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800">
+            제출
+          </button>
+        </form>
+      ) : (
+        <>
+          <div className={[
+            'rounded-xl border p-3 text-sm',
+            isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900',
+          ].join(' ')}>
+            <span className="text-xs font-medium block mb-1">{isCorrect ? '✓ 정답' : '✗ 오답'} · 내 답</span>
+            {response?.response_text}
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <span className="text-xs font-medium text-emerald-600 block mb-1">정답</span>
+            {p.meaningKo}
+          </div>
+          <ScoreBadge scorePct={response?.score_pct ?? null} isCorrect={response?.is_correct ?? null} />
         </>
       )}
     </>

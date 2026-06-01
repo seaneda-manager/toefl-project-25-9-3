@@ -59,6 +59,18 @@ export async function submitDrillAnswerAction(
         feedbackText = result.feedbackText;
       }
     }
+  } else if (drillType === 'vocab') {
+    // 단어 뜻 자동 채점: 대소문자·앞뒤 공백 무시 단순 비교
+    const answerKo = (fd.get('answer_ko') as string)?.trim().toLowerCase() ?? '';
+    if (answerKo && responseText) {
+      const student = responseText.toLowerCase();
+      isCorrect = student === answerKo;
+      // 정답이 여러 표현으로 분리된 경우(쉼표/슬래시) 부분 매치 허용
+      if (!isCorrect) {
+        const parts = answerKo.split(/[,\/·]/);
+        isCorrect = parts.some((p) => student === p.trim());
+      }
+    }
   }
 
   const { error } = await supabase

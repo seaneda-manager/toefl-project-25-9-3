@@ -8,9 +8,10 @@ import { createSupabaseBrowser } from '@/lib/supabaseBrowser';
 type Props = {
   /** 서버에서 이메일을 넘길 수 있고, 없으면 클라이언트에서 조회 */
   email?: string;
+  role?: 'student' | 'teacher' | 'admin';
 };
 
-export default function TopbarClient({ email: initialEmail }: Props) {
+export default function TopbarClient({ email: initialEmail, role }: Props) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const [isPending, startTransition] = useTransition();
@@ -86,8 +87,8 @@ export default function TopbarClient({ email: initialEmail }: Props) {
           {isFullscreen ? '⤢' : '⛶'}
         </button>
 
-        <span className="ml-2 text-sm font-semibold text-neutral-900">
-          Admin Panel
+        <span className="ml-2 text-sm font-semibold tracking-tight text-neutral-900">
+          X-PRIME{role === 'admin' && <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">Admin</span>}
         </span>
       </div>
 

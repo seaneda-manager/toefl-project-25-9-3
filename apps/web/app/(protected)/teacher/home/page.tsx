@@ -232,6 +232,56 @@ export default async function TeacherHomePage() {
       (profile?.full_name as string | null) ?? user.email ?? "선생님";
   }
 
+  // ── 새 숙제 제출 (최근 48시간) ──────────────────────────────
+  const since48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const { data: newSubmissions } = await supabase
+    .from('photo_homework_submissions')
+    .select('id, homework_id, student_id, correct_count, total_count, graded_at')
+    .gte('graded_at', since48h)
+    .order('graded_at', { ascending: false })
+    .limit(20);
+
+  // 관련 숙제 제목
+  const newSubHwIds = [...new Set((newSubmissions ?? []).map((s: any) => s.homework_id as string))];
+  const { data: newSubHws } = newSubHwIds.length > 0
+    ? await supabase.from('photo_homework').select('id, title').in('id', newSubHwIds)
+    : { data: [] };
+  const newSubHwMap = new Map((newSubHws ?? []).map((h: any) => [h.id as string, h.title as string]));
+
+  // 제출한 학생 이름
+  const newSubStudentIds = [...new Set((newSubmissions ?? []).map((s: any) => s.student_id as string))];
+  const { data: newSubProfiles } = newSubStudentIds.length > 0
+    ? await supabase.from('profiles').select('id, full_name, name, email').in('id', newSubStudentIds)
+    : { data: [] };
+  const newSubProfileMap = new Map(
+    (newSubProfiles ?? []).map((p: any) => [
+      p.id as string,
+      (p.full_name ?? p.name ?? p.email ?? '학생') as string,
+    ]),
+  );
+
+  type NewSubmission = {
+    id: string;
+    homeworkTitle: string;
+    studentName: string;
+    scorePct: number | null;
+    correctCount: number;
+    totalCount: number;
+    gradedAt: string;
+    hwId: string;
+  };
+
+  const recentSubmissions: NewSubmission[] = (newSubmissions ?? []).map((s: any) => ({
+    id:            s.id,
+    hwId:          s.homework_id,
+    homeworkTitle: newSubHwMap.get(s.homework_id) ?? '숙제',
+    studentName:   newSubProfileMap.get(s.student_id) ?? '학생',
+    scorePct:      s.total_count > 0 ? Math.round((s.correct_count / s.total_count) * 100) : null,
+    correctCount:  s.correct_count ?? 0,
+    totalCount:    s.total_count ?? 0,
+    gradedAt:      s.graded_at,
+  }));
+
   // Reading 2026 결과 일부 가져오기 (없으면 []로)
   const { data: readingRowsRaw } = await supabase
     .from("reading_results_2026")
@@ -270,6 +320,66 @@ export default async function TeacherHomePage() {
           화면입니다.
         </p>
       </header>
+
+      {/* ── 새 숙제 제출 알림 ─────────────────────────────────── */}
+      {recentSubmissions.length > 0 && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                {recentSubmissions.length}
+              </span>
+              <h2 className="text-sm font-semibold text-amber-900">
+                새 숙제 제출 (최근 48시간)
+              </h2>
+            </div>
+            <a
+              href="/admin/homework"
+              className="text-xs text-amber-700 hover:underline"
+            >
+              전체 보기 →
+            </a>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {recentSubmissions.map((sub) => {
+              const scoreColor =
+                sub.scorePct === null    ? 'text-neutral-500' :
+                sub.scorePct >= 80       ? 'text-emerald-600' :
+                sub.scorePct >= 60       ? 'text-amber-600'   :
+                                           'text-red-500';
+              const timeAgo = (() => {
+                const diff = Date.now() - new Date(sub.gradedAt).getTime();
+                const mins = Math.floor(diff / 60000);
+                if (mins < 60) return `${mins}분 전`;
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return `${hrs}시간 전`;
+                return `${Math.floor(hrs / 24)}일 전`;
+              })();
+              return (
+                <a
+                  key={sub.id}
+                  href={`/admin/homework/${sub.hwId}`}
+                  className="flex items-center justify-between rounded-xl border border-amber-200 bg-white px-3 py-2.5 hover:shadow-sm transition"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-neutral-800 truncate">
+                      {sub.studentName}
+                    </p>
+                    <p className="text-[11px] text-neutral-400 truncate">
+                      {sub.homeworkTitle} · {timeAgo}
+                    </p>
+                  </div>
+                  {sub.scorePct !== null && (
+                    <span className={`shrink-0 ml-2 text-sm font-black ${scoreColor}`}>
+                      {sub.scorePct}%
+                    </span>
+                  )}
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 요약 카드 */}
       <TeacherSummaryCards

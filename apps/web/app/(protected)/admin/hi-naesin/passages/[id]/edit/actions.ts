@@ -202,3 +202,20 @@ export async function saveHiNaesinVariantChoicesAction(
   revalidate(passageId);
   return { ok: true };
 }
+
+// ── 변형문제 공개 토글 ───────────────────────────────
+export async function toggleVariantPublishAction(
+  passageId: string,
+  questionId: string,
+  currentValue: boolean,
+): Promise<Ok | Fail> {
+  const supabase = await getServerSupabase();
+  const { error } = await supabase
+    .from('hi_naesin_variant_questions')
+    .update({ is_published: !currentValue })
+    .eq('id', questionId);
+
+  if (error) return { ok: false, error: error.message };
+  revalidate(passageId);
+  return { ok: true };
+}

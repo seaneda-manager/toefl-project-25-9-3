@@ -15,25 +15,53 @@ export type GrammarQuestion = {
   contextBefore?: string;
 };
 
+type GrammarResult = Array<{ orderIndex: number; question: GrammarQuestion }>;
+type GrammarOk   = { ok: true;  results: GrammarResult };
+type GrammarFail = { ok: false; error: string; results: [] };
+
 const getClient = () =>
   new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+/** 응답에서 JSON 배열 파싱 (마크다운 코드블록 처리 포함) */
+function parseJsonArray<T>(text: string): T[] {
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) return [];
+  try {
+    return JSON.parse(match[0]) as T[];
+  } catch {
+    return [];
+  }
+}
+
+/** sentenceTemplate 에서 ____ 포함 버전을 우선 선택 */
+function pickTemplate(item: {
+  sentenceTemplate?: string;
+  sentenceWithBlank?: string;
+  [key: string]: unknown;
+}): string {
+  const candidates = [item.sentenceWithBlank, item.sentenceTemplate].filter(Boolean) as string[];
+  return candidates.find((s) => s.includes('____')) ?? candidates[0] ?? '';
+}
 
 // ── 문장 내 문법 드릴 (동사형태 / 접속사 / 분사 등) ──────────────────
 export async function generateGrammarQuestions(
   sentences: Array<{ sentenceEn: string; sentenceKo: string }>,
-): Promise<Array<{ orderIndex: number; question: GrammarQuestion }>> {
-  if (sentences.length === 0) return [];
+): Promise<GrammarOk | GrammarFail> {
+  if (sentences.length === 0) return { ok: true, results: [] };
+
+  // 최대 12개 문장으로 제한 → 응답 토큰 초과 방지
+  const capped = sentences.slice(0, 12);
 
   try {
     const client = getClient();
 
-    const sentenceList = sentences
+    const sentenceList = capped
       .map((s, i) => `[${i}] EN: ${s.sentenceEn}\n    KO: ${s.sentenceKo}`)
       .join('\n');
 
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 4096,
+      max_tokens: 8000,
       messages: [
         {
           role: 'user',
@@ -47,25 +75,25 @@ For EACH sentence, create one 4-choice grammar question targeting its most impor
 Grammar categories (use EXACTLY one):
 시제 | 수 일치 | 분사 | 명사절 접속사 | 부사절 접속사 | 관계사 | 도치 | 가정법 | 수량 표현 | 대명사
 
-Rules:
-- Replace ONE word or short phrase with ____
+CRITICAL rules:
+- "sentenceTemplate" MUST be the sentence with exactly ONE word/phrase replaced by ____ (four underscores)
 - 3 wrong options must be plausible but grammatically incorrect in context
-- Explanation: 1-2 sentences in Korean explaining WHY the correct answer is right
+- "explanation": 1-2 sentences in Korean explaining WHY the correct answer is right
 - If a sentence has no clear grammar test point, set "skip": true
 
-Output ONLY a valid JSON array — no markdown, no extra text:
+Output ONLY a valid JSON array — no markdown fences, no extra text:
 [
   {
     "sentenceIndex": 0,
     "skip": false,
-    "sentenceTemplate": "The results ____ surprising to everyone.",
-    "optionA": "were",
-    "optionB": "was",
-    "optionC": "are",
-    "optionD": "being",
+    "sentenceTemplate": "Scientists have ____ that exercise improves health.",
+    "optionA": "discovered",
+    "optionB": "discover",
+    "optionC": "discovering",
+    "optionD": "to discover",
     "correct": "a",
-    "explanation": "주어 'The results'는 복수명사이므로 복수 동사 were가 올바릅니다.",
-    "grammarCategory": "수 일치"
+    "explanation": "have + 과거분사(p.p.) 형태인 현재완료 구조입니다. 주어 Scientists에 맞는 have discovered가 정답입니다.",
+    "grammarCategory": "시제"
   }
 ]`,
         },
@@ -74,13 +102,13 @@ Output ONLY a valid JSON array — no markdown, no extra text:
 
     const text =
       msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
 
-    const items = JSON.parse(jsonMatch[0]) as Array<{
+    const items = parseJsonArray<{
       sentenceIndex: number;
       skip?: boolean;
-      sentenceTemplate: string;
+      sentenceTemplate?: string;
+      sentenceWithBlank?: string;
+      [key: string]: unknown;
       optionA: string;
       optionB: string;
       optionC: string;
@@ -88,14 +116,14 @@ Output ONLY a valid JSON array — no markdown, no extra text:
       correct: 'a' | 'b' | 'c' | 'd';
       explanation: string;
       grammarCategory: string;
-    }>;
+    }>(text);
 
-    return items
-      .filter((item) => !item.skip && item.sentenceIndex < sentences.length)
+    const results: GrammarResult = items
+      .filter((item) => !item.skip && item.sentenceIndex < capped.length)
       .map((item) => ({
         orderIndex: item.sentenceIndex,
         question: {
-          sentenceTemplate: item.sentenceTemplate,
+          sentenceTemplate: pickTemplate(item),
           optionA: item.optionA,
           optionB: item.optionB,
           optionC: item.optionC,
@@ -105,32 +133,37 @@ Output ONLY a valid JSON array — no markdown, no extra text:
           grammarCategory: item.grammarCategory,
         },
       }));
+
+    return { ok: true, results };
   } catch (e) {
     console.error('[generateGrammarQuestions] error:', e);
-    return [];
+    return { ok: false, error: e instanceof Error ? e.message : String(e), results: [] };
   }
 }
 
 // ── 연결어 드릴 (문장 간 논리 관계) ─────────────────────────────────
 export async function generateConnectiveQuestions(
   sentences: Array<{ sentenceEn: string }>,
-): Promise<Array<{ orderIndex: number; question: GrammarQuestion }>> {
-  if (sentences.length < 2) return [];
+): Promise<GrammarOk | GrammarFail> {
+  if (sentences.length < 2) return { ok: true, results: [] };
+
+  // 최대 8쌍으로 제한
+  const capped = sentences.slice(0, 9);
 
   try {
     const client = getClient();
 
-    const pairList = sentences
+    const pairList = capped
       .slice(0, -1)
       .map(
         (s, i) =>
-          `[${i}→${i + 1}] BEFORE: ${s.sentenceEn}\n  AFTER:  ${sentences[i + 1].sentenceEn}`,
+          `[${i}→${i + 1}] BEFORE: ${s.sentenceEn}\n  AFTER:  ${capped[i + 1].sentenceEn}`,
       )
       .join('\n\n');
 
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 3000,
+      max_tokens: 6000,
       messages: [
         {
           role: 'user',
@@ -144,13 +177,15 @@ For pairs where the AFTER sentence naturally begins with (or could begin with) a
 Connective categories: 역접 | 인과 | 추가 | 양보 | 예시 | 순서
 
 Rules:
-- If the AFTER sentence already starts with a connective, replace it with ____
-- If it doesn't, but clearly needs one, show the sentence as "____, [rest of sentence]"
-- If the logical relationship is unclear or the sentence doesn't benefit from a connective, set "skip": true
+- "contextAfter" MUST start with ____ followed by a comma or the rest of the sentence
+  (e.g. "____, the team decided to publish." or "____ the results improved.")
+- If AFTER sentence starts with a connective, replace that connective with ____
+- If it doesn't, add "____, " at the beginning
+- If the logical relationship is unclear, set "skip": true
 - 4 options must come from DIFFERENT logical relationship types
-- Explanation in Korean: state the logical relationship between the two sentences
+- Explanation in Korean: state the logical relationship
 
-Output ONLY a valid JSON array:
+Output ONLY a valid JSON array — no markdown fences:
 [
   {
     "pairIndex": 0,
@@ -162,7 +197,7 @@ Output ONLY a valid JSON array:
     "optionC": "For example",
     "optionD": "Nevertheless",
     "correct": "a",
-    "explanation": "앞 문장의 좋은 결과가 뒤 문장의 발표 결정의 원인이므로 인과 관계의 Therefore가 적합합니다.",
+    "explanation": "앞 문장의 좋은 실험 결과가 발표 결정의 원인이므로 인과 관계의 Therefore가 정답입니다.",
     "grammarCategory": "연결어"
   }
 ]`,
@@ -172,10 +207,8 @@ Output ONLY a valid JSON array:
 
     const text =
       msg.content[0].type === 'text' ? msg.content[0].text.trim() : '';
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
 
-    const items = JSON.parse(jsonMatch[0]) as Array<{
+    const items = parseJsonArray<{
       pairIndex: number;
       skip?: boolean;
       contextBefore: string;
@@ -187,14 +220,16 @@ Output ONLY a valid JSON array:
       correct: 'a' | 'b' | 'c' | 'd';
       explanation: string;
       grammarCategory: string;
-    }>;
+    }>(text);
 
-    return items
-      .filter((item) => !item.skip && item.pairIndex < sentences.length - 1)
+    const results: GrammarResult = items
+      .filter((item) => !item.skip && item.pairIndex < capped.length - 1)
       .map((item) => ({
         orderIndex: item.pairIndex,
         question: {
-          sentenceTemplate: item.contextAfter,
+          sentenceTemplate: item.contextAfter?.includes('____')
+            ? item.contextAfter
+            : `____, ${item.contextAfter}`,
           optionA: item.optionA,
           optionB: item.optionB,
           optionC: item.optionC,
@@ -205,8 +240,10 @@ Output ONLY a valid JSON array:
           contextBefore: item.contextBefore,
         },
       }));
+
+    return { ok: true, results };
   } catch (e) {
     console.error('[generateConnectiveQuestions] error:', e);
-    return [];
+    return { ok: false, error: e instanceof Error ? e.message : String(e), results: [] };
   }
 }

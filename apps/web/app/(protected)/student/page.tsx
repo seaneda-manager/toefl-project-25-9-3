@@ -1,473 +1,515 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { getDrillRoute } from "@/lib/student-activities/routes";
-import { markPrescriptionInProgress } from "@/lib/student-activities/prescription-actions";
 
 export const dynamic = "force-dynamic";
 
-type SupabaseServerClient = Awaited<ReturnType<typeof getServerSupabase>>;
+// ── 커리큘럼 라벨 ──────────────────────────────────────────────
+type CurriculumKey = "toefl" | "gap" | "lingx_jr" | "lingx_ms" | "lingx_hs" | "unknown";
 
-type StudentActivity = {
-  id: string;
-  student_id: string;
-  activity_type: string;
-  track: string | null;
-  section: string | null;
-  status: string;
-  title: string | null;
-  description: string | null;
-  created_at: string | null;
-  started_at: string | null;
-  completed_at: string | null;
+type CurriculumMeta = {
+  key: CurriculumKey;
+  label: string;
+  sub: string;
+  badge: string;       // Tailwind classes for the badge
+  accentBg: string;    // card bg gradient
+  accentText: string;  // accent text color
 };
 
-type StudentPrescription = {
-  id: string;
-  student_id: string;
-  activity_id: string | null;
-  weak_tag: string;
-  prescription_type: string;
-  status: string;
-  title: string | null;
-  payload: unknown;
-  due_at: string | null;
-  created_at: string | null;
+const CURRICULUM: Record<CurriculumKey, CurriculumMeta> = {
+  toefl: {
+    key: "toefl",
+    label: "TOEFL",
+    sub: "Lingo-X TOEFL Program",
+    badge: "bg-sky-100 text-sky-700 ring-1 ring-sky-200",
+    accentBg: "from-sky-50 to-white",
+    accentText: "text-sky-700",
+  },
+  gap: {
+    key: "gap",
+    label: "GAP",
+    sub: "Lingo-X GAP Program",
+    badge: "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200",
+    accentBg: "from-indigo-50 to-white",
+    accentText: "text-indigo-700",
+  },
+  lingx_jr: {
+    key: "lingx_jr",
+    label: "LingX 주니어",
+    sub: "Lingo-X Junior Program",
+    badge: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
+    accentBg: "from-amber-50 to-white",
+    accentText: "text-amber-700",
+  },
+  lingx_ms: {
+    key: "lingx_ms",
+    label: "LingX 중학",
+    sub: "Lingo-X 중학 Program",
+    badge: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200",
+    accentBg: "from-emerald-50 to-white",
+    accentText: "text-emerald-700",
+  },
+  lingx_hs: {
+    key: "lingx_hs",
+    label: "LingX 고등",
+    sub: "Lingo-X 고등 Program",
+    badge: "bg-violet-100 text-violet-700 ring-1 ring-violet-200",
+    accentBg: "from-violet-50 to-white",
+    accentText: "text-violet-700",
+  },
+  unknown: {
+    key: "unknown",
+    label: "Lingo-X",
+    sub: "Lingo-X Learning Platform",
+    badge: "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200",
+    accentBg: "from-neutral-50 to-white",
+    accentText: "text-neutral-600",
+  },
 };
 
-function formatDateTime(value: string | null): string | null {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: value.includes("T") ? "2-digit" : undefined,
-    minute: value.includes("T") ? "2-digit" : undefined,
-    hour12: false,
-  }).format(d);
+function deriveCurriculum(
+  program: string | null | undefined,
+  gradeBand: string | null | undefined,
+): CurriculumMeta {
+  const p = program?.toLowerCase() ?? "";
+  if (p === "toefl") return CURRICULUM.toefl;
+  if (p === "gap")   return CURRICULUM.gap;
+  if (p === "lingx") {
+    const gb = gradeBand ?? "";
+    if (gb === "K10_12" || gb === "POST_K12") return CURRICULUM.lingx_hs;
+    if (gb === "K7_9")                        return CURRICULUM.lingx_ms;
+    return CURRICULUM.lingx_jr;
+  }
+  return CURRICULUM.unknown;
 }
 
-function toneByStatus(status: string) {
-  switch (status) {
-    case "done":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    case "in_progress":
-      return "border-amber-200 bg-amber-50 text-amber-700";
-    case "todo":
-      return "border-slate-200 bg-slate-50 text-slate-700";
-    case "queued":
-      return "border-violet-200 bg-violet-50 text-violet-700";
-    default:
-      return "border-slate-200 bg-white text-slate-600";
+// ── 수준 배지 ──────────────────────────────────────────────────
+function levelBadge(level: string | null | undefined) {
+  switch (level) {
+    case "beginner":     return { label: "초급", cls: "bg-sky-50 text-sky-600 ring-1 ring-sky-200" };
+    case "intermediate": return { label: "중급", cls: "bg-amber-50 text-amber-600 ring-1 ring-amber-200" };
+    case "advanced":     return { label: "고급", cls: "bg-rose-50 text-rose-600 ring-1 ring-rose-200" };
+    default:             return null;
   }
 }
 
-function labelByStatus(status: string) {
-  switch (status) {
-    case "done":
-      return "완료";
-    case "in_progress":
-      return "진행 중";
-    case "todo":
-      return "할 일";
-    case "queued":
-      return "대기 중";
-    default:
-      return status;
-  }
-}
-
+// ── helpers ────────────────────────────────────────────────────
 async function tryResolveAcademyStudentId(
-  supabase: SupabaseServerClient,
+  supabase: Awaited<ReturnType<typeof getServerSupabase>>,
   authUserId: string,
 ): Promise<string | null> {
-  const tries: Array<"id" | "auth_user_id" | "user_id" | "profile_id"> = [
-    "id",
-    "auth_user_id",
-    "user_id",
-    "profile_id",
-  ];
-
-  for (const col of tries) {
+  for (const col of ["id", "auth_user_id", "user_id", "profile_id"] as const) {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("academy_students")
         .select("id")
-        .eq(col, authUserId)
+        .eq(col as string, authUserId)
         .maybeSingle();
-
-      if (!error && data?.id) {
-        return String(data.id);
-      }
-    } catch {
-      // ignore
-    }
+      if (data?.id) return String(data.id);
+    } catch { /* ignore */ }
   }
-
   return null;
 }
 
-async function resolveStudentKeys(
-  supabase: SupabaseServerClient,
-  authUserId: string,
-): Promise<string[]> {
-  const academyStudentId = await tryResolveAcademyStudentId(supabase, authUserId);
-  return Array.from(
-    new Set([academyStudentId, authUserId].filter(Boolean) as string[]),
-  );
-}
-
+// ── Page ───────────────────────────────────────────────────────
 export default async function StudentPage() {
   const supabase = await getServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // ── 1. 프로필 ────────────────────────────────────────────────
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, program, full_name, name, grade")
+    .eq("id", user.id)
+    .maybeSingle();
 
-  if (!user) {
-    redirect("/login");
+  // ── 2. 학원 학생 레코드 ──────────────────────────────────────
+  const academyStudentId = await tryResolveAcademyStudentId(supabase, user.id);
+
+  let acdStudent: {
+    display_name: string | null;
+    grade_band: string | null;
+    level: string | null;
+  } | null = null;
+
+  if (academyStudentId) {
+    const { data } = await supabase
+      .from("academy_students")
+      .select("display_name, grade_band, level")
+      .eq("id", academyStudentId)
+      .maybeSingle();
+    acdStudent = data ?? null;
   }
 
-  const studentKeys = await resolveStudentKeys(supabase, user.id);
+  const program   = (profile as any)?.program as string | null ?? null;
+  const gradeBand = acdStudent?.grade_band ?? null;
+  const curriculum = deriveCurriculum(program, gradeBand);
 
-  const [
-    { data: activities, error: activitiesError },
-    { data: prescriptions, error: prescriptionsError },
-  ] = await Promise.all([
-    supabase
-      .from("student_activities")
-      .select(
-        "id, student_id, activity_type, track, section, status, title, description, created_at, started_at, completed_at",
-      )
-      .in("student_id", studentKeys)
-      .order("created_at", { ascending: false })
-      .limit(50),
+  const studentName =
+    acdStudent?.display_name ??
+    (profile as any)?.full_name ??
+    (profile as any)?.name ??
+    user.email?.split("@")[0] ??
+    "학생";
 
-    supabase
-      .from("student_prescriptions")
-      .select(
-        "id, student_id, activity_id, weak_tag, prescription_type, status, title, payload, due_at, created_at",
-      )
-      .in("student_id", studentKeys)
-      .in("status", ["queued", "in_progress"])
-      .order("status", { ascending: true })
-      .order("due_at", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .limit(10),
-  ]);
+  const lvBadge = levelBadge(acdStudent?.level ?? null);
 
-  if (activitiesError) {
-    throw new Error(activitiesError.message);
+  // ── 3. 내신 통계 ─────────────────────────────────────────────
+  // 배정된 지문 수
+  const { data: naesinAssignments } = await supabase
+    .from("hi_naesin_assignments")
+    .select("passage_id")
+    .eq("student_id", user.id);
+
+  const assignedPassageIds = [
+    ...new Set((naesinAssignments ?? []).map((a: any) => a.passage_id as string)),
+  ];
+
+  // 제출(완료)된 세션 수 (passage 기준 unique)
+  let naesinDonePassages = 0;
+  if (assignedPassageIds.length > 0) {
+    const { data: doneSessions } = await supabase
+      .from("hi_naesin_sessions")
+      .select("passage_id")
+      .eq("student_id", user.id)
+      .eq("status", "submitted")
+      .in("passage_id", assignedPassageIds);
+
+    naesinDonePassages = new Set(
+      (doneSessions ?? []).map((s: any) => s.passage_id as string),
+    ).size;
   }
 
-  if (prescriptionsError) {
-    throw new Error(prescriptionsError.message);
+  // ── 4. 어휘 통계 ──────────────────────────────────────────────
+  // student_vocab_plans (active)
+  let vocaPlanCount = 0;
+  let vocaTodayCount = 0;
+
+  if (academyStudentId) {
+    const todayISO = (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    })();
+
+    const { data: vocaPlans } = await supabase
+      .from("student_vocab_plans")
+      .select("id, track_id, is_paused")
+      .eq("student_id", academyStudentId)
+      .eq("is_enabled", true);
+
+    vocaPlanCount = (vocaPlans ?? []).length;
+
+    if (vocaPlanCount > 0) {
+      const trackIds = (vocaPlans ?? []).map((p: any) => p.track_id as string);
+      const { data: todayAsg } = await supabase
+        .from("student_vocab_assignments")
+        .select("id")
+        .eq("student_id", academyStudentId)
+        .in("track_id", trackIds)
+        .lte("available_at", todayISO)
+        .is("completed_at", null);
+      vocaTodayCount = (todayAsg ?? []).length;
+    }
   }
 
-  const activityRows = (activities ?? []) as StudentActivity[];
-  const prescriptionRows = (prescriptions ?? []) as StudentPrescription[];
+  // ── 5. 정규 읽기 통계 (간략) ──────────────────────────────────
+  const { data: readingResults } = await supabase
+    .from("reading_results_2026")
+    .select("id")
+    .eq("user_id", user.id);
 
-  const current = activityRows.find((a) => a.status === "in_progress") ?? null;
-  const todos = activityRows.filter((a) => a.status === "todo");
-  const recent = activityRows.slice(0, 5);
-
-  const debugInfo = {
-    authUserId: user.id,
-    studentKeys,
-    activityCount: activityRows.length,
-    prescriptionCount: prescriptionRows.length,
-    prescriptionStudentIds: prescriptionRows.map((p) => p.student_id),
-  };
+  const readingDone = (readingResults ?? []).length;
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
-      <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-violet-700">Student</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-          학생 홈 (Timeline)
+    <main className="mx-auto max-w-3xl space-y-6 pb-12">
+
+      {/* ── 커리큘럼 헤더 ─────────────────────────────────────── */}
+      <header
+        className={[
+          "rounded-3xl border border-neutral-200 bg-gradient-to-br p-6 shadow-sm",
+          curriculum.accentBg,
+        ].join(" ")}
+      >
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${curriculum.badge}`}>
+            {curriculum.label}
+          </span>
+          {lvBadge && (
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${lvBadge.cls}`}>
+              {lvBadge.label}
+            </span>
+          )}
+        </div>
+        <h1 className="text-2xl font-bold text-neutral-900 leading-tight">
+          {studentName}
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          활동 타임라인과 자동 추천 학습을 한 화면에서 보여줍니다.
+        <p className={`text-sm mt-0.5 ${curriculum.accentText}`}>
+          {curriculum.sub}
         </p>
       </header>
 
-      <section className="rounded-3xl border border-red-300 bg-red-50 p-4 shadow-sm">
-        <div className="mb-2 text-sm font-bold text-red-700">DEBUG</div>
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all text-xs text-red-900">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500">진행 중</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
-            {current ? 1 : 0}
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500">해야 할 것</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
-            {todos.length}
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500">최근 활동</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
-            {recent.length}
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500">추천 학습</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">
-            {prescriptionRows.length}
-          </p>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <Link
-          href="/vocab/session"
-          className="group block rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-slate-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-        >
-          <p className="text-sm font-semibold text-violet-700">LingX-VOCA</p>
-          <h2 className="mt-1 text-xl font-bold text-slate-900">
-            단어 Drill & Practice
+      {/* ── 내신 ─────────────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-500">
+            내신
           </h2>
-          <p className="mt-2 text-sm text-slate-500">
-            단어 학습 세션으로 바로 들어갑니다.
-          </p>
-          <div className="mt-4 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white group-hover:bg-slate-800">
-            시작하기
-          </div>
-        </Link>
-
-        <Link
-          href="/hi-naesin/passages"
-          className="group block rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-        >
-          <p className="text-sm font-semibold text-emerald-700">
-            Lingo-X 내신
-          </p>
-          <h2 className="mt-1 text-xl font-bold text-slate-900">
-            내신 Reading / Drill
-          </h2>
-          <p className="mt-2 text-sm text-slate-500">
-            지문을 선택해서 해석·작문·문법 드릴을 시작하세요.
-          </p>
-          <div className="mt-4 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white group-hover:bg-slate-800">
-            지문 목록 보기
-          </div>
-        </Link>
-      </section>
-
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-slate-900">지금 하는 것</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            현재 진행 중인 가장 최근 활동입니다.
-          </p>
+          {assignedPassageIds.length > 0 && (
+            <Link
+              href="/hi-naesin"
+              className="text-xs text-emerald-600 hover:underline"
+            >
+              내신 드릴 →
+            </Link>
+          )}
         </div>
 
-        {current ? (
-          <div className="rounded-2xl border border-slate-200 p-4">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${toneByStatus(
-                  current.status,
-                )}`}
-              >
-                {labelByStatus(current.status)}
-              </span>
-
-              {current.track ? (
-                <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  {current.track}
-                </span>
-              ) : null}
-
-              {current.section ? (
-                <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  {current.section}
-                </span>
-              ) : null}
+        {assignedPassageIds.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-6 flex items-center justify-between">
+            <p className="text-sm text-neutral-400">배정된 내신 지문이 없습니다.</p>
+            <Link
+              href="/hi-naesin"
+              className="text-xs text-neutral-500 hover:underline"
+            >
+              드릴 목록 →
+            </Link>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-emerald-200 bg-white p-5 space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <NaesinStat
+                label="배정 지문"
+                value={`${assignedPassageIds.length}개`}
+              />
+              <NaesinStat
+                label="학습 완료"
+                value={`${naesinDonePassages}개`}
+                sub={
+                  assignedPassageIds.length > 0
+                    ? `${Math.round((naesinDonePassages / assignedPassageIds.length) * 100)}%`
+                    : undefined
+                }
+              />
+              <NaesinStat
+                label="남은 지문"
+                value={`${assignedPassageIds.length - naesinDonePassages}개`}
+                warn={assignedPassageIds.length - naesinDonePassages > 0}
+              />
             </div>
 
-            <h3 className="text-base font-semibold text-slate-900">
-              {current.title ?? current.activity_type}
-            </h3>
-
-            {current.description ? (
-              <p className="mt-2 text-sm text-slate-500">
-                {current.description}
-              </p>
-            ) : null}
-
-            <div className="mt-3 space-y-1 text-xs text-slate-500">
-              {current.started_at ? (
-                <p>시작 {formatDateTime(current.started_at)}</p>
-              ) : null}
-              {current.created_at ? (
-                <p>생성 {formatDateTime(current.created_at)}</p>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-            진행 중인 활동이 없습니다.
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-slate-900">추천 학습</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            약점 분석을 바탕으로 자동 생성된 드릴입니다.
-          </p>
-        </div>
-
-        {prescriptionRows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-            지금은 추천된 학습이 없습니다.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {prescriptionRows.map((p) => {
-              const href = getDrillRoute(p);
-
-              return (
-                <div
-                  key={p.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="min-w-0">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${toneByStatus(
-                          p.status,
-                        )}`}
-                      >
-                        {labelByStatus(p.status)}
-                      </span>
-
-                      <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                        {p.weak_tag}
-                      </span>
-
-                      <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                        {p.prescription_type}
-                      </span>
-                    </div>
-
-                    <p className="truncate text-base font-semibold text-slate-900">
-                      {p.title ?? p.prescription_type}
-                    </p>
-
-                    <div className="mt-2 space-y-1 text-xs text-slate-500">
-                      {p.due_at ? <p>마감 {formatDateTime(p.due_at)}</p> : null}
-                      {p.created_at ? (
-                        <p>생성 {formatDateTime(p.created_at)}</p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 items-center">
-                    <form
-                      action={async () => {
-                        "use server";
-                        await markPrescriptionInProgress(p.id);
-                        redirect(href);
-                      }}
-                    >
-                      <button
-                        type="submit"
-                        className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                      >
-                        시작하기
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-slate-900">최근 활동</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            가장 최근에 저장된 활동입니다.
-          </p>
-        </div>
-
-        {recent.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-            아직 저장된 활동이 없습니다.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {recent.map((activity) => (
-              <div
-                key={activity.id}
-                className="rounded-2xl border border-slate-200 p-4"
-              >
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${toneByStatus(
-                      activity.status,
-                    )}`}
-                  >
-                    {labelByStatus(activity.status)}
+            {/* 진행 바 */}
+            {assignedPassageIds.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] text-neutral-400">
+                  <span>전체 진도</span>
+                  <span>
+                    {Math.round((naesinDonePassages / assignedPassageIds.length) * 100)}%
                   </span>
-
-                  {activity.track ? (
-                    <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                      {activity.track}
-                    </span>
-                  ) : null}
-
-                  {activity.section ? (
-                    <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                      {activity.section}
-                    </span>
-                  ) : null}
                 </div>
-
-                <h3 className="text-base font-semibold text-slate-900">
-                  {activity.title ?? activity.activity_type}
-                </h3>
-
-                {activity.description ? (
-                  <p className="mt-2 text-sm text-slate-500">
-                    {activity.description}
-                  </p>
-                ) : null}
-
-                <div className="mt-3 space-y-1 text-xs text-slate-500">
-                  {activity.started_at ? (
-                    <p>시작 {formatDateTime(activity.started_at)}</p>
-                  ) : null}
-                  {activity.completed_at ? (
-                    <p>완료 {formatDateTime(activity.completed_at)}</p>
-                  ) : null}
-                  {activity.created_at ? (
-                    <p>생성 {formatDateTime(activity.created_at)}</p>
-                  ) : null}
+                <div className="h-2 w-full rounded-full bg-neutral-100">
+                  <div
+                    className="h-2 rounded-full bg-emerald-400 transition-all"
+                    style={{
+                      width: `${Math.round(
+                        (naesinDonePassages / assignedPassageIds.length) * 100,
+                      )}%`,
+                    }}
+                  />
                 </div>
               </div>
-            ))}
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Link
+                href="/hi-naesin"
+                className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+              >
+                내신 드릴 시작
+              </Link>
+              <Link
+                href="/hi-naesin/stats"
+                className="inline-flex items-center rounded-xl border border-neutral-200 px-4 py-2 text-xs text-neutral-600 hover:bg-neutral-50"
+              >
+                학습 현황
+              </Link>
+              <Link
+                href="/hi-naesin/vocab"
+                className="inline-flex items-center rounded-xl border border-neutral-200 px-4 py-2 text-xs text-neutral-600 hover:bg-neutral-50"
+              >
+                내신 단어
+              </Link>
+            </div>
           </div>
         )}
       </section>
+
+      {/* ── 정규 ─────────────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-500">
+            정규
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {/* Reading */}
+          <SkillCard
+            href="/reading-2026/study"
+            label="Reading"
+            emoji="📖"
+            detail={readingDone > 0 ? `완료 ${readingDone}회` : "학습 시작하기"}
+            color="sky"
+          />
+
+          {/* Grammar */}
+          <SkillCard
+            href="#"
+            label="Grammar"
+            emoji="📝"
+            detail="준비 중"
+            color="neutral"
+            disabled
+          />
+
+          {/* Listening */}
+          <SkillCard
+            href="/listening-2026/study"
+            label="Listening"
+            emoji="🎧"
+            detail="학습 시작하기"
+            color="violet"
+          />
+
+          {/* Writing */}
+          <SkillCard
+            href="/writing-2026/study"
+            label="Writing"
+            emoji="✍️"
+            detail="학습 시작하기"
+            color="amber"
+          />
+
+          {/* Speaking */}
+          <SkillCard
+            href="/speaking-2026/study"
+            label="Speaking"
+            emoji="🎤"
+            detail="학습 시작하기"
+            color="rose"
+          />
+
+          {/* Voca */}
+          <SkillCard
+            href="/vocab"
+            label="Voca"
+            emoji="📚"
+            detail={
+              vocaPlanCount === 0
+                ? "배정 없음"
+                : vocaTodayCount > 0
+                ? `오늘 ${vocaTodayCount}개`
+                : `플랜 ${vocaPlanCount}개`
+            }
+            color={vocaTodayCount > 0 ? "emerald" : "neutral"}
+            highlight={vocaTodayCount > 0}
+          />
+        </div>
+      </section>
     </main>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────
+
+function NaesinStat({
+  label,
+  value,
+  sub,
+  warn,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  warn?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-xs text-neutral-400">{label}</p>
+      <p
+        className={[
+          "mt-0.5 text-xl font-bold",
+          warn ? "text-amber-600" : "text-neutral-900",
+        ].join(" ")}
+      >
+        {value}
+      </p>
+      {sub && <p className="text-[11px] text-neutral-400">{sub}</p>}
+    </div>
+  );
+}
+
+type SkillColor = "sky" | "violet" | "amber" | "rose" | "emerald" | "neutral";
+
+const COLOR_MAP: Record<
+  SkillColor,
+  { border: string; bg: string; hoverBg: string; label: string; detail: string }
+> = {
+  sky:     { border: "border-sky-200",     bg: "bg-sky-50",     hoverBg: "hover:bg-sky-50",     label: "text-sky-800",     detail: "text-sky-600"     },
+  violet:  { border: "border-violet-200",  bg: "bg-violet-50",  hoverBg: "hover:bg-violet-50",  label: "text-violet-800",  detail: "text-violet-600"  },
+  amber:   { border: "border-amber-200",   bg: "bg-amber-50",   hoverBg: "hover:bg-amber-50",   label: "text-amber-800",   detail: "text-amber-600"   },
+  rose:    { border: "border-rose-200",    bg: "bg-rose-50",    hoverBg: "hover:bg-rose-50",    label: "text-rose-800",    detail: "text-rose-600"    },
+  emerald: { border: "border-emerald-200", bg: "bg-emerald-50", hoverBg: "hover:bg-emerald-50", label: "text-emerald-800", detail: "text-emerald-600" },
+  neutral: { border: "border-neutral-200", bg: "bg-neutral-50", hoverBg: "hover:bg-neutral-50", label: "text-neutral-700", detail: "text-neutral-400" },
+};
+
+function SkillCard({
+  href,
+  label,
+  emoji,
+  detail,
+  color,
+  disabled,
+  highlight,
+}: {
+  href: string;
+  label: string;
+  emoji: string;
+  detail: string;
+  color: SkillColor;
+  disabled?: boolean;
+  highlight?: boolean;
+}) {
+  const c = COLOR_MAP[color];
+
+  if (disabled) {
+    return (
+      <div
+        className={[
+          "rounded-2xl border p-4 opacity-50",
+          c.border,
+          c.bg,
+        ].join(" ")}
+      >
+        <span className="text-xl">{emoji}</span>
+        <p className={`mt-2 text-sm font-semibold ${c.label}`}>{label}</p>
+        <p className={`text-xs mt-0.5 ${c.detail}`}>{detail}</p>
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className={[
+        "group block rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md",
+        c.border,
+        highlight ? c.bg : `bg-white ${c.hoverBg}`,
+      ].join(" ")}
+    >
+      <span className="text-xl">{emoji}</span>
+      <p className={`mt-2 text-sm font-semibold ${c.label}`}>{label}</p>
+      <p className={`text-xs mt-0.5 ${c.detail}`}>{detail}</p>
+    </Link>
   );
 }

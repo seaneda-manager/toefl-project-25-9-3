@@ -2,6 +2,28 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
 
+// ── 변형문제 있으면 링크 노출 ─────────────────────────────
+async function VariantLink({ passageId }: { passageId: string }) {
+  const supabase = await getServerSupabase();
+  const { data } = await supabase
+    .from('hi_naesin_variant_questions')
+    .select('id')
+    .eq('passage_id', passageId)
+    .eq('is_published', true)
+    .limit(1);
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <Link
+      href={`/hi-naesin/variant/${passageId}`}
+      className="rounded-xl border-2 border-violet-300 bg-violet-50 px-6 py-3 text-sm font-semibold text-violet-700 text-center hover:bg-violet-100"
+    >
+      변형문제 풀기 →
+    </Link>
+  );
+}
+
 export const dynamic = 'force-dynamic';
 
 type Params = Promise<{ sessionId: string }>;
@@ -182,11 +204,14 @@ export default async function HiNaesinDrillCompletePage({
 
       {/* 버튼 */}
       <div className="flex flex-col gap-3">
+        {/* 변형문제가 있으면 링크 표시 */}
+        <VariantLink passageId={session.passage_id} />
+
         <Link
-          href="/hi-naesin/passages"
+          href="/hi-naesin"
           className="rounded-xl bg-neutral-900 px-6 py-3 text-sm font-semibold text-white text-center hover:bg-neutral-800"
         >
-          다른 지문 하러 가기
+          대시보드
         </Link>
         <Link
           href={`/hi-naesin/drill/${sessionId}?step=0`}

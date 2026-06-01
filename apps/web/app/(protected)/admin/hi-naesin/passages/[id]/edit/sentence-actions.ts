@@ -1,7 +1,9 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getServerSupabase } from '@/lib/supabase/server';
+import { getServiceSupabase } from '@/lib/supabase/service';
 import {
   splitEnglish,
   splitKorean,
@@ -10,6 +12,7 @@ import {
   makeBlankSentence,
   detectGrammarHints,
   countWords,
+  parseVocabAnnotations,
 } from '@/lib/hi-naesin/sentence-splitter';
 import {
   generateGrammarQuestions,
@@ -91,12 +94,13 @@ export async function updateSentencePairAction(
   return { ok: true };
 }
 
-// ── 3단계: 확인된 문장 쌍으로 Drill 자동 생성 ───────────
+// ── 2단계: 확인된 문장 쌍으로 기본 Drill 자동 생성 (번역/작문/빈칸/단어) ──
 
 export async function generateDrillsFromSentencesAction(
   passageId: string,
-): Promise<Ok<{ translationCount: number; writingCount: number; fillBlankCount: number; grammarChoiceCount: number }> | Fail> {
+): Promise<void> {
   const supabase = await getServerSupabase();
+  const adminDb  = getServiceSupabase(); // RLS 우회 — admin 쓰기 전용
 
   const { data: sentences, error: sErr } = await supabase
     .from('hi_naesin_passage_sentences')
@@ -104,21 +108,24 @@ export async function generateDrillsFromSentencesAction(
     .eq('passage_id', passageId)
     .order('order_index');
 
-  if (sErr) return { ok: false, error: sErr.message };
-  if (!sentences || sentences.length === 0) {
-    return { ok: false, error: '먼저 문장 분리를 실행해주세요.' };
+  if (sErr || !sentences || sentences.length === 0) {
+    redirect(`/admin/hi-naesin/passages/${passageId}/edit?tab=sentences&err=no_sentences`);
   }
 
-  // 기존 자동생성 드릴 삭제
-  await supabase
+  // 기존 자동생성 드릴 삭제 (service role: RLS DELETE 정책 무관하게 삭제)
+  await adminDb
     .from('hi_naesin_drills')
     .delete()
     .eq('passage_id', passageId)
-    .in('drill_type', ['translation', 'writing', 'fill_blank', 'grammar_choice']);
+    .in('drill_type', ['translation', 'writing', 'fill_blank', 'grammar_choice', 'vocab']);
 
   const translationDrills: object[] = [];
   const writingDrills:     object[] = [];
   const fillBlankDrills:   object[] = [];
+
+  // fill_blank은 문장당 최대 2개 → sentence index 재사용 시 unique(passage_id, drill_type, order_index) 위반
+  // 전역 카운터로 고유한 order_index 보장
+  let fillBlankIdx = 0;
 
   for (let i = 0; i < sentences.length; i++) {
     const { sentence_en, sentence_ko } = sentences[i];
@@ -154,6 +161,7 @@ export async function generateDrillsFromSentencesAction(
     }
 
     // 빈칸 넣기 (문장당 최대 2개, 핵심 단어 기반)
+    // order_index를 전역 카운터(fillBlankIdx)로 부여 → unique constraint 위반 방지
     const keywords = extractKeyWords(sentence_en, 2);
     for (const keyword of keywords) {
       const template = makeBlankSentence(sentence_en, keyword);
@@ -161,7 +169,7 @@ export async function generateDrillsFromSentencesAction(
         fillBlankDrills.push({
           passage_id:   passageId,
           drill_type:   'fill_blank',
-          order_index:  i,
+          order_index:  fillBlankIdx++,
           payload: {
             sentenceTemplate: template,
             answer:     keyword,
@@ -174,69 +182,161 @@ export async function generateDrillsFromSentencesAction(
     }
   }
 
-  // 기본 드릴 먼저 저장
-  const baseInserts = [
-    supabase.from('hi_naesin_drills').insert(translationDrills),
-    supabase.from('hi_naesin_drills').insert(writingDrills),
-    supabase.from('hi_naesin_drills').insert(fillBlankDrills),
-  ].filter((_, i) =>
-    [translationDrills, writingDrills, fillBlankDrills][i].length > 0,
+  // ── 어휘 드릴 생성 ──────────────────────────────────────
+  const { data: passageFull } = await adminDb
+    .from('hi_naesin_passages')
+    .select('passage_text')
+    .eq('id', passageId)
+    .single();
+
+  const vocabDrills: object[] = [];
+  if (passageFull?.passage_text) {
+    const vocabItems = parseVocabAnnotations(passageFull.passage_text);
+    for (let i = 0; i < vocabItems.length; i++) {
+      const { word, meaningKo } = vocabItems[i];
+      // 지문에서 예문 찾기
+      const exSentence = sentences.find((s) =>
+        new RegExp(`\\b${word.split(' ')[0]}\\b`, 'i').test(s.sentence_en)
+      );
+      vocabDrills.push({
+        passage_id:   passageId,
+        drill_type:   'vocab',
+        order_index:  i,
+        payload: {
+          word,
+          meaningKo,
+          exampleSentence: exSentence?.sentence_en ?? null,
+        },
+        is_published: false,
+      });
+    }
+  }
+
+  // 기본 드릴 저장 (비어있는 배열은 insert 제외)
+  const toInsert: Array<{ label: string; rows: object[] }> = [
+    { label: 'translation', rows: translationDrills },
+    { label: 'writing',     rows: writingDrills     },
+    { label: 'fill_blank',  rows: fillBlankDrills   },
+    { label: 'vocab',       rows: vocabDrills        },
+  ].filter((x) => x.rows.length > 0);
+
+  const baseResults = await Promise.all(
+    toInsert.map((x) => adminDb.from('hi_naesin_drills').insert(x.rows)),
   );
 
-  const baseResults = await Promise.all(baseInserts);
-  const firstError = baseResults.find((r) => r.error);
-  if (firstError?.error) return { ok: false, error: firstError.error.message };
+  for (let bi = 0; bi < baseResults.length; bi++) {
+    if (baseResults[bi].error) {
+      const errMsg = encodeURIComponent(baseResults[bi].error?.message ?? 'unknown');
+      redirect(`/admin/hi-naesin/passages/${passageId}/edit?tab=sentences&err=${toInsert[bi].label}:${errMsg}`);
+    }
+  }
 
-  // ── AI 문법 드릴 생성 (grammar_choice) ──────────────────
+  // 지문 배열 변형문제 자동 생성
+  await generateTextOrderingVariant(adminDb, passageId, sentences);
+
+  // 결과를 URL 파라미터로 전달해 배너 표시
+  const t = translationDrills.length;
+  const w = writingDrills.length;
+  const fb = fillBlankDrills.length;
+  const v = vocabDrills.length;
+
+  redirect(
+    `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&ok=2step&t=${t}&w=${w}&fb=${fb}&v=${v}`,
+  );
+}
+
+// ── 3단계: AI 문법/연결어 Drill 생성 ──────────────────────
+
+export async function generateGrammarDrillsAction(
+  passageId: string,
+): Promise<void> {
+  const supabase = await getServerSupabase();
+  const adminDb  = getServiceSupabase(); // RLS 우회 — admin 쓰기 전용
+
+  const { data: sentences, error: sErr } = await supabase
+    .from('hi_naesin_passage_sentences')
+    .select('sentence_en, sentence_ko')
+    .eq('passage_id', passageId)
+    .order('order_index');
+
+  if (sErr || !sentences || sentences.length === 0) {
+    redirect(`/admin/hi-naesin/passages/${passageId}/edit?tab=sentences&err=no_sentences`);
+  }
+
+  // 기존 grammar_choice 삭제 (service role: RLS 우회)
+  await adminDb
+    .from('hi_naesin_drills')
+    .delete()
+    .eq('passage_id', passageId)
+    .eq('drill_type', 'grammar_choice');
+
   const sentenceInputs = sentences
     .filter((s) => s.sentence_en)
     .map((s) => ({ sentenceEn: s.sentence_en, sentenceKo: s.sentence_ko ?? '' }));
 
-  const [grammarResults, connectiveResults] = await Promise.all([
+  const [gResult, cResult] = await Promise.all([
     generateGrammarQuestions(sentenceInputs),
     generateConnectiveQuestions(sentenceInputs),
   ]);
 
+  // redirect() MUST NOT be called inside try/catch — collect error first, redirect after
+  // 'error' in x narrowing is more reliable than !x.ok for TypeScript
+  if ('error' in gResult) {
+    redirect(
+      `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&err=${encodeURIComponent('AI 오류 (문법): ' + gResult.error)}`,
+    );
+  }
+  if ('error' in cResult) {
+    redirect(
+      `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&err=${encodeURIComponent('AI 오류 (연결어): ' + cResult.error)}`,
+    );
+  }
+
+  const grammarResults = gResult.results;
+  const connectiveResults = cResult.results;
+
   const grammarChoiceDrills: object[] = [
-    ...grammarResults.map(({ orderIndex, question }) => ({
+    ...grammarResults.map(({ question }, idx) => ({
       passage_id:   passageId,
       drill_type:   'grammar_choice',
-      order_index:  orderIndex,
+      order_index:  idx,
       payload:      question,
       is_published: false,
     })),
-    ...connectiveResults.map(({ orderIndex, question }) => ({
+    ...connectiveResults.map(({ question }, idx) => ({
       passage_id:   passageId,
       drill_type:   'grammar_choice',
-      order_index:  orderIndex,
+      order_index:  grammarResults.length + idx,
       payload:      question,
       is_published: false,
     })),
   ];
 
+  let grammarCount = 0;
   if (grammarChoiceDrills.length > 0) {
-    const { error: gErr } = await supabase
+    const { error: gErr } = await adminDb
       .from('hi_naesin_drills')
       .insert(grammarChoiceDrills);
-    if (gErr) console.error('[generateDrillsFromSentencesAction] grammar_choice insert error:', gErr.message);
+    if (gErr) {
+      const errMsg = encodeURIComponent(gErr.message);
+      redirect(`/admin/hi-naesin/passages/${passageId}/edit?tab=drill&err=grammar_insert:${errMsg}`);
+    }
+    grammarCount = grammarChoiceDrills.length;
   }
 
-  // 지문 배열 변형문제 자동 생성
-  await generateTextOrderingVariant(supabase, passageId, sentences);
-
   revalidate(passageId);
-  return {
-    ok: true,
-    translationCount:  translationDrills.length,
-    writingCount:      writingDrills.length,
-    fillBlankCount:    fillBlankDrills.length,
-    grammarChoiceCount: grammarChoiceDrills.length,
-  };
+
+  const debugInfo = encodeURIComponent(
+    `gr${grammarResults.length}_co${connectiveResults.length}_in${sentenceInputs.length}`,
+  );
+  redirect(
+    `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&ok=3step&g=${grammarCount}&d=${debugInfo}`,
+  );
 }
 
 // 지문 배열 변형문제 자동 생성 (4등분)
 async function generateTextOrderingVariant(
-  supabase: Awaited<ReturnType<typeof import('@/lib/supabase/server').getServerSupabase>>,
+  adminDb: ReturnType<typeof import('@/lib/supabase/service').getServiceSupabase>,
   passageId: string,
   sentences: Array<{ sentence_en: string }>,
 ) {
@@ -266,13 +366,13 @@ async function generateTextOrderingVariant(
   };
 
   // 기존 text_ordering 삭제 후 재생성
-  await supabase
+  await adminDb
     .from('hi_naesin_variant_questions')
     .delete()
     .eq('passage_id', passageId)
     .eq('question_type', 'text_ordering');
 
-  await supabase.from('hi_naesin_variant_questions').insert({
+  await adminDb.from('hi_naesin_variant_questions').insert({
     passage_id:    passageId,
     question_type: 'text_ordering',
     order_index:   0,

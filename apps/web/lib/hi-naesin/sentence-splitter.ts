@@ -162,6 +162,38 @@ export function detectGrammarHints(sentence: string): string[] {
   return hints.slice(0, 2); // 최대 2개
 }
 
+/**
+ * 지문 하단의 * word: 뜻 형식 어휘 주석 파싱
+ * 예: "* innate: 타고난 ** conservation: 보존"
+ */
+export function parseVocabAnnotations(text: string): Array<{ word: string; meaningKo: string }> {
+  const results: Array<{ word: string; meaningKo: string }> = [];
+
+  // 각 줄에서 * word: 뜻 패턴 찾기
+  const lines = text.split('\n');
+  for (const line of lines) {
+    // * 또는 ** 로 시작하는 어휘 주석 줄
+    const annotationLine = line.match(/^\s*\*+\s*(.+)$/);
+    if (!annotationLine) continue;
+
+    const content = annotationLine[1];
+    // word: 뜻 ** word2: 뜻2 형태로 여러 개 있을 수 있음
+    const entries = content.split(/\s+\*+\s*/);
+    for (const entry of entries) {
+      const match = entry.match(/^([^:]+):\s*(.+)$/);
+      if (match) {
+        const word = match[1].trim();
+        const meaningKo = match[2].trim();
+        if (word && meaningKo) {
+          results.push({ word, meaningKo });
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
 // 단어 수 계산
 export function countWords(sentence: string): number {
   return sentence.trim().split(/\s+/).filter(Boolean).length;

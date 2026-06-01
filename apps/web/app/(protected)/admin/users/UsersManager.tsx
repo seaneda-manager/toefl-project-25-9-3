@@ -1,15 +1,16 @@
-// apps/web/app/(protected)/admin/users/UsersManager.tsx
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Role = 'student' | 'teacher' | 'admin';
+type Program = 'gap' | 'toefl' | 'lingx' | null;
 
 type Profile = {
   id: string;
   email: string | null;
   full_name: string | null;
   role: Role;
+  program: Program;
   created_at: string | null;
 };
 
@@ -32,13 +33,27 @@ const ROLE_BADGE_CLASS: Record<Role, string> = {
   admin: 'bg-amber-50 text-amber-800 ring-amber-100',
 };
 
+const PROGRAM_LABEL: Record<string, string> = {
+  gap: 'GAP',
+  toefl: 'TOEFL',
+  lingx: 'LingX',
+};
+
+const PROGRAM_BADGE_CLASS: Record<string, string> = {
+  gap: 'bg-purple-50 text-purple-700 ring-purple-100',
+  toefl: 'bg-sky-50 text-sky-700 ring-sky-100',
+  lingx: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+};
+
 export default function UsersManager() {
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<UsersResp>({ items: [] });
   const [draftRole, setDraftRole] = useState<Record<string, Role>>({});
+  const [draftProgram, setDraftProgram] = useState<Record<string, Program>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [savingProgram, setSavingProgram] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,7 +136,6 @@ export default function UsersManager() {
     setError(null);
     setToast(null);
 
-    // 낙관적 업데이트
     setData((d) => ({
       ...d,
       items: d.items.map((it) => (it.id === userId ? { ...it, role: newRole } : it)),
@@ -134,9 +148,8 @@ export default function UsersManager() {
         body: JSON.stringify({ userId, role: newRole }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setToast('권한이 저장되었습니다.');
+      setToast('역할이 저장되었습니다.');
     } catch (e: any) {
-      // 실패 시 롤백
       if (prev) {
         setData((d) => ({
           ...d,
@@ -149,18 +162,61 @@ export default function UsersManager() {
     }
   };
 
+  const applyProgram = async (userId: string) => {
+    // draftProgram[userId] may be undefined meaning "no change drafted"
+    // We allow explicitly setting to null (no program)
+    const key = userId;
+    const hasDraft = key in draftProgram;
+    if (!hasDraft) return;
+    const newProgram = draftProgram[key];
+
+    const prev = data.items.find((it) => it.id === userId)?.program;
+
+    setSavingProgram((s) => ({ ...s, [userId]: true }));
+    setError(null);
+    setToast(null);
+
+    setData((d) => ({
+      ...d,
+      items: d.items.map((it) => (it.id === userId ? { ...it, program: newProgram } : it)),
+    }));
+
+    try {
+      const res = await fetch('/api/admin/set-program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, program: newProgram }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setToast('프로그램이 저장되었습니다.');
+      // Remove from draft after save
+      setDraftProgram((d) => {
+        const next = { ...d };
+        delete next[userId];
+        return next;
+      });
+    } catch (e: any) {
+      setData((d) => ({
+        ...d,
+        items: d.items.map((it) => (it.id === userId ? { ...it, program: prev ?? null } : it)),
+      }));
+      setError(e?.message || 'Failed to set program');
+    } finally {
+      setSavingProgram((s) => ({ ...s, [userId]: false }));
+    }
+  };
+
   const RoleSelect = ({ user }: { user: Profile }) => {
     const value = draftRole[user.id] ?? user.role;
     return (
       <div className="flex items-center gap-2">
-        <label className="sr-only" htmlFor={`role-${user.id}`}>
-          Role
-        </label>
         <select
           id={`role-${user.id}`}
           className="rounded border px-2 py-1 text-xs"
           value={value}
-          onChange={(e) => setDraftRole((d) => ({ ...d, [user.id]: e.target.value as Role }))}
+          onChange={(e) =>
+            setDraftRole((d) => ({ ...d, [user.id]: e.target.value as Role }))
+          }
         >
           <option value="student">학생 (student)</option>
           <option value="teacher">선생님 (teacher)</option>
@@ -172,7 +228,40 @@ export default function UsersManager() {
           onClick={() => applyRole(user.id)}
           aria-busy={!!saving[user.id]}
         >
-          {saving[user.id] ? 'Saving...' : 'Save'}
+          {saving[user.id] ? '...' : '저장'}
+        </button>
+      </div>
+    );
+  };
+
+  const ProgramSelect = ({ user }: { user: Profile }) => {
+    const hasDraft = user.id in draftProgram;
+    const value = hasDraft ? draftProgram[user.id] : user.program;
+    const isDirty = hasDraft && value !== user.program;
+
+    return (
+      <div className="flex items-center gap-2">
+        <select
+          id={`program-${user.id}`}
+          className="rounded border px-2 py-1 text-xs"
+          value={value ?? ''}
+          onChange={(e) => {
+            const v = e.target.value === '' ? null : (e.target.value as Program);
+            setDraftProgram((d) => ({ ...d, [user.id]: v }));
+          }}
+        >
+          <option value="">— 없음 —</option>
+          <option value="gap">GAP</option>
+          <option value="toefl">TOEFL</option>
+          <option value="lingx">LingX</option>
+        </select>
+        <button
+          className="rounded border px-3 py-1 text-xs disabled:opacity-50"
+          disabled={!!savingProgram[user.id] || !isDirty}
+          onClick={() => applyProgram(user.id)}
+          aria-busy={!!savingProgram[user.id]}
+        >
+          {savingProgram[user.id] ? '...' : '저장'}
         </button>
       </div>
     );
@@ -220,44 +309,34 @@ export default function UsersManager() {
             <tr>
               <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">User</th>
               <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Email</th>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Role</th>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">Created</th>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">
-                Change Role
-              </th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">역할</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">프로그램</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">역할 변경</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">프로그램 변경</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500">가입일</th>
             </tr>
           </thead>
           <tbody>
             {loading && data.items.length === 0 ? (
-              // 스켈레톤 로딩
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="border-t">
-                  <td className="px-3 py-3">
-                    <div className="h-3 w-28 animate-pulse rounded bg-gray-200" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-3 w-40 animate-pulse rounded bg-gray-200" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-3 w-32 animate-pulse rounded bg-gray-200" />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-                  </td>
+                  {[...Array(7)].map((_, j) => (
+                    <td key={j} className="px-3 py-3">
+                      <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+                    </td>
+                  ))}
                 </tr>
               ))
             ) : data.items.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={5}>
+                <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={7}>
                   No users
                 </td>
               </tr>
             ) : (
               data.items.map((u) => {
                 const roleBadgeClass = ROLE_BADGE_CLASS[u.role];
+                const programBadgeClass = u.program ? PROGRAM_BADGE_CLASS[u.program] : '';
                 return (
                   <tr key={u.id} className="border-t">
                     <td className="px-3 py-2 align-middle">
@@ -265,7 +344,7 @@ export default function UsersManager() {
                         <span className="text-sm font-medium text-neutral-800">
                           {u.full_name ?? '-'}
                         </span>
-                        <span className="text-xs text-neutral-500 truncate max-w-[220px]">
+                        <span className="text-[10px] text-neutral-400 truncate max-w-[160px]">
                           {u.id}
                         </span>
                       </div>
@@ -280,18 +359,33 @@ export default function UsersManager() {
                           roleBadgeClass,
                         ].join(' ')}
                       >
-                        {ROLE_LABEL[u.role]} <span className="ml-1 text-[10px] opacity-70">
-                          ({u.role})
-                        </span>
+                        {ROLE_LABEL[u.role]}
                       </span>
                     </td>
                     <td className="px-3 py-2 align-middle">
-                      <span className="text-xs text-neutral-600">
-                        {u.created_at ? new Date(u.created_at).toLocaleString() : '-'}
-                      </span>
+                      {u.program ? (
+                        <span
+                          className={[
+                            'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1',
+                            programBadgeClass,
+                          ].join(' ')}
+                        >
+                          {PROGRAM_LABEL[u.program]}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-300">—</span>
+                      )}
                     </td>
                     <td className="px-3 py-2 align-middle">
                       <RoleSelect user={u} />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <ProgramSelect user={u} />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <span className="text-xs text-neutral-600">
+                        {u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '-'}
+                      </span>
                     </td>
                   </tr>
                 );

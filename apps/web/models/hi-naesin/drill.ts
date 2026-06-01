@@ -6,6 +6,7 @@ export const HI_NAESIN_DRILL_TYPES = [
   'writing',
   'summary',
   'grammar_choice',
+  'vocab',
 ] as const;
 export type HiNaesinDrillType = (typeof HI_NAESIN_DRILL_TYPES)[number];
 
@@ -42,6 +43,12 @@ export type SummaryPayload = {
   blanks: SummaryBlank[];
 };
 
+export type VocabPayload = {
+  word: string;          // 영어 단어/표현
+  meaningKo: string;     // 한국어 뜻
+  exampleSentence?: string; // 지문 속 예문 (선택)
+};
+
 export type GrammarChoicePayload = {
   sentenceTemplate: string; // 빈칸은 ____ 로 표시
   optionA: string;
@@ -62,6 +69,7 @@ export type DrillPayloadMap = {
   writing:        WritingPayload;
   summary:        SummaryPayload;
   grammar_choice: GrammarChoicePayload;
+  vocab:          VocabPayload;
 };
 
 export type HiNaesinDrill<T extends HiNaesinDrillType = HiNaesinDrillType> = {
@@ -93,5 +101,6 @@ export function drillTypeLabel(t: HiNaesinDrillType): string {
     case 'writing':        return '작문';
     case 'summary':        return '요약';
     case 'grammar_choice': return '문법 고르기';
+    case 'vocab':          return '단어';
   }
 }
