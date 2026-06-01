@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
@@ -351,9 +352,9 @@ export default async function HiNaesinDashboard() {
               </thead>
               <tbody>
                 {grouped.map(({ sourceType: src, items }) => (
-                  <>
+                  <React.Fragment key={`group-${src}`}>
                     {/* 출처 구분 헤더 행 */}
-                    <tr key={`group-${src}`} className="bg-neutral-50/80">
+                    <tr className="bg-neutral-50/80">
                       <td
                         colSpan={DRILL_COLS.length + 3}
                         className="px-4 py-2"
@@ -444,7 +445,7 @@ export default async function HiNaesinDashboard() {
                         </tr>
                       );
                     })}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
