@@ -153,9 +153,10 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'Content', href: '/admin/content/list?kind=listening',label: 'Listening Set List' },
 
         { section: 'Teacher Tools', href: '/teacher/home',      label: 'Teacher Home' },
-        { section: 'Teacher Tools', href: '/teacher/tasks',     label: '할 일 관리' },
-        { section: 'Teacher Tools', href: '/teacher/students',  label: '학생 관리' },
-        { section: 'Teacher Tools', href: '/admin/homework',    label: '📷 숙제 채점 관리' },
+        { section: 'Teacher Tools', href: '/admin/students',   label: '학생 추가/관리' },
+        { section: 'Teacher Tools', href: '/teacher/tasks',    label: '할 일 관리' },
+        { section: 'Teacher Tools', href: '/teacher/students', label: '학생 현황' },
+        { section: 'Teacher Tools', href: '/admin/homework',   label: '📷 숙제 채점 관리' },
         { section: 'Teacher Tools', href: '/teacher/home-mock', label: 'Teacher Home (Mock)' },
 
         { section: 'Lingo-X TOEFL', href: '/admin/landing',    label: 'Landing Editor' },
