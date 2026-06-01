@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { toggleHiNaesinPassagePublishedAction } from './actions';
@@ -197,7 +198,7 @@ export default async function HiNaesinPassageListPage({
                     </thead>
                     <tbody>
                       {subGroups.map(({ label, items: groupItems }) => (
-                        <>
+                        <React.Fragment key={label}>
                           {/* 서브 그룹 헤더 (교재명/연도) */}
                           {subGroups.length > 1 && (
                             <tr key={`sub-${label}`} className="bg-neutral-50/60 border-t">
@@ -249,7 +250,7 @@ export default async function HiNaesinPassageListPage({
                               </tr>
                             );
                           })}
-                        </>
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
