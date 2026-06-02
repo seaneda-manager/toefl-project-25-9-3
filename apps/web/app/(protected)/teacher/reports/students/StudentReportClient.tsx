@@ -7,6 +7,7 @@ type StudentSummary = {
   id: string;
   name: string;
   email: string;
+  school: string | null;
   grade: string | null;
   program: string | null;
   hiNaeSin: { total: number; completed: number; lastAt: string | null };
@@ -148,8 +149,10 @@ export default function StudentReportClient({
                       <td>
                         <div className="font-medium text-neutral-900">{s.name}</div>
                         <div className="text-xs text-neutral-400">{s.email}</div>
-                        {s.grade && (
-                          <div className="mt-0.5 text-xs font-medium text-neutral-500">{s.grade}</div>
+                        {(s.school || s.grade) && (
+                          <div className="mt-0.5 text-xs font-medium text-neutral-500">
+                            {[s.school, s.grade].filter(Boolean).join(" · ")}
+                          </div>
                         )}
                       </td>
                       <td>

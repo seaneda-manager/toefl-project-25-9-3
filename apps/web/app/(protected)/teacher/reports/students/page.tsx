@@ -4,25 +4,32 @@ import StudentReportClient from "./StudentReportClient";
 
 export const dynamic = "force-dynamic";
 
-type ProfileRow = {
+type AcademyStudentRow = {
   id: string;
   full_name: string | null;
   email: string | null;
+  school: string | null;
   grade: string | null;
   program: string | null;
+  auth_user_id: string | null;
 };
 
 export default async function TeacherStudentsReportPage() {
   const supabase = await getServerSupabase();
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, grade, program")
-    .eq("role", "student")
+  // academy_students에서 school + grade 포함해서 가져오기
+  const { data: academyStudents } = await supabase
+    .from("academy_students")
+    .select("id, full_name, email, school, grade, program, auth_user_id")
+    .eq("is_active", true)
     .order("full_name", { ascending: true });
 
-  const students: ProfileRow[] = profiles ?? [];
-  const studentIds = students.map((s) => s.id);
+  const students: AcademyStudentRow[] = academyStudents ?? [];
+
+  // 활동 데이터 조회용 ID: auth_user_id (profiles.id와 동일)
+  const studentIds = students
+    .map((s) => s.auth_user_id)
+    .filter((id): id is string => !!id);
 
   if (studentIds.length === 0) {
     return (
@@ -44,18 +51,20 @@ export default async function TeacherStudentsReportPage() {
   const vocabRows = vocabAttempts ?? [];
 
   const summaries = students.map((s) => {
-    const sessions = hiSessionRows.filter((r) => r.user_id === s.id);
+    const uid = s.auth_user_id; // 활동 데이터는 auth_user_id 기준
+
+    const sessions = uid ? hiSessionRows.filter((r) => r.user_id === uid) : [];
     const completed = sessions.filter((r) => r.status === "completed" || r.status === "submitted");
     const lastHi = sessions.map((r) => r.submitted_at).filter(Boolean).sort().at(-1) ?? null;
 
-    const jr = jrRows.filter((r) => r.student_id === s.id);
+    const jr = uid ? jrRows.filter((r) => r.student_id === uid) : [];
     const jrScores = jr.map((r) => r.score_pct).filter((v): v is number => v !== null);
     const jrAvg = jrScores.length > 0
       ? Math.round(jrScores.reduce((a, b) => a + b, 0) / jrScores.length)
       : null;
     const lastJr = jr.map((r) => r.completed_at).sort().at(-1) ?? null;
 
-    const vAttempts = vocabRows.filter((r) => r.user_id === s.id);
+    const vAttempts = uid ? vocabRows.filter((r) => r.user_id === uid) : [];
     const vCorrect = vAttempts.filter((r) => r.is_correct).length;
     const lastVocab = vAttempts.map((r) => r.created_at).sort().at(-1) ?? null;
 
@@ -63,7 +72,8 @@ export default async function TeacherStudentsReportPage() {
       id: s.id,
       name: s.full_name ?? "(이름 없음)",
       email: s.email ?? "",
-      grade: s.grade,
+      school: s.school,       // 학교명
+      grade: s.grade,         // 고1 / 중2 / 초5 등
       program: s.program,
       hiNaeSin: { total: sessions.length, completed: completed.length, lastAt: lastHi },
       jrNaesin: { total: jr.length, avgScore: jrAvg, lastAt: lastJr },
