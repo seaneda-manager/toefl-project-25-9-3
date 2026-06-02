@@ -133,7 +133,7 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
 
         {/* 로고 */}
         <div className="flex items-center gap-2">
-          <Image src="/lexiox.png" alt="LEXiOX" height={96} width={320} className="h-24 w-auto" priority />
+          <Image src="/lexiox.png" alt="LEXiOX" height={32} width={110} className="h-8 w-auto" priority unoptimized />
           {role === 'admin' && (
             <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
               Admin
