@@ -361,45 +361,42 @@ export default function SidebarClient({ role, program = null }: Props) {
         !collapsed || !isExamRoute ? 'border-r border-neutral-100' : '',
       ].join(' ')}
     >
-      <nav className="flex-1 overflow-y-auto py-3 text-sm">
+      <nav className="flex-1 overflow-y-auto py-2 text-sm">
         {groups.map(([section, list], idx) => {
           const open      = openSections[section] ?? true;
           const showItems = collapsed || open;
           const theme     = getSectionTheme(section);
 
           return (
-            <div key={section} className={['mb-1', idx > 0 ? 'mt-1' : ''].join(' ')}>
+            <div key={section} className={['', idx > 0 ? 'mt-1 border-t border-neutral-100 pt-1' : ''].join(' ')}>
               {/* Section header */}
               <button
                 type="button"
                 onClick={() => !collapsed && toggleSection(section)}
                 className={[
-                  'flex w-full items-center justify-between px-4 pb-1 pt-3',
-                  !collapsed ? 'hover:bg-neutral-50/80 rounded-md' : '',
+                  'flex w-full items-center justify-between px-3 py-2',
+                  !collapsed ? 'hover:bg-neutral-50 rounded-lg' : 'justify-center',
                 ].join(' ')}
               >
-                <span
-                  className={[
-                    'text-[10px] font-extrabold uppercase tracking-widest',
-                    theme.header,
-                  ].join(' ')}
-                >
-                  {collapsed
-                    ? collapsedLabel(section)
-                    : lang === 'en'
-                      ? (SECTION_EN[section as NavSection] ?? section)
-                      : section}
-                </span>
-                {!collapsed && (
-                  <span className="text-[10px] text-neutral-300">
-                    {open ? '▴' : '▾'}
+                {!collapsed ? (
+                  <>
+                    <span className={['text-xs font-bold tracking-wide', theme.header].join(' ')}>
+                      {lang === 'en' ? (SECTION_EN[section as NavSection] ?? section) : section}
+                    </span>
+                    <span className={['text-xs font-medium', theme.header, 'opacity-50'].join(' ')}>
+                      {open ? '▴' : '▾'}
+                    </span>
+                  </>
+                ) : (
+                  <span className={['text-[10px] font-bold uppercase tracking-widest', theme.header].join(' ')}>
+                    {collapsedLabel(section)}
                   </span>
                 )}
               </button>
 
               {/* Section items */}
               {showItems && (
-                <ul className="mt-0.5">
+                <ul className="mb-1">
                   {list.map((it, itemIdx) => {
                     const active = isActive(it.href);
 
@@ -408,19 +405,19 @@ export default function SidebarClient({ role, program = null }: Props) {
                         <li key={`${section}-${it.label}-${itemIdx}`}>
                           <div
                             className={[
-                              'flex items-center rounded-lg px-4 py-2 text-sm',
+                              'flex items-center rounded-lg mx-2 px-3 py-1.5 text-sm',
                               collapsed ? 'justify-center' : 'justify-between',
-                              'border-l-2 border-transparent text-neutral-300',
+                              'text-neutral-300',
                             ].join(' ')}
                           >
                             {!collapsed && (
                               <>
-                                <span className="truncate text-neutral-400">{it.label.replace(' (soon)', '')}</span>
+                                <span className="truncate text-neutral-300">{it.label.replace(' (soon)', '')}</span>
                                 <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-neutral-400">Soon</span>
                               </>
                             )}
                             {collapsed && (
-                              <span aria-hidden className="h-1 w-5 rounded-full bg-neutral-200" />
+                              <span aria-hidden className="h-1 w-4 rounded-full bg-neutral-200" />
                             )}
                           </div>
                         </li>
@@ -430,17 +427,16 @@ export default function SidebarClient({ role, program = null }: Props) {
                     const skillActive  = active && it.skill ? SKILL_ACTIVE[it.skill]  : '';
                     const skillHover   = !active && it.skill ? SKILL_HOVER[it.skill]   : '';
                     const linkClasses = [
-                      'group flex items-center rounded-lg px-4 py-2 text-sm transition-colors',
+                      'group flex items-center rounded-lg mx-2 px-3 py-1.5 text-sm transition-colors',
                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/70',
                       collapsed ? 'justify-center' : 'justify-between',
-                      'border-l-2',
                       active
                         ? it.skill
-                          ? `${skillActive} font-bold`
-                          : `${theme.active} font-bold`
+                          ? `${skillActive} font-semibold`
+                          : `${theme.active} font-semibold`
                         : it.skill
-                          ? `border-transparent text-neutral-700 ${skillHover}`
-                          : `border-transparent text-neutral-700 ${theme.hover}`,
+                          ? `text-neutral-600 ${skillHover}`
+                          : `text-neutral-600 ${theme.hover}`,
                     ].join(' ');
 
                     return (
@@ -459,7 +455,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                                   'h-3.5 w-3.5 shrink-0 transition-colors',
                                   active
                                     ? it.skill ? SKILL_CHEVRON[it.skill] : theme.chevron
-                                    : 'text-neutral-200 group-hover:text-neutral-400',
+                                    : 'text-neutral-200 group-hover:text-neutral-300',
                                 ].join(' ')}
                               />
                             </>
@@ -468,7 +464,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                             <span
                               aria-hidden
                               className={[
-                                'h-1 w-5 rounded-full',
+                                'h-1 w-4 rounded-full',
                                 active
                                   ? it.skill ? SKILL_DOT[it.skill] : theme.dot
                                   : 'bg-neutral-200',
