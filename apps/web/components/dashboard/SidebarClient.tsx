@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useLang } from '@/contexts/LangContext';
 
 type Role    = 'student' | 'teacher' | 'admin';
 type Program = 'gap' | 'toefl' | 'lingx' | null;
@@ -12,16 +13,37 @@ type Props   = { role: Role; program?: Program };
 // ── Section type: all section keys used across roles ─────────────
 type NavSection =
   // Admin
-  | 'Admin' | 'Lingo-X TOEFL' | 'Lingo-X Naesin' | 'Lingo-X Junior'
-  | 'Lingo-X Voca' | 'Content' | 'Teacher Tools'
-  // Teacher (Korean)
-  | '콘텐츠' | '학생 관리'
+  | '관리자' | 'LEXiOX TOEFL' | 'LEXiOX 내신' | 'LEXiOX Jr.'
+  | 'LEXiOX 어휘' | '콘텐츠' | '선생님 도구'
+  // Teacher
+  | '학생 관리'
   // Student — program-specific
   | '내신' | 'Hi-내신' | '어휘' | '숙제'   // lingx
   | '학습' | '내 현황'          // toefl / gap
   | '내 학습' | '학습 콘텐츠'   // unassigned (legacy)
   // Shared
   | '설정';
+
+// ── 한/영 섹션 라벨 매핑 ─────────────────────────────────────────
+const SECTION_EN: Record<NavSection, string> = {
+  '관리자': 'Admin',
+  'LEXiOX TOEFL': 'LEXiOX TOEFL',
+  'LEXiOX 내신': 'LEXiOX Naesin',
+  'LEXiOX Jr.': 'LEXiOX Jr.',
+  'LEXiOX 어휘': 'LEXiOX Vocab',
+  '콘텐츠': 'Content',
+  '선생님 도구': 'Teacher Tools',
+  '학생 관리': 'Students',
+  '내신': 'Naesin',
+  'Hi-내신': 'Hi-Naesin',
+  '어휘': 'Vocab',
+  '숙제': 'Homework',
+  '학습': 'Study',
+  '내 현황': 'My Progress',
+  '내 학습': 'My Learning',
+  '학습 콘텐츠': 'Content',
+  '설정': 'Settings',
+};
 
 type SkillColor = 'reading' | 'listening' | 'speaking' | 'writing';
 
@@ -54,15 +76,11 @@ function normalizePath(s: string | null | undefined) {
 
 function collapsedLabel(section: string) {
   const map: Record<string, string> = {
-    // Admin
-    Admin: 'A', 'Lingo-X TOEFL': 'TF', 'Lingo-X Naesin': 'N',
-    'Lingo-X Junior': 'J', 'Lingo-X Voca': 'V', Content: 'C', 'Teacher Tools': 'TT',
-    // Teacher
-    '콘텐츠': '콘', '학생 관리': '관',
-    // Student
+    '관리자': 'A', 'LEXiOX TOEFL': 'TF', 'LEXiOX 내신': 'N',
+    'LEXiOX Jr.': 'Jr', 'LEXiOX 어휘': 'V', '콘텐츠': '콘', '선생님 도구': 'T',
+    '학생 관리': '관',
     '내신': '내', 'Hi-내신': 'Hi', '어휘': '어', '숙제': '숙', '학습': '학', '내 현황': '현',
     '내 학습': '나', '학습 콘텐츠': '콘',
-    // Shared
     '설정': '설',
   };
   return map[section] ?? section.slice(0, 1);
@@ -98,6 +116,7 @@ const SKILL_DOT: Record<SkillColor, string> = {
 export default function SidebarClient({ role, program = null }: Props) {
   const pathnameRaw = usePathname() || '/';
   const pathname    = normalizePath(pathnameRaw);
+  const { lang }    = useLang();
 
   const [collapsed, setCollapsed]   = useState(false);
   const [legacyOpen, setLegacyOpen] = useState(false);
@@ -106,17 +125,16 @@ export default function SidebarClient({ role, program = null }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     if (role === 'admin') {
       return {
-        Admin: true, 'Lingo-X TOEFL': true, 'Lingo-X Naesin': true,
-        'Lingo-X Junior': true, 'Lingo-X Voca': true,
-        Content: true, 'Teacher Tools': true,
+        '관리자': true, 'LEXiOX TOEFL': true, 'LEXiOX 내신': true,
+        'LEXiOX Jr.': true, 'LEXiOX 어휘': true,
+        '콘텐츠': true, '선생님 도구': true,
       };
     }
     if (role === 'teacher') {
       return { '콘텐츠': true, '학생 관리': true, '설정': true };
     }
-    // student: open all
     return {
-      '내신': true, '어휘': true,
+      '내신': true, 'Hi-내신': true, '어휘': true,
       '학습': true, '내 현황': true,
       '내 학습': true, '학습 콘텐츠': true,
       '설정': true,
@@ -158,52 +176,49 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Admin ─────────────────────────────────────────────────
     if (role === 'admin') {
       return [
-        { section: 'Admin',         href: '/admin',                             label: 'Admin Home' },
+        { section: '관리자',         href: '/admin',                             label: '관리자 홈' },
+        { section: '관리자',         href: '/admin/users',                       label: '사용자 관리' },
 
-        { section: 'Lingo-X TOEFL', href: '/admin/content/reading-2026/new',   label: 'Reading 2026 Editor' },
-        { section: 'Lingo-X TOEFL', href: '/admin/content/listening-2026/new', label: 'Listening 2026 Editor' },
-        { section: 'Lingo-X TOEFL', href: '/admin/content/writing-2026/new',   label: 'Writing 2026 Editor' },
+        { section: 'LEXiOX TOEFL', href: '/admin/content/reading-2026/new',   label: 'Reading 편집기' },
+        { section: 'LEXiOX TOEFL', href: '/admin/content/listening-2026/new', label: 'Listening 편집기' },
+        { section: 'LEXiOX TOEFL', href: '/admin/content/writing-2026/new',   label: 'Writing 편집기' },
+        { section: 'LEXiOX TOEFL', href: '/admin/landing',                    label: '랜딩 편집기' },
+        { section: 'LEXiOX TOEFL', href: '/settings',                         label: '설정' },
 
-        { section: 'Lingo-X Naesin', href: '/admin/naesin',                    label: '내신 허브' },
-        { section: 'Lingo-X Naesin', href: '/admin/naesin/scopes',             label: '시험 범위 관리' },
-        { section: 'Lingo-X Naesin', href: '/admin/naesin/scopes/new',         label: '새 범위 만들기' },
-        { section: 'Lingo-X Naesin', href: '/admin/hi-naesin/passages',        label: 'Hi-내신 지문 목록' },
-        { section: 'Lingo-X Naesin', href: '/admin/hi-naesin/passages/new',    label: 'Hi-내신 단건 등록' },
-        { section: 'Lingo-X Naesin', href: '/admin/hi-naesin/passages/bulk-new', label: 'Hi-내신 챕터 일괄' },
+        { section: 'LEXiOX 내신', href: '/admin/naesin',                      label: '내신 허브' },
+        { section: 'LEXiOX 내신', href: '/admin/naesin/scopes',               label: '시험 범위 관리' },
+        { section: 'LEXiOX 내신', href: '/admin/naesin/scopes/new',           label: '새 범위 만들기' },
+        { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages',          label: 'Hi-내신 지문 목록' },
+        { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages/new',      label: 'Hi-내신 단건 등록' },
+        { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages/bulk-new', label: 'Hi-내신 챕터 일괄' },
 
-        { section: 'Lingo-X Junior', label: 'Junior Hub (soon)',     disabled: true },
-        { section: 'Lingo-X Junior', label: 'Junior Content (soon)', disabled: true },
+        { section: 'LEXiOX Jr.', href: '/admin/naesin/passages',              label: 'Jr. 지문 관리' },
+        { section: 'LEXiOX Jr.', label: 'Jr. 커리큘럼 (준비중)',              disabled: true },
 
-        { section: 'Lingo-X Voca', href: '/voca/admin', label: 'VOCA Admin' },
+        { section: 'LEXiOX 어휘', href: '/voca/admin', label: '어휘 관리' },
 
-        { section: 'Content', href: '/admin/content/new?kind=reading',  label: 'New Reading Set' },
-        { section: 'Content', href: '/admin/content/list?kind=reading', label: 'Reading Set List' },
-        { section: 'Content', href: '/admin/content/new?kind=listening',label: 'New Listening Set' },
-        { section: 'Content', href: '/admin/content/list?kind=listening',label: 'Listening Set List' },
+        { section: '콘텐츠', href: '/admin/content/new?kind=reading',   label: 'Reading 세트 추가' },
+        { section: '콘텐츠', href: '/admin/content/list?kind=reading',  label: 'Reading 세트 목록' },
+        { section: '콘텐츠', href: '/admin/content/new?kind=listening', label: 'Listening 세트 추가' },
+        { section: '콘텐츠', href: '/admin/content/list?kind=listening',label: 'Listening 세트 목록' },
 
-        { section: 'Teacher Tools', href: '/teacher/home',      label: 'Teacher Home' },
-        { section: 'Teacher Tools', href: '/admin/students',   label: '학생 추가/관리' },
-        { section: 'Teacher Tools', href: '/teacher/tasks',    label: '할 일 관리' },
-        { section: 'Teacher Tools', href: '/teacher/students', label: '학생 현황' },
-        { section: 'Teacher Tools', href: '/admin/homework',   label: '📷 숙제 채점 관리' },
-        { section: 'Teacher Tools', href: '/teacher/home-mock', label: 'Teacher Home (Mock)' },
-
-        { section: 'Lingo-X TOEFL', href: '/admin/landing',    label: 'Landing Editor' },
-        { section: 'Lingo-X TOEFL', href: '/settings',         label: 'Settings' },
-        { section: 'Admin',         href: '/admin/users',       label: '사용자 관리' },
+        { section: '선생님 도구', href: '/teacher/home',      label: '선생님 홈' },
+        { section: '선생님 도구', href: '/admin/students',    label: '학생 추가/관리' },
+        { section: '선생님 도구', href: '/teacher/tasks',     label: '할 일 관리' },
+        { section: '선생님 도구', href: '/teacher/students',  label: '학생 현황' },
+        { section: '선생님 도구', href: '/admin/homework',    label: '📷 숙제 채점 관리' },
       ];
     }
 
     // ── Teacher ───────────────────────────────────────────────
     if (role === 'teacher') {
       return [
-        { section: '콘텐츠',  href: '/home',        label: 'Home' },
-        { section: '콘텐츠',  href: '/vocab',       label: '단어 학습' },
+        { section: '콘텐츠',  href: '/home',  label: '홈' },
+        { section: '콘텐츠',  href: '/vocab', label: '단어 학습' },
 
-        { section: '학생 관리', href: '/teacher/home',      label: 'Teacher Home' },
-        { section: '학생 관리', href: '/teacher/tasks',     label: '할 일 관리' },
-        { section: '학생 관리', href: '/teacher/students',  label: '학생 관리' },
-        { section: '학생 관리', href: '/teacher/home-mock', label: 'Teacher Home (Mock)' },
+        { section: '학생 관리', href: '/teacher/home',     label: '선생님 홈' },
+        { section: '학생 관리', href: '/teacher/tasks',    label: '할 일 관리' },
+        { section: '학생 관리', href: '/teacher/students', label: '학생 현황' },
 
         { section: '설정', href: '/settings', label: '설정' },
       ];
@@ -327,7 +342,11 @@ export default function SidebarClient({ role, program = null }: Props) {
                       : 'text-[10px] font-extrabold uppercase tracking-widest text-neutral-500'
                   }
                 >
-                  {collapsed ? collapsedLabel(section) : section}
+                  {collapsed
+                    ? collapsedLabel(section)
+                    : lang === 'en'
+                      ? (SECTION_EN[section as NavSection] ?? section)
+                      : section}
                 </span>
                 {!collapsed && (
                   <span className="text-[10px] text-neutral-300">

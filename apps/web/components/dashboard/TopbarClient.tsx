@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabaseBrowser';
 import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import { useLang } from '@/contexts/LangContext';
 
 const PATH_LABELS: Record<string, { label: string; skill?: string }> = {
   '/student':              { label: '대시보드' },
@@ -44,6 +45,7 @@ type Props = {
 export default function TopbarClient({ email: initialEmail, role }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { lang, toggle: toggleLang } = useLang();
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState<string>(initialEmail ?? '');
@@ -153,8 +155,16 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
         )}
       </div>
 
-      {/* 오른쪽: 이메일 + 프로필 동그라미 + Sign out */}
+      {/* 오른쪽: 언어토글 + 이메일 + 프로필 동그라미 + Sign out */}
       <div className="flex items-center gap-3 text-sm">
+        <button
+          type="button"
+          onClick={toggleLang}
+          className="rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-500 hover:bg-neutral-50 transition-colors"
+        >
+          {lang === 'ko' ? 'EN' : '한'}
+        </button>
+
         <span className="hidden max-w-[160px] truncate text-neutral-400 sm:block text-xs">
           {email || 'guest'}
         </span>
