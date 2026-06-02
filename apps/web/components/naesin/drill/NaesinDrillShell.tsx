@@ -37,6 +37,7 @@ import {
 
 type Props = {
   initialPassage?: NaesinPassage;
+  onComplete?: (result: { passageId: string; stages: string[] }) => void;
 };
 
 type StructurePart =
@@ -148,6 +149,7 @@ function getWeaknessSeverity(count: number): "low" | "medium" | "high" {
 
 export default function NaesinDrillShell({
   initialPassage = MOCK_NAESIN_PASSAGE,
+  onComplete,
 }: Props) {
   const [currentStage, setCurrentStage] =
     useState<DrillStage>("word_analysis");
@@ -216,10 +218,22 @@ export default function NaesinDrillShell({
       const nextIndex =
         direction === "prev" ? currentIndex - 1 : currentIndex + 1;
 
-      if (nextIndex < 0 || nextIndex >= DRILL_STAGE_ORDER.length) return prev;
+      if (nextIndex < 0) return prev;
+
+      // 마지막 스테이지 이후 → 완료 콜백
+      if (nextIndex >= DRILL_STAGE_ORDER.length) {
+        if (onComplete) {
+          onComplete({
+            passageId: initialPassage.id,
+            stages: DRILL_STAGE_ORDER.slice(0, currentIndex + 1),
+          });
+        }
+        return prev;
+      }
+
       return DRILL_STAGE_ORDER[nextIndex];
     });
-  }, []);
+  }, [onComplete, initialPassage.id]);
 
   const goPrevSentence = useCallback(() => {
     setCurrentSentenceIndex((prev) => Math.max(0, prev - 1));
