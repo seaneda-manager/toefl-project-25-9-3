@@ -16,6 +16,13 @@ type HiNaesinSessionRow = {
   submitted_at: string | null;
 };
 
+type JrDrillResultRow = {
+  student_id: string;
+  stage: string;
+  score_pct: number | null;
+  completed_at: string;
+};
+
 type VocabAttemptRow = {
   user_id: string;
   is_correct: boolean | null;
@@ -27,6 +34,7 @@ type StudentSummary = {
   name: string;
   email: string;
   hiNaeSin: { total: number; completed: number; lastAt: string | null };
+  jrNaesin: { total: number; avgScore: number | null; lastAt: string | null };
   vocab: { total: number; correct: number; lastAt: string | null };
 };
 
@@ -60,7 +68,15 @@ export default async function TeacherStudentsReportPage() {
 
   const hiSessionRows: HiNaesinSessionRow[] = hiSessions ?? [];
 
-  // 3) Vocab 드릴 시도
+  // 3) JR. 내신 드릴 결과
+  const { data: jrResults } = await supabase
+    .from("lexiox_jr_drill_results")
+    .select("student_id, stage, score_pct, completed_at")
+    .in("student_id", studentIds);
+
+  const jrRows: JrDrillResultRow[] = jrResults ?? [];
+
+  // 4) Vocab 드릴 시도
   const { data: vocabAttempts } = await supabase
     .from("vocab_drill_attempts")
     .select("user_id, is_correct, created_at")
@@ -68,7 +84,7 @@ export default async function TeacherStudentsReportPage() {
 
   const vocabRows: VocabAttemptRow[] = vocabAttempts ?? [];
 
-  // 4) 학생별 집계
+  // 5) 학생별 집계
   const summaries: StudentSummary[] = students.map((s) => {
     const sessions = hiSessionRows.filter((r) => r.user_id === s.id);
     const completed = sessions.filter((r) => r.status === "completed" || r.status === "submitted");
@@ -77,6 +93,11 @@ export default async function TeacherStudentsReportPage() {
       .filter(Boolean)
       .sort()
       .at(-1) ?? null;
+
+    const jr = jrRows.filter((r) => r.student_id === s.id);
+    const jrScores = jr.map((r) => r.score_pct).filter((v): v is number => v !== null);
+    const jrAvg = jrScores.length > 0 ? Math.round(jrScores.reduce((a, b) => a + b, 0) / jrScores.length) : null;
+    const lastJr = jr.map((r) => r.completed_at).sort().at(-1) ?? null;
 
     const vAttempts = vocabRows.filter((r) => r.user_id === s.id);
     const vCorrect = vAttempts.filter((r) => r.is_correct).length;
@@ -87,6 +108,7 @@ export default async function TeacherStudentsReportPage() {
       name: s.full_name ?? "(이름 없음)",
       email: s.email ?? "",
       hiNaeSin: { total: sessions.length, completed: completed.length, lastAt: lastHi },
+      jrNaesin: { total: jr.length, avgScore: jrAvg, lastAt: lastJr },
       vocab: { total: vAttempts.length, correct: vCorrect, lastAt: lastVocab },
     };
   });
@@ -136,6 +158,9 @@ export default async function TeacherStudentsReportPage() {
                 <th>Hi-내신 세션</th>
                 <th>Hi-내신 완료</th>
                 <th>마지막 Hi-내신</th>
+                <th>JR. 내신 드릴</th>
+                <th>JR. 평균점수</th>
+                <th>마지막 JR.</th>
                 <th>어휘 시도</th>
                 <th>어휘 정답률</th>
                 <th>마지막 어휘</th>
@@ -160,6 +185,17 @@ export default async function TeacherStudentsReportPage() {
                     </span>
                   </td>
                   <td className="text-xs text-neutral-500">{fmtDate(s.hiNaeSin.lastAt)}</td>
+                  <td className="text-neutral-700">{s.jrNaesin.total}</td>
+                  <td>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      s.jrNaesin.avgScore !== null
+                        ? "bg-orange-50 text-orange-700"
+                        : "bg-neutral-100 text-neutral-500"
+                    }`}>
+                      {s.jrNaesin.avgScore !== null ? `${s.jrNaesin.avgScore}%` : "-"}
+                    </span>
+                  </td>
+                  <td className="text-xs text-neutral-500">{fmtDate(s.jrNaesin.lastAt)}</td>
                   <td className="text-neutral-700">{s.vocab.total}</td>
                   <td>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
