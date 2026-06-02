@@ -20,6 +20,7 @@ const APP_PREFIXES = [
 ];
 
 function isAppRoute(pathname: string) {
+  if (pathname === "/") return true; // 랜딩 페이지는 자체 헤더 포함
   return APP_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
