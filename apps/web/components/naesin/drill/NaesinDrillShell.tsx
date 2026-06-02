@@ -38,6 +38,7 @@ import {
 type Props = {
   initialPassage?: NaesinPassage;
   onComplete?: (result: { passageId: string; stages: string[] }) => void;
+  onStageComplete?: (stage: string, passageId: string) => void;
 };
 
 type StructurePart =
@@ -150,6 +151,7 @@ function getWeaknessSeverity(count: number): "low" | "medium" | "high" {
 export default function NaesinDrillShell({
   initialPassage = MOCK_NAESIN_PASSAGE,
   onComplete,
+  onStageComplete,
 }: Props) {
   const [currentStage, setCurrentStage] =
     useState<DrillStage>("word_analysis");
@@ -220,20 +222,23 @@ export default function NaesinDrillShell({
 
       if (nextIndex < 0) return prev;
 
-      // 마지막 스테이지 이후 → 완료 콜백
+      // 스테이지 완료 시 저장
+      if (direction === "next") {
+        onStageComplete?.(prev, initialPassage.id);
+      }
+
+      // 마지막 스테이지 이후 → 전체 완료 콜백
       if (nextIndex >= DRILL_STAGE_ORDER.length) {
-        if (onComplete) {
-          onComplete({
-            passageId: initialPassage.id,
-            stages: DRILL_STAGE_ORDER.slice(0, currentIndex + 1),
-          });
-        }
+        onComplete?.({
+          passageId: initialPassage.id,
+          stages: DRILL_STAGE_ORDER.slice(0, currentIndex + 1),
+        });
         return prev;
       }
 
       return DRILL_STAGE_ORDER[nextIndex];
     });
-  }, [onComplete, initialPassage.id]);
+  }, [onComplete, onStageComplete, initialPassage.id]);
 
   const goPrevSentence = useCallback(() => {
     setCurrentSentenceIndex((prev) => Math.max(0, prev - 1));

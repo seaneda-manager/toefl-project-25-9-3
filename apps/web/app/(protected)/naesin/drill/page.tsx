@@ -10,26 +10,26 @@ export default function NaesinDrillPage() {
   const router = useRouter();
   const [done, setDone] = useState(false);
 
-  const handleComplete = useCallback(async (result: { passageId: string; stages: string[] }) => {
+  const saveStage = useCallback(async (stage: string, passageId: string) => {
     try {
       const supabase = createSupabaseBrowser();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 스테이지별 결과 저장
-      const rows = result.stages.map((stage) => ({
+      await supabase.from('lexiox_jr_drill_results').insert({
         student_id: user.id,
-        passage_id: result.passageId,
+        passage_id: passageId,
         stage,
-        score_pct: null, // 추후 스테이지별 점수 계산 추가
+        score_pct: null,
         completed_at: new Date().toISOString(),
-      }));
-
-      await supabase.from('lexiox_jr_drill_results').insert(rows);
-      setDone(true);
+      });
     } catch (e) {
-      console.error('드릴 결과 저장 실패', e);
+      console.error(`스테이지 저장 실패 (${stage})`, e);
     }
+  }, []);
+
+  const handleComplete = useCallback(async (_result: { passageId: string; stages: string[] }) => {
+    setDone(true);
   }, []);
 
   if (done) {
@@ -61,6 +61,7 @@ export default function NaesinDrillPage() {
 
       <NaesinDrillShell
         initialPassage={MOCK_NAESIN_PASSAGE}
+        onStageComplete={saveStage}
         onComplete={handleComplete}
       />
     </main>
