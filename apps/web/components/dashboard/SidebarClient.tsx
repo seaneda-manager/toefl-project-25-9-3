@@ -195,7 +195,11 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'LEXiOX Jr.', href: '/admin/naesin/passages',              label: 'Jr. 지문 관리' },
         { section: 'LEXiOX Jr.', label: 'Jr. 커리큘럼 (준비중)',              disabled: true },
 
-        { section: 'LEXiOX 어휘', href: '/voca/admin', label: '어휘 관리' },
+        { section: 'LEXiOX 어휘', href: '/admin/vocab/words',  label: '단어 목록' },
+        { section: 'LEXiOX 어휘', href: '/admin/vocab/words/import', label: '단어 가져오기' },
+        { section: 'LEXiOX 어휘', href: '/admin/vocab/import', label: '책 CSV 업로드' },
+        { section: 'LEXiOX 어휘', href: '/admin/vocab/Tracks', label: '트랙 배포 (학생)' },
+        { section: 'LEXiOX 어휘', href: '/voca/admin',         label: '어휘 관리 (구)' },
 
         { section: '콘텐츠', href: '/admin/content/new?kind=reading',   label: 'Reading 세트 추가' },
         { section: '콘텐츠', href: '/admin/content/list?kind=reading',  label: 'Reading 세트 목록' },
