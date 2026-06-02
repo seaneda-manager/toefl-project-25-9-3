@@ -1,71 +1,126 @@
 // apps/web/app/page.tsx
 import Image from "next/image";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 
-export default function LandingPage() {
+// ── Types (랜딩 편집기와 동일) ─────────────────────────────────
+type HeroConfig = {
+  subtitle: string;
+  title: string;
+  body: string;
+  titleColor: string;
+  highlightColor: string;
+  fontFamily: "serif" | "sans";
+};
+type ProgramItem = { id: string; title: string; desc: string };
+type RoleSection = { title: string; heading: string; body: string; bullets: string[] };
+type StorySection = { quote: string; author: string; meta: string };
+type JoinSection = { heading: string; body: string };
+type LandingConfig = {
+  hero: HeroConfig;
+  heroLogo: { url: string };
+  programs: ProgramItem[];
+  teachers: RoleSection;
+  learners: RoleSection;
+  story: StorySection;
+  join: JoinSection;
+};
+
+const DEFAULT_CONFIG: LandingConfig = {
+  hero: {
+    subtitle: "TOEFL · ACADEMY PLATFORM",
+    title: "One platform,\ntwo engines.\nUPDATED-TOEFL and LEXiOX.",
+    body: "LEXiOX runs two focused programs side by side. Enter the TOEFL test engine, or jump into LEXiOX for daily vocab missions and academy workflows.",
+    titleColor: "#022c22",
+    highlightColor: "#047857",
+    fontFamily: "serif",
+  },
+  heroLogo: { url: "/LEXiOX.png" },
+  programs: [
+    { id: "p1", title: "UPDATED-TOEFL", desc: "Adaptive Reading & Listening, plus Speaking & Writing practice sets." },
+    { id: "p2", title: "Grammar & Structure", desc: "3-month intensive course for middle & high school learners." },
+    { id: "p3", title: "Mock Tests", desc: "Full-length timed tests with teacher-friendly reports." },
+  ],
+  teachers: {
+    title: "TEACHERS",
+    heading: "Differentiate your classroom and engage every student.",
+    body: "Assign sets, see results, and focus on coaching.",
+    bullets: [
+      "Instant reports by skill, passage, and question type",
+      "Auto-graded Reading & Listening with detailed explanations",
+      "Homework tracking and class dashboards",
+    ],
+  },
+  learners: {
+    title: "LEARNERS AND STUDENTS",
+    heading: "You can learn anything.",
+    body: "Build solid understanding in reading, listening, speaking, and writing.",
+    bullets: [
+      "Adaptive difficulty that stays just above your comfort zone",
+      "Instant explanations in clear, student-friendly English",
+      "Daily rhythm with missions and progress tracking",
+    ],
+  },
+  story: {
+    quote: "I used to guess my way through TOEFL Reading. With LEXiOX, I can finally see why I got each question wrong—and what to fix next.",
+    author: "JIHO · HIGH SCHOOL STUDENT",
+    meta: "",
+  },
+  join: {
+    heading: "Join LEXiOX today",
+    body: "One account. Two programs. Start small, scale fast.",
+  },
+};
+
+async function getLandingConfig(): Promise<LandingConfig> {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return DEFAULT_CONFIG;
+
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+    const { data } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "landing_home_v1")
+      .maybeSingle();
+
+    if (data?.value && typeof data.value === "object") {
+      return { ...DEFAULT_CONFIG, ...(data.value as Partial<LandingConfig>) };
+    }
+  } catch (e) {
+    console.error("[LandingPage] config load failed", e);
+  }
+  return DEFAULT_CONFIG;
+}
+
+export const revalidate = 60; // 1분 캐시
+
+export default async function LandingPage() {
+  const config = await getLandingConfig();
+  const titleLines = config.hero.title.split("\n");
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       {/* Top Navbar */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          {/* Left Logo */}
-          <div className="flex items-center gap-4">
-            <Image
-              src="/k-prime-logo.png"
-              alt="K-PRIME"
-              width={56}
-              height={56}
-              className="h-14 w-14"
-            />
-            <div className="leading-tight">
-              <div className="text-base font-semibold tracking-[0.22em] text-emerald-900">
-                K-PRIME
-              </div>
-              <div className="text-sm text-slate-500">SEEK TRUTH. MASTER LEARNING.</div>
-            </div>
+      <header className="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-50">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Image src="/LEXiOX.png" alt="LEXiOX" width={120} height={40} className="h-10 w-auto" />
           </div>
 
-          {/* Center Menu */}
-          <nav className="hidden items-center gap-7 text-lg font-medium text-slate-700 md:flex">
-            <a href="#programs" className="hover:text-emerald-800">
-              Programs
-            </a>
-            <a href="#teachers" className="hover:text-emerald-800">
-              For Teachers
-            </a>
-            <a href="#learners" className="hover:text-emerald-800">
-              For Students
-            </a>
-            <a href="#stories" className="hover:text-emerald-800">
-              Stories
-            </a>
+          <nav className="hidden items-center gap-7 text-base font-medium text-slate-700 md:flex">
+            <a href="#programs" className="hover:text-emerald-800">Programs</a>
+            <a href="#teachers" className="hover:text-emerald-800">For Teachers</a>
+            <a href="#learners" className="hover:text-emerald-800">For Students</a>
+            <a href="#stories" className="hover:text-emerald-800">Stories</a>
           </nav>
 
-          {/* Right Auth + Product Links */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/toefl"
-              className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-slate-50 md:inline-flex"
-            >
-              UPDATED-TOEFL
-            </Link>
-            <Link
-              href="/lingox"
-              className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-slate-50 md:inline-flex"
-            >
-              Lingo-X
-            </Link>
-
-            <Link
-              href="/auth/login"
-              className="hidden text-lg font-medium text-slate-700 hover:text-emerald-800 md:inline-block"
-            >
+            <Link href="/auth/login" className="hidden text-base font-medium text-slate-700 hover:text-emerald-800 md:inline-block">
               Log in
             </Link>
-            <Link
-              href="/auth/signup"
-              className="rounded-full bg-emerald-900 px-6 py-3 text-lg font-semibold text-emerald-50 hover:bg-emerald-800"
-            >
+            <Link href="/auth/signup" className="rounded-full bg-emerald-900 px-5 py-2.5 text-base font-semibold text-emerald-50 hover:bg-emerald-800">
               Sign up
             </Link>
           </div>
@@ -73,110 +128,54 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="border-b border-slate-200 bg-white text-slate-900">
+      <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-24 md:flex-row md:items-center md:py-28">
-          {/* Left Text */}
           <div className="flex-1 space-y-6">
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-emerald-700">
-              TOEFL · ACADEMY PLATFORM
+              {config.hero.subtitle}
             </p>
-            <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-emerald-900">
-              One platform,
-              <br />
-              two engines.
-              <br />
-              <span className="text-emerald-700">UPDATED-TOEFL and Lingo-X.</span>
+            <h1
+              className={`text-5xl font-extrabold leading-tight tracking-tight ${config.hero.fontFamily === "serif" ? "font-serif" : "font-sans"}`}
+              style={{ color: config.hero.titleColor }}
+            >
+              {titleLines.map((line, i) => (
+                <span key={i}>{line}{i < titleLines.length - 1 && <br />}</span>
+              ))}
             </h1>
             <p className="max-w-xl text-lg font-medium leading-relaxed text-slate-700">
-              K-PRIME runs two focused programs side by side.
-              Enter the TOEFL test engine, or jump into Lingo-X for daily vocab missions
-              and academy workflows.
+              {config.hero.body}
             </p>
-
-            {/* Product Entry CTAs */}
             <div className="flex flex-wrap gap-4 pt-2">
-              <Link
-                href="/toefl"
-                className="rounded-full bg-emerald-900 px-7 py-3 text-base font-semibold text-emerald-50 hover:bg-emerald-800"
-              >
-                Enter UPDATED-TOEFL
+              <Link href="/auth/signup?role=student" className="rounded-full bg-emerald-900 px-7 py-3 text-base font-semibold text-emerald-50 hover:bg-emerald-800">
+                학생으로 시작하기
               </Link>
-              <Link
-                href="/lingox"
-                className="rounded-full border border-slate-400 px-7 py-3 text-base font-semibold text-slate-800 hover:bg-slate-100"
-              >
-                Enter Lingo-X
+              <Link href="/auth/signup?role=teacher" className="rounded-full border border-slate-400 px-7 py-3 text-base font-semibold text-slate-800 hover:bg-slate-100">
+                선생님으로 시작하기
               </Link>
-              <Link
-                href="/home"
-                className="rounded-full border border-slate-200 bg-white px-7 py-3 text-base font-semibold text-emerald-900 hover:bg-slate-50"
-              >
-                Portal (Logged-in)
+              <Link href="/auth/login" className="rounded-full border border-slate-200 bg-white px-7 py-3 text-base font-semibold text-emerald-900 hover:bg-slate-50">
+                로그인
               </Link>
             </div>
-
-            {/* Role Signup CTAs */}
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Link
-                href="/auth/signup?role=student"
-                className="rounded-full bg-emerald-600 px-7 py-3 text-base font-semibold text-white hover:bg-emerald-500"
-              >
-                Learners
-              </Link>
-              <Link
-                href="/auth/signup?role=teacher"
-                className="rounded-full border border-slate-400 px-7 py-3 text-base font-semibold text-slate-800 hover:bg-slate-100"
-              >
-                Teachers
-              </Link>
-              <Link
-                href="/auth/signup?role=parent"
-                className="rounded-full border border-slate-400 px-7 py-3 text-base font-semibold text-slate-800 hover:bg-slate-100"
-              >
-                Parents
-              </Link>
-            </div>
-
-            <p className="text-sm text-slate-600">
-              Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="font-semibold underline-offset-2 hover:underline"
-              >
-                Log in
-              </Link>
-            </p>
           </div>
 
-          {/* Right Card */}
           <div className="flex-1">
             <div className="relative mx-auto max-w-sm rounded-3xl border border-slate-200 bg-white p-10 shadow-xl shadow-slate-300/60">
               <div className="flex flex-col items-center gap-5 text-center">
                 <Image
-                  src="/k-prime-logo.png"
-                  alt="K-PRIME Academy"
-                  width={180}
-                  height={180}
-                  className="h-44 w-44 object-contain"
+                  src={config.heroLogo.url || "/LEXiOX.png"}
+                  alt="LEXiOX"
+                  width={200}
+                  height={80}
+                  className="h-20 w-auto object-contain"
+                  unoptimized
                 />
-                <p className="text-xs font-semibold tracking-[0.18em] text-slate-600">
-                  SEEK TRUTH. MASTER LEARNING.
-                </p>
-                <p className="text-sm text-slate-700">
-                  UPDATED-TOEFL for test practice, Lingo-X for daily vocab systems and academy ops.
-                </p>
-                <div className="mt-2 flex flex-col gap-2">
-                  <Link
-                    href="/toefl"
-                    className="rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-emerald-50 hover:bg-emerald-800"
-                  >
-                    Go to UPDATED-TOEFL
+                <p className="text-sm text-slate-700">{config.hero.body}</p>
+                <div className="mt-2 flex flex-col gap-2 w-full">
+                  <Link href="/auth/signup" className="rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-emerald-50 hover:bg-emerald-800">
+                    시작하기
                   </Link>
-                  <Link
-                    href="/lingox"
-                    className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-emerald-900 hover:bg-slate-50"
-                  >
-                    Go to Lingo-X
+                  <Link href="/auth/login" className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-emerald-900 hover:bg-slate-50">
+                    로그인
                   </Link>
                 </div>
               </div>
@@ -186,145 +185,46 @@ export default function LandingPage() {
       </section>
 
       {/* Programs */}
-      <section
-        id="programs"
-        className="mx-auto max-w-6xl space-y-8 px-4 py-18 md:py-20"
-      >
+      <section id="programs" className="mx-auto max-w-6xl space-y-8 px-4 py-20">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Programs for every learner
-          </h2>
-          <p className="mt-1 text-base text-slate-600">
-            Two programs, one account. Pick a lane, or run both.
-          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">Programs for every learner</h2>
+          <p className="mt-1 text-base text-slate-600">Two programs, one account. Pick a lane, or run both.</p>
         </div>
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              title: "UPDATED-TOEFL",
-              desc: "Adaptive Reading and Listening practice with clear analytics.",
-              href: "/toefl",
-              tag: "TOEFL",
-            },
-            {
-              title: "Lingo-X Vocabulary",
-              desc: "Daily missions: synonyms, word forms, blanks, collocations.",
-              href: "/lingox",
-              tag: "LINGO-X",
-            },
-            {
-              title: "Mock Tests",
-              desc: "Timed sets, auto scoring, teacher-friendly reports.",
-              href: "/toefl/home",
-              tag: "TOEFL",
-            },
-            {
-              title: "Academy Dashboard",
-              desc: "Assign, track, analyze. Fast operations for 학원 teachers.",
-              href: "/lingox/home",
-              tag: "LINGO-X",
-            },
-            {
-              title: "Grammar and Structure",
-              desc: "Structured training for middle and high school learners.",
-              href: "/toefl/home",
-              tag: "TOEFL",
-            },
-            {
-              title: "Vocabulary Missions (Advanced)",
-              desc: "Spaced repetition, weak-word queue, and perk-based rhythm.",
-              href: "/lingox/home",
-              tag: "LINGO-X",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-5"
-            >
+          {config.programs.map((item) => (
+            <div key={item.id} className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
               <div>
-                <div className="mb-2 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-900 ring-1 ring-slate-200">
-                  {item.tag}
-                </div>
-                <h3 className="text-base font-semibold text-slate-900">
-                  {item.title}
-                </h3>
+                <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
                 <p className="mt-2 text-sm text-slate-600">{item.desc}</p>
               </div>
-              <Link
-                href={item.href}
-                className="mt-4 w-fit text-sm font-semibold text-emerald-800 hover:text-emerald-900"
-              >
-                Enter →
-              </Link>
             </div>
           ))}
         </div>
       </section>
 
       {/* Teachers */}
-      <section
-        id="teachers"
-        className="border-y border-slate-100 bg-slate-50 py-18 md:py-20"
-      >
+      <section id="teachers" className="border-y border-slate-100 bg-slate-50 py-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 md:flex-row md:items-center">
           <div className="flex-1 space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700">
-              TEACHERS
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-              Differentiate your classroom and engage every student.
-            </h2>
-            <p className="text-base text-slate-600">
-              Assign sets, see results, and focus on coaching.
-              Use UPDATED-TOEFL for test practice and Lingo-X for vocab systems and daily flow.
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700">{config.teachers.title}</p>
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{config.teachers.heading}</h2>
+            <p className="text-base text-slate-600">{config.teachers.body}</p>
             <ul className="list-disc space-y-1 pl-5 text-base text-slate-600">
-              <li>Reports by skill, passage, and question type</li>
-              <li>Auto-graded Reading and Listening with explanations</li>
-              <li>Homework tracking and class dashboards</li>
+              {config.teachers.bullets.map((b, i) => <li key={i}>{b}</li>)}
             </ul>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/toefl"
-                className="inline-flex rounded-full bg-emerald-900 px-6 py-3 text-sm font-semibold text-emerald-50 hover:bg-emerald-800"
-              >
-                UPDATED-TOEFL
-              </Link>
-              <Link
-                href="/lingox"
-                className="inline-flex rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-emerald-900 hover:bg-slate-50"
-              >
-                Lingo-X
-              </Link>
-            </div>
           </div>
-
           <div className="flex-1">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                CLASS SNAPSHOT
-              </p>
-              <div className="mt-3 space-y-2 text-sm text-slate-700">
-                <div className="flex justify-between">
-                  <span>Reading – Inference</span>
-                  <span>68% accuracy</span>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">CLASS SNAPSHOT</p>
+              <div className="mt-3 space-y-3 text-sm text-slate-700">
+                <div>
+                  <div className="flex justify-between mb-1"><span>Reading – Inference</span><span>68%</span></div>
+                  <div className="h-1.5 rounded-full bg-slate-200"><div className="h-1.5 w-2/3 rounded-full bg-emerald-600" /></div>
                 </div>
-                <div className="h-1.5 rounded-full bg-slate-200">
-                  <div className="h-1.5 w-2/3 rounded-full bg-emerald-600" />
+                <div>
+                  <div className="flex justify-between mb-1"><span>Listening – Detail</span><span>74%</span></div>
+                  <div className="h-1.5 rounded-full bg-slate-200"><div className="h-1.5 w-3/4 rounded-full bg-emerald-500" /></div>
                 </div>
-
-                <div className="mt-3 flex justify-between">
-                  <span>Listening – Detail</span>
-                  <span>74% accuracy</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-slate-200">
-                  <div className="h-1.5 w-3/4 rounded-full bg-emerald-500" />
-                </div>
-
-                <p className="mt-4 text-xs text-slate-500">
-                  See weak areas, then assign targeted practice in one click.
-                </p>
               </div>
             </div>
           </div>
@@ -332,105 +232,45 @@ export default function LandingPage() {
       </section>
 
       {/* Learners */}
-      <section
-        id="learners"
-        className="mx-auto max-w-6xl px-4 py-18 md:py-20"
-      >
+      <section id="learners" className="mx-auto max-w-6xl px-4 py-20">
         <div className="flex flex-col gap-10 md:flex-row md:items-center">
-          <div className="flex-1">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700">
-              LEARNERS AND STUDENTS
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">
-              You can learn anything.
-            </h2>
-            <p className="mt-2 text-base text-slate-600">
-              Practice test skills in UPDATED-TOEFL, and build daily vocab power in Lingo-X.
-            </p>
-            <ul className="mt-4 list-disc space-y-1 pl-5 text-base text-slate-600">
-              <li>Adaptive difficulty stays just above comfort zone</li>
-              <li>Instant explanations in clear, student-friendly English</li>
-              <li>Daily rhythm with missions and progress tracking</li>
+          <div className="flex-1 space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-700">{config.learners.title}</p>
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{config.learners.heading}</h2>
+            <p className="text-base text-slate-600">{config.learners.body}</p>
+            <ul className="list-disc space-y-1 pl-5 text-base text-slate-600">
+              {config.learners.bullets.map((b, i) => <li key={i}>{b}</li>)}
             </ul>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/toefl"
-                className="inline-flex rounded-full bg-emerald-900 px-6 py-3 text-sm font-semibold text-emerald-50 hover:bg-emerald-800"
-              >
-                Start UPDATED-TOEFL
-              </Link>
-              <Link
-                href="/lingox"
-                className="inline-flex rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-emerald-900 hover:bg-slate-50"
-              >
-                Start Lingo-X
-              </Link>
-            </div>
           </div>
-
           <div className="flex-1">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-sm shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                TODAY&apos;S MISSION
-              </p>
-              <p className="mt-3 text-sm text-slate-800">
-                Complete 1 set in UPDATED-TOEFL and 1 mission in Lingo-X.
-              </p>
-              <p className="mt-3 text-xs text-slate-600">
-                Keep your streak alive and build momentum.
-              </p>
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">TODAY&apos;S MISSION</p>
+              <p className="mt-3 text-sm text-slate-800">Complete 1 set in UPDATED-TOEFL and 1 mission in LEXiOX.</p>
+              <p className="mt-3 text-xs text-slate-600">Keep your streak alive and build momentum.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stories */}
-      <section
-        id="stories"
-        className="border-y border-slate-100 bg-slate-50 py-18 md:py-20"
-      >
+      {/* Story */}
+      <section id="stories" className="border-y border-slate-100 bg-slate-50 py-20">
         <div className="mx-auto max-w-3xl px-4 text-center">
-          <p className="text-xl italic text-slate-800 md:text-2xl">
-            “I used to guess my way through TOEFL Reading. With K-PRIME, I can
-            finally see <span className="font-semibold">why</span> I got each
-            question wrong and what to fix next.”
-          </p>
-          <p className="mt-4 text-sm font-semibold tracking-[0.18em] text-slate-500">
-            JIHO · HIGH SCHOOL STUDENT
-          </p>
+          <p className="text-xl italic text-slate-800 md:text-2xl">"{config.story.quote}"</p>
+          <p className="mt-4 text-sm font-semibold tracking-[0.18em] text-slate-500">{config.story.author}</p>
         </div>
       </section>
 
       {/* Join */}
-      <section id="join" className="mx-auto max-w-6xl px-4 py-18 md:py-20">
+      <section id="join" className="mx-auto max-w-6xl px-4 py-20">
         <div className="flex flex-col gap-8 md:flex-row md:items-center">
           <div className="flex-1 space-y-3">
-            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-              Join K-PRIME today
-            </h2>
-            <p className="text-base text-slate-600">
-              One account. Two programs. Start small, scale fast.
-            </p>
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{config.join.heading}</h2>
+            <p className="text-base text-slate-600">{config.join.body}</p>
           </div>
           <div className="flex flex-1 flex-col gap-3">
-            <Link
-              href="/auth/signup?role=student"
-              className="rounded-full bg-emerald-900 px-6 py-3 text-sm font-semibold text-emerald-50 hover:bg-emerald-800"
-            >
-              Learners
-            </Link>
-            <Link
-              href="/auth/signup?role=teacher"
-              className="rounded-full bg-emerald-100 px-6 py-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-200"
-            >
-              Teachers
-            </Link>
-            <Link
-              href="/auth/signup?role=parent"
-              className="rounded-full bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-900 hover:bg-emerald-100"
-            >
-              Parents
-            </Link>
+            <Link href="/auth/signup?role=student" className="rounded-full bg-emerald-900 px-6 py-3 text-center text-sm font-semibold text-emerald-50 hover:bg-emerald-800">학생</Link>
+            <Link href="/auth/signup?role=teacher" className="rounded-full bg-emerald-100 px-6 py-3 text-center text-sm font-semibold text-emerald-900 hover:bg-emerald-200">선생님</Link>
+            <Link href="/auth/signup?role=parent" className="rounded-full bg-emerald-50 px-6 py-3 text-center text-sm font-semibold text-emerald-900 hover:bg-emerald-100">학부모</Link>
           </div>
         </div>
       </section>
@@ -438,41 +278,29 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-emerald-950 py-10 text-emerald-100">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 md:flex-row md:justify-between">
-          <div className="space-y-2 text-base">
-            <p className="font-semibold">Our mission</p>
+          <div className="space-y-2">
+            <Image src="/LEXiOX.png" alt="LEXiOX" width={100} height={36} className="h-9 w-auto brightness-0 invert" />
             <p className="max-w-sm text-sm text-emerald-100/80">
-              To seek truth, master learning, and make high-quality English
-              education accessible for every motivated learner.
+              To seek truth, master learning, and make high-quality English education accessible for every motivated learner.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8 text-sm md:grid-cols-3">
             <div>
               <p className="mb-2 font-semibold">About</p>
-              <ul className="space-y-1 text-emerald-100/80">
-                <li>Our story</li>
-                <li>For academies</li>
-                <li>Careers</li>
-              </ul>
+              <ul className="space-y-1 text-emerald-100/80"><li>Our story</li><li>For academies</li></ul>
             </div>
             <div>
               <p className="mb-2 font-semibold">Programs</p>
-              <ul className="space-y-1 text-emerald-100/80">
-                <li>UPDATED-TOEFL</li>
-                <li>Lingo-X Vocabulary</li>
-                <li>Mock tests</li>
-              </ul>
+              <ul className="space-y-1 text-emerald-100/80"><li>UPDATED-TOEFL</li><li>LEXiOX Jr.</li><li>Hi-내신</li></ul>
             </div>
             <div>
               <p className="mb-2 font-semibold">Contact</p>
-              <ul className="space-y-1 text-emerald-100/80">
-                <li>Help center</li>
-                <li>Partnerships</li>
-              </ul>
+              <ul className="space-y-1 text-emerald-100/80"><li>Help center</li><li>Partnerships</li></ul>
             </div>
           </div>
         </div>
         <div className="mx-auto mt-8 max-w-6xl px-4 text-sm text-emerald-200/80">
-          © {new Date().getFullYear()} K-PRIME. All rights reserved.
+          © {new Date().getFullYear()} LEXiOX. All rights reserved.
         </div>
       </footer>
     </main>
