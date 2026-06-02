@@ -23,7 +23,13 @@ export default {
           700: '#2357c6',
           800: '#1d479f',
           900: '#1a3d83'
-        }
+        },
+        skill: {
+          reading:   { DEFAULT: '#3b82f6', light: '#eff6ff', border: '#93c5fd', text: '#1d4ed8' },
+          listening: { DEFAULT: '#8b5cf6', light: '#f5f3ff', border: '#c4b5fd', text: '#6d28d9' },
+          speaking:  { DEFAULT: '#f97316', light: '#fff7ed', border: '#fdba74', text: '#c2410c' },
+          writing:   { DEFAULT: '#14b8a6', light: '#f0fdfa', border: '#5eead4', text: '#0f766e' },
+        },
       },
       fontFamily: {
         ui: ['Inter', 'Pretendard', 'system-ui', 'Apple SD Gothic Neo', 'Segoe UI', 'Roboto', 'sans-serif']

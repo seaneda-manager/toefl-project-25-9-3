@@ -17,17 +17,20 @@ type NavSection =
   // Teacher (Korean)
   | '콘텐츠' | '학생 관리'
   // Student — program-specific
-  | '내신' | '어휘' | '숙제'   // lingx
+  | '내신' | 'Hi-내신' | '어휘' | '숙제'   // lingx
   | '학습' | '내 현황'          // toefl / gap
   | '내 학습' | '학습 콘텐츠'   // unassigned (legacy)
   // Shared
   | '설정';
+
+type SkillColor = 'reading' | 'listening' | 'speaking' | 'writing';
 
 type NavItem = {
   section: NavSection;
   label: string;
   href?: string;
   disabled?: boolean;
+  skill?: SkillColor;
 };
 
 // Shown only to admin / teacher / unassigned students
@@ -57,13 +60,39 @@ function collapsedLabel(section: string) {
     // Teacher
     '콘텐츠': '콘', '학생 관리': '관',
     // Student
-    '내신': '내', '어휘': '어', '숙제': '숙', '학습': '학', '내 현황': '현',
+    '내신': '내', 'Hi-내신': 'Hi', '어휘': '어', '숙제': '숙', '학습': '학', '내 현황': '현',
     '내 학습': '나', '학습 콘텐츠': '콘',
     // Shared
     '설정': '설',
   };
   return map[section] ?? section.slice(0, 1);
 }
+
+// ── Skill color classes ───────────────────────────────────────────
+const SKILL_ACTIVE: Record<SkillColor, string> = {
+  reading:   'border-blue-400   bg-blue-50   text-blue-700',
+  listening: 'border-violet-400 bg-violet-50 text-violet-700',
+  speaking:  'border-orange-400 bg-orange-50 text-orange-700',
+  writing:   'border-teal-400   bg-teal-50   text-teal-700',
+};
+const SKILL_HOVER: Record<SkillColor, string> = {
+  reading:   'hover:bg-blue-50/60   hover:text-blue-800',
+  listening: 'hover:bg-violet-50/60 hover:text-violet-800',
+  speaking:  'hover:bg-orange-50/60 hover:text-orange-800',
+  writing:   'hover:bg-teal-50/60   hover:text-teal-800',
+};
+const SKILL_CHEVRON: Record<SkillColor, string> = {
+  reading:   'text-blue-300',
+  listening: 'text-violet-300',
+  speaking:  'text-orange-300',
+  writing:   'text-teal-300',
+};
+const SKILL_DOT: Record<SkillColor, string> = {
+  reading:   'bg-blue-400',
+  listening: 'bg-violet-400',
+  speaking:  'bg-orange-400',
+  writing:   'bg-teal-400',
+};
 
 // ── Component ────────────────────────────────────────────────────
 export default function SidebarClient({ role, program = null }: Props) {
@@ -183,9 +212,11 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: LingX ───────────────────────────────────────
     if (program === 'lingx') {
       return [
-        { section: '내신', href: '/hi-naesin',        label: '내신 드릴' },
-        { section: '내신', href: '/hi-naesin/stats',  label: '학습 현황' },
-        { section: '내신', href: '/hi-naesin/review', label: '직전정리' },
+        { section: '내신', href: '/naesin/drill',     label: '내신 드릴' },
+
+        { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴' },
+        { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황' },
+        { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리' },
 
         { section: '어휘', href: '/vocab', label: '단어 학습' },
 
@@ -198,13 +229,13 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: TOEFL / GAP ─────────────────────────────────
     if (program === 'toefl' || program === 'gap') {
       return [
-        { section: '학습', href: '/reading-2026/study',   label: 'Reading' },
-        { section: '학습', href: '/listening-2026/study', label: 'Listening' },
-        { section: '학습', href: '/speaking-2026/study',  label: 'Speaking' },
-        { section: '학습', href: '/writing-2026/study',   label: 'Writing' },
-        { section: '학습', href: '/vocab',                  label: '단어 학습' },
+        { section: '학습', href: '/reading-2026/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
+        { section: '학습', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
+        { section: '학습', href: '/speaking-2026/study',  label: 'Speaking',  skill: 'speaking'  as SkillColor },
+        { section: '학습', href: '/writing-2026/study',   label: 'Writing',   skill: 'writing'   as SkillColor },
+        { section: '학습', href: '/vocab',                 label: '단어 학습' },
 
-        { section: '내 현황', href: '/student',              label: '대시보드' },
+        { section: '내 현황', href: '/student',            label: '대시보드' },
         { section: '내 현황', href: '/student/homework',   label: '숙제 채점' },
         { section: '내 현황', href: '/student/tests',      label: '시험 목록' },
         { section: '내 현황', href: '/student/review',     label: '복습' },
@@ -220,17 +251,17 @@ export default function SidebarClient({ role, program = null }: Props) {
       { section: '내 학습', href: '/hi-naesin',         label: '내신 드릴' },
       { section: '내 학습', href: '/hi-naesin/stats',   label: '학습 현황' },
       { section: '내 학습', href: '/hi-naesin/review',  label: '직전정리' },
-      { section: '내 학습', href: '/vocab',               label: '단어 학습' },
+      { section: '내 학습', href: '/vocab',              label: '단어 학습' },
       { section: '내 학습', href: '/student/tests',     label: '시험 목록' },
       { section: '내 학습', href: '/student/review',    label: '복습' },
       { section: '내 학습', href: '/student/progress',  label: '진도 현황' },
       { section: '내 학습', href: '/student/homework',  label: '숙제' },
 
       { section: '학습 콘텐츠', href: '/home',                  label: 'Home' },
-      { section: '학습 콘텐츠', href: '/reading-2026/study',   label: 'Reading 2026' },
-      { section: '학습 콘텐츠', href: '/listening-2026/study', label: 'Listening 2026' },
-      { section: '학습 콘텐츠', href: '/speaking-2026/study',  label: 'Speaking 2026' },
-      { section: '학습 콘텐츠', href: '/writing-2026/study',   label: 'Writing 2026' },
+      { section: '학습 콘텐츠', href: '/reading-2026/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
+      { section: '학습 콘텐츠', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
+      { section: '학습 콘텐츠', href: '/speaking-2026/study',  label: 'Speaking',  skill: 'speaking'  as SkillColor },
+      { section: '학습 콘텐츠', href: '/writing-2026/study',   label: 'Writing',   skill: 'writing'   as SkillColor },
 
       { section: '설정', href: '/settings', label: '설정' },
     ];
@@ -292,8 +323,8 @@ export default function SidebarClient({ role, program = null }: Props) {
                 <span
                   className={
                     collapsed
-                      ? 'text-[10px] font-bold uppercase tracking-wider text-emerald-700'
-                      : 'text-[11px] font-bold uppercase tracking-wider text-neutral-400'
+                      ? 'text-[10px] font-bold uppercase tracking-widest text-emerald-600'
+                      : 'text-[10px] font-extrabold uppercase tracking-widest text-neutral-500'
                   }
                 >
                   {collapsed ? collapsedLabel(section) : section}
@@ -323,8 +354,8 @@ export default function SidebarClient({ role, program = null }: Props) {
                           >
                             {!collapsed && (
                               <>
-                                <span className="truncate">{it.label}</span>
-                                <span className="text-[10px] text-neutral-200">soon</span>
+                                <span className="truncate text-neutral-400">{it.label.replace(' (soon)', '')}</span>
+                                <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-neutral-400">Soon</span>
                               </>
                             )}
                             {collapsed && (
@@ -335,14 +366,20 @@ export default function SidebarClient({ role, program = null }: Props) {
                       );
                     }
 
+                    const skillActive  = active && it.skill ? SKILL_ACTIVE[it.skill]  : '';
+                    const skillHover   = !active && it.skill ? SKILL_HOVER[it.skill]   : '';
                     const linkClasses = [
                       'group flex items-center rounded-lg px-4 py-2 text-sm transition-colors',
-                      'hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/70',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/70',
                       collapsed ? 'justify-center' : 'justify-between',
                       'border-l-2',
                       active
-                        ? 'border-emerald-400 bg-emerald-50 font-semibold text-emerald-700'
-                        : 'border-transparent text-neutral-700 hover:text-neutral-900',
+                        ? it.skill
+                          ? `${skillActive} font-bold`
+                          : 'border-emerald-400 bg-emerald-50 font-bold text-emerald-700'
+                        : it.skill
+                          ? `border-transparent text-neutral-700 ${skillHover}`
+                          : 'border-transparent text-neutral-700 hover:bg-emerald-50 hover:text-neutral-900',
                     ].join(' ');
 
                     return (
@@ -360,8 +397,8 @@ export default function SidebarClient({ role, program = null }: Props) {
                                 className={[
                                   'h-3.5 w-3.5 shrink-0 transition-colors',
                                   active
-                                    ? 'text-emerald-400'
-                                    : 'text-neutral-200 group-hover:text-emerald-300',
+                                    ? it.skill ? SKILL_CHEVRON[it.skill] : 'text-emerald-400'
+                                    : 'text-neutral-200 group-hover:text-neutral-400',
                                 ].join(' ')}
                               />
                             </>
@@ -371,7 +408,9 @@ export default function SidebarClient({ role, program = null }: Props) {
                               aria-hidden
                               className={[
                                 'h-1 w-5 rounded-full',
-                                active ? 'bg-emerald-500' : 'bg-neutral-200',
+                                active
+                                  ? it.skill ? SKILL_DOT[it.skill] : 'bg-emerald-500'
+                                  : 'bg-neutral-200',
                               ].join(' ')}
                             />
                           )}

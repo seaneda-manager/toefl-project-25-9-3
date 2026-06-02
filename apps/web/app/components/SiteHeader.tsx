@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function SiteHeader() {
@@ -15,7 +16,9 @@ export default function SiteHeader() {
   return (
     <header className="border-b">
       <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-semibold text-lg">TOEFL App</Link>
+        <Link href="/">
+          <Image src="/lexiox.png" alt="LEXiOX" height={96} width={320} className="h-24 w-auto" priority />
+        </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/listening/study" className="hover:underline">Listening Study</Link>
           <Link href="/listening/test" className="hover:underline">Listening Test</Link>

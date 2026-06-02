@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function SiteHeader() {
@@ -26,8 +27,10 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b">
-      <div className="mx-auto max-w-5xl h-12 px-4 flex items-center justify-between">
-        <Link href="/" className="font-semibold">TOEFL App</Link>
+      <div className="mx-auto max-w-5xl h-16 px-4 flex items-center justify-between">
+        <Link href="/">
+          <Image src="/lexiox.png" alt="LEXiOX" height={64} width={210} className="h-16 w-auto" priority />
+        </Link>
         <nav className="flex items-center gap-4 text-sm">
           {email ? (
             <>

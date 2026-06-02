@@ -2,8 +2,38 @@
 'use client';
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabaseBrowser';
+import { ChevronRight } from 'lucide-react';
+import Image from 'next/image';
+
+const PATH_LABELS: Record<string, { label: string; skill?: string }> = {
+  '/student':              { label: '대시보드' },
+  '/student/homework':     { label: '숙제 채점' },
+  '/student/tests':        { label: '시험 목록' },
+  '/student/review':       { label: '복습' },
+  '/student/progress':     { label: '진도 현황' },
+  '/reading-2026/study':   { label: 'Reading',   skill: 'reading' },
+  '/listening-2026/study': { label: 'Listening', skill: 'listening' },
+  '/speaking-2026/study':  { label: 'Speaking',  skill: 'speaking' },
+  '/writing-2026/study':   { label: 'Writing',   skill: 'writing' },
+  '/vocab':                { label: '단어 학습' },
+  '/hi-naesin':            { label: '내신 드릴' },
+  '/hi-naesin/stats':      { label: '학습 현황' },
+  '/hi-naesin/review':     { label: '직전정리' },
+  '/settings':             { label: '설정' },
+  '/admin':                { label: '관리자' },
+  '/teacher/home':         { label: '선생님 홈' },
+  '/teacher/students':     { label: '학생 관리' },
+  '/teacher/tasks':        { label: '할 일 관리' },
+};
+
+const SKILL_LABEL_COLOR: Record<string, string> = {
+  reading:   'text-blue-600',
+  listening: 'text-violet-600',
+  speaking:  'text-orange-500',
+  writing:   'text-teal-600',
+};
 
 type Props = {
   /** 서버에서 이메일을 넘길 수 있고, 없으면 클라이언트에서 조회 */
@@ -13,6 +43,7 @@ type Props = {
 
 export default function TopbarClient({ email: initialEmail, role }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = useMemo(() => createSupabaseBrowser(), []);
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState<string>(initialEmail ?? '');
@@ -65,14 +96,23 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
 
   const initial = (email || 'guest')[0]?.toUpperCase() ?? '?';
 
+  // Breadcrumb: match longest prefix
+  const breadcrumb = useMemo(() => {
+    const clean = (pathname ?? '/').split('?')[0].replace(/\/+$/, '') || '/';
+    const match = Object.keys(PATH_LABELS)
+      .filter((k) => clean === k || clean.startsWith(k + '/'))
+      .sort((a, b) => b.length - a.length)[0];
+    return match ? PATH_LABELS[match] : null;
+  }, [pathname]);
+
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-white px-4">
-      {/* 왼쪽: 사이드바 토글 + 풀스크린 + 타이틀 */}
-      <div className="flex items-center gap-2">
+    <header className="flex h-16 items-center justify-between border-b border-neutral-100 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      {/* 왼쪽: 사이드바 토글 + 풀스크린 + 로고 + breadcrumb */}
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={toggleSidebar}
-          className="rounded p-2 text-neutral-700 hover:bg-neutral-100"
+          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
           aria-label="Toggle sidebar"
         >
           ☰
@@ -81,30 +121,51 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="rounded p-2 text-neutral-700 hover:bg-neutral-100"
+          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
           aria-label="Toggle fullscreen"
         >
           {isFullscreen ? '⤢' : '⛶'}
         </button>
 
-        <span className="ml-2 text-sm font-semibold tracking-tight text-neutral-900">
-          X-PRIME{role === 'admin' && <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">Admin</span>}
-        </span>
+        <div className="mx-2 h-5 w-px bg-neutral-200" />
+
+        {/* 로고 */}
+        <div className="flex items-center gap-2">
+          <Image src="/lexiox.png" alt="LEXiOX" height={96} width={320} className="h-24 w-auto" priority />
+          {role === 'admin' && (
+            <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+              Admin
+            </span>
+          )}
+        </div>
+
+        {/* Breadcrumb */}
+        {breadcrumb && (
+          <>
+            <ChevronRight className="mx-1 h-3.5 w-3.5 text-neutral-300" />
+            <span className={[
+              'text-sm font-semibold',
+              breadcrumb.skill ? SKILL_LABEL_COLOR[breadcrumb.skill] : 'text-neutral-600',
+            ].join(' ')}>
+              {breadcrumb.label}
+            </span>
+          </>
+        )}
       </div>
 
       {/* 오른쪽: 이메일 + 프로필 동그라미 + Sign out */}
       <div className="flex items-center gap-3 text-sm">
-        <span className="max-w-[180px] truncate text-neutral-500">
+        <span className="hidden max-w-[160px] truncate text-neutral-400 sm:block text-xs">
           {email || 'guest'}
         </span>
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-neutral-50">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white shadow-sm">
           {initial}
         </div>
 
         <button
           type="button"
-          className="rounded-lg border px-3 py-1.5 disabled:opacity-60"
+          className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 transition-colors"
           onClick={handleSignOut}
           disabled={isPending}
           aria-busy={isPending || undefined}
