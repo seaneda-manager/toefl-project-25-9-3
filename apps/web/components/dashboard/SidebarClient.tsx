@@ -202,11 +202,12 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '콘텐츠', href: '/admin/content/new?kind=listening', label: 'Listening 세트 추가' },
         { section: '콘텐츠', href: '/admin/content/list?kind=listening',label: 'Listening 세트 목록' },
 
-        { section: '선생님 도구', href: '/teacher/home',      label: '선생님 홈' },
-        { section: '선생님 도구', href: '/admin/students',    label: '학생 추가/관리' },
-        { section: '선생님 도구', href: '/teacher/tasks',     label: '할 일 관리' },
-        { section: '선생님 도구', href: '/teacher/students',  label: '학생 현황' },
-        { section: '선생님 도구', href: '/admin/homework',    label: '📷 숙제 채점 관리' },
+        { section: '선생님 도구', href: '/teacher/home',              label: '선생님 홈' },
+        { section: '선생님 도구', href: '/admin/students',            label: '학생 추가/관리' },
+        { section: '선생님 도구', href: '/teacher/tasks',             label: '할 일 관리' },
+        { section: '선생님 도구', href: '/teacher/students',          label: '학생 현황' },
+        { section: '선생님 도구', href: '/teacher/reports/students',  label: '학생 활동 리포트' },
+        { section: '선생님 도구', href: '/admin/homework',            label: '📷 숙제 채점 관리' },
       ];
     }
 
