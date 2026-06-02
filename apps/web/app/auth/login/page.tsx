@@ -31,6 +31,8 @@ export default function LoginPage() {
   // ... 나머지 JSX 그대로
   return (
     <main className="mx-auto max-w-md px-6 py-10">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/LEXiOX.png" alt="LEXiOX" className="h-12 w-auto mb-8" />
       <h1 className="text-2xl font-semibold mb-6">Sign In</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

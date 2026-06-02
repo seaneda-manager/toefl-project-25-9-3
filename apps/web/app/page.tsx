@@ -107,10 +107,10 @@ export default async function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/LEXiOX.png" alt="LEXiOX" className="h-10 w-auto" />
+            <img src="/LEXiOX.png" alt="LEXiOX" className="h-14 w-auto" />
           </div>
 
-          <nav className="hidden items-center gap-7 text-base font-medium text-slate-700 md:flex">
+          <nav className="hidden items-center gap-7 text-lg font-medium text-slate-700 md:flex">
             <a href="#programs" className="hover:text-emerald-800">Programs</a>
             <a href="#teachers" className="hover:text-emerald-800">For Teachers</a>
             <a href="#learners" className="hover:text-emerald-800">For Students</a>

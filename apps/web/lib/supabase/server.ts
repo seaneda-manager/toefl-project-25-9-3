@@ -18,10 +18,10 @@ export async function getServerSupabase() {
         return cookieStore.get(name)?.value;
       },
       set(name: string, value: string, options: CookieOptions) {
-        cookieStore.set({ name, value, ...options });
+        try { cookieStore.set({ name, value, ...options }); } catch {}
       },
       remove(name: string, options: CookieOptions) {
-        cookieStore.set({ name, value: '', ...options });
+        try { cookieStore.set({ name, value: '', ...options }); } catch {}
       },
     },
   });
