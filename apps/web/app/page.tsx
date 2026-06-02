@@ -106,7 +106,8 @@ export default async function LandingPage() {
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-50">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Image src="/LEXiOX.png" alt="LEXiOX" width={120} height={40} className="h-10 w-auto" unoptimized />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/LEXiOX.png" alt="LEXiOX" className="h-10 w-auto" />
           </div>
 
           <nav className="hidden items-center gap-7 text-base font-medium text-slate-700 md:flex">
@@ -279,7 +280,8 @@ export default async function LandingPage() {
       <footer className="bg-emerald-950 py-10 text-emerald-100">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 md:flex-row md:justify-between">
           <div className="space-y-2">
-            <Image src="/LEXiOX.png" alt="LEXiOX" width={100} height={36} className="h-9 w-auto brightness-0 invert" unoptimized />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/LEXiOX.png" alt="LEXiOX" className="h-9 w-auto brightness-0 invert" />
             <p className="max-w-sm text-sm text-emerald-100/80">
               To seek truth, master learning, and make high-quality English education accessible for every motivated learner.
             </p>
