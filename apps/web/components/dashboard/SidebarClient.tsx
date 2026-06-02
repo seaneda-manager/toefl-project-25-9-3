@@ -86,6 +86,43 @@ function collapsedLabel(section: string) {
   return map[section] ?? section.slice(0, 1);
 }
 
+// ── Section color themes ─────────────────────────────────────────
+type SectionTheme = {
+  header: string;       // 섹션 헤더 텍스트 색
+  active: string;       // 활성 아이템 border+bg+text
+  hover: string;        // hover 상태
+  chevron: string;      // 활성 chevron 색
+  dot: string;          // collapsed 활성 dot 색
+};
+
+const SECTION_THEME: Record<string, SectionTheme> = {
+  '관리자':       { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
+  'LEXiOX TOEFL': { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
+  'LEXiOX 내신':  { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'LEXiOX Jr.':   { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
+  'LEXiOX 어휘':  { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
+  '콘텐츠':       { header: 'text-sky-600',     active: 'border-sky-400     bg-sky-50     text-sky-700',     hover: 'hover:bg-sky-50     hover:text-sky-900',     chevron: 'text-sky-300',     dot: 'bg-sky-400'     },
+  '선생님 도구':  { header: 'text-amber-600',   active: 'border-amber-400   bg-amber-50   text-amber-700',   hover: 'hover:bg-amber-50   hover:text-amber-900',   chevron: 'text-amber-300',   dot: 'bg-amber-400'   },
+  '학생 관리':    { header: 'text-teal-600',    active: 'border-teal-400    bg-teal-50    text-teal-700',    hover: 'hover:bg-teal-50    hover:text-teal-900',    chevron: 'text-teal-300',    dot: 'bg-teal-400'    },
+  '내신':         { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'Hi-내신':      { header: 'text-cyan-600',    active: 'border-cyan-400    bg-cyan-50    text-cyan-700',    hover: 'hover:bg-cyan-50    hover:text-cyan-900',    chevron: 'text-cyan-300',    dot: 'bg-cyan-400'    },
+  '어휘':         { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
+  '숙제':         { header: 'text-rose-500',    active: 'border-rose-400    bg-rose-50    text-rose-700',    hover: 'hover:bg-rose-50    hover:text-rose-900',    chevron: 'text-rose-300',    dot: 'bg-rose-400'    },
+  '설정':         { header: 'text-neutral-500', active: 'border-neutral-400 bg-neutral-50 text-neutral-700', hover: 'hover:bg-neutral-50 hover:text-neutral-900', chevron: 'text-neutral-300', dot: 'bg-neutral-400' },
+};
+
+const DEFAULT_THEME: SectionTheme = {
+  header: 'text-neutral-500',
+  active: 'border-emerald-400 bg-emerald-50 text-emerald-700',
+  hover:  'hover:bg-emerald-50 hover:text-neutral-900',
+  chevron:'text-emerald-400',
+  dot:    'bg-emerald-500',
+};
+
+function getSectionTheme(section: string): SectionTheme {
+  return SECTION_THEME[section] ?? DEFAULT_THEME;
+}
+
 // ── Skill color classes ───────────────────────────────────────────
 const SKILL_ACTIVE: Record<SkillColor, string> = {
   reading:   'border-blue-400   bg-blue-50   text-blue-700',
@@ -328,6 +365,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         {groups.map(([section, list], idx) => {
           const open      = openSections[section] ?? true;
           const showItems = collapsed || open;
+          const theme     = getSectionTheme(section);
 
           return (
             <div key={section} className={['mb-1', idx > 0 ? 'mt-1' : ''].join(' ')}>
@@ -337,15 +375,14 @@ export default function SidebarClient({ role, program = null }: Props) {
                 onClick={() => !collapsed && toggleSection(section)}
                 className={[
                   'flex w-full items-center justify-between px-4 pb-1 pt-3',
-                  !collapsed ? 'hover:bg-emerald-50/60 rounded-md' : '',
+                  !collapsed ? 'hover:bg-neutral-50/80 rounded-md' : '',
                 ].join(' ')}
               >
                 <span
-                  className={
-                    collapsed
-                      ? 'text-[10px] font-bold uppercase tracking-widest text-emerald-600'
-                      : 'text-[10px] font-extrabold uppercase tracking-widest text-neutral-500'
-                  }
+                  className={[
+                    'text-[10px] font-extrabold uppercase tracking-widest',
+                    theme.header,
+                  ].join(' ')}
                 >
                   {collapsed
                     ? collapsedLabel(section)
@@ -400,10 +437,10 @@ export default function SidebarClient({ role, program = null }: Props) {
                       active
                         ? it.skill
                           ? `${skillActive} font-bold`
-                          : 'border-emerald-400 bg-emerald-50 font-bold text-emerald-700'
+                          : `${theme.active} font-bold`
                         : it.skill
                           ? `border-transparent text-neutral-700 ${skillHover}`
-                          : 'border-transparent text-neutral-700 hover:bg-emerald-50 hover:text-neutral-900',
+                          : `border-transparent text-neutral-700 ${theme.hover}`,
                     ].join(' ');
 
                     return (
@@ -421,7 +458,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                                 className={[
                                   'h-3.5 w-3.5 shrink-0 transition-colors',
                                   active
-                                    ? it.skill ? SKILL_CHEVRON[it.skill] : 'text-emerald-400'
+                                    ? it.skill ? SKILL_CHEVRON[it.skill] : theme.chevron
                                     : 'text-neutral-200 group-hover:text-neutral-400',
                                 ].join(' ')}
                               />
@@ -433,7 +470,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                               className={[
                                 'h-1 w-5 rounded-full',
                                 active
-                                  ? it.skill ? SKILL_DOT[it.skill] : 'bg-emerald-500'
+                                  ? it.skill ? SKILL_DOT[it.skill] : theme.dot
                                   : 'bg-neutral-200',
                               ].join(' ')}
                             />
