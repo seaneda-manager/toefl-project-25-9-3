@@ -15,6 +15,18 @@ export default function ExplanationPlayer({ segments, onDone }: Props) {
 
   const seg = segments[current];
 
+  if (!seg) {
+    return (
+      <div className="text-center py-10 text-gray-400 text-sm">
+        설명 콘텐츠가 아직 준비되지 않았습니다.
+        <br />
+        <button onClick={onDone} className="mt-4 px-5 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition">
+          드릴 시작
+        </button>
+      </div>
+    );
+  }
+
   const advance = () => {
     if (current + 1 >= segments.length) {
       onDone();

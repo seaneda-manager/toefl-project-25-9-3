@@ -41,7 +41,7 @@ export default async function TeacherStudentsReportPage() {
   }
 
   const [{ data: hiSessions }, { data: jrResults }, { data: vocabAttempts }] = await Promise.all([
-    supabase.from("hi_naesin_sessions").select("user_id, status, submitted_at").in("user_id", studentIds),
+    supabase.from("hi_naesin_sessions").select("student_id, status, submitted_at").in("student_id", studentIds),
     supabase.from("lexiox_jr_drill_results").select("student_id, stage, score_pct, completed_at").in("student_id", studentIds),
     supabase.from("vocab_drill_attempts").select("user_id, is_correct, created_at").in("user_id", studentIds),
   ]);
@@ -53,8 +53,9 @@ export default async function TeacherStudentsReportPage() {
   const summaries = students.map((s) => {
     const uid = s.auth_user_id; // 활동 데이터는 auth_user_id 기준
 
-    const sessions = uid ? hiSessionRows.filter((r) => r.user_id === uid) : [];
+    const sessions = uid ? hiSessionRows.filter((r) => r.student_id === uid) : [];
     const completed = sessions.filter((r) => r.status === "completed" || r.status === "submitted");
+    const inProgress = sessions.filter((r) => r.status === "started");
     const lastHi = sessions.map((r) => r.submitted_at).filter(Boolean).sort().at(-1) ?? null;
 
     const jr = uid ? jrRows.filter((r) => r.student_id === uid) : [];
@@ -75,7 +76,7 @@ export default async function TeacherStudentsReportPage() {
       school: s.school,       // 학교명
       grade: s.grade,         // 고1 / 중2 / 초5 등
       program: s.program,
-      hiNaeSin: { total: sessions.length, completed: completed.length, lastAt: lastHi },
+      hiNaeSin: { total: sessions.length, completed: completed.length, inProgress: inProgress.length, lastAt: lastHi },
       jrNaesin: { total: jr.length, avgScore: jrAvg, lastAt: lastJr },
       vocab: { total: vAttempts.length, correct: vCorrect, lastAt: lastVocab },
     };

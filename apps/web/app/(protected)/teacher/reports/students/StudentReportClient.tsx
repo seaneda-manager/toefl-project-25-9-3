@@ -10,7 +10,7 @@ type StudentSummary = {
   school: string | null;
   grade: string | null;
   program: string | null;
-  hiNaeSin: { total: number; completed: number; lastAt: string | null };
+  hiNaeSin: { total: number; completed: number; inProgress: number; lastAt: string | null };
   jrNaesin: { total: number; avgScore: number | null; lastAt: string | null };
   vocab: { total: number; correct: number; lastAt: string | null };
 };
@@ -167,9 +167,16 @@ export default function StudentReportClient({
                       </td>
                       <td className={mods.hiNaesin ? "" : dim}>
                         {mods.hiNaesin ? (
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            s.hiNaeSin.completed > 0 ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"
-                          }`}>{s.hiNaeSin.completed}</span>
+                          <div className="flex items-center gap-1">
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                              s.hiNaeSin.completed > 0 ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"
+                            }`}>{s.hiNaeSin.completed}완료</span>
+                            {s.hiNaeSin.inProgress > 0 && (
+                              <span className="rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-600">
+                                {s.hiNaeSin.inProgress}진행중
+                              </span>
+                            )}
+                          </div>
                         ) : "—"}
                       </td>
                       <td className={`text-xs ${mods.hiNaesin ? "text-neutral-500" : dim}`}>

@@ -14,6 +14,18 @@ export default function DrillRunner({ drills, onDone }: Props) {
   const [index, setIndex] = useState(0);
   const [responses, setResponses] = useState<GrammarStudentResponse[]>([]);
 
+  if (drills.length === 0) {
+    return (
+      <div className="text-center py-10 text-gray-400 text-sm">
+        드릴 문제가 아직 준비되지 않았습니다.
+        <br />
+        <button onClick={() => onDone([])} className="mt-4 px-5 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition">
+          다음으로
+        </button>
+      </div>
+    );
+  }
+
   const handleResponse = (r: GrammarStudentResponse) => {
     const next = [...responses, r];
     setResponses(next);
