@@ -28,6 +28,23 @@ export default function GrammarUnitEditorClient({ data }: { data: GrammarUnitFul
   const [drills,    setDrills]    = useState<GrammarDrill[]>(data.drills);
   const [stylistic, setStylistic] = useState<GrammarStylisticItem[]>(data.stylistic_items);
   const [saving,    setSaving]    = useState(false);
+  const [status,    setStatus]    = useState(data.unit.status);
+  const [toggling,  setToggling]  = useState(false);
+
+  const handleToggleStatus = async () => {
+    const next = status === "published" ? "draft" : "published";
+    setToggling(true);
+    try {
+      await fetch(`/api/grammar-2026/unit/${data.unit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      setStatus(next);
+    } finally {
+      setToggling(false);
+    }
+  };
 
   // 전체 저장
   const handleSaveAll = useCallback(async () => {
@@ -82,6 +99,16 @@ export default function GrammarUnitEditorClient({ data }: { data: GrammarUnitFul
               </button>
             ))}
           </div>
+          <button
+            onClick={handleToggleStatus}
+            disabled={toggling}
+            className={`mb-1 px-3 py-1.5 text-xs font-medium rounded-lg transition shrink-0 disabled:opacity-40
+              ${status === "published"
+                ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200"}`}
+          >
+            {toggling ? "..." : status === "published" ? "✓ Published" : "Draft"}
+          </button>
           <button
             onClick={handleSaveAll}
             disabled={saving}

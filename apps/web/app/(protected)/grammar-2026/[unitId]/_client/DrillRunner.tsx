@@ -95,6 +95,12 @@ function DrillItem({
       ? ["correct", "incorrect"]
       : [drill.answer, ...drill.distractors].sort(() => Math.random() - 0.5);
 
+  const JUDGMENT_LABEL: Record<string, string> = {
+    correct: "✓ 맞다 (Correct)",
+    incorrect: "✗ 틀리다 (Incorrect)",
+  };
+  const displayOption = (opt: string) => JUDGMENT_LABEL[opt] ?? opt;
+
   // useMemo 대신 초기화 시점에 fix — key prop으로 컴포넌트 리마운트되므로 안전
   const [shuffledOptions] = useState(options);
 
@@ -155,7 +161,7 @@ function DrillItem({
                 ${selectedAnswer === opt ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                 {OPTION_LABELS[i]}
               </span>
-              {opt}
+              {displayOption(opt)}
             </button>
           ))}
           <button
@@ -187,7 +193,7 @@ function DrillItem({
                     ${isCorrectOpt ? "bg-green-500 text-white" : isSelected ? "bg-red-400 text-white" : "bg-gray-100 text-gray-400"}`}>
                     {isCorrectOpt ? "✓" : OPTION_LABELS[i]}
                   </span>
-                  {opt}
+                  {displayOption(opt)}
                   {isSelected && !isCorrectOpt && (
                     <span className="ml-auto text-xs text-red-400">내 선택</span>
                   )}
@@ -202,7 +208,7 @@ function DrillItem({
           }`}>
             {answer_correct
               ? "정답입니다!"
-              : `오답 — 정답은 "${drill.answer}"입니다.`}
+              : `오답 — 정답은 "${displayOption(drill.answer)}"입니다.`}
           </div>
 
           {/* 레이블 선택 영역 (자동 오픈) */}

@@ -14,12 +14,20 @@ export default function GrammarUnitClient({ data }: { data: GrammarUnitFull }) {
   const [responses, setResponses] = useState<GrammarStudentResponse[]>([]);
 
   const handleExplanationDone = () => setPhase("drill");
+  const markComplete = () => {
+    fetch("/api/grammar-2026/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unit_id: data.unit.id }),
+    }).catch(() => {});
+  };
+
   const handleDrillDone = (rs: GrammarStudentResponse[]) => {
     setResponses(rs);
     if (data.stylistic_items.length > 0) setPhase("stylistic");
-    else setPhase("summary");
+    else { markComplete(); setPhase("summary"); }
   };
-  const handleStylisticDone = () => setPhase("summary");
+  const handleStylisticDone = () => { markComplete(); setPhase("summary"); };
 
   return (
     <div className="max-w-2xl mx-auto p-6">

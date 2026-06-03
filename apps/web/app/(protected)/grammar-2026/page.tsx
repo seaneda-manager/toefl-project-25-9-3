@@ -10,17 +10,23 @@ export const dynamic = "force-dynamic";
 
 export default async function Grammar2026Page() {
   let units: { id: string; label_ko: string; label_en: string; level: string; order_index: number; status: string }[] = MOCK_GRAMMAR_UNITS_LIST;
+  let completedUnitIds: Set<string> = new Set();
 
   try {
     const supabase = await getServerSupabase();
-    const { data, error } = await supabase
-      .from("grammar_2026_units")
-      .select("id, label_ko, label_en, level, order_index, status")
-      .order("order_index");
-    if (!error && data && data.length > 0) units = data;
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const [unitsRes, completionsRes] = await Promise.all([
+      supabase.from("grammar_2026_units").select("id, label_ko, label_en, level, order_index, status").order("order_index"),
+      user ? supabase.from("grammar_2026_unit_completions").select("unit_id").eq("student_id", user.id) : Promise.resolve({ data: [] }),
+    ]);
+
+    if (!unitsRes.error && unitsRes.data && unitsRes.data.length > 0) units = unitsRes.data;
+    completedUnitIds = new Set((completionsRes.data ?? []).map((r: any) => r.unit_id));
   } catch {}
 
   const publishedCount = units.filter((u) => u.status === "published").length;
+  const completedCount = units.filter((u) => completedUnitIds.has(u.id)).length;
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -32,30 +38,35 @@ export default async function Grammar2026Page() {
 
       <div className="mb-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-medium text-indigo-700">전체 진행률</p>
-          <p className="text-xs text-indigo-400">{publishedCount} / {units.length} 챕터</p>
+          <p className="text-xs font-medium text-indigo-700">내 진행률</p>
+          <p className="text-xs text-indigo-400">{completedCount} / {publishedCount} 챕터 완료</p>
         </div>
         <div className="w-full bg-indigo-100 rounded-full h-1.5">
           <div className="bg-indigo-500 h-1.5 rounded-full transition-all"
-            style={{ width: units.length > 0 ? `${(publishedCount / units.length) * 100}%` : "0%" }} />
+            style={{ width: publishedCount > 0 ? `${(completedCount / publishedCount) * 100}%` : "0%" }} />
         </div>
       </div>
 
       <div className="space-y-2.5">
         {units.map((unit, i) => {
           const isPublished = unit.status === "published";
+          const isDone = completedUnitIds.has(unit.id);
           return (
             <Link key={unit.id}
               href={isPublished ? `/grammar-2026/${unit.id}` : "#"}
               className={`flex items-center gap-4 p-4 rounded-2xl border transition group
-                ${isPublished
+                ${isDone
+                  ? "border-green-200 bg-green-50 hover:border-green-300 hover:shadow-md cursor-pointer"
+                  : isPublished
                   ? "border-gray-200 bg-white hover:border-indigo-300 hover:shadow-md cursor-pointer"
                   : "border-gray-100 bg-gray-50 cursor-not-allowed opacity-60"}`}>
               <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm transition
-                ${isPublished
+                ${isDone
+                  ? "bg-green-500 text-white"
+                  : isPublished
                   ? "bg-indigo-100 text-indigo-700 group-hover:bg-indigo-500 group-hover:text-white"
                   : "bg-gray-200 text-gray-400"}`}>
-                {i + 1}
+                {isDone ? "✓" : i + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-gray-900">{unit.label_ko}</p>
@@ -68,7 +79,7 @@ export default async function Grammar2026Page() {
                 {!isPublished && (
                   <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">준비중</span>
                 )}
-                {isPublished && (
+                {isPublished && !isDone && (
                   <svg className="w-4 h-4 text-gray-300 group-hover:text-indigo-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
