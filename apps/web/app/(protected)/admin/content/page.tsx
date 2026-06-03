@@ -378,6 +378,12 @@ export default async function AdminContentPage({
             Reading 2026 전용 목록
           </Link>
           <Link
+            href="/admin/content/grammar-2026"
+            className="rounded-lg border px-4 py-2 text-sm font-medium text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+          >
+            LEXiOX-Gram 편집기
+          </Link>
+          <Link
             href="/admin/assignments/new"
             className="rounded-lg border px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >

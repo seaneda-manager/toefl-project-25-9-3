@@ -18,6 +18,7 @@ import { applyRawPassageToDocument } from "@/components/naesin/authoring/passage
 import GrammarTargetsEditor from "@/components/naesin/authoring/GrammarTargetsEditor";
 import ReadAloudItemsEditor from "@/components/naesin/authoring/ReadAloudItemsEditor";
 import SentenceOrderItemsEditor from "@/components/naesin/authoring/SentenceOrderItemsEditor";
+import WorkoutReviewPanel from "@/components/naesin/authoring/WorkoutReviewPanel";
 import { saveNaesinPassageAction } from "@/app/(protected)/admin/naesin/passages/actions";
 import type { GrammarUnitLite } from "@/lib/naesin/grammar/ruleScanV1";
 
@@ -496,6 +497,13 @@ export default function PassageAuthoringEditor({ initialDoc }: Props) {
           </div>
         </div>
       </section>
+
+      {/* ── 1~5단계 워크아웃 (AI 생성 + 수동 검수) ── */}
+      <WorkoutReviewPanel
+        passageId={doc.core.id}
+        doc={doc}
+        onDocChange={setDoc}
+      />
 
       {isPassageSaved && doc.core.id ? (
         <GrammarTargetsEditor

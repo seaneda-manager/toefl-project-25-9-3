@@ -78,6 +78,22 @@ export default function AdminPage() {
           </div>
         </section>
 
+        <section className="flex flex-col rounded-xl border border-indigo-100 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold">LEXiOX-Gram Editor</h2>
+          <p className="mt-2 flex-1 text-xs text-neutral-600">
+            Grammar 챕터(유닛) 별 설명·드릴·Stylistic 문제를 편집합니다.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => go('/admin/content/grammar-2026')}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700"
+            >
+              Open Editor
+            </button>
+          </div>
+        </section>
+
         <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold">Listening Sets</h2>
           <p className="mt-2 flex-1 text-xs text-neutral-600">

@@ -61,6 +61,47 @@ function parseJsonRows(jsonText: string): any[] {
   return [];
 }
 
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(cur.trim());
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseCsvRows(csvText: string): any[] {
+  const lines = cleanStr(csvText).split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = parseCsvLine(lines[0]).map((h) =>
+    h.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""),
+  );
+  if (!headers.length || !headers[0]) return [];
+  const rows: any[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const values = parseCsvLine(line);
+    const row: any = {};
+    for (let j = 0; j < headers.length; j++) {
+      row[headers[j]] = values[j] ?? "";
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -245,6 +286,77 @@ async function createOrGetSetId(admin: any, slug: string, title?: string | null,
   }
 
   throw new Error(`createOrGetSetId failed: ${toErrMsg(ins.error ?? sel.error ?? sel2.error)}`);
+}
+
+export type ImportWisewordWordsFromCsvTextInput = { csvText: string };
+export type ImportWisewordWordsAndCreateSetFromCsvTextInput = {
+  slug: string;
+  title?: string | null;
+  description?: string | null;
+  csvText: string;
+};
+
+export async function importWisewordWordsFromCsvText(
+  input: ImportWisewordWordsFromCsvTextInput,
+): Promise<ImportWisewordCsvActionResult> {
+  const diag: any = { kind: "CSV_WORDS_ONLY", steps: [] as any[] };
+  try {
+    const admin = getAdmin();
+    const rows = parseCsvRows(input.csvText);
+    diag.steps.push({ step: "parseCsv", rowCount: rows.length });
+    const ensured = await ensureWords(admin, rows);
+    diag.steps.push({ step: "ensureWords", ...ensured.diag });
+    return {
+      ok: true,
+      insertedWords: ensured.insertedWords,
+      existingWords: ensured.existingWords,
+      totalRows: ensured.totalRows,
+      skippedRows: ensured.skippedRows,
+      errors: ensured.errors,
+      diag,
+    };
+  } catch (e: any) {
+    return { ok: false, error: toErrMsg(e), diag };
+  }
+}
+
+export async function importWisewordWordsAndCreateSetFromCsvText(
+  input: ImportWisewordWordsAndCreateSetFromCsvTextInput,
+): Promise<ImportWisewordCsvActionResult> {
+  const diag: any = { kind: "CSV_WORDS_AND_SET", steps: [] as any[] };
+  try {
+    const slug = cleanStr(input.slug);
+    if (!slug) return { ok: false, error: "slug is required", diag };
+    const admin = getAdmin();
+    const rows = parseCsvRows(input.csvText);
+    diag.steps.push({ step: "parseCsv", rowCount: rows.length });
+    const ensured = await ensureWords(admin, rows);
+    diag.steps.push({ step: "ensureWords", ...ensured.diag });
+    const setId = await createOrGetSetId(admin, slug, input.title ?? null, input.description ?? null);
+    diag.steps.push({ step: "setResolved", setId });
+    const del = await admin.from("vocab_set_items").delete().eq("set_id", setId);
+    diag.steps.push({ step: "deleteSetItems", ok: !del.error });
+    const items = ensured.orderedWordIds.map((word_id, i) => ({ set_id: setId, word_id, sort: i + 1 }));
+    let insertedSetItems = 0;
+    for (const group of chunk(items, 200)) {
+      const ins = await admin.from("vocab_set_items").insert(group);
+      if (ins.error) ensured.errors.push(`set_items insert failed: ${toErrMsg(ins.error)}`);
+      else insertedSetItems += group.length;
+    }
+    return {
+      ok: true,
+      setId,
+      insertedWords: ensured.insertedWords,
+      existingWords: ensured.existingWords,
+      insertedSetItems,
+      totalRows: ensured.totalRows,
+      skippedRows: ensured.skippedRows,
+      errors: ensured.errors,
+      diag,
+    };
+  } catch (e: any) {
+    return { ok: false, error: toErrMsg(e), diag };
+  }
 }
 
 export async function importWisewordWordsFromJsonText(

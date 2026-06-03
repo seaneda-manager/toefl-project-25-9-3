@@ -1,14 +1,16 @@
 // apps/web/app/(protected)/admin/vocab/import/_client/WisewordCsvImporter.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   importWisewordWordsAndCreateSetFromJsonText,
   importWisewordWordsFromJsonText,
-  type ImportWisewordWordsAndCreateSetFromJsonTextInput,
-  type ImportWisewordWordsFromJsonTextInput,
+  importWisewordWordsFromCsvText,
+  importWisewordWordsAndCreateSetFromCsvText,
   type ImportWisewordCsvActionResult,
 } from "../wiseword-actions";
+
+type Mode = "CSV" | "JSON";
 
 type Props = {
   initialSlug?: string;
@@ -20,36 +22,52 @@ function clean(s: any) {
   return String(s ?? "").trim();
 }
 
-const JSON_SHAPE = "[{...}, {...}]";
-
 export default function WisewordCsvImporter({
   initialSlug = "",
   initialTitle = "",
   initialDescription = "",
 }: Props) {
+  const [mode, setMode] = useState<Mode>("CSV");
   const [slug, setSlug] = useState(initialSlug);
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
-
-  const [jsonText, setJsonText] = useState("");
+  const [text, setText] = useState("");
   const [busy, setBusy] = useState<"WORDS" | "SET" | null>(null);
   const [result, setResult] = useState<ImportWisewordCsvActionResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canImportWords = useMemo(() => {
-    const t = clean(jsonText);
-    return t.startsWith("[") || t.startsWith("{");
-  }, [jsonText]);
+  function canImportWords() {
+    const t = clean(text);
+    if (mode === "JSON") return t.startsWith("[") || t.startsWith("{");
+    return t.length > 0;
+  }
 
-  const canImportSet = useMemo(() => {
-    return canImportWords && !!clean(slug);
-  }, [canImportWords, slug]);
+  function canImportSet() {
+    return canImportWords() && !!clean(slug);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      setText(content ?? "");
+      if (file.name.endsWith(".csv")) setMode("CSV");
+      else if (file.name.endsWith(".json")) setMode("JSON");
+    };
+    reader.readAsText(file, "utf-8");
+    e.target.value = "";
+  }
 
   async function doImportWordsOnly() {
     setResult(null);
     setBusy("WORDS");
     try {
-      const input: ImportWisewordWordsFromJsonTextInput = { jsonText };
-      const r = await importWisewordWordsFromJsonText(input);
+      const r =
+        mode === "CSV"
+          ? await importWisewordWordsFromCsvText({ csvText: text })
+          : await importWisewordWordsFromJsonText({ jsonText: text });
       setResult(r);
     } finally {
       setBusy(null);
@@ -60,35 +78,67 @@ export default function WisewordCsvImporter({
     setResult(null);
     setBusy("SET");
     try {
-      const input: ImportWisewordWordsAndCreateSetFromJsonTextInput = {
+      const common = {
         slug: clean(slug),
         title: clean(title) || null,
         description: clean(description) || null,
-        jsonText,
       };
-      const r = await importWisewordWordsAndCreateSetFromJsonText(input);
+      const r =
+        mode === "CSV"
+          ? await importWisewordWordsAndCreateSetFromCsvText({ ...common, csvText: text })
+          : await importWisewordWordsAndCreateSetFromJsonText({ ...common, jsonText: text });
       setResult(r);
     } finally {
       setBusy(null);
     }
   }
 
+  const csvExample = `text,lemma,pos,meanings_ko,meanings_en_simple,examples_easy
+retire,retire,verb,은퇴하다,to stop working permanently,He will retire next year.
+acquire,acquire,verb,획득하다,to get or obtain something,She acquired new skills.`;
+
+  const jsonExample = `[
+  {
+    "text": "retire",
+    "lemma": "retire",
+    "pos": "verb",
+    "meanings_ko": ["은퇴하다"],
+    "meanings_en_simple": ["to stop working permanently"],
+    "examples_easy": "He will retire next year."
+  }
+]`;
+
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-4xl p-6 space-y-4">
       <div className="rounded-2xl border bg-white p-5">
-        <div className="text-xs font-semibold text-slate-500">Wiseword Import</div>
-        <div className="mt-1 text-lg font-semibold text-slate-900">CSV → JSON → DB</div>
-        <div className="mt-2 text-sm text-slate-600">
-          아래 JSON 칸에는 <span className="font-mono">{JSON_SHAPE}</span> 형태로 붙여넣으면 됨.
+        <div className="text-xl font-extrabold text-slate-900">Wiseword Import</div>
+        <div className="mt-1 text-sm text-slate-600">단어 DB 직접 적재 · CSV 또는 JSON</div>
+
+        {/* Mode toggle */}
+        <div className="mt-4 inline-flex rounded-xl border overflow-hidden">
+          {(["CSV", "JSON"] as Mode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => { setMode(m); setText(""); setResult(null); }}
+              className={[
+                "px-5 py-2 text-sm font-extrabold",
+                mode === m ? "bg-slate-900 text-white" : "bg-white text-slate-700",
+              ].join(" ")}
+            >
+              {m}
+            </button>
+          ))}
         </div>
 
+        {/* Set info */}
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div>
-            <div className="text-xs font-semibold text-slate-600">slug (required for set)</div>
+            <div className="text-xs font-semibold text-slate-600">slug (세트 생성 시 필수)</div>
             <input
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="e.g. neungyul-derivation-day01"
+              placeholder="e.g. neungyul-day01"
               className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
             />
           </div>
@@ -97,7 +147,7 @@ export default function WisewordCsvImporter({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Neungyul Derivation Day 01"
+              placeholder="e.g. 능률 Day 01"
               className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
             />
           </div>
@@ -112,44 +162,56 @@ export default function WisewordCsvImporter({
           </div>
         </div>
 
-        <div className="mt-4">
-          <div className="text-xs font-semibold text-slate-600">JSON rows</div>
-          <textarea
-            value={jsonText}
-            onChange={(e) => setJsonText(e.target.value)}
-            placeholder={`Example:
-[
-  {
-    "text": "retire",
-    "lemma": "retire",
-    "pos": "verb",
-    "meanings_ko": ["은퇴하다"],
-    "meanings_en_simple": ["to stop working permanently"],
-    "examples_easy": "He will retire next year.",
-    "synonyms_en_simple": ["quit", "leave"]
-  }
-]`}
-            className="mt-1 h-64 w-full rounded-xl border p-3 font-mono text-[12px]"
-          />
-          <div className="mt-2 text-xs text-slate-500">
-            팁: CSV 파서 완전복구 전에, JSON 인젝션 루트부터 살려두면 회복 속도가 미친 듯이 빨라짐.
-          </div>
+        {/* File upload */}
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-xl border px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            파일 업로드 (.csv / .json)
+          </button>
+          {text && (
+            <span className="text-xs text-emerald-700 font-semibold">
+              {text.split("\n").length}행 로드됨
+            </span>
+          )}
+          <input ref={fileInputRef} type="file" accept=".csv,.json,.txt" className="hidden" onChange={handleFileChange} />
         </div>
 
+        {/* Text area */}
+        <div className="mt-3">
+          <div className="text-xs font-semibold text-slate-600">
+            {mode === "CSV" ? "CSV 텍스트 (헤더 행 포함)" : "JSON 텍스트 ([{...}] 형태)"}
+          </div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={mode === "CSV" ? csvExample : jsonExample}
+            className="mt-1 h-56 w-full rounded-xl border p-3 font-mono text-[12px]"
+          />
+          {mode === "CSV" && (
+            <div className="mt-1 text-xs text-slate-500">
+              지원 컬럼: text, lemma, pos, meanings_ko, meanings_en_simple, examples_easy, synonyms_en_simple, notes
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
         <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
           <button
             onClick={doImportWordsOnly}
-            disabled={!canImportWords || busy !== null}
-            className="rounded-xl border bg-white py-2 text-sm font-semibold text-slate-900 disabled:opacity-50"
+            disabled={!canImportWords() || busy !== null}
+            className="rounded-xl border bg-white py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-50"
           >
-            {busy === "WORDS" ? "Importing..." : "Import Words Only"}
+            {busy === "WORDS" ? "Importing..." : "단어만 Import"}
           </button>
           <button
             onClick={doImportAndCreateSet}
-            disabled={!canImportSet || busy !== null}
-            className="rounded-xl bg-black py-2 text-sm font-semibold text-white disabled:opacity-50"
+            disabled={!canImportSet() || busy !== null}
+            className="rounded-xl bg-black py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {busy === "SET" ? "Importing..." : "Import + Create/Replace Set"}
+            {busy === "SET" ? "Importing..." : "Import + 세트 생성/교체"}
           </button>
         </div>
       </div>
@@ -157,44 +219,34 @@ export default function WisewordCsvImporter({
       {result ? (
         <div className={`rounded-2xl border p-5 ${result.ok ? "bg-emerald-50" : "bg-rose-50"}`}>
           <div className={`font-semibold ${result.ok ? "text-emerald-900" : "text-rose-900"}`}>
-            {result.ok ? "OK" : "FAILED"}
+            {result.ok ? "✅ 완료" : "❌ 실패"}
           </div>
-
-          <div className="mt-2 text-sm text-slate-800">
-            {"setId" in result && (result as any).setId ? (
-              <div>
-                setId: <span className="font-mono">{(result as any).setId}</span>
-              </div>
-            ) : null}
-            {"insertedWords" in result ? <div>insertedWords: {(result as any).insertedWords}</div> : null}
-            {"existingWords" in result ? <div>existingWords: {(result as any).existingWords}</div> : null}
-            {"insertedSetItems" in result ? <div>insertedSetItems: {(result as any).insertedSetItems}</div> : null}
-            {"totalRows" in result ? <div>totalRows: {(result as any).totalRows}</div> : null}
-            {"skippedRows" in result ? <div>skippedRows: {(result as any).skippedRows}</div> : null}
-          </div>
-
-          {"error" in result && (result as any).error ? (
-            <div className="mt-2 text-sm text-rose-800">
-              error: <span className="font-mono">{(result as any).error}</span>
+          {result.ok ? (
+            <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-800 md:grid-cols-4">
+              {"setId" in result && result.setId && (
+                <div className="col-span-2">setId: <span className="font-mono text-xs">{result.setId}</span></div>
+              )}
+              {"insertedWords" in result && <div>신규 단어: <strong>{(result as any).insertedWords}</strong></div>}
+              {"existingWords" in result && <div>기존 단어: <strong>{(result as any).existingWords}</strong></div>}
+              {"insertedSetItems" in result && <div>세트 항목: <strong>{(result as any).insertedSetItems}</strong></div>}
+              {"totalRows" in result && <div>전체 행: <strong>{(result as any).totalRows}</strong></div>}
+              {"skippedRows" in result && (result as any).skippedRows > 0 && (
+                <div className="text-amber-800">스킵: <strong>{(result as any).skippedRows}</strong></div>
+              )}
             </div>
-          ) : null}
+          ) : (
+            <div className="mt-2 text-sm text-rose-800 font-mono">{(result as any).error}</div>
+          )}
 
           {"errors" in result && Array.isArray((result as any).errors) && (result as any).errors.length ? (
-            <div className="mt-3">
-              <div className="text-xs font-semibold text-slate-700">errors</div>
-              <pre className="mt-1 max-h-64 overflow-auto rounded-xl border bg-white p-2 text-[11px] text-slate-700">
-                {JSON.stringify((result as any).errors, null, 2)}
+            <details className="mt-3">
+              <summary className="text-xs font-semibold text-slate-700 cursor-pointer">
+                errors ({(result as any).errors.length})
+              </summary>
+              <pre className="mt-1 max-h-48 overflow-auto rounded-xl border bg-white p-2 text-[11px] text-slate-700">
+                {(result as any).errors.join("\n")}
               </pre>
-            </div>
-          ) : null}
-
-          {"diag" in result && (result as any).diag ? (
-            <div className="mt-3">
-              <div className="text-xs font-semibold text-slate-700">diag</div>
-              <pre className="mt-1 max-h-64 overflow-auto rounded-xl border bg-white p-2 text-[11px] text-slate-700">
-                {JSON.stringify((result as any).diag, null, 2)}
-              </pre>
-            </div>
+            </details>
           ) : null}
         </div>
       ) : null}

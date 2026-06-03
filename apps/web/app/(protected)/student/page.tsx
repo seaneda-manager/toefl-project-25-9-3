@@ -364,12 +364,11 @@ export default async function StudentPage() {
 
           {/* Grammar */}
           <SkillCard
-            href="#"
-            label="Grammar"
+            href="/grammar-2026"
+            label="LEXiOX-Gram"
             emoji="📝"
-            detail="준비 중"
-            color="neutral"
-            disabled
+            detail="학습 시작하기"
+            color="indigo"
           />
 
           {/* Listening */}
@@ -449,7 +448,7 @@ function NaesinStat({
   );
 }
 
-type SkillColor = "sky" | "violet" | "amber" | "rose" | "emerald" | "neutral";
+type SkillColor = "sky" | "violet" | "amber" | "rose" | "emerald" | "neutral" | "indigo";
 
 const COLOR_MAP: Record<
   SkillColor,
@@ -461,6 +460,7 @@ const COLOR_MAP: Record<
   rose:    { border: "border-rose-200",    bg: "bg-rose-50",    hoverBg: "hover:bg-rose-50",    label: "text-rose-800",    detail: "text-rose-600"    },
   emerald: { border: "border-emerald-200", bg: "bg-emerald-50", hoverBg: "hover:bg-emerald-50", label: "text-emerald-800", detail: "text-emerald-600" },
   neutral: { border: "border-neutral-200", bg: "bg-neutral-50", hoverBg: "hover:bg-neutral-50", label: "text-neutral-700", detail: "text-neutral-400" },
+  indigo:  { border: "border-indigo-200",  bg: "bg-indigo-50",  hoverBg: "hover:bg-indigo-50",  label: "text-indigo-800",  detail: "text-indigo-600"  },
 };
 
 function SkillCard({

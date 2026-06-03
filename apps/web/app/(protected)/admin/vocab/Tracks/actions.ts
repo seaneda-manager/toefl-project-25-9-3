@@ -87,7 +87,8 @@ export type StudentLite = {
   auth_user_id: string | null;
   login_id: string | null;
   full_name: string | null;
-  grade: number | null;
+  grade: string | null;
+  school: string | null;
   is_active: boolean | null;
   must_change_password: boolean | null;
   created_at: string | null;
@@ -359,10 +360,12 @@ export async function listAcademyStudentsAction(): Promise<ListAcademyStudentsRe
     const { data, error } = await supabase
       .from("academy_students")
       .select(
-        "id, auth_user_id, login_id, full_name, grade, is_active, must_change_password, created_at",
+        "id, auth_user_id, login_id, full_name, grade, school, is_active, must_change_password, created_at",
       )
-      .order("created_at", { ascending: false })
-      .limit(500);
+      .eq("is_active", true)
+      .order("grade", { ascending: true })
+      .order("full_name", { ascending: true })
+      .limit(1000);
 
     if (error) return { ok: false, error: error.message ?? "students query failed" };
     return { ok: true, rows: (data ?? []) as any };
@@ -1823,4 +1826,95 @@ export async function syncImportedDaySetsToTrackAction(params: {
 
     recockSummary,
   };
+}
+
+/* =========================================================
+ * Bulk: 여러 학생에게 동일 트랙 플랜 한번에 배포
+ * ======================================================= */
+export type BulkPlanResult = {
+  ok: true;
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: Array<{ studentId: string; name: string; ok: boolean; error?: string }>;
+};
+
+export async function bulkCreateStudentVocabPlansAction(params: {
+  studentIds: string[];
+  trackId: string;
+  startDateISO: string;
+  weekdays: number[];
+  maxActiveSets?: number;
+  startDayIndex?: number;
+  queueSize?: number;
+}): Promise<BulkPlanResult | { ok: false; error: string }> {
+  try {
+    const supabase = await getServerSupabase();
+    await getUserOrThrow(supabase);
+
+    const trackId = cleanStr(params.trackId);
+    if (!trackId) return { ok: false, error: "trackId required" };
+    if (!params.studentIds?.length) return { ok: false, error: "studentIds required" };
+
+    const weekdays = (params.weekdays ?? []).map(Number).filter((n) => n >= 1 && n <= 7);
+    if (weekdays.length === 0) return { ok: false, error: "weekdays required" };
+
+    const startDateISO = cleanStr(params.startDateISO);
+    const maxActiveSets = clampInt(params.maxActiveSets ?? 1, 1, 20, 1);
+    const startDayIndex = clampInt(params.startDayIndex ?? 1, 1, 9999, 1);
+    const queueSize = clampInt(params.queueSize ?? 3, 1, 20, 3);
+
+    const { data: studentRows } = await supabase
+      .from("academy_students")
+      .select("id, full_name")
+      .in("id", params.studentIds);
+
+    const nameMap = new Map<string, string>(
+      (studentRows ?? []).map((r: any) => [String(r.id), String(r.full_name ?? r.id)]),
+    );
+
+    const results: BulkPlanResult["results"] = [];
+
+    for (const rawId of params.studentIds) {
+      const name = nameMap.get(rawId) ?? rawId;
+      try {
+        const studentId = await resolveAcademyStudentIdOrThrow(supabase, rawId);
+
+        const { data: plan, error: perr } = await supabase
+          .from("student_vocab_plans")
+          .upsert(
+            {
+              student_id: studentId,
+              track_id: trackId,
+              start_date: startDateISO,
+              weekdays,
+              max_active_sets: maxActiveSets,
+              is_enabled: true,
+              start_day_index: startDayIndex,
+              cursor_day_index: startDayIndex,
+              is_paused: false,
+              paused_reason: null,
+            } as any,
+            { onConflict: "student_id,track_id" },
+          )
+          .select("id")
+          .single();
+
+        if (perr || !(plan as any)?.id) {
+          results.push({ studentId, name, ok: false, error: perr?.message ?? "upsert failed" });
+          continue;
+        }
+
+        await ensureCockedQueueForPlan(supabase, { studentId, trackId, mode: "auto", queueSize });
+        results.push({ studentId, name, ok: true });
+      } catch (e: any) {
+        results.push({ studentId: rawId, name, ok: false, error: e?.message ?? "unknown" });
+      }
+    }
+
+    const succeeded = results.filter((r) => r.ok).length;
+    return { ok: true, total: results.length, succeeded, failed: results.length - succeeded, results };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "bulk assign failed" };
+  }
 }

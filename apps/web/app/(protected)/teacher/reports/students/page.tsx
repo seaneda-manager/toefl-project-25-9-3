@@ -1,5 +1,5 @@
 // apps/web/app/(protected)/teacher/reports/students/page.tsx
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getServiceSupabase } from "@/lib/supabase/service";
 import StudentReportClient from "./StudentReportClient";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ type AcademyStudentRow = {
 };
 
 export default async function TeacherStudentsReportPage() {
-  const supabase = await getServerSupabase();
+  const supabase = getServiceSupabase();
 
   // academy_students에서 school + grade 포함해서 가져오기
   const { data: academyStudents } = await supabase

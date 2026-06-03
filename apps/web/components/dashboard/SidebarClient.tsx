@@ -219,10 +219,12 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'LEXiOX TOEFL', href: '/admin/content/reading-2026/new',   label: 'Reading 편집기' },
         { section: 'LEXiOX TOEFL', href: '/admin/content/listening-2026/new', label: 'Listening 편집기' },
         { section: 'LEXiOX TOEFL', href: '/admin/content/writing-2026/new',   label: 'Writing 편집기' },
+        { section: 'LEXiOX TOEFL', href: '/admin/content/grammar-2026',       label: 'LEXiOX-Gram 편집기' },
         { section: 'LEXiOX TOEFL', href: '/admin/landing',                    label: '랜딩 편집기' },
         { section: 'LEXiOX TOEFL', href: '/settings',                         label: '설정' },
 
         { section: 'LEXiOX 내신', href: '/admin/naesin',                      label: '내신 허브' },
+        { section: 'LEXiOX 내신', href: '/admin/naesin/drill-demo',           label: '드릴 미리보기' },
         { section: 'LEXiOX 내신', href: '/admin/naesin/scopes',               label: '시험 범위 관리' },
         { section: 'LEXiOX 내신', href: '/admin/naesin/scopes/new',           label: '새 범위 만들기' },
         { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages',          label: 'Hi-내신 지문 목록' },
@@ -237,6 +239,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'LEXiOX 어휘', href: '/admin/vocab/words/import', label: '단어 가져오기' },
         { section: 'LEXiOX 어휘', href: '/admin/vocab/import',       label: '책 CSV 업로드' },
         { section: 'LEXiOX 어휘', href: '/admin/vocab/Tracks',       label: '트랙 배포 (학생)' },
+        { section: 'LEXiOX 어휘', href: '/admin/vocab/progress',    label: '학생 진행 현황' },
         { section: 'LEXiOX 어휘', href: '/voca/admin',               label: '어휘 관리 (구)' },
 
         { section: '콘텐츠', href: '/admin/content/new?kind=reading',   label: 'Reading 세트 추가' },
@@ -291,6 +294,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '학습', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/speaking-2026/study',  label: 'Speaking',  skill: 'speaking'  as SkillColor },
         { section: '학습', href: '/writing-2026/study',   label: 'Writing',   skill: 'writing'   as SkillColor },
+        { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram' },
         { section: '학습', href: '/vocab',                 label: '단어 학습' },
 
         { section: '내 현황', href: '/student',            label: '대시보드' },
