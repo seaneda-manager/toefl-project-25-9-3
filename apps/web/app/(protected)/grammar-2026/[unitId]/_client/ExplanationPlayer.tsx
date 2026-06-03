@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { ExplanationSegment, BlankSegmentContent, TextSegmentContent, AnimationSegmentContent } from "@/models/grammar/types";
+import type { ExplanationSegment, BlankSegmentContent, TextSegmentContent, AnimationSegmentContent, VideoSegmentContent } from "@/models/grammar/types";
 import BlankFillChallenge from "./BlankFillChallenge";
+import VideoExplanationPlayer from "./VideoExplanationPlayer";
 
 type Props = {
   segments: ExplanationSegment[];
@@ -10,6 +11,17 @@ type Props = {
 };
 
 export default function ExplanationPlayer({ segments, onDone }: Props) {
+  // video 타입 세그먼트가 있으면 VideoExplanationPlayer로 위임
+  const videoSeg = segments.find((s) => s.type === "video");
+  if (videoSeg) {
+    return (
+      <VideoExplanationPlayer
+        content={videoSeg.content as VideoSegmentContent}
+        onDone={onDone}
+      />
+    );
+  }
+
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
 

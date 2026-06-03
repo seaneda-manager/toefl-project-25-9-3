@@ -13,14 +13,27 @@ export type GrammarUnit = {
 
 // --- 설명 세그먼트 ---
 
-export type ExplanationSegmentType = "text" | "animation" | "blank";
+export type ExplanationSegmentType = "text" | "animation" | "blank" | "video";
 
 export type TextSegmentContent = { text: string };
 export type AnimationSegmentContent = { key: string; duration_ms: number };
 export type BlankSegmentContent = {
-  prompt: string;   // "주어가 단수이면 동사도 ___해야 한다."
-  answer: string;   // "단수"
+  prompt: string;
+  answer: string;
   hint_ko?: string;
+};
+
+export type PausePoint = {
+  id: string;
+  timestamp_sec: number;   // 몇 초에서 멈출지
+  prompt: string;          // "주어가 단수이면 동사도 ___해야 한다."
+  answer: string;
+  hint_ko?: string;
+};
+
+export type VideoSegmentContent = {
+  video_url: string;
+  pause_points: PausePoint[];
 };
 
 export type ExplanationSegment = {
