@@ -224,8 +224,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: 'LEXiOX-내신', href: '/admin/naesin',                         label: '내신 허브' },
         { section: 'LEXiOX-내신', href: '/admin/naesin/drill-demo',              label: '드릴 미리보기' },
-        { section: 'LEXiOX-내신', href: '/admin/naesin/scopes',                  label: '시험 범위 관리' },
-        { section: 'LEXiOX-내신', href: '/admin/naesin/scopes/new',              label: '새 범위 만들기' },
+
         { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages',             label: 'Hi-내신 지문 목록' },
         { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages/new',         label: 'Hi-내신 단건 등록' },
         { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages/bulk-new',    label: 'Hi-내신 챕터 일괄' },

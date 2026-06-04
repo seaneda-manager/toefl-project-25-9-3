@@ -99,35 +99,33 @@ export const revalidate = 0;
 export default async function TeacherStudentsPage() {
   const supabase = await getServerSupabase();
 
-  // 1) 학생 프로필 불러오기 (role = 'student')
-  const { data: profileRows, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, full_name, school, grade, level, role")
-    .eq("role", "student")
-    .order("full_name", { ascending: true });
+  // 1) academy_students에서 학생 목록 (profiles RLS 우회)
+  const { data: studentRows } = await supabase
+    .from("academy_students")
+    .select("id, display_name, school, grade, level, user_id, auth_user_id")
+    .eq("is_active", true)
+    .order("display_name", { ascending: true });
 
-  const safeProfiles: ProfileRow[] = profileRows ?? [];
+  const safeProfiles: ProfileRow[] = (studentRows ?? []).map((s: any) => ({
+    id:        (s.user_id ?? s.auth_user_id ?? s.id) as string,
+    full_name: s.display_name,
+    school:    s.school,
+    grade:     s.grade,
+    level:     s.level,
+    role:      "student",
+  }));
 
-  // 2) 학생 없으면 바로 빈 리스트 상태로
-  if (profileError) {
-    console.error("TeacherStudentsPage profiles error", profileError);
-  }
+  const studentIds = safeProfiles.map((p) => p.id).filter(Boolean);
 
-  const studentIds = safeProfiles.map((p) => p.id);
-
-  // 3) 각 학생의 최근 Reading 결과 (있으면)
+  // 2) 각 학생의 최근 Reading 결과
   let latestReadingMap: Record<string, ReadingResultRow> = {};
 
   if (studentIds.length > 0) {
-    const { data: readingRows, error: readingError } = await supabase
+    const { data: readingRows } = await supabase
       .from("reading_results_2026")
       .select("user_id, label, finished_at, total_questions, correct_count")
       .in("user_id", studentIds)
       .order("finished_at", { ascending: false });
-
-    if (readingError) {
-      console.error("TeacherStudentsPage reading_results error", readingError);
-    }
 
     (readingRows ?? []).forEach((row) => {
       if (!row.user_id) return;
@@ -137,14 +135,12 @@ export default async function TeacherStudentsPage() {
     });
   }
 
-  // 4) UI용 StudentRow로 매핑
+  // 3) UI용 StudentRow로 매핑
   const students: StudentRow[] = safeProfiles.map((p) => {
     const latest = latestReadingMap[p.id];
 
     const levelFromDb = (p.level as Level | null) ?? "중급";
-    const latestDate = latest?.finished_at
-      ? latest.finished_at.slice(0, 10)
-      : "-";
+    const latestDate  = latest?.finished_at ? latest.finished_at.slice(0, 10) : "-";
     const latestLabel = latest?.label ?? "최근 시험 없음";
     const latestScore = latest?.correct_count ?? null;
     const latestMaxScore = latest?.total_questions ?? null;
@@ -153,16 +149,14 @@ export default async function TeacherStudentsPage() {
       id: p.id,
       name: p.full_name ?? "이름 미입력",
       school: p.school ?? "-",
-      grade: p.grade ?? "-",
-      level: levelFromDb,
-      trend: "flat", // TODO: 나중에 성적 추이 로직 연결
+      grade:  p.grade  ?? "-",
+      level:  levelFromDb,
+      trend:  "flat",
       latestTestLabel: latestLabel,
-      latestTestDate: latestDate,
+      latestTestDate:  latestDate,
       latestScore,
       latestMaxScore,
-      focusTag: latest
-        ? "Reading 2026 복습"
-        : "레벨링/Placement 예정",
+      focusTag: latest ? "Reading 2026 복습" : "레벨링/Placement 예정",
     };
   });
 

@@ -221,8 +221,51 @@ export default async function StudentPage() {
 
   const readingDone = (readingResults ?? []).length;
 
+  // 오늘 요일 라벨
+  const todayDow   = new Date().getDay();
+  const DOW_KO     = ['일', '월', '화', '수', '목', '금', '토'];
+  const isClassDay = (acdStudent as any)?.class_days?.some((d: string) => {
+    const MAP: Record<string, number> = {
+      sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,
+      일:0,월:1,화:2,수:3,목:4,금:5,토:6,
+      '0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,
+    };
+    return MAP[d.toLowerCase()] === todayDow;
+  }) ?? false;
+
   return (
     <main className="mx-auto max-w-3xl space-y-6 pb-12">
+
+      {/* ── 오늘 수업 CTA ─────────────────────────────────────── */}
+      <Link
+        href="/student/session"
+        className={[
+          "block rounded-3xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md",
+          isClassDay
+            ? "border-sky-200 bg-gradient-to-br from-sky-50 to-white"
+            : "border-neutral-200 bg-gradient-to-br from-neutral-50 to-white",
+        ].join(" ")}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-neutral-400 mb-0.5">
+              {DOW_KO[todayDow]}요일{isClassDay ? " · 수업 있는 날 🎯" : ""}
+            </p>
+            <p className="text-lg font-bold text-neutral-900">
+              {isClassDay ? "오늘 수업 시작하기" : "자율 학습 모드"}
+            </p>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              숙제 채점 → 단어 → 리딩 → 그래머 → …
+            </p>
+          </div>
+          <span className={[
+            "shrink-0 rounded-2xl px-5 py-2.5 text-sm font-bold text-white",
+            isClassDay ? "bg-sky-600" : "bg-neutral-700",
+          ].join(" ")}>
+            입장 →
+          </span>
+        </div>
+      </Link>
 
       {/* ── 커리큘럼 헤더 ─────────────────────────────────────── */}
       <header
