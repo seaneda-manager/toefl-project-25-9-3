@@ -13,8 +13,8 @@ type Props   = { role: Role; program?: Program };
 // ── Section type: all section keys used across roles ─────────────
 type NavSection =
   // Admin
-  | '관리자' | 'LEXiOX TOEFL' | 'LEXiOX 내신' | 'LEXiOX Jr.'
-  | 'LEXiOX 어휘' | '콘텐츠' | '선생님 도구'
+  | '관리자' | 'LEXiOX-TOEFL' | 'LEXiOX-내신' | 'LEXiOX-Jr.'
+  | 'LEXiOX-어휘' | '콘텐츠' | '선생님 도구'
   // Teacher
   | '학생 관리'
   // Student — program-specific
@@ -27,10 +27,10 @@ type NavSection =
 // ── 한/영 섹션 라벨 매핑 ─────────────────────────────────────────
 const SECTION_EN: Record<NavSection, string> = {
   '관리자': 'Admin',
-  'LEXiOX TOEFL': 'LEXiOX TOEFL',
-  'LEXiOX 내신': 'LEXiOX Naesin',
-  'LEXiOX Jr.': 'LEXiOX Jr.',
-  'LEXiOX 어휘': 'LEXiOX Vocab',
+  'LEXiOX-TOEFL': 'LEXiOX-TOEFL',
+  'LEXiOX-내신': 'LEXiOX-Naesin',
+  'LEXiOX-Jr.': 'LEXiOX-Jr.',
+  'LEXiOX-어휘': 'LEXiOX-Vocab',
   '콘텐츠': 'Content',
   '선생님 도구': 'Teacher Tools',
   '학생 관리': 'Students',
@@ -76,8 +76,8 @@ function normalizePath(s: string | null | undefined) {
 
 function collapsedLabel(section: string) {
   const map: Record<string, string> = {
-    '관리자': 'A', 'LEXiOX TOEFL': 'TF', 'LEXiOX 내신': 'N',
-    'LEXiOX Jr.': 'Jr', 'LEXiOX 어휘': 'V', '콘텐츠': '콘', '선생님 도구': 'T',
+    '관리자': 'A', 'LEXiOX-TOEFL': 'TF', 'LEXiOX-내신': 'N',
+    'LEXiOX-Jr.': 'Jr', 'LEXiOX-어휘': 'V', '콘텐츠': '콘', '선생님 도구': 'T',
     '학생 관리': '관',
     '내신': '내', 'Hi-내신': 'Hi', '어휘': '어', '숙제': '숙', '학습': '학', '내 현황': '현',
     '내 학습': '나', '학습 콘텐츠': '콘',
@@ -97,10 +97,10 @@ type SectionTheme = {
 
 const SECTION_THEME: Record<string, SectionTheme> = {
   '관리자':       { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
-  'LEXiOX TOEFL': { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
-  'LEXiOX 내신':  { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
-  'LEXiOX Jr.':   { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
-  'LEXiOX 어휘':  { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
+  'LEXiOX-TOEFL': { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
+  'LEXiOX-내신':  { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'LEXiOX-Jr.':   { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
+  'LEXiOX-어휘':  { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
   '콘텐츠':       { header: 'text-sky-600',     active: 'border-sky-400     bg-sky-50     text-sky-700',     hover: 'hover:bg-sky-50     hover:text-sky-900',     chevron: 'text-sky-300',     dot: 'bg-sky-400'     },
   '선생님 도구':  { header: 'text-amber-600',   active: 'border-amber-400   bg-amber-50   text-amber-700',   hover: 'hover:bg-amber-50   hover:text-amber-900',   chevron: 'text-amber-300',   dot: 'bg-amber-400'   },
   '학생 관리':    { header: 'text-teal-600',    active: 'border-teal-400    bg-teal-50    text-teal-700',    hover: 'hover:bg-teal-50    hover:text-teal-900',    chevron: 'text-teal-300',    dot: 'bg-teal-400'    },
@@ -162,8 +162,8 @@ export default function SidebarClient({ role, program = null }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     if (role === 'admin') {
       return {
-        '관리자': true, 'LEXiOX TOEFL': true, 'LEXiOX 내신': true,
-        'LEXiOX Jr.': true, 'LEXiOX 어휘': true,
+        '관리자': true, 'LEXiOX-TOEFL': true, 'LEXiOX-내신': true,
+        'LEXiOX-Jr.': true, 'LEXiOX-어휘': true,
         '콘텐츠': true, '선생님 도구': true,
       };
     }
@@ -216,31 +216,31 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '관리자',         href: '/admin',                             label: '관리자 홈' },
         { section: '관리자',         href: '/admin/users',                       label: '사용자 관리' },
 
-        { section: 'LEXiOX TOEFL', href: '/admin/content/reading-2026/new',   label: 'Reading 편집기' },
-        { section: 'LEXiOX TOEFL', href: '/admin/content/listening-2026/new', label: 'Listening 편집기' },
-        { section: 'LEXiOX TOEFL', href: '/admin/content/writing-2026/new',   label: 'Writing 편집기' },
-        { section: 'LEXiOX TOEFL', href: '/admin/content/grammar-2026',       label: 'LEXiOX-Gram 편집기' },
-        { section: 'LEXiOX TOEFL', href: '/admin/landing',                    label: '랜딩 편집기' },
-        { section: 'LEXiOX TOEFL', href: '/settings',                         label: '설정' },
+        { section: 'LEXiOX-TOEFL', href: '/admin/content/reading-2026/new',        label: 'Reading 편집기' },
+        { section: 'LEXiOX-TOEFL', href: '/admin/content/listening/toefl',       label: 'Listening 편집기' },
+        { section: 'LEXiOX-TOEFL', href: '/admin/content/writing-2026/new',      label: 'Writing 편집기' },
+        { section: 'LEXiOX-TOEFL', href: '/admin/content/grammar-2026',          label: 'Grammar 편집기' },
+        { section: 'LEXiOX-TOEFL', href: '/admin/landing',                       label: '랜딩 편집기' },
 
-        { section: 'LEXiOX 내신', href: '/admin/naesin',                      label: '내신 허브' },
-        { section: 'LEXiOX 내신', href: '/admin/naesin/drill-demo',           label: '드릴 미리보기' },
-        { section: 'LEXiOX 내신', href: '/admin/naesin/scopes',               label: '시험 범위 관리' },
-        { section: 'LEXiOX 내신', href: '/admin/naesin/scopes/new',           label: '새 범위 만들기' },
-        { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages',          label: 'Hi-내신 지문 목록' },
-        { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages/new',      label: 'Hi-내신 단건 등록' },
-        { section: 'LEXiOX 내신', href: '/admin/hi-naesin/passages/bulk-new', label: 'Hi-내신 챕터 일괄' },
+        { section: 'LEXiOX-내신', href: '/admin/naesin',                         label: '내신 허브' },
+        { section: 'LEXiOX-내신', href: '/admin/naesin/drill-demo',              label: '드릴 미리보기' },
+        { section: 'LEXiOX-내신', href: '/admin/naesin/scopes',                  label: '시험 범위 관리' },
+        { section: 'LEXiOX-내신', href: '/admin/naesin/scopes/new',              label: '새 범위 만들기' },
+        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages',             label: 'Hi-내신 지문 목록' },
+        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages/new',         label: 'Hi-내신 단건 등록' },
+        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages/bulk-new',    label: 'Hi-내신 챕터 일괄' },
 
-        { section: 'LEXiOX Jr.', href: '/admin/naesin/passages',              label: 'Jr. 지문 관리' },
-        { section: 'LEXiOX Jr.', label: 'Jr. 커리큘럼 (준비중)',              disabled: true },
+        { section: 'LEXiOX-Jr.', href: '/admin/content/listening/jr',            label: 'Listening (Jr.) 편집기' },
+        { section: 'LEXiOX-Jr.', href: '/admin/naesin/passages',                 label: 'Jr. 지문 관리' },
+        { section: 'LEXiOX-Jr.', label: 'Jr. 커리큘럼 (준비중)',                 disabled: true },
 
-        { section: 'LEXiOX 어휘', href: '/admin/vocab/sets',        label: '단어 책 목록' },
-        { section: 'LEXiOX 어휘', href: '/admin/vocab/words',        label: '단어 목록' },
-        { section: 'LEXiOX 어휘', href: '/admin/vocab/words/import', label: '단어 가져오기' },
-        { section: 'LEXiOX 어휘', href: '/admin/vocab/import',       label: '책 CSV 업로드' },
-        { section: 'LEXiOX 어휘', href: '/admin/vocab/Tracks',       label: '트랙 배포 (학생)' },
-        { section: 'LEXiOX 어휘', href: '/admin/vocab/progress',    label: '학생 진행 현황' },
-        { section: 'LEXiOX 어휘', href: '/voca/admin',               label: '어휘 관리 (구)' },
+        { section: 'LEXiOX-어휘', href: '/admin/vocab/sets',        label: '단어 책 목록' },
+        { section: 'LEXiOX-어휘', href: '/admin/vocab/words',        label: '단어 목록' },
+        { section: 'LEXiOX-어휘', href: '/admin/vocab/words/import', label: '단어 가져오기' },
+        { section: 'LEXiOX-어휘', href: '/admin/vocab/import',       label: '책 CSV 업로드' },
+        { section: 'LEXiOX-어휘', href: '/admin/vocab/Tracks',       label: '트랙 배포 (학생)' },
+        { section: 'LEXiOX-어휘', href: '/admin/vocab/progress',    label: '학생 진행 현황' },
+        { section: 'LEXiOX-어휘', href: '/voca/admin',               label: '어휘 관리 (구)' },
 
         { section: '콘텐츠', href: '/admin/content/new?kind=reading',   label: 'Reading 세트 추가' },
         { section: '콘텐츠', href: '/admin/content/list?kind=reading',  label: 'Reading 세트 목록' },
@@ -273,11 +273,12 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: LEXiOX ───────────────────────────────────────
     if (program === 'lexiox') {
       return [
-        { section: '내신', href: '/naesin/drill',     label: '내신 드릴' },
-
         { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴' },
         { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황' },
         { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리' },
+
+        { section: '학습', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
+        { section: '학습', href: '/grammar-2026',          label: 'Grammar' },
 
         { section: '어휘', href: '/vocab', label: '단어 학습' },
 

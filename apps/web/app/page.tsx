@@ -293,7 +293,7 @@ export default async function LandingPage() {
             </div>
             <div>
               <p className="mb-2 font-semibold">Programs</p>
-              <ul className="space-y-1 text-emerald-100/80"><li>UPDATED-TOEFL</li><li>LEXiOX Jr.</li><li>Hi-내신</li></ul>
+              <ul className="space-y-1 text-emerald-100/80"><li>LEXiOX-TOEFL</li><li>LEXiOX-Jr.</li><li>LEXiOX-Hi-내신</li><li>LEXiOX-내신</li></ul>
             </div>
             <div>
               <p className="mb-2 font-semibold">Contact</p>

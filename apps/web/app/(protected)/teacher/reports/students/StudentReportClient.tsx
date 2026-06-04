@@ -34,7 +34,7 @@ function getActiveModules(program: string | null) {
 }
 
 function programLabel(program: string | null) {
-  if (program === "lexiox") return { text: "LEXiOX 내신", color: "bg-emerald-100 text-emerald-700" };
+  if (program === "lexiox") return { text: "LEXiOX-내신", color: "bg-emerald-100 text-emerald-700" };
   if (program === "toefl") return { text: "TOEFL", color: "bg-blue-100 text-blue-700" };
   if (program === "gap")   return { text: "GAP", color: "bg-orange-100 text-orange-700" };
   return { text: "미지정", color: "bg-neutral-100 text-neutral-500" };

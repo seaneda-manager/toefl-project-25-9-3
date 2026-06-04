@@ -18,7 +18,7 @@ export default async function AdminVocabSetsPage() {
     <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
       <header className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-widest text-neutral-400">어드민 / LEXiOX 어휘</div>
+          <div className="text-xs uppercase tracking-widest text-neutral-400">어드민 / LEXiOX-어휘</div>
           <h1 className="mt-1 text-2xl font-semibold text-neutral-900">단어 책 목록</h1>
           <p className="mt-1 text-sm text-neutral-500">등록된 vocab set(단어 책) 목록입니다</p>
         </div>
