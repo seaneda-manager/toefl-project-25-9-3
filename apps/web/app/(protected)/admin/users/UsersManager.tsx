@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Role = 'student' | 'teacher' | 'admin';
-type Program = 'gap' | 'toefl' | 'lingx' | null;
+type Program = 'gap' | 'toefl' | 'lexiox' | null;
 
 type Profile = {
   id: string;
@@ -36,13 +36,13 @@ const ROLE_BADGE_CLASS: Record<Role, string> = {
 const PROGRAM_LABEL: Record<string, string> = {
   gap: 'GAP',
   toefl: 'TOEFL',
-  lingx: 'LingX',
+  lexiox: 'LEXiOX',
 };
 
 const PROGRAM_BADGE_CLASS: Record<string, string> = {
   gap: 'bg-purple-50 text-purple-700 ring-purple-100',
   toefl: 'bg-sky-50 text-sky-700 ring-sky-100',
-  lingx: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+  lexiox: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
 };
 
 export default function UsersManager() {
@@ -253,7 +253,7 @@ export default function UsersManager() {
           <option value="">— 없음 —</option>
           <option value="gap">GAP</option>
           <option value="toefl">TOEFL</option>
-          <option value="lingx">LingX</option>
+          <option value="lexiox">LEXiOX</option>
         </select>
         <button
           className="rounded border px-3 py-1 text-xs disabled:opacity-50"

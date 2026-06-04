@@ -107,7 +107,7 @@ export default async function TeacherStudentsReportPage() {
         </div>
         <div className="rounded-2xl border bg-white p-4">
           <div className="text-xs font-medium text-neutral-500">LEXiOX 내신</div>
-          <div className="mt-2 text-3xl font-bold text-emerald-700">{programCounts["lingx"] ?? 0}</div>
+          <div className="mt-2 text-3xl font-bold text-emerald-700">{programCounts["lexiox"] ?? 0}</div>
         </div>
         <div className="rounded-2xl border bg-white p-4">
           <div className="text-xs font-medium text-neutral-500">TOEFL</div>

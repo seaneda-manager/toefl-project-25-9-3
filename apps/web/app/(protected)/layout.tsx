@@ -7,7 +7,7 @@ import SidebarClient from '@/components/dashboard/SidebarClient';
 import { LangProvider } from '@/contexts/LangContext';
 
 type Role = 'student' | 'teacher' | 'admin';
-type Program = 'gap' | 'toefl' | 'lingx' | null;
+type Program = 'gap' | 'toefl' | 'lexiox' | null;
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const supabase = await getSupabaseServer();
@@ -35,7 +35,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     if (profile?.role === 'admin' || profile?.role === 'teacher' || profile?.role === 'student') {
       role = profile.role;
     }
-    if (profile?.program === 'gap' || profile?.program === 'toefl' || profile?.program === 'lingx') {
+    if (profile?.program === 'gap' || profile?.program === 'toefl' || profile?.program === 'lexiox') {
       program = profile.program;
     }
   }

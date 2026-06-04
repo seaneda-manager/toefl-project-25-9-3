@@ -7,7 +7,7 @@ import { ChevronRight } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 
 type Role    = 'student' | 'teacher' | 'admin';
-type Program = 'gap' | 'toefl' | 'lingx' | null;
+type Program = 'gap' | 'toefl' | 'lexiox' | null;
 type Props   = { role: Role; program?: Program };
 
 // ── Section type: all section keys used across roles ─────────────
@@ -270,8 +270,8 @@ export default function SidebarClient({ role, program = null }: Props) {
       ];
     }
 
-    // ── Student: LingX ───────────────────────────────────────
-    if (program === 'lingx') {
+    // ── Student: LEXiOX ───────────────────────────────────────
+    if (program === 'lexiox') {
       return [
         { section: '내신', href: '/naesin/drill',     label: '내신 드릴' },
 

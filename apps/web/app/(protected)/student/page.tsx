@@ -5,7 +5,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 // ── 커리큘럼 라벨 ──────────────────────────────────────────────
-type CurriculumKey = "toefl" | "gap" | "lingx_jr" | "lingx_ms" | "lingx_hs" | "unknown";
+type CurriculumKey = "toefl" | "gap" | "lexiox_jr" | "lexiox_ms" | "lexiox_hs" | "unknown";
 
 type CurriculumMeta = {
   key: CurriculumKey;
@@ -33,25 +33,25 @@ const CURRICULUM: Record<CurriculumKey, CurriculumMeta> = {
     accentBg: "from-indigo-50 to-white",
     accentText: "text-indigo-700",
   },
-  lingx_jr: {
-    key: "lingx_jr",
-    label: "LingX 주니어",
+  lexiox_jr: {
+    key: "lexiox_jr",
+    label: "LEXiOX 주니어",
     sub: "Lingo-X Junior Program",
     badge: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
     accentBg: "from-amber-50 to-white",
     accentText: "text-amber-700",
   },
-  lingx_ms: {
-    key: "lingx_ms",
-    label: "LingX 중학",
+  lexiox_ms: {
+    key: "lexiox_ms",
+    label: "LEXiOX 중학",
     sub: "Lingo-X 중학 Program",
     badge: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200",
     accentBg: "from-emerald-50 to-white",
     accentText: "text-emerald-700",
   },
-  lingx_hs: {
-    key: "lingx_hs",
-    label: "LingX 고등",
+  lexiox_hs: {
+    key: "lexiox_hs",
+    label: "LEXiOX 고등",
     sub: "Lingo-X 고등 Program",
     badge: "bg-violet-100 text-violet-700 ring-1 ring-violet-200",
     accentBg: "from-violet-50 to-white",
@@ -74,11 +74,11 @@ function deriveCurriculum(
   const p = program?.toLowerCase() ?? "";
   if (p === "toefl") return CURRICULUM.toefl;
   if (p === "gap")   return CURRICULUM.gap;
-  if (p === "lingx") {
+  if (p === "lexiox") {
     const gb = gradeBand ?? "";
-    if (gb === "K10_12" || gb === "POST_K12") return CURRICULUM.lingx_hs;
-    if (gb === "K7_9")                        return CURRICULUM.lingx_ms;
-    return CURRICULUM.lingx_jr;
+    if (gb === "K10_12" || gb === "POST_K12") return CURRICULUM.lexiox_hs;
+    if (gb === "K7_9")                        return CURRICULUM.lexiox_ms;
+    return CURRICULUM.lexiox_jr;
   }
   return CURRICULUM.unknown;
 }

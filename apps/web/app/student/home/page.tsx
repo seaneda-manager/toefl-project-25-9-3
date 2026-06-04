@@ -206,7 +206,7 @@ export default async function StudentPage() {
                 Quick Start
               </p>
               <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                LingX-VOCA
+                LEXiOX-VOCA
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 단어 Drill & Practice로 바로 들어갑니다.

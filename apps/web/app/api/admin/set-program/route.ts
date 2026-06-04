@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import { getServiceSupabase } from '@/lib/supabase/service';
 
-const VALID_PROGRAMS = ['gap', 'toefl', 'lingx', null] as const;
-type Program = 'gap' | 'toefl' | 'lingx' | null;
+const VALID_PROGRAMS = ['gap', 'toefl', 'lexiox', null] as const;
+type Program = 'gap' | 'toefl' | 'lexiox' | null;
 
 export async function POST(req: NextRequest) {
   const supabase = await getSupabaseServer();
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
   if (!VALID_PROGRAMS.includes(program as Program)) {
     return NextResponse.json(
-      { error: `program must be one of: gap, toefl, lingx, or null` },
+      { error: `program must be one of: gap, toefl, lexiox, or null` },
       { status: 400 }
     );
   }
