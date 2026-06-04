@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
+import SectionGuide from '@/app/components/SectionGuide';
 
 export const dynamic = 'force-dynamic';
 
@@ -153,10 +154,35 @@ export default async function VocabHomePage() {
       {/* 헤더 */}
       <header>
         <h1 className="text-xl font-bold text-neutral-900">단어 학습</h1>
-        <p className="text-xs text-neutral-400 mt-0.5">
-          내신 단어와 단어장을 한눈에 확인하세요
-        </p>
       </header>
+
+      <SectionGuide
+        storageKey="guide-seen-vocab"
+        color="amber"
+        icon="🔤"
+        title="단어"
+        tagline="매일 꾸준히 — 내신 단어 + 단어장 플랜을 한곳에서 관리합니다."
+        outcomes={[
+          '내신 교과서 지문의 핵심 어휘를 정확한 뜻과 함께 암기할 수 있다',
+          '매일 정해진 단어를 반복 노출로 장기 기억에 저장할 수 있다',
+          '오답 단어를 집중 반복해 취약 어휘를 빠르게 제거할 수 있다',
+        ]}
+        steps={[
+          { icon: '📖', title: '내신 단어', desc: '지문별 단어 드릴 결과가 아래에 표시됩니다. 정답률과 오답 수로 복습 우선순위를 파악하세요.' },
+          { icon: '📚', title: '단어장 플랜', desc: '선생님이 배정한 Day 플랜을 따라 매일 새 단어를 학습합니다. "오늘 학습 가능" 배지가 있으면 바로 시작하세요.' },
+          { icon: '🔁', title: '오답 복습', desc: '틀린 단어는 [오답 복습] 버튼으로 집중 반복할 수 있습니다.' },
+        ]}
+        progress={naesin.total > 0 ? { done: naesin.studied, total: naesin.total, unit: '단어' } : undefined}
+        nextAction={
+          naesin.wrong > 0
+            ? { label: '오답 복습하기', href: '/hi-naesin/vocab?filter=wrong' }
+            : naesin.total - naesin.studied > 0
+            ? { label: '내신 단어 학습', href: '/hi-naesin/vocab?filter=unstudied' }
+            : plans.find((p) => p.todayCount > 0)
+            ? { label: '오늘 단어장 시작', href: '/vocab/session' }
+            : undefined
+        }
+      />
 
       {/* ── 내신 단어 ───────────────────────────────────────────── */}
       <section className="space-y-3">

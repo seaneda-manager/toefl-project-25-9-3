@@ -17,6 +17,9 @@ export interface ListeningQuestion {
   stem?: string;
   choices: ListeningChoice[];
   meta?: Record<string, unknown>;
+  // 메타인지 학습용
+  type?: string;        // 문제 유형 (main_topic, detail, function, ...)
+  clue_quote?: string;  // 정답 근거가 되는 스크립트 인용문
 }
 export type LQuestion = ListeningQuestion;
 

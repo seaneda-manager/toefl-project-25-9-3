@@ -178,6 +178,42 @@ export default function AdminListeningEditor(props: any) {
             <input className="input" {...register('title')} />
           </label>
         </div>
+
+        {/* 기출 출처 */}
+        <div className="border-t pt-3 space-y-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">기출 출처</p>
+          <div className="grid grid-cols-4 gap-3">
+            <label className="block">
+              출처
+              <select className="input" {...register('source' as any)}>
+                <option value="">선택</option>
+                <option value="수능">수능 (CSAT)</option>
+                <option value="교육청">교육청 모의고사</option>
+                <option value="EBS">EBS</option>
+                <option value="TOEFL">TOEFL 공식</option>
+                <option value="사설">사설 모의고사</option>
+                <option value="자체제작">자체 제작</option>
+              </select>
+            </label>
+            <label className="block">
+              연도
+              <input className="input" type="number" placeholder="2024" {...register('source_year' as any, { valueAsNumber: true })} />
+            </label>
+            <label className="block">
+              월
+              <input className="input" type="number" placeholder="11" {...register('source_month' as any, { valueAsNumber: true })} />
+            </label>
+            <label className="block">
+              난이도
+              <select className="input" {...register('default_difficulty' as any)}>
+                <option value="">전체</option>
+                <option value="basic">Basic</option>
+                <option value="standard">Standard</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </label>
+          </div>
+        </div>
       </section>
 
       {/* Conversation */}
@@ -197,6 +233,14 @@ export default function AdminListeningEditor(props: any) {
             className="input"
             {...register('conversation.imageUrl')}
             placeholder="/img/demo-conv.jpg"
+          />
+        </label>
+        <label className="block">
+          Transcript (스크립트 전문)
+          <textarea
+            className="input min-h-[120px] font-mono text-xs"
+            placeholder="A: Good morning, I wanted to ask about...&#10;B: Of course, what's your question?"
+            {...register('conversation.transcript' as any)}
           />
         </label>
 
@@ -219,42 +263,47 @@ export default function AdminListeningEditor(props: any) {
         </div>
 
         {convQs.fields.map((f, i) => (
-          <div key={f.id} className="rounded border p-3 space-y-2">
-            <div className="flex gap-2 items-end">
+          <div key={f.id} className="rounded border p-3 space-y-2 bg-slate-50">
+            <div className="flex gap-2 items-start">
               <label className="block flex-1">
-                Prompt
-                <textarea
-                  className="input"
-                  {...register(`conversation.questions.${i}.prompt` as const)}
-                />
+                Prompt (문제)
+                <textarea className="input" {...register(`conversation.questions.${i}.prompt` as const)} />
               </label>
-              <label className="block w-32">
-                Type
-                <select
-                  className="input"
-                  {...register(`conversation.questions.${i}.qtype` as const, {
-                    setValueAs: (v) => (v === '' ? undefined : v),
-                  })}
-                >
-                  <option value="">(auto)</option>
-                  <option value="function">function</option>
-                  <option value="purpose">purpose</option>
-                  <option value="detail">detail</option>
-                  <option value="inference">inference</option>
-                  <option value="gist">gist</option>
-                  <option value="attitude">attitude</option>
-                  <option value="organization">organization</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                className="px-2 py-1 border rounded"
-                onClick={() => convQs.remove(i)}
-                aria-label={`Delete conversation question ${i + 1}`}
-              >
-                Delete
-              </button>
+              <div className="flex flex-col gap-2 w-36 shrink-0">
+                <label className="block">
+                  유형
+                  <select className="input" {...register(`conversation.questions.${i}.qtype` as const, { setValueAs: (v) => (v === '' ? undefined : v) })}>
+                    <option value="">(미지정)</option>
+                    <option value="main_topic">주제/목적</option>
+                    <option value="detail">세부사항</option>
+                    <option value="function">화자의 의도</option>
+                    <option value="attitude">화자의 태도</option>
+                    <option value="organization">강의 구성</option>
+                    <option value="inference">추론</option>
+                    <option value="connecting">개념 연결</option>
+                  </select>
+                </label>
+                <label className="block">
+                  난이도
+                  <select className="input" {...register(`conversation.questions.${i}.difficulty` as any)}>
+                    <option value="">전체</option>
+                    <option value="basic">Basic</option>
+                    <option value="standard">Standard</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </label>
+              </div>
+              <button type="button" className="px-2 py-1 border rounded text-xs mt-5 shrink-0"
+                onClick={() => convQs.remove(i)}>삭제</button>
             </div>
+
+            <label className="block">
+              <span className="text-xs font-semibold text-amber-700">Clue Quote</span>
+              <span className="text-[11px] text-slate-400 ml-1">— 정답 근거가 되는 스크립트 문장 (복붙)</span>
+              <textarea className="input min-h-[48px] text-xs border-amber-200 bg-amber-50"
+                placeholder="예: 'The real issue here is the budget allocation.'"
+                {...register(`conversation.questions.${i}.clue_quote` as any)} />
+            </label>
 
             <ChoicesEditor
               base={`conversation.questions.${i}.choices` as `conversation.questions.${number}.choices`}
@@ -277,11 +326,13 @@ export default function AdminListeningEditor(props: any) {
         </label>
         <label className="block">
           Image URL
-          <input
-            className="input"
-            {...register('lecture.imageUrl')}
-            placeholder="/img/demo-lect.jpg"
-          />
+          <input className="input" {...register('lecture.imageUrl')} placeholder="/img/demo-lect.jpg" />
+        </label>
+        <label className="block">
+          Transcript (스크립트 전문)
+          <textarea className="input min-h-[120px] font-mono text-xs"
+            placeholder="Professor: Today we're going to discuss..."
+            {...register('lecture.transcript' as any)} />
         </label>
 
         <div className="flex justify-between items-center">
@@ -303,42 +354,47 @@ export default function AdminListeningEditor(props: any) {
         </div>
 
         {lectQs.fields.map((f, i) => (
-          <div key={f.id} className="rounded border p-3 space-y-2">
-            <div className="flex gap-2 items-end">
+          <div key={f.id} className="rounded border p-3 space-y-2 bg-slate-50">
+            <div className="flex gap-2 items-start">
               <label className="block flex-1">
-                Prompt
-                <textarea
-                  className="input"
-                  {...register(`lecture.questions.${i}.prompt` as const)}
-                />
+                Prompt (문제)
+                <textarea className="input" {...register(`lecture.questions.${i}.prompt` as const)} />
               </label>
-              <label className="block w-32">
-                Type
-                <select
-                  className="input"
-                  {...register(`lecture.questions.${i}.qtype` as const, {
-                    setValueAs: (v) => (v === '' ? undefined : v),
-                  })}
-                >
-                  <option value="">(auto)</option>
-                  <option value="function">function</option>
-                  <option value="purpose">purpose</option>
-                  <option value="detail">detail</option>
-                  <option value="inference">inference</option>
-                  <option value="gist">gist</option>
-                  <option value="attitude">attitude</option>
-                  <option value="organization">organization</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                className="px-2 py-1 border rounded"
-                onClick={() => lectQs.remove(i)}
-                aria-label={`Delete lecture question ${i + 1}`}
-              >
-                Delete
-              </button>
+              <div className="flex flex-col gap-2 w-36 shrink-0">
+                <label className="block">
+                  유형
+                  <select className="input" {...register(`lecture.questions.${i}.qtype` as const, { setValueAs: (v) => (v === '' ? undefined : v) })}>
+                    <option value="">(미지정)</option>
+                    <option value="main_topic">주제/목적</option>
+                    <option value="detail">세부사항</option>
+                    <option value="function">화자의 의도</option>
+                    <option value="attitude">화자의 태도</option>
+                    <option value="organization">강의 구성</option>
+                    <option value="inference">추론</option>
+                    <option value="connecting">개념 연결</option>
+                  </select>
+                </label>
+                <label className="block">
+                  난이도
+                  <select className="input" {...register(`lecture.questions.${i}.difficulty` as any)}>
+                    <option value="">전체</option>
+                    <option value="basic">Basic</option>
+                    <option value="standard">Standard</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </label>
+              </div>
+              <button type="button" className="px-2 py-1 border rounded text-xs mt-5 shrink-0"
+                onClick={() => lectQs.remove(i)}>삭제</button>
             </div>
+
+            <label className="block">
+              <span className="text-xs font-semibold text-amber-700">Clue Quote</span>
+              <span className="text-[11px] text-slate-400 ml-1">— 정답 근거가 되는 스크립트 문장 (복붙)</span>
+              <textarea className="input min-h-[48px] text-xs border-amber-200 bg-amber-50"
+                placeholder="예: 'The real issue here is the budget allocation.'"
+                {...register(`lecture.questions.${i}.clue_quote` as any)} />
+            </label>
 
             <ChoicesEditor
               base={`lecture.questions.${i}.choices` as `lecture.questions.${number}.choices`}

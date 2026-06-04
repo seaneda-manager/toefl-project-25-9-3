@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { MOCK_GRAMMAR_UNITS_LIST } from "@/models/grammar/mock";
+import SectionGuide from "@/app/components/SectionGuide";
 
 const LEVEL_LABEL: Record<string, string> = {
   all: "전체", ms: "중등", hs: "고등", toefl: "TOEFL",
@@ -30,11 +31,35 @@ export default async function Grammar2026Page() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="mb-8">
+      <div className="mb-6">
         <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest mb-1">LEXiOX-Gram</p>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">문법 챕터</h1>
-        <p className="text-sm text-gray-400">순서대로 학습하면 가장 효과적입니다.</p>
       </div>
+
+      <SectionGuide
+        storageKey="guide-seen-grammar-2026"
+        color="indigo"
+        icon="✍️"
+        title="문법"
+        tagline="개념 영상 → 빈칸 드릴 순서로 챕터를 완성합니다."
+        outcomes={[
+          '영어 문장의 구조(주어·동사·목적어·수식어)를 직관적으로 분석할 수 있다',
+          '시제·관계절·조동사 등 핵심 규칙을 실제 문장 속에서 바로 적용할 수 있다',
+          '내신·TOEFL·수능에 자주 출제되는 문법 포인트를 정확히 구분할 수 있다',
+        ]}
+        steps={[
+          { icon: '🎬', title: '설명 영상', desc: '핵심 규칙을 애니메이션으로 설명합니다. 멈추고 돌려보며 이해를 확인하세요.' },
+          { icon: '✏️', title: '빈칸 드릴', desc: '문장 속 빈칸을 채우며 규칙을 직접 적용합니다. 정답과 문장 성분 레이블을 함께 확인하세요.' },
+          { icon: '🔢', title: '순서대로', desc: '1번부터 순서대로 완료하면 규칙이 자연스럽게 쌓입니다.' },
+        ]}
+        progress={publishedCount > 0 ? { done: completedCount, total: publishedCount, unit: '챕터' } : undefined}
+        nextAction={(() => {
+          const next = units.find((u) => u.status === 'published' && !completedUnitIds.has(u.id));
+          return next ? { label: `${next.label_ko} 이어하기`, href: `/grammar-2026/${next.id}` } : undefined;
+        })()}
+      />
+
+
 
       <div className="mb-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
         <div className="flex items-center justify-between mb-2">

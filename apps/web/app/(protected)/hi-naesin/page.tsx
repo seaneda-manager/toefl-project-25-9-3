@@ -5,6 +5,7 @@ import { getServerSupabase } from '@/lib/supabase/server';
 import { HI_NAESIN_DRILL_TYPES, sourceTypeLabel } from '@/models/hi-naesin';
 import type { HiNaesinDrillType, HiNaesinSourceType } from '@/models/hi-naesin';
 import { startHiNaesinDrillSessionAction } from './passages/actions';
+import SectionGuide from '@/app/components/SectionGuide';
 
 export const dynamic = 'force-dynamic';
 
@@ -217,6 +218,41 @@ export default async function HiNaesinDashboard() {
   return (
     <main className="space-y-6 pb-12">
 
+      <SectionGuide
+        storageKey="guide-seen-hi-naesin"
+        color="emerald"
+        icon="📖"
+        title="고등 내신"
+        tagline="배정된 교과서 지문을 6가지 드릴로 반복해 시험을 준비합니다."
+        outcomes={[
+          '교과서 지문의 단어·해석·작문·빈칸·문법·요약을 드릴로 완전히 소화할 수 있다',
+          '시험 출제 패턴에 맞춘 표현을 정확히 암기해 서술형·빈칸 문제에 바로 쓸 수 있다',
+          'D-Day까지 체계적으로 반복해 시험 당일 자신있게 임할 수 있다',
+        ]}
+        steps={[
+          { icon: '📋', title: '지문 배정', desc: '선생님이 배정한 지문이 아래 표에 나타납니다. 교과서·모의고사·외부 출처별로 묶여 있어요.' },
+          { icon: '▶️', title: '드릴 순서', desc: '단어 → 해석 → 작문 → 빈칸 → 문법 → 요약 순으로 진행됩니다. 중간에 나가도 진도가 저장됩니다.' },
+          { icon: '🔄', title: '반복 학습', desc: '1회전 완주 후 2회전을 반복할수록 기억이 굳어집니다.' },
+        ]}
+        progress={
+          progressList.reduce((s, p) => s + p.totalDrills, 0) > 0
+            ? {
+                done:  progressList.reduce((s, p) => s + p.totalDone, 0),
+                total: progressList.reduce((s, p) => s + p.totalDrills, 0),
+                unit:  '드릴',
+              }
+            : undefined
+        }
+        nextAction={
+          nextPassage
+            ? {
+                label: nextPassage.sessionStatus === 'started' ? `"${nextPassage.title}" 이어하기` : `"${nextPassage.title}" 시작하기`,
+                href: '#drill-table',
+              }
+            : undefined
+        }
+      />
+
       {/* ── 상단: D-Day + 이어하기 ─────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
 
@@ -323,7 +359,7 @@ export default async function HiNaesinDashboard() {
       </div>
 
       {/* ── 진도 테이블 ──────────────────────────────────────── */}
-      <section>
+      <section id="drill-table">
         <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400 mb-3">
           지문별 진도
         </h2>
