@@ -48,8 +48,8 @@ export const KO_CONTENT: LandingContent = {
     { id: "p2", title: "LEXiOX Jr. · 내신 · LEXiOX", desc: "중·고등학생을 위한 전용 모듈로 내신과 영어 기초를 동시에 잡습니다." },
     { id: "p3", title: "GAP (글로벌 아트 패스웨이) 커리큘럼", desc: "2개월 집중 과정으로 학생의 잠재력을 최대로 끌어냅니다." },
   ],
-  programsHeading: "모든 학습자를 위한 프로그램",
-  programsSubheading: "두 개의 프로그램, 하나의 계정. 원하는 방향으로 시작하세요.",
+  programsHeading: "Programs for every learner",
+  programsSubheading: "Two programs, one account. Pick a lane, or run both.",
   teachers: {
     title: "선생님",
     heading: "수업을 차별화하고 모든 학생을 집중시키세요.",
