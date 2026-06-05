@@ -332,7 +332,10 @@ export default async function LandingPage() {
           <div className="flex flex-col gap-10 md:flex-row md:justify-between">
             <div className="space-y-3 max-w-xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/LEXiOX.png" alt="LEXiOX" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+              {/* 푸터용 흰색 텍스트 로고 */}
+              <span className="text-2xl font-extrabold tracking-tight text-white" style={{ fontFamily: "'Inter', 'Helvetica Neue', sans-serif", letterSpacing: '-0.02em' }}>
+                LEX<span style={{ fontWeight: 400 }}>i</span>OX
+              </span>
               <p className="text-sm leading-relaxed text-emerald-100/70">
                 To seek truth, master learning, and make high-quality English education accessible for every motivated learner.
               </p>
