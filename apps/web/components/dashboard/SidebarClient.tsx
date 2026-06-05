@@ -149,6 +149,31 @@ const SKILL_DOT: Record<SkillColor, string> = {
   writing:   'bg-teal-400',
 };
 
+// ── Admin tab detection (mirrors AdminTabBar logic) ──────────
+const ADMIN_PATH_TAB_MAP: [string, string][] = [
+  ['/admin/content/reading-2026',    'LEXiOX-TOEFL'],
+  ['/admin/content/listening/toefl', 'LEXiOX-TOEFL'],
+  ['/admin/content/writing-2026',    'LEXiOX-TOEFL'],
+  ['/admin/content/grammar-2026',    'LEXiOX-TOEFL'],
+  ['/admin/landing',                 'LEXiOX-TOEFL'],
+  ['/admin/naesin',                  'LEXiOX-내신'],
+  ['/admin/hi-naesin',               'LEXiOX-내신'],
+  ['/admin/content/listening/jr',    'LEXiOX-Jr.'],
+  ['/admin/vocab',                   'LEXiOX-어휘'],
+  ['/voca/admin',                    'LEXiOX-어휘'],
+  ['/admin/content',                 '콘텐츠'],
+  ['/teacher',                       '선생님 도구'],
+  ['/admin/students',                '선생님 도구'],
+  ['/admin/homework',                '선생님 도구'],
+];
+
+function guessAdminTabFromPath(pathname: string): string {
+  for (const [prefix, tab] of ADMIN_PATH_TAB_MAP) {
+    if (pathname.startsWith(prefix)) return tab;
+  }
+  return '관리자';
+}
+
 // ── Component ────────────────────────────────────────────────────
 export default function SidebarClient({ role, program = null }: Props) {
   const pathnameRaw = usePathname() || '/';
@@ -157,6 +182,10 @@ export default function SidebarClient({ role, program = null }: Props) {
 
   const [collapsed, setCollapsed]   = useState(false);
   const [legacyOpen, setLegacyOpen] = useState(false);
+  const [adminTab, setAdminTab]     = useState<string>(() => {
+    if (role !== 'admin') return '';
+    return guessAdminTabFromPath(pathnameRaw);
+  });
 
   // ── Initial open-section state ──────────────────────────────
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
@@ -336,8 +365,12 @@ export default function SidebarClient({ role, program = null }: Props) {
       if (!map.has(it.section)) map.set(it.section, []);
       map.get(it.section)!.push(it);
     }
-    return [...map.entries()] as [string, NavItem[]][];
-  }, [items]);
+    const all = [...map.entries()] as [string, NavItem[]][];
+    if (role === 'admin' && adminTab !== '') {
+      return all.filter(([section]) => section === adminTab);
+    }
+    return all;
+  }, [items, role, adminTab]);
 
   // ── Sidebar events ────────────────────────────────────────────
   useEffect(() => {
@@ -345,6 +378,17 @@ export default function SidebarClient({ role, program = null }: Props) {
     document.addEventListener('toggle-sidebar', handler);
     return () => document.removeEventListener('toggle-sidebar', handler);
   }, []);
+
+  useEffect(() => {
+    if (role !== 'admin') return;
+    const handler = (e: Event) => setAdminTab((e as CustomEvent<string>).detail);
+    document.addEventListener('change-admin-tab', handler);
+    return () => document.removeEventListener('change-admin-tab', handler);
+  }, [role]);
+
+  useEffect(() => {
+    if (role === 'admin') setAdminTab(guessAdminTabFromPath(pathnameRaw));
+  }, [pathnameRaw, role]);
 
   useEffect(() => {
     if (isExamRoute) setCollapsed(true);
