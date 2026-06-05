@@ -332,7 +332,7 @@ export default async function LandingPage() {
           <div className="flex flex-col gap-10 md:flex-row md:justify-between">
             <div className="space-y-3 max-w-xs">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/LEXiOX.png" alt="LEXiOX" className="h-8 w-auto brightness-0 invert" />
+              <img src="/LEXiOX.png" alt="LEXiOX" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
               <p className="text-sm leading-relaxed text-emerald-100/70">
                 To seek truth, master learning, and make high-quality English education accessible for every motivated learner.
               </p>
