@@ -102,12 +102,35 @@ export default async function Page(...args: any[]) {
     questions,
   };
 
+  async function onAnswer(a: { sessionId: string; questionId: string; choiceId: string }) {
+    'use server';
+    const supa = await getSupabaseServer();
+    await supa.from('reading_answers').upsert(
+      { session_id: a.sessionId, question_id: a.questionId, choice_id: a.choiceId },
+      { onConflict: 'session_id,question_id' }
+    );
+    return { ok: true as const };
+  }
+
+  async function onFinish(a: { sessionId: string }) {
+    'use server';
+    const supa = await getSupabaseServer();
+    const { data: { user } } = await supa.auth.getUser();
+    if (user) {
+      await supa.from('reading_sessions')
+        .update({ finished_at: new Date().toISOString() })
+        .eq('id', a.sessionId)
+        .eq('user_id', user.id);
+    }
+    return { ok: true as const };
+  }
+
   return (
     <ReadingTestRunner
       passage={passage}
       sessionId={params.sessionId}
-      onAnswer={async () => ({ ok: true })}
-      onFinish={async () => ({ ok: true })}
+      onAnswer={onAnswer}
+      onFinish={onFinish}
     />
   );
 }
