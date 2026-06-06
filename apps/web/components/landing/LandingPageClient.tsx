@@ -199,7 +199,6 @@ export default function LandingPageClient({ savedConfig }: { savedConfig?: Saved
     ? mergeContent(KO_CONTENT, savedConfig, true)
     : mergeContent(EN_CONTENT, savedConfig, false);
 
-  const heroLogo = (savedConfig?.heroLogo as { url: string } | undefined)?.url;
   const titleLines = c.hero.title.split("\n");
 
   return (
@@ -208,13 +207,8 @@ export default function LandingPageClient({ savedConfig }: { savedConfig?: Saved
       {/* ── Navbar ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-4">
-          {heroLogo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={heroLogo} alt="LEXiOX" className="h-10 w-auto" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/LEXiOX.png" alt="LEXiOX" className="h-10 w-auto" />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/LEXiOX.png" alt="LEXiOX" className="h-10 w-auto" />
 
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
             <a href="#programs" className="hover:text-emerald-800 transition-colors">{c.nav.programs}</a>
