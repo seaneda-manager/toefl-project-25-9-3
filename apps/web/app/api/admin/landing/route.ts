@@ -1,1 +1,76 @@
-import { NextResponse } from "next/server"; import { createClient } from "@supabase/supabase-js"; import { getServerSupabase } from "@/lib/supabase/server"; const LANDING_KEY = "landing_home_v1"; function getServiceSupabase() { const url = process.env.NEXT_PUBLIC_SUPABASE_URL; const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY; if (!url || !serviceRoleKey) { throw new Error( "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" ); } return createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false, }, }); } async function guardAdmin() { const supabase = await getServerSupabase(); const { data: { user }, error: userError, } = await supabase.auth.getUser(); if (userError) { return { status: 500 as const, error: userError.message }; } if (!user) { return { status: 401 as const, error: "unauthorized" }; } const { data: profile, error: profileError } = await supabase .from("profiles") .select("role") .eq("id", user.id) .maybeSingle(); if (profileError) { return { status: 500 as const, error: profileError.message }; } if (!profile || profile.role !== "admin") { return { status: 403 as const, error: "forbidden" }; } return { status: 200 as const, error: null }; } export async function GET() { const guard = await guardAdmin(); if (guard.status !== 200) { return NextResponse.json({ error: guard.error }, { status: guard.status }); } try { const adminSupabase = getServiceSupabase(); const { data, error } = await adminSupabase .from("site_settings") .select("value") .eq("key", LANDING_KEY) .maybeSingle(); if (error) { return NextResponse.json({ error: error.message }, { status: 500 }); } return NextResponse.json(data?.value ?? {}); } catch (err: any) { return NextResponse.json( { error: err?.message || "Failed to load landing config." }, { status: 500 } ); } } export async function PUT(req: Request) { const guard = await guardAdmin(); if (guard.status !== 200) { return NextResponse.json({ error: guard.error }, { status: guard.status }); } try { const body = await req.json(); const adminSupabase = getServiceSupabase(); const { data, error } = await adminSupabase .from("site_settings") .upsert( { key: LANDING_KEY, value: body, }, { onConflict: "key", } ) .select("value") .single(); if (error) { return NextResponse.json({ error: error.message }, { status: 500 }); } return NextResponse.json(data?.value ?? body); } catch (err: any) { return NextResponse.json( { error: err?.message || "Failed to save landing config." }, { status: 500 } ); } }
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
+import { getServerSupabase } from "@/lib/supabase/server";
+
+const LANDING_KEY = "landing_home_v1";
+
+function getServiceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+  return createClient(url, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function guardAdmin() {
+  const supabase = await getServerSupabase();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) return { status: 500 as const, error: userError.message };
+  if (!user) return { status: 401 as const, error: "unauthorized" };
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError) return { status: 500 as const, error: profileError.message };
+  if (!profile || profile.role !== "admin") return { status: 403 as const, error: "forbidden" };
+  return { status: 200 as const, error: null };
+}
+
+export async function GET() {
+  const guard = await guardAdmin();
+  if (guard.status !== 200) {
+    return NextResponse.json({ error: guard.error }, { status: guard.status });
+  }
+  try {
+    const adminSupabase = getServiceSupabase();
+    const { data, error } = await adminSupabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", LANDING_KEY)
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data?.value ?? {});
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Failed to load landing config." }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  const guard = await guardAdmin();
+  if (guard.status !== 200) {
+    return NextResponse.json({ error: guard.error }, { status: guard.status });
+  }
+  try {
+    const body = await req.json();
+    const adminSupabase = getServiceSupabase();
+    const { data, error } = await adminSupabase
+      .from("site_settings")
+      .upsert({ key: LANDING_KEY, value: body }, { onConflict: "key" })
+      .select("value")
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // 저장 즉시 랜딩 페이지 ISR 캐시 무효화 → 다음 방문 시 즉시 반영
+    revalidatePath("/");
+
+    return NextResponse.json(data?.value ?? body);
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Failed to save landing config." }, { status: 500 });
+  }
+}
