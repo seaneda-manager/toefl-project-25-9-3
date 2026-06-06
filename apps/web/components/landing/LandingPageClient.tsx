@@ -48,8 +48,8 @@ export const KO_CONTENT: LandingContent = {
     { id: "p2", title: "LEXiOX Jr. · 내신 · LEXiOX", desc: "중·고등학생을 위한 전용 모듈로 내신과 영어 기초를 동시에 잡습니다." },
     { id: "p3", title: "GAP (글로벌 아트 패스웨이) 커리큘럼", desc: "2개월 집중 과정으로 학생의 잠재력을 최대로 끌어냅니다." },
   ],
-  programsHeading: "Programs for every learner",
-  programsSubheading: "Two programs, one account. Pick a lane, or run both.",
+  programsHeading: "모든 학습자를 위한 프로그램",
+  programsSubheading: "두 프로그램, 하나의 계정. 원하는 과정을 선택하거나 둘 다 수강하세요.",
   teachers: {
     title: "선생님",
     heading: "수업을 차별화하고 모든 학생을 집중시키세요.",
@@ -163,10 +163,43 @@ export const EN_CONTENT: LandingContent = {
   },
 };
 
+// ── Saved config shape (from admin editor) ─────────────────────
+type SavedConfig = Record<string, unknown>;
+
+function mergeContent(base: LandingContent, saved: SavedConfig | undefined, koKey: boolean): LandingContent {
+  if (!saved) return base;
+  const src = koKey ? (saved.ko as SavedConfig | undefined) : saved;
+  if (!src) return base;
+
+  const hero = src.hero as Partial<HeroConfig> | undefined;
+  const programs = src.programs as ProgramItem[] | undefined;
+  const teachers = src.teachers as Partial<RoleSection> | undefined;
+  const learners = src.learners as Partial<RoleSection> | undefined;
+  const story = src.story as Partial<StorySection> | undefined;
+  const join = src.join as Partial<JoinSection> | undefined;
+
+  return {
+    ...base,
+    hero: hero ? { ...base.hero, ...hero } : base.hero,
+    programs: programs?.length ? programs : base.programs,
+    programsHeading: (src.programsHeading as string) || base.programsHeading,
+    programsSubheading: (src.programsSubheading as string) || base.programsSubheading,
+    teachers: teachers ? { ...base.teachers, ...teachers } : base.teachers,
+    learners: learners ? { ...base.learners, ...learners } : base.learners,
+    story: story ? { ...base.story, ...story } : base.story,
+    join: join ? { ...base.join, ...join } : base.join,
+  };
+}
+
 // ── Component ──────────────────────────────────────────────────
-export default function LandingPageClient() {
+export default function LandingPageClient({ savedConfig }: { savedConfig?: SavedConfig }) {
   const [lang, setLang] = useState<"ko" | "en">("ko");
-  const c = lang === "ko" ? KO_CONTENT : EN_CONTENT;
+
+  const c = lang === "ko"
+    ? mergeContent(KO_CONTENT, savedConfig, true)
+    : mergeContent(EN_CONTENT, savedConfig, false);
+
+  const heroLogo = (savedConfig?.heroLogo as { url: string } | undefined)?.url;
   const titleLines = c.hero.title.split("\n");
 
   return (
@@ -175,8 +208,13 @@ export default function LandingPageClient() {
       {/* ── Navbar ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/LEXiOX.png" alt="LEXiOX" className="h-10 w-auto" />
+          {heroLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={heroLogo} alt="LEXiOX" className="h-10 w-auto" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/LEXiOX.png" alt="LEXiOX" className="h-10 w-auto" />
+          )}
 
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
             <a href="#programs" className="hover:text-emerald-800 transition-colors">{c.nav.programs}</a>
@@ -186,7 +224,6 @@ export default function LandingPageClient() {
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* 언어 토글 버튼 */}
             <button
               onClick={() => setLang(lang === "ko" ? "en" : "ko")}
               className="flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:border-emerald-300 hover:text-emerald-800 transition-colors"

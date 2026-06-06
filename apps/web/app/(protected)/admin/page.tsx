@@ -151,6 +151,50 @@ export default function AdminPage() {
           </div>
         </section>
 
+        <section className="flex flex-col rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-emerald-900">프랜차이즈 허브</h2>
+          <p className="mt-2 flex-1 text-xs text-emerald-700">
+            가맹점 공지, 교육 모듈 이수, Q&A 처리, 자료 배포를 관리하는 본사 운영 센터입니다.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => go('/admin/franchise')}
+              className="rounded-lg bg-emerald-900 px-3 py-1.5 font-medium text-white hover:bg-emerald-800"
+            >
+              허브 열기
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/admin/franchise/announcements')}
+              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
+            >
+              공지사항
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/admin/franchise/training')}
+              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
+            >
+              교육 센터
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/admin/franchise/qna')}
+              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
+            >
+              Q&A
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/admin/franchise/resources')}
+              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
+            >
+              자료실
+            </button>
+          </div>
+        </section>
+
         <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm md:col-span-2 lg:col-span-3">
           <h2 className="text-sm font-semibold">최근 작업 &amp; 운영 영역</h2>
           <p className="mt-2 text-xs text-neutral-600">
