@@ -1093,12 +1093,20 @@ export default async function AdminStudentsPage({
                       </td>
 
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/admin/students?edit=${encodeURIComponent(id)}`}
-                          className="inline-flex rounded-xl border px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-                        >
-                          Edit
-                        </Link>
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/admin/students/${encodeURIComponent(id)}`}
+                            className="inline-flex rounded-xl border px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                          >
+                            분석
+                          </Link>
+                          <Link
+                            href={`/admin/students?edit=${encodeURIComponent(id)}`}
+                            className="inline-flex rounded-xl border px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                          >
+                            Edit
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

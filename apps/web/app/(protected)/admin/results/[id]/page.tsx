@@ -1,273 +1,235 @@
+// apps/web/app/(protected)/admin/results/[id]/page.tsx
 import Link from "next/link";
-
-type PageProps = {
-  params: Promise<{ id: string }>;
-};
-
-type ResultDetail = {
-  id: string;
-  assignmentTitle: string;
-  studentLabel: string;
-  track: "naesin" | "junior" | "toefl";
-  section: "reading" | "listening" | "speaking" | "writing" | "grammar" | "vocab";
-  status: "completed" | "in_progress" | "not_started";
-  score: string;
-  submittedAt: string;
-  weakLabels: string[];
-  answers: {
-    number: number;
-    status: "correct" | "wrong";
-    userAnswer: string;
-    correctAnswer: string;
-  }[];
-};
-
-const resultMap: Record<string, ResultDetail> = {
-  res_001: {
-    id: "res_001",
-    assignmentTitle: "송도고1-1 중간 범위 A",
-    studentLabel: "student_001",
-    track: "naesin",
-    section: "reading",
-    status: "completed",
-    score: "84",
-    submittedAt: "2026-03-14 10:22",
-    weakLabels: ["근거 찾기 약함", "문장 구조 약함"],
-    answers: [
-      { number: 1, status: "correct", userAnswer: "2", correctAnswer: "2" },
-      { number: 2, status: "wrong", userAnswer: "3", correctAnswer: "1" },
-      { number: 3, status: "correct", userAnswer: "4", correctAnswer: "4" },
-      { number: 4, status: "wrong", userAnswer: "1", correctAnswer: "2" },
-    ],
-  },
-  res_002: {
-    id: "res_002",
-    assignmentTitle: "Junior Reading Passage 01",
-    studentLabel: "student_002",
-    track: "junior",
-    section: "reading",
-    status: "in_progress",
-    score: "-",
-    submittedAt: "-",
-    weakLabels: ["진행중"],
-    answers: [],
-  },
-  res_003: {
-    id: "res_003",
-    assignmentTitle: "TOEFL Reading Drill Set 01",
-    studentLabel: "student_003",
-    track: "toefl",
-    section: "reading",
-    status: "completed",
-    score: "92",
-    submittedAt: "2026-03-13 18:40",
-    weakLabels: ["어휘 약점 소폭"],
-    answers: [
-      { number: 1, status: "correct", userAnswer: "1", correctAnswer: "1" },
-      { number: 2, status: "correct", userAnswer: "3", correctAnswer: "3" },
-      { number: 3, status: "correct", userAnswer: "2", correctAnswer: "2" },
-    ],
-  },
-};
-
-function trackLabel(track: ResultDetail["track"]) {
-  switch (track) {
-    case "naesin":
-      return "내신";
-    case "junior":
-      return "주니어";
-    case "toefl":
-      return "TOEFL";
-    default:
-      return track;
-  }
-}
-
-function sectionLabel(section: ResultDetail["section"]) {
-  switch (section) {
-    case "reading":
-      return "리딩";
-    case "listening":
-      return "리스닝";
-    case "speaking":
-      return "스피킹";
-    case "writing":
-      return "라이팅";
-    case "grammar":
-      return "문법";
-    case "vocab":
-      return "보카";
-    default:
-      return section;
-  }
-}
-
-function statusLabel(status: ResultDetail["status"]) {
-  switch (status) {
-    case "completed":
-      return "완료";
-    case "in_progress":
-      return "진행중";
-    case "not_started":
-      return "미시작";
-    default:
-      return status;
-  }
-}
-
-function statusBadgeClass(status: ResultDetail["status"]) {
-  switch (status) {
-    case "completed":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    case "in_progress":
-      return "border-amber-200 bg-amber-50 text-amber-700";
-    case "not_started":
-      return "border-neutral-300 bg-neutral-50 text-neutral-700";
-    default:
-      return "border-neutral-300 bg-neutral-50 text-neutral-700";
-  }
-}
-
-function answerBadgeClass(status: "correct" | "wrong") {
-  switch (status) {
-    case "correct":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    case "wrong":
-      return "border-red-200 bg-red-50 text-red-700";
-    default:
-      return "border-neutral-300 bg-neutral-50 text-neutral-700";
-  }
-}
+import { notFound } from "next/navigation";
+import { getServerSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+type PageProps = { params: Promise<{ id: string }> };
+
+function fmt(value: string | null | undefined): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+}
+
 export default async function AdminResultDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const result = resultMap[id];
+  const supabase = await getServerSupabase();
 
-  if (!result) {
-    return (
-      <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-        <div className="rounded-2xl border bg-white px-4 py-10 text-center text-sm text-neutral-500">
-          해당 결과를 찾을 수 없습니다.
-        </div>
-      </main>
-    );
+  // 세션 + 지문 정보
+  const { data: session, error: sessionErr } = await supabase
+    .from("reading_sessions")
+    .select(
+      "id, user_id, mode, band_score, legacy_score, started_at, finished_at, reading_passages(id, title)"
+    )
+    .eq("id", id)
+    .single();
+
+  if (sessionErr || !session) return notFound();
+
+  // 학생 이름
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, name, email")
+    .eq("id", session.user_id)
+    .single();
+
+  const studentLabel =
+    (profile as { full_name?: string | null } | null)?.full_name ||
+    (profile as { name?: string | null } | null)?.name ||
+    profile?.email ||
+    `…${session.user_id.slice(-6)}`;
+
+  // 제출 답안 (최종)
+  const { data: answers } = await supabase
+    .from("reading_answers")
+    .select(
+      "question_id, choice_id, elapsed_ms, reading_questions(number, stem, type), reading_choices(id, text, is_correct, label, ord)"
+    )
+    .eq("session_id", id);
+
+  // 해당 지문의 모든 선지 (정답 확인용)
+  const passage = Array.isArray(session.reading_passages)
+    ? session.reading_passages[0]
+    : session.reading_passages;
+  const passageId = (passage as { id?: string } | null)?.id;
+
+  const { data: allChoices } = passageId
+    ? await supabase
+        .from("reading_choices")
+        .select("id, question_id, is_correct, label, ord")
+        .in(
+          "question_id",
+          (answers ?? []).map((a) => a.question_id).filter(Boolean)
+        )
+    : { data: [] };
+
+  // question_id → correct choice id map
+  const correctChoiceMap = new Map<string, string>();
+  for (const c of allChoices ?? []) {
+    if (c.is_correct) correctChoiceMap.set(c.question_id, c.id);
   }
 
+  type AnswerRow = {
+    questionNumber: number;
+    stem: string;
+    type: string;
+    choiceLabel: string;
+    choiceText: string;
+    isCorrect: boolean | null;
+    elapsedSec: string;
+  };
+
+  const answerRows: AnswerRow[] = (answers ?? [])
+    .map((a) => {
+      const q = Array.isArray(a.reading_questions)
+        ? a.reading_questions[0]
+        : a.reading_questions;
+      const c = Array.isArray(a.reading_choices)
+        ? a.reading_choices[0]
+        : a.reading_choices;
+      const correctId = correctChoiceMap.get(a.question_id);
+
+      return {
+        questionNumber: (q as { number?: number } | null)?.number ?? 0,
+        stem: (q as { stem?: string } | null)?.stem ?? "-",
+        type: (q as { type?: string } | null)?.type ?? "-",
+        choiceLabel:
+          (c as { label?: string | null } | null)?.label ?? "-",
+        choiceText: (c as { text?: string } | null)?.text ?? "-",
+        isCorrect: a.choice_id != null ? a.choice_id === correctId : null,
+        elapsedSec:
+          a.elapsed_ms != null ? `${Math.round(a.elapsed_ms / 1000)}s` : "-",
+      };
+    })
+    .sort((a, b) => a.questionNumber - b.questionNumber);
+
+  const totalCount = answerRows.length;
+  const correctCount = answerRows.filter((r) => r.isCorrect === true).length;
+  const score = session.band_score ?? session.legacy_score;
+  const passageTitle = (passage as { title?: string } | null)?.title ?? "-";
+
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+    <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-2">
-          <div className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-            Admin / Results / Detail
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-              {result.assignmentTitle}
-            </h1>
-            <span
-              className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusBadgeClass(
-                result.status,
-              )}`}
-            >
-              {statusLabel(result.status)}
-            </span>
-          </div>
-
-          <p className="text-sm text-neutral-500">
-            {result.studentLabel} · {trackLabel(result.track)} · {sectionLabel(result.section)}
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+            Admin / Results / 상세
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {passageTitle}
+          </h1>
+          <p className="text-sm text-slate-500">
+            {studentLabel} · {session.mode}
           </p>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/results"
-            className="rounded-xl border px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-          >
-            결과 보드
-          </Link>
-          <Link
-            href="/reading/review"
-            className="rounded-xl border px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-          >
-            리뷰 보기
-          </Link>
-        </div>
+        <Link
+          href="/admin/results"
+          className="self-start rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          ← 목록
+        </Link>
       </header>
 
-      <section className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border bg-white p-4">
-          <div className="text-xs font-medium text-neutral-500">학생</div>
-          <div className="mt-2 text-lg font-semibold text-neutral-900">{result.studentLabel}</div>
+      {/* 요약 */}
+      <section className="grid gap-4 md:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold text-slate-500">학생</p>
+          <p className="mt-1 font-semibold text-slate-900">{studentLabel}</p>
         </div>
-
-        <div className="rounded-2xl border bg-white p-4">
-          <div className="text-xs font-medium text-neutral-500">점수</div>
-          <div className="mt-2 text-lg font-semibold text-neutral-900">{result.score}</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold text-slate-500">점수</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">
+            {score != null ? score : "-"}
+          </p>
         </div>
-
-        <div className="rounded-2xl border bg-white p-4">
-          <div className="text-xs font-medium text-neutral-500">제출 시각</div>
-          <div className="mt-2 text-lg font-semibold text-neutral-900">{result.submittedAt}</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold text-slate-500">정답률</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">
+            {totalCount > 0
+              ? `${correctCount}/${totalCount} (${Math.round((correctCount / totalCount) * 100)}%)`
+              : "-"}
+          </p>
         </div>
-
-        <div className="rounded-2xl border bg-white p-4">
-          <div className="text-xs font-medium text-neutral-500">약점 라벨</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {result.weakLabels.map((label) => (
-              <span
-                key={label}
-                className="rounded-full border px-2.5 py-1 text-xs text-neutral-700"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold text-slate-500">완료 시각</p>
+          <p className="mt-1 font-semibold text-slate-900">
+            {fmt(session.finished_at)}
+          </p>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border bg-white">
-        <div className="border-b px-4 py-3 text-sm font-semibold text-neutral-900">
-          문항별 결과
+      {/* 문항별 결과 */}
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <h2 className="text-sm font-bold text-slate-900">문항별 결과</h2>
         </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-neutral-600">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr className="[&>th]:px-4 [&>th]:py-3">
-                <th>문항</th>
-                <th>상태</th>
+                <th>#</th>
+                <th>유형</th>
+                <th className="min-w-[240px]">문제</th>
                 <th>학생 답</th>
-                <th>정답</th>
+                <th>결과</th>
+                <th>소요시간</th>
               </tr>
             </thead>
             <tbody>
-              {result.answers.map((answer) => (
-                <tr key={answer.number} className="border-t [&>td]:px-4 [&>td]:py-3">
-                  <td className="font-medium text-neutral-900">{answer.number}</td>
-                  <td>
-                    <span
-                      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${answerBadgeClass(
-                        answer.status,
-                      )}`}
-                    >
-                      {answer.status === "correct" ? "정답" : "오답"}
-                    </span>
-                  </td>
-                  <td className="text-neutral-700">{answer.userAnswer}</td>
-                  <td className="text-neutral-700">{answer.correctAnswer}</td>
-                </tr>
-              ))}
-
-              {result.answers.length === 0 ? (
+              {answerRows.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-sm text-neutral-500">
-                    아직 제출된 답안이 없습니다.
+                  <td
+                    colSpan={6}
+                    className="px-4 py-10 text-center text-slate-500"
+                  >
+                    제출된 답안이 없습니다.
                   </td>
                 </tr>
-              ) : null}
+              ) : (
+                answerRows.map((row) => (
+                  <tr
+                    key={row.questionNumber}
+                    className="border-t border-slate-100 [&>td]:px-4 [&>td]:py-3"
+                  >
+                    <td className="font-semibold text-slate-700">
+                      {row.questionNumber}
+                    </td>
+                    <td className="text-slate-500">{row.type}</td>
+                    <td className="max-w-xs text-slate-700">{row.stem}</td>
+                    <td className="text-slate-700">
+                      {row.choiceLabel !== "-"
+                        ? `${row.choiceLabel}. ${row.choiceText}`
+                        : row.choiceText}
+                    </td>
+                    <td>
+                      {row.isCorrect === true ? (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                          정답
+                        </span>
+                      ) : row.isCorrect === false ? (
+                        <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                          오답
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                          -
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-slate-500">{row.elapsedSec}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
