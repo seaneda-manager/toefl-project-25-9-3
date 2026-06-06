@@ -43,6 +43,8 @@ export default async function AdminLayout({
           <Link href="/admin/content/list">Content List</Link>
           <Link href="/admin/reports">Reports</Link>
           <Link href="/admin/analytics">Analytics</Link>
+          <Link href="/admin/results">Results</Link>
+          <Link href="/admin/students">Students</Link>
           <Link href="/admin/users" className="font-medium">
             Users
           </Link>

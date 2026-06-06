@@ -195,11 +195,56 @@ export default function AdminPage() {
           </div>
         </section>
 
+        <section className="flex flex-col rounded-xl border border-violet-100 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold">학생 풀이 결과</h2>
+          <p className="mt-2 flex-1 text-xs text-neutral-600">
+            학생별 독해 세션 풀이 이력과 문항별 정오답을 확인합니다.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => go('/admin/results')}
+              className="rounded-lg bg-violet-700 px-3 py-1.5 font-medium text-white hover:bg-violet-800"
+            >
+              Results
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/admin/students')}
+              className="rounded-lg border border-violet-200 px-3 py-1.5 text-violet-800 hover:bg-violet-50"
+            >
+              Students
+            </button>
+          </div>
+        </section>
+
+        <section className="flex flex-col rounded-xl border border-sky-100 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold">Analytics</h2>
+          <p className="mt-2 flex-1 text-xs text-neutral-600">
+            전체 현황 · 지문별 오답률 · 클래스 비교 · 기간별 추이를 탭으로 확인합니다.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => go('/admin/analytics')}
+              className="rounded-lg bg-sky-700 px-3 py-1.5 font-medium text-white hover:bg-sky-800"
+            >
+              Open Analytics
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/admin/reports')}
+              className="rounded-lg border border-sky-200 px-3 py-1.5 text-sky-800 hover:bg-sky-50"
+            >
+              Reports
+            </button>
+          </div>
+        </section>
+
         <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm md:col-span-2 lg:col-span-3">
           <h2 className="text-sm font-semibold">최근 작업 &amp; 운영 영역</h2>
           <p className="mt-2 text-xs text-neutral-600">
-            지금은 내신 허브와 시험 범위 관리가 연결되어 있고, 이후 Reading 리뷰/분석, Assignment, Student / Parent,
-            Grammar / Listening / Writing 운영 기능을 계속 붙여갈 수 있습니다.
+            내신 허브, 결과 분석, Reading/Listening/Speaking/Writing 운영 기능이 연결되어 있습니다.
           </p>
         </section>
       </div>
