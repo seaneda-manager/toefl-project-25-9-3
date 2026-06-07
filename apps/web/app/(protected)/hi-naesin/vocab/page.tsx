@@ -156,12 +156,20 @@ export default async function HiNaesinVocabPage({
             배정된 지문 {assignedPassageIds.length}개 · 총 {totalWords}개 단어
           </p>
         </div>
-        <Link
-          href="/hi-naesin/review"
-          className="rounded-xl border px-3 py-1.5 text-xs text-neutral-500 hover:bg-neutral-50"
-        >
-          직전정리 →
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/hi-naesin/vocab/quiz"
+            className="rounded-xl bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-800"
+          >
+            문제 풀기 →
+          </Link>
+          <Link
+            href="/hi-naesin/review"
+            className="rounded-xl border px-3 py-1.5 text-xs text-neutral-500 hover:bg-neutral-50"
+          >
+            직전정리 →
+          </Link>
+        </div>
       </header>
 
       {/* 요약 카드 */}

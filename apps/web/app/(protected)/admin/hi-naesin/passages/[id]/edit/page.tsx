@@ -736,7 +736,12 @@ function DrillPreview({ drill }: { drill: { drill_type: string; order_index: num
   if (drill.drill_type === 'vocab') {
     return (
       <div className="flex-1 space-y-1 min-w-0">
-        <div className="flex items-center gap-2">{idx}</div>
+        <div className="flex items-center gap-2">
+          {idx}
+          {p.isExpression && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">표현</span>
+          )}
+        </div>
         <p className="text-sm font-semibold text-neutral-800">{String(p.word ?? '')}</p>
         <p className="text-xs text-blue-600">{String(p.meaningKo ?? '')}</p>
         {p.exampleSentence && (

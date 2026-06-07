@@ -60,7 +60,13 @@ export default async function HiNaesinPassageListPage({
             고등 내신 지문 라이브러리 — 모의고사 · 교과서 · 외부교재
           </p>
         </div>
-        <div className="flex gap-2 self-start">
+        <div className="flex gap-2 self-start flex-wrap">
+          <Link
+            href="/admin/hi-naesin/vocab/bulk"
+            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+          >
+            + 단어 일괄 추가
+          </Link>
           <Link
             href="/admin/hi-naesin/passages/bulk-new"
             className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"

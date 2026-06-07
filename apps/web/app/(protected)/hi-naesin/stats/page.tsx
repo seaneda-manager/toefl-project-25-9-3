@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
+import WeaknessAnalysisClient from './WeaknessAnalysisClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -308,6 +309,9 @@ export default async function HiNaesinStatsPage() {
           )}
         </section>
       </div>
+
+      {/* ── AI 약점 분석 ── */}
+      <WeaknessAnalysisClient />
 
       {/* ── 지문별 숙지도 ── */}
       {passageMastery.length > 0 && (

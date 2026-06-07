@@ -47,6 +47,7 @@ export type VocabPayload = {
   word: string;          // 영어 단어/표현
   meaningKo: string;     // 한국어 뜻
   exampleSentence?: string; // 지문 속 예문 (선택)
+  isExpression?: boolean;   // true면 숙어/표현 (문제 모드 3에서 활용)
 };
 
 export type GrammarChoicePayload = {
