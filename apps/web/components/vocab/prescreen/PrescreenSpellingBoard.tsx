@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import StageIntroScreen from "@/components/common/StageIntroScreen";
 
 type Word = {
   id: string;
@@ -21,6 +20,30 @@ function norm(s: string) {
   return String(s ?? "").trim().toLowerCase();
 }
 
+/* ── Progress Bar ─────────────────────────────────────────── */
+function ProgressBar({ current, total }: { current: number; total: number }) {
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+  return (
+    <div className="w-full space-y-1.5">
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <span className="text-[#0F766E]">철자 확인</span>
+        <span className="text-slate-400">
+          <span className="text-[#F97316] font-bold">{current}</span>
+          <span className="text-slate-300 mx-0.5">/</span>
+          {total}
+        </span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[#0F766E] transition-all duration-300 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ── Main ─────────────────────────────────────────────────── */
 export default function PrescreenSpellingBoard({
   words,
   onFinish,
@@ -35,7 +58,7 @@ export default function PrescreenSpellingBoard({
   const [value, setValue] = useState("");
   const [failedIds, setFailedIds] = useState<string[]>([]);
   const [shake, setShake] = useState(false);
-  const [pulse, setPulse] = useState(false);
+  const [animKey, setAnimKey] = useState(0);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -48,7 +71,7 @@ export default function PrescreenSpellingBoard({
   const goNext = (nextFailed: string[]) => {
     const nextIndex = i + 1;
     if (nextIndex >= total) return done(nextFailed);
-
+    setAnimKey((k) => k + 1);
     setI(nextIndex);
     setValue("");
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -63,19 +86,13 @@ export default function PrescreenSpellingBoard({
 
   const submit = () => {
     if (!cur?.id) return;
-
     const ok = norm(value) === norm(answer);
-
     if (ok) {
-      setPulse(true);
-      window.setTimeout(() => setPulse(false), 280);
       goNext(failedIds);
       return;
     }
-
     setShake(true);
-    window.setTimeout(() => setShake(false), 260);
-
+    window.setTimeout(() => setShake(false), 280);
     if (!failedIds.includes(cur.id)) setFailedIds((p) => [...p, cur.id]);
   };
 
@@ -85,14 +102,8 @@ export default function PrescreenSpellingBoard({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        submit();
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        markFailAndNext();
-      }
+      if (e.key === "Enter") { e.preventDefault(); submit(); }
+      if (e.key === "Escape") { e.preventDefault(); markFailAndNext(); }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -101,56 +112,105 @@ export default function PrescreenSpellingBoard({
 
   if (!list.length) {
     return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 text-center text-slate-700">
-          No words found for Spelling Check.
+      <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 text-sm">
+          단어가 없습니다.
         </div>
       </div>
     );
   }
 
   return (
-    <div className="lx-panel-wrap">
-      <div className={[shake ? "wrong" : "", pulse ? "correct" : ""].join(" ")}>
-        <StageIntroScreen
-          badge={
-            <>
-              Spelling Check {i + 1}/{total}{" "}
-              <span className="text-slate-500">(Enter to submit · Esc to skip)</span>
-            </>
-          }
-          title="Type the spelling"
-          subtitle={meaning.length ? `Meaning: ${meaning.join(" / ")}` : "Meaning not available"}
-          hint={
-            <div>
-              <div className="font-extrabold">Type the correct spelling.</div>
-              <div className="mt-1 text-sm font-semibold text-slate-600">
-                Press <b>Enter</b> to submit. Press <b>Esc</b> to skip (counts as failed).
-              </div>
-            </div>
-          }
-          primaryLabel="Submit"
-          secondaryLabel="Not sure"
-          onPrimary={submit}
-          onSecondary={markFailAndNext}
+    <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
+      <div
+        className="flex flex-col w-[min(420px,88%)] gap-6"
+        key={animKey}
+        style={{ animation: "lx-card-in 220ms cubic-bezier(0.22,1,0.36,1) both" }}
+      >
+        {/* 헤더 */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-extrabold tracking-widest text-[#0F766E] uppercase">
+              LEXiOX
+            </span>
+            <span className="text-xs text-slate-300">·</span>
+            <span className="text-xs font-semibold text-slate-400">철자 확인</span>
+          </div>
+          <ProgressBar current={i + 1} total={total} />
+        </div>
+
+        {/* 카드 */}
+        <div
+          className={[
+            "rounded-3xl bg-white shadow-[0_4px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-8 py-8 space-y-5",
+            shake ? "lx-shake" : "",
+          ].join(" ")}
         >
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+          {/* 뜻 힌트 */}
+          <div className="text-center space-y-1">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">뜻</p>
+            <p className="text-lg font-bold text-slate-700">
+              {meaning.length ? meaning.join(" / ") : "뜻 없음"}
+            </p>
+          </div>
+
+          <div className="w-10 h-[2px] bg-[#0F766E] mx-auto rounded-full opacity-30" />
+
+          {/* 입력 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-slate-400 text-center">영어 단어를 입력하세요</p>
             <input
               ref={inputRef}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="Type here..."
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
+              placeholder="철자 입력..."
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-xl font-bold text-slate-900 text-center outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/20 transition-all"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
             />
-            <div className="mt-3 text-xs font-semibold text-slate-500">
-              Failed so far: <span className="text-slate-700">{failedIds.length}</span>
-            </div>
           </div>
-        </StageIntroScreen>
+
+          {failedIds.length > 0 && (
+            <p className="text-center text-xs text-slate-400">
+              틀린 단어: <span className="font-bold text-rose-500">{failedIds.length}개</span>
+            </p>
+          )}
+        </div>
+
+        {/* 버튼 */}
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={submit}
+            className="w-full rounded-2xl bg-[#0F766E] hover:bg-[#115E59] active:scale-[0.98] text-white font-bold text-base py-4 transition-all duration-150 shadow-sm"
+          >
+            확인 <span className="ml-2 opacity-50 text-xs">(Enter)</span>
+          </button>
+          <button
+            type="button"
+            onClick={markFailAndNext}
+            className="w-full rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-500 font-semibold text-sm py-3 transition-all duration-150 border border-slate-200"
+          >
+            모르겠어요 <span className="ml-2 opacity-40 text-xs">(Esc)</span>
+          </button>
+        </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes lx-card-in {
+          from { opacity: 0; transform: translateY(10px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+        @keyframes lx-shake {
+          0%,100% { transform: translateX(0); }
+          20%     { transform: translateX(-6px); }
+          40%     { transform: translateX(6px); }
+          60%     { transform: translateX(-4px); }
+          80%     { transform: translateX(4px); }
+        }
+        .lx-shake { animation: lx-shake 260ms ease; }
+      `}</style>
     </div>
   );
 }
