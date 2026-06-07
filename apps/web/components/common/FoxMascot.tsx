@@ -3,76 +3,88 @@
 import React from "react";
 import type { MascotMood } from "./ParrotMascot";
 
-/**
- * FoxMascot — LEXiOX 로고 여우 캐릭터
- * LEXiOX.png에서 여우 부분(좌측 ~38%)만 크롭해서 표시
- */
-function moodClass(mood: MascotMood): string {
-  switch (mood) {
-    case "success":
-    case "celebrate":
-      return "animate-bounce";
-    case "fail":
-      return "opacity-60 grayscale";
-    case "focus":
-      return "drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]";
-    case "hint":
-      return "animate-pulse";
-    case "pause":
-      return "opacity-50";
-    default:
-      return "";
-  }
-}
+const MOOD_IMAGE: Record<MascotMood, string> = {
+  default:   "/lingox/mascot/fox/fox-default.png",
+  success:   "/lingox/mascot/fox/fox-happy.png",
+  celebrate: "/lingox/mascot/fox/fox-celebrate.png",
+  fail:      "/lingox/mascot/fox/fox-calm.png",
+  focus:     "/lingox/mascot/fox/fox-focus.png",
+  hint:      "/lingox/mascot/fox/fox-hint.png",
+  pause:     "/lingox/mascot/fox/fox-calm.png",
+};
+
+const MOOD_ANIM: Record<MascotMood, string> = {
+  default:   "fox-idle 3s ease-in-out infinite",
+  success:   "fox-bounce 500ms cubic-bezier(0.2,1.2,0.2,1) 1",
+  celebrate: "fox-bounce 500ms cubic-bezier(0.2,1.2,0.2,1) 1",
+  fail:      "fox-droop 400ms ease-out 1",
+  focus:     "fox-idle 2s ease-in-out infinite",
+  hint:      "fox-wiggle 500ms ease-out 1",
+  pause:     "none",
+};
 
 export default function FoxMascot({
   mood = "default",
-  size = 84,
+  size = 100,
 }: {
   mood?: MascotMood;
   size?: number;
 }) {
-  const cls = moodClass(mood);
-
-  // LEXiOX.png의 원본 비율: 약 16:5 (가로 길이가 훨씬 긴 로고)
-  // 여우 캐릭터는 좌측 약 32% 차지 → overflow hidden으로 크롭
-  const logoNaturalW = 520;
-  const logoNaturalH = 160;
-  const foxFraction = 0.33; // 여우가 차지하는 가로 비율
-
-  // size = 보여줄 영역 높이 기준
-  const displayH = size;
-  const scale = displayH / logoNaturalH;
-  const logoRenderedW = logoNaturalW * scale;
-  const displayW = logoRenderedW * foxFraction;
+  const src  = MOOD_IMAGE[mood] ?? MOOD_IMAGE.default;
+  const anim = MOOD_ANIM[mood]  ?? "none";
 
   return (
-    <div
-      className={`select-none transition-all duration-200 ${cls}`}
-      style={{
-        width: displayW,
-        height: displayH,
-        overflow: "hidden",
-        position: "relative",
-        filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.15))",
-      }}
-      aria-label="LEXiOX fox mascot"
-      role="img"
-    >
-      <img
-        src="/LEXiOX.png"
-        alt="LEXiOX fox"
-        draggable={false}
+    <>
+      <div
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: logoRenderedW,
-          height: displayH,
-          objectFit: "fill",
-          pointerEvents: "none",
+          width: size,
+          height: size,
+          animation: anim,
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          filter: mood === "fail"
+            ? "drop-shadow(0 4px 8px rgba(0,0,0,0.12)) grayscale(0.3)"
+            : "drop-shadow(0 4px 12px rgba(0,0,0,0.15))",
         }}
-      />
-    </div>
+        aria-label="Lingo-X Fox mascot"
+        role="img"
+      >
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+
+      <style jsx global>{`
+        @keyframes fox-idle {
+          0%,100% { transform: translateY(0) scale(1); }
+          50%      { transform: translateY(-4px) scale(1.01); }
+        }
+        @keyframes fox-bounce {
+          0%   { transform: translateY(0) scale(1); }
+          35%  { transform: translateY(-12px) scale(1.06); }
+          65%  { transform: translateY(2px) scale(0.98); }
+          100% { transform: translateY(0) scale(1); }
+        }
+        @keyframes fox-droop {
+          0%   { transform: translateY(0); }
+          40%  { transform: translateY(5px) scale(0.98); }
+          100% { transform: translateY(0); }
+        }
+        @keyframes fox-wiggle {
+          0%,100% { transform: rotate(0deg); }
+          25%     { transform: rotate(-6deg) scale(1.04); }
+          75%     { transform: rotate(5deg) scale(1.04); }
+        }
+      `}</style>
+    </>
   );
 }
