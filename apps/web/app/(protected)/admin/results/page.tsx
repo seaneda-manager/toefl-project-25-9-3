@@ -131,7 +131,7 @@ async function NaesinTab() {
     };
   });
 
-  return <ResultTable rows={rows} scoreLabel="점수" />;
+  return <ResultTable rows={rows} detailHref={(id) => `/admin/results/naesin/${id}`} scoreLabel="점수" />;
 }
 
 // ── Hi-naesin ─────────────────────────────────────────────────────────────────

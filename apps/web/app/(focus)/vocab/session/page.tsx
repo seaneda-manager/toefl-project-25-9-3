@@ -151,23 +151,11 @@ function StageWrap({
   wrapClassName?: string;
 }) {
   return (
-    <FocusModeWrapper
-      variant="card"
-      panelWidthClass="w-full max-w-none"
-      className={[
-        "text-slate-900",
-        "!bg-transparent !shadow-none !border-0 !p-0",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      dim={false}
-      blur={false}
-    >
+    <div className={["h-full w-full text-slate-900", className].filter(Boolean).join(" ")}>
       <div className={["lx-panel-wrap", wrapClassName].filter(Boolean).join(" ")}>
         {children}
       </div>
-    </FocusModeWrapper>
+    </div>
   );
 }
 
