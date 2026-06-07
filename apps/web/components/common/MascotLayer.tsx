@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import ParrotMascot, { type MascotMood } from "./ParrotMascot";
+import FoxMascot from "./FoxMascot";
+import type { MascotMood } from "./ParrotMascot";
 
 export default function MascotLayer({
   stage,
@@ -14,21 +15,19 @@ export default function MascotLayer({
 
   const isLearning = s.includes("LEARNING");
   const isSpeed = s.includes("SPEED");
-  const isIntro = s.includes("INTRO"); // optional
+  const isIntro = s.includes("INTRO");
 
-  // ✅ Learning에서는 옆에 독립 배치
   const pos = isLearning
     ? "fixed right-2 top-1/2 -translate-y-1/2 z-[10000]"
-    : "fixed top-5 right-5 z-[10000]";
+    : "fixed top-4 right-4 z-[10000]";
 
-  const size = isLearning ? 76 : isSpeed ? 88 : 84;
+  const size = isLearning ? 64 : isSpeed ? 76 : 72;
 
-  // ✅ 원하면 intro 단계에서는 숨길 수도 있음
   if (isIntro) return null;
 
   return (
     <div className={`${pos} pointer-events-none`}>
-      <ParrotMascot mood={mood} size={size} />
+      <FoxMascot mood={mood} size={size} />
     </div>
   );
 }

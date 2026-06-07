@@ -13,7 +13,7 @@ export default async function FocusLayout({ children }: { children: ReactNode })
     <div className="focus-root">
       <div className="focus-outside" />
       <div className="focus-stage-wrap">
-        <div className="focus-stage">
+        <div className="focus-stage" data-theme="vocab">
           <div className="focus-stage-inner">{children}</div>
         </div>
       </div>
