@@ -24,8 +24,8 @@ function norm(s: string) {
 function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
   return (
-    <div className="w-full space-y-1.5">
-      <div className="flex items-center justify-between text-xs font-semibold">
+    <div className="w-full space-y-2">
+      <div className="flex items-center justify-between text-sm font-semibold">
         <span className="text-[#0F766E]">철자 확인</span>
         <span className="text-slate-400">
           <span className="text-[#F97316] font-bold">{current}</span>
@@ -33,7 +33,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
           {total}
         </span>
       </div>
-      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+      <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
         <div
           className="h-full rounded-full bg-[#0F766E] transition-all duration-300 ease-out"
           style={{ width: `${pct}%` }}
@@ -123,18 +123,18 @@ export default function PrescreenSpellingBoard({
   return (
     <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
       <div
-        className="flex flex-col w-[min(420px,88%)] gap-6"
+        className="flex flex-col w-[min(600px,88%)] gap-6"
         key={animKey}
         style={{ animation: "lx-card-in 220ms cubic-bezier(0.22,1,0.36,1) both" }}
       >
         {/* 헤더 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold tracking-widest text-[#0F766E] uppercase">
+            <span className="text-sm font-extrabold tracking-widest text-[#0F766E] uppercase">
               LEXiOX
             </span>
-            <span className="text-xs text-slate-300">·</span>
-            <span className="text-xs font-semibold text-slate-400">철자 확인</span>
+            <span className="text-sm text-slate-300">·</span>
+            <span className="text-sm font-semibold text-slate-400">철자 확인</span>
           </div>
           <ProgressBar current={i + 1} total={total} />
         </div>
@@ -148,8 +148,8 @@ export default function PrescreenSpellingBoard({
         >
           {/* 뜻 힌트 */}
           <div className="text-center space-y-1">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">뜻</p>
-            <p className="text-lg font-bold text-slate-700">
+            <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">뜻</p>
+            <p className="text-2xl font-bold text-slate-700">
               {meaning.length ? meaning.join(" / ") : "뜻 없음"}
             </p>
           </div>
@@ -158,13 +158,13 @@ export default function PrescreenSpellingBoard({
 
           {/* 입력 */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-400 text-center">영어 단어를 입력하세요</p>
+            <p className="text-sm font-semibold text-slate-400 text-center">영어 단어를 입력하세요</p>
             <input
               ref={inputRef}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder="철자 입력..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-xl font-bold text-slate-900 text-center outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/20 transition-all"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5 text-2xl font-bold text-slate-900 text-center outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/20 transition-all"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -183,14 +183,14 @@ export default function PrescreenSpellingBoard({
           <button
             type="button"
             onClick={submit}
-            className="w-full rounded-2xl bg-[#0F766E] hover:bg-[#115E59] active:scale-[0.98] text-white font-bold text-base py-4 transition-all duration-150 shadow-sm"
+            className="w-full rounded-2xl bg-[#0F766E] hover:bg-[#115E59] active:scale-[0.98] text-white font-bold text-lg py-5 transition-all duration-150 shadow-sm"
           >
             확인 <span className="ml-2 opacity-50 text-xs">(Enter)</span>
           </button>
           <button
             type="button"
             onClick={markFailAndNext}
-            className="w-full rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-500 font-semibold text-sm py-3 transition-all duration-150 border border-slate-200"
+            className="w-full rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-500 font-semibold text-base py-4 transition-all duration-150 border border-slate-200"
           >
             모르겠어요 <span className="ml-2 opacity-40 text-xs">(Esc)</span>
           </button>
