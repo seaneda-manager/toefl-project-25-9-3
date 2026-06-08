@@ -776,6 +776,7 @@ export async function assignNextSetNowAction(params: {
 export async function cancelStudentVocabAssignmentAction(params: {
   assignmentId: string;
   queueSize?: number;
+  force?: boolean;
 }) {
   const supabase = await getServerSupabase();
   await getUserOrThrow(supabase);
@@ -784,6 +785,7 @@ export async function cancelStudentVocabAssignmentAction(params: {
   if (!assignmentId) throw new Error("assignmentId is required");
 
   const queueSize = clampInt(params.queueSize ?? 3, 1, 20, 3);
+  const force = Boolean(params.force);
 
   const { data: row, error: rerr } = await supabase
     .from("student_vocab_assignments")
@@ -793,8 +795,8 @@ export async function cancelStudentVocabAssignmentAction(params: {
 
   if (rerr) throw new Error("assignment lookup failed");
   if (!(row as any)?.id) return { ok: false, error: "NOT_FOUND" };
-  if ((row as any).completed_at) return { ok: false, error: "ALREADY_COMPLETED" };
-  if ((row as any).started_at) return { ok: false, error: "ALREADY_STARTED" };
+  if (!force && (row as any).completed_at) return { ok: false, error: "ALREADY_COMPLETED" };
+  if (!force && (row as any).started_at) return { ok: false, error: "ALREADY_STARTED" };
 
   const studentId = String((row as any).student_id);
   const trackId = String((row as any).track_id);

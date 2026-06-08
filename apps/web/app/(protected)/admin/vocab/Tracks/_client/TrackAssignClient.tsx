@@ -202,12 +202,13 @@ export default function TrackAssignClient({
     }
   }
 
-  async function cancelAssignment(assignmentId: string) {
+  async function cancelAssignment(assignmentId: string, force = false) {
+    if (force && !window.confirm("이미 시작/완료된 할당입니다. 강제로 삭제할까요?")) return;
     setMsg("");
     setBusy(true);
     try {
-      await cancelStudentVocabAssignmentAction({ assignmentId, queueSize });
-      setMsg("✅ 취소됨");
+      await cancelStudentVocabAssignmentAction({ assignmentId, queueSize, force });
+      setMsg(force ? "✅ 강제 삭제됨" : "✅ 취소됨");
       await loadPlan();
     } catch (e: any) {
       setMsg(`❌ ${e?.message ?? "failed"}`);
@@ -433,7 +434,7 @@ export default function TrackAssignClient({
                     </td>
                     <td className="py-2 pr-4 text-xs text-slate-500">{r.started_at ? r.started_at.slice(0, 10) : "—"}</td>
                     <td className="py-2 pr-4 text-xs text-emerald-700">{r.completed_at ? r.completed_at.slice(0, 10) : "—"}</td>
-                    <td className="py-2">
+                    <td className="py-2 flex gap-1.5">
                       <button
                         type="button"
                         disabled={busy || Boolean(r.started_at) || Boolean(r.completed_at)}
@@ -442,6 +443,16 @@ export default function TrackAssignClient({
                       >
                         취소
                       </button>
+                      {(Boolean(r.started_at) || Boolean(r.completed_at)) && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => cancelAssignment(r.id, true)}
+                          className="rounded-lg border border-rose-300 px-3 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-30"
+                        >
+                          강제삭제
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
