@@ -1830,6 +1830,12 @@ if (stage === "SPELLING") {
   }
 
   if (stage === "DONE") {
+    const totalWords = allWords.length;
+    const knownCount = prescreenResult?.knownWordIds.length ?? 0;
+    const unknownCount = prescreenResult?.unknownWordIds.length ?? 0;
+    const spellingFailCount = spellingResult?.spellingFailedIds.length ?? 0;
+    const drillCount = drillTasks.length;
+
     return (
       <StageWrap>
         {Debug}
@@ -1842,7 +1848,30 @@ if (stage === "SPELLING") {
             secondaryLabel="Exit"
             onPrimary={() => window.location.reload()}
             onSecondary={exitToHome}
-          />
+          >
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                <div className="text-[clamp(22px,2.5cqi,40px)] font-extrabold text-slate-900">{totalWords}</div>
+                <div className="mt-1 text-[clamp(11px,1.1cqi,14px)] font-semibold text-slate-500">총 단어</div>
+              </div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+                <div className="text-[clamp(22px,2.5cqi,40px)] font-extrabold text-emerald-700">{knownCount}</div>
+                <div className="mt-1 text-[clamp(11px,1.1cqi,14px)] font-semibold text-emerald-600">이미 알던 단어</div>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center">
+                <div className="text-[clamp(22px,2.5cqi,40px)] font-extrabold text-blue-700">{unknownCount}</div>
+                <div className="mt-1 text-[clamp(11px,1.1cqi,14px)] font-semibold text-blue-600">새로 배운 단어</div>
+              </div>
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center">
+                <div className="text-[clamp(22px,2.5cqi,40px)] font-extrabold text-rose-700">{spellingFailCount}</div>
+                <div className="mt-1 text-[clamp(11px,1.1cqi,14px)] font-semibold text-rose-500">철자 틀린 단어</div>
+              </div>
+              <div className="col-span-2 rounded-2xl border border-violet-200 bg-violet-50 p-4 text-center">
+                <div className="text-[clamp(22px,2.5cqi,40px)] font-extrabold text-violet-700">{drillCount}</div>
+                <div className="mt-1 text-[clamp(11px,1.1cqi,14px)] font-semibold text-violet-500">완료한 드릴 문제</div>
+              </div>
+            </div>
+          </StageIntroScreen>
         </div>
       </StageWrap>
     );

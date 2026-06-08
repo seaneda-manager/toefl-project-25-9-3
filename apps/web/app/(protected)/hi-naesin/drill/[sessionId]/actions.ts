@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase/server';
 import { gradeTranslation, gradeWriting } from '@/lib/hi-naesin/translation-grader';
 
@@ -28,6 +29,7 @@ export async function submitDrillAnswerAction(
   let scorePct:     number  | null = null;
   let feedbackText: string  | null = null;
 
+  // ── 즉시 채점 가능한 타입 (로컬 비교) ──────────────────────
   if (drillType === 'fill_blank') {
     const answer = (fd.get('answer') as string)?.trim().toLowerCase();
     isCorrect = responseText.toLowerCase() === answer;
@@ -36,36 +38,11 @@ export async function submitDrillAnswerAction(
     const correct = (fd.get('correct_option') as string)?.trim();
     isCorrect = responseChoice === correct;
 
-  } else if (drillType === 'translation') {
-    const sentenceEn = (fd.get('sentence_en') as string)?.trim() ?? '';
-    const answerKo   = (fd.get('answer_ko') as string)?.trim() ?? '';
-    if (sentenceEn && answerKo && responseText) {
-      const result = await gradeTranslation(sentenceEn, answerKo, responseText);
-      if (result) {
-        isCorrect    = result.isCorrect;
-        scorePct     = result.scorePct;
-        feedbackText = result.feedbackText;
-      }
-    }
-
-  } else if (drillType === 'writing') {
-    const promptKo = (fd.get('prompt_ko') as string)?.trim() ?? '';
-    const answerEn = (fd.get('answer_en') as string)?.trim() ?? '';
-    if (promptKo && answerEn && responseText) {
-      const result = await gradeWriting(promptKo, answerEn, responseText);
-      if (result) {
-        isCorrect    = result.isCorrect;
-        scorePct     = result.scorePct;
-        feedbackText = result.feedbackText;
-      }
-    }
   } else if (drillType === 'vocab') {
-    // 단어 뜻 자동 채점: 대소문자·앞뒤 공백 무시 단순 비교
     const answerKo = (fd.get('answer_ko') as string)?.trim().toLowerCase() ?? '';
     if (answerKo && responseText) {
       const student = responseText.toLowerCase();
       isCorrect = student === answerKo;
-      // 정답이 여러 표현으로 분리된 경우(쉼표/슬래시) 부분 매치 허용
       if (!isCorrect) {
         const parts = answerKo.split(/[,\/·]/);
         isCorrect = parts.some((p) => student === p.trim());
@@ -73,6 +50,40 @@ export async function submitDrillAnswerAction(
     }
   }
 
+  // ── AI 채점이 필요한 타입 → 백그라운드에서 실행 ─────────────
+  // after()는 redirect 이후 응답이 나간 뒤에 실행되므로 체감 딜레이 없음
+  if (drillType === 'translation') {
+    const sentenceEn = (fd.get('sentence_en') as string)?.trim() ?? '';
+    const answerKo   = (fd.get('answer_ko') as string)?.trim() ?? '';
+    const captured   = { sessionId, drillId, sentenceEn, answerKo, responseText };
+    after(async () => {
+      const result = await gradeTranslation(captured.sentenceEn, captured.answerKo, captured.responseText);
+      if (!result) return;
+      const bg = await getServerSupabase();
+      await bg
+        .from('hi_naesin_drill_responses')
+        .update({ is_correct: result.isCorrect, score_pct: result.scorePct, feedback_text: result.feedbackText })
+        .eq('session_id', captured.sessionId)
+        .eq('drill_id', captured.drillId);
+    });
+
+  } else if (drillType === 'writing') {
+    const promptKo = (fd.get('prompt_ko') as string)?.trim() ?? '';
+    const answerEn = (fd.get('answer_en') as string)?.trim() ?? '';
+    const captured = { sessionId, drillId, promptKo, answerEn, responseText };
+    after(async () => {
+      const result = await gradeWriting(captured.promptKo, captured.answerEn, captured.responseText);
+      if (!result) return;
+      const bg = await getServerSupabase();
+      await bg
+        .from('hi_naesin_drill_responses')
+        .update({ is_correct: result.isCorrect, score_pct: result.scorePct, feedback_text: result.feedbackText })
+        .eq('session_id', captured.sessionId)
+        .eq('drill_id', captured.drillId);
+    });
+  }
+
+  // ── 응답 저장 (채점 결과 없이 즉시 upsert) ─────────────────
   const { error } = await supabase
     .from('hi_naesin_drill_responses')
     .upsert(
@@ -81,7 +92,7 @@ export async function submitDrillAnswerAction(
         drill_id:        drillId,
         response_text:   responseText || null,
         response_choice: responseChoice || null,
-        is_correct:      isCorrect,
+        is_correct:      isCorrect,   // AI 채점 타입은 null, 나중에 after()가 update
         score_pct:       scorePct,
         feedback_text:   feedbackText,
       },
