@@ -102,7 +102,7 @@ export default function PrescreenBoard({
   return (
     <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
       <div
-        className="flex flex-col w-[min(420px,88%)] gap-6"
+        className="flex flex-col w-[min(600px,88%)] gap-6"
         key={animKey}
         style={{ animation: "lx-card-in 220ms cubic-bezier(0.22,1,0.36,1) both" }}
       >
@@ -121,7 +121,7 @@ export default function PrescreenBoard({
         {/* 단어 카드 */}
         <div className="rounded-3xl bg-white shadow-[0_4px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-8 py-10 text-center space-y-4">
           {/* 단어 */}
-          <p className="text-[clamp(48px,7cqi,80px)] font-extrabold tracking-tight text-slate-900 leading-tight">
+          <p className="text-[clamp(36px,6cqi,72px)] font-extrabold tracking-tight text-slate-900 leading-tight break-words">
             {cur?.text ?? ""}
           </p>
 
