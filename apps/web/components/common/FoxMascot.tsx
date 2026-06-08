@@ -3,14 +3,26 @@
 import React from "react";
 import type { MascotMood } from "./ParrotMascot";
 
-const MOOD_IMAGE: Record<MascotMood, string> = {
-  default:   "/lingox/mascot/fox/fox-default.png",
-  success:   "/lingox/mascot/fox/fox-happy.png",
+// 단계별 기본 이미지 (무드 override 없을 때)
+const STAGE_IMAGE: Record<string, string> = {
+  PRESCREEN:  "/lingox/mascot/fox/fox-default.png",   // 기본 서있기
+  SPELLING:   "/lingox/mascot/fox/fox-focus.png",     // 엄지척+안경 (집중)
+  LEARNING:   "/lingox/mascot/fox/fox-study.png",     // 책 들고 인사
+  SPEED:      "/lingox/mascot/fox/fox-default.png",   // 기본 서있기
+  DRILL:      "/lingox/mascot/fox/fox-focus.png",     // 엄지척+안경
+  DONE:       "/lingox/mascot/fox/fox-celebrate.png", // 축하
+  SUMMARY:    "/lingox/mascot/fox/fox-celebrate.png", // 축하
+};
+
+// 무드 override 이미지 (단계와 무관하게 감정 우선)
+const MOOD_IMAGE: Record<MascotMood, string | null> = {
+  default:   null,                                     // stage 기본값 사용
+  success:   "/lingox/mascot/fox/fox-celebrate.png",
   celebrate: "/lingox/mascot/fox/fox-celebrate.png",
-  fail:      "/lingox/mascot/fox/fox-calm.png",
-  focus:     "/lingox/mascot/fox/fox-focus.png",
-  hint:      "/lingox/mascot/fox/fox-hint.png",
-  pause:     "/lingox/mascot/fox/fox-calm.png",
+  fail:      "/lingox/mascot/fox/fox-default.png",
+  focus:     null,                                     // stage 기본값 유지
+  hint:      "/lingox/mascot/fox/fox-focus.png",
+  pause:     "/lingox/mascot/fox/fox-default.png",
 };
 
 const MOOD_ANIM: Record<MascotMood, string> = {
@@ -25,13 +37,18 @@ const MOOD_ANIM: Record<MascotMood, string> = {
 
 export default function FoxMascot({
   mood = "default",
+  stage = "",
   size = 100,
 }: {
   mood?: MascotMood;
+  stage?: string;
   size?: number;
 }) {
-  const src  = MOOD_IMAGE[mood] ?? MOOD_IMAGE.default;
-  const anim = MOOD_ANIM[mood]  ?? "none";
+  const stageKey = String(stage).toUpperCase();
+  const stageImg = STAGE_IMAGE[stageKey] ?? "/lingox/mascot/fox/fox-default.png";
+  const moodImg  = MOOD_IMAGE[mood];
+  const src  = moodImg ?? stageImg;
+  const anim = MOOD_ANIM[mood] ?? "none";
 
   return (
     <>

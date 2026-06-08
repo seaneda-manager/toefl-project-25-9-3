@@ -27,7 +27,7 @@ export default function MascotLayer({
 
   return (
     <div className={`${pos} pointer-events-none`}>
-      <FoxMascot mood={mood} size={size} />
+      <FoxMascot mood={mood} stage={s} size={size} />
     </div>
   );
 }
