@@ -21,7 +21,7 @@ export default function MascotLayer({
     ? "fixed right-2 top-1/2 -translate-y-1/2 z-[10000]"
     : "fixed top-4 right-4 z-[10000]";
 
-  const size = isLearning ? 64 : isSpeed ? 76 : 72;
+  const size = isLearning ? 110 : isSpeed ? 130 : 150;
 
   if (isIntro) return null;
 

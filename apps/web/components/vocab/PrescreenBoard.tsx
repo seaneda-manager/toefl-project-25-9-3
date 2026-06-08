@@ -121,7 +121,7 @@ export default function PrescreenBoard({
         {/* 단어 카드 */}
         <div className="rounded-3xl bg-white shadow-[0_4px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-8 py-10 text-center space-y-4">
           {/* 단어 */}
-          <p className="text-[clamp(32px,5cqi,52px)] font-extrabold tracking-tight text-slate-900 leading-tight">
+          <p className="text-[clamp(48px,7cqi,80px)] font-extrabold tracking-tight text-slate-900 leading-tight">
             {cur?.text ?? ""}
           </p>
 
