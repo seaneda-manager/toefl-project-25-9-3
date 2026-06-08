@@ -21,8 +21,8 @@ function safeWords(v: any): Word[] {
 function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
   return (
-    <div className="w-full space-y-1.5">
-      <div className="flex items-center justify-between text-xs font-semibold">
+    <div className="w-full space-y-2">
+      <div className="flex items-center justify-between text-sm font-semibold">
         <span className="text-[#0F766E]">어휘 확인</span>
         <span className="text-slate-400">
           <span className="text-[#F97316] font-bold">{current}</span>
@@ -30,7 +30,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
           {total}
         </span>
       </div>
-      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+      <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
         <div
           className="h-full rounded-full bg-[#0F766E] transition-all duration-300 ease-out"
           style={{ width: `${pct}%` }}
@@ -109,11 +109,11 @@ export default function PrescreenBoard({
         {/* 헤더 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-extrabold tracking-widest text-[#0F766E] uppercase">
+            <span className="text-sm font-extrabold tracking-widest text-[#0F766E] uppercase">
               LEXiOX
             </span>
-            <span className="text-xs text-slate-300">·</span>
-            <span className="text-xs font-semibold text-slate-400">어휘 확인</span>
+            <span className="text-sm text-slate-300">·</span>
+            <span className="text-sm font-semibold text-slate-400">어휘 확인</span>
           </div>
           <ProgressBar current={i + 1} total={total} />
         </div>
@@ -129,7 +129,7 @@ export default function PrescreenBoard({
           <div className="w-10 h-[2px] bg-[#0F766E] mx-auto rounded-full opacity-40" />
 
           {/* 질문 */}
-          <p className="text-sm font-semibold text-slate-500">
+          <p className="text-base font-semibold text-slate-500">
             이 단어를 알고 있나요?
           </p>
         </div>
@@ -139,14 +139,14 @@ export default function PrescreenBoard({
           <button
             type="button"
             onClick={() => commit(true)}
-            className="w-full rounded-2xl bg-[#0F766E] hover:bg-[#115E59] active:scale-[0.98] text-white font-bold text-base py-4 transition-all duration-150 shadow-sm"
+            className="w-full rounded-2xl bg-[#0F766E] hover:bg-[#115E59] active:scale-[0.98] text-white font-bold text-lg py-5 transition-all duration-150 shadow-sm"
           >
             알아요 <span className="ml-2 opacity-50 text-xs font-semibold">(1)</span>
           </button>
           <button
             type="button"
             onClick={() => commit(false)}
-            className="w-full rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-bold text-base py-4 transition-all duration-150 border border-slate-200 shadow-sm"
+            className="w-full rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-bold text-lg py-5 transition-all duration-150 border border-slate-200 shadow-sm"
           >
             아직 몰라요 <span className="ml-2 opacity-40 text-xs font-semibold">(2)</span>
           </button>
