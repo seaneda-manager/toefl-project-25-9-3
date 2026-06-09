@@ -6,6 +6,7 @@ import TopbarClient from '@/components/dashboard/TopbarClient';
 import SidebarClient from '@/components/dashboard/SidebarClient';
 import AdminTabBar from '@/components/dashboard/AdminTabBar';
 import MobileLexioxTabBar from '@/components/dashboard/MobileLexioxTabBar';
+import PWAInstallBanner from '@/components/PWAInstallBanner';
 import { LangProvider } from '@/contexts/LangContext';
 
 type Role = 'student' | 'teacher' | 'admin';
@@ -63,6 +64,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
           </main>
         </div>
         {showMobileTabBar && <MobileLexioxTabBar />}
+        <PWAInstallBanner />
       </div>
     </LangProvider>
   );

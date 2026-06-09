@@ -33,6 +33,7 @@ const APP_PREFIXES = [
   "/toefl",
   "/lingox",
   "/focus",
+  "/install",
 ];
 
 function isAppRoute(pathname: string) {
