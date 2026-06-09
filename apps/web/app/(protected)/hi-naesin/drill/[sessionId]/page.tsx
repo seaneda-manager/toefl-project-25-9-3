@@ -218,7 +218,7 @@ export default async function HiNaesinDrillPage({
 
   // ── 렌더 ──────────────────────────────────────────────
   return (
-    <main className="mx-auto max-w-2xl space-y-4 px-4 py-8">
+    <main className="mx-auto max-w-2xl space-y-4 px-3 py-6 sm:px-4 sm:py-8">
       {/* 지문 제목 */}
       <p className="text-xs text-neutral-400">{passageData?.title ?? '지문'}</p>
 

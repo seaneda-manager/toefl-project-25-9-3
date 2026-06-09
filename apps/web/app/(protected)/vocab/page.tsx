@@ -150,7 +150,7 @@ export default async function VocabHomePage() {
   }
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-6 sm:space-y-8">
       {/* 헤더 */}
       <header>
         <h1 className="text-xl font-bold text-neutral-900">단어 학습</h1>

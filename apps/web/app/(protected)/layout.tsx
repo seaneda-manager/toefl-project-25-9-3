@@ -5,6 +5,7 @@ import { getSupabaseServer } from '@/lib/supabaseServer';
 import TopbarClient from '@/components/dashboard/TopbarClient';
 import SidebarClient from '@/components/dashboard/SidebarClient';
 import AdminTabBar from '@/components/dashboard/AdminTabBar';
+import MobileLexioxTabBar from '@/components/dashboard/MobileLexioxTabBar';
 import { LangProvider } from '@/contexts/LangContext';
 
 type Role = 'student' | 'teacher' | 'admin';
@@ -41,6 +42,8 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     }
   }
 
+  const showMobileTabBar = role === 'student' && program === 'lexiox';
+
   return (
     <LangProvider>
       <div className="h-screen overflow-hidden grid grid-rows-[auto_1fr] bg-neutral-50 text-neutral-900">
@@ -49,11 +52,17 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
           {role === 'admin' && <AdminTabBar />}
         </div>
         <div className="grid grid-cols-[auto_1fr] min-h-0">
-          <aside className="h-full overflow-y-auto">
+          <aside className="hidden md:block h-full overflow-y-auto">
             <SidebarClient role={role} program={program} />
           </aside>
-          <main className="min-h-0 overflow-y-auto p-6">{children}</main>
+          <main className={[
+            'min-h-0 overflow-y-auto p-4 md:p-6',
+            showMobileTabBar ? 'pb-20 md:pb-6' : '',
+          ].join(' ')}>
+            {children}
+          </main>
         </div>
+        {showMobileTabBar && <MobileLexioxTabBar />}
       </div>
     </LangProvider>
   );

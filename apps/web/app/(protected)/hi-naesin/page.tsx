@@ -358,13 +358,110 @@ export default async function HiNaesinDashboard() {
         </div>
       </div>
 
-      {/* ── 진도 테이블 ──────────────────────────────────────── */}
+      {/* ── 진도 목록 ──────────────────────────────────────── */}
       <section id="drill-table">
         <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400 mb-3">
           지문별 진도
         </h2>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+        {/* 모바일: 카드 리스트 */}
+        <div className="md:hidden space-y-3">
+          {grouped.map(({ sourceType: src, items }) => (
+            <div key={`m-group-${src}`} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${SOURCE_BADGE[src] ?? SOURCE_BADGE.external_book}`}>
+                  {sourceTypeLabel(src as HiNaesinSourceType)}
+                </span>
+                <span className="text-[11px] text-neutral-400">{items.length}개</span>
+              </div>
+              {items.map((p) => {
+                const pct = p.totalDrills > 0
+                  ? Math.round((p.totalDone / p.totalDrills) * 100)
+                  : 0;
+                const isAllDone = p.totalDrills > 0 && p.totalDone >= p.totalDrills;
+                const btnLabel = isAllDone ? '다시 하기'
+                  : p.sessionStatus === 'started' ? '이어하기'
+                  : p.totalDone > 0 ? '계속하기'
+                  : '시작하기';
+
+                return (
+                  <div
+                    key={p.passageId}
+                    className={`rounded-2xl border bg-white p-4 space-y-3 ${isAllDone ? 'opacity-60' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-neutral-800 leading-snug">{p.title}</p>
+                        <p className="text-[11px] text-neutral-400 mt-0.5">
+                          {p.grade === 'H1' ? '고1' : p.grade === 'H2' ? '고2' : p.grade === 'H3' ? '고3' : ''}
+                          {isAllDone && <span className="ml-1 text-emerald-600 font-semibold">✓ 완료</span>}
+                        </p>
+                      </div>
+                      <form action={startHiNaesinDrillSessionAction} className="shrink-0">
+                        <input type="hidden" name="passage_id" value={p.passageId} />
+                        <button
+                          type="submit"
+                          className={[
+                            'rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap',
+                            isAllDone
+                              ? 'border border-neutral-200 text-neutral-400'
+                              : p.sessionStatus === 'started'
+                              ? 'bg-amber-500 text-white'
+                              : p.totalDone > 0
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-neutral-900 text-white',
+                          ].join(' ')}
+                        >
+                          {btnLabel}
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* 드릴 타입 도트 */}
+                    <div className="flex gap-1.5 flex-wrap">
+                      {DRILL_COLS.map((col) => {
+                        const cell = p.cols[col.type];
+                        if (cell.status === 'none') return null;
+                        return (
+                          <span
+                            key={col.type}
+                            className={[
+                              'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                              cell.status === 'done'    ? 'bg-emerald-100 text-emerald-700' :
+                              cell.status === 'partial' ? 'bg-amber-100 text-amber-700' :
+                              'bg-neutral-100 text-neutral-400',
+                            ].join(' ')}
+                          >
+                            {col.short}{cell.status === 'partial' ? ` ${cell.answered}/${cell.total}` : cell.status === 'done' ? ' ✓' : ''}
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    {/* 진도 바 */}
+                    {p.totalDrills > 0 && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-neutral-400">
+                          <span>{p.totalDone} / {p.totalDrills} 드릴</span>
+                          <span className={pct === 100 ? 'text-emerald-600 font-bold' : pct > 0 ? 'text-amber-600 font-bold' : ''}>{pct > 0 ? `${pct}%` : '—'}</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-neutral-100">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${pct === 100 ? 'bg-emerald-400' : 'bg-amber-400'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* 데스크탑: 테이블 */}
+        <div className="hidden md:block rounded-2xl border border-neutral-200 bg-white overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -389,7 +486,6 @@ export default async function HiNaesinDashboard() {
               <tbody>
                 {grouped.map(({ sourceType: src, items }) => (
                   <React.Fragment key={`group-${src}`}>
-                    {/* 출처 구분 헤더 행 */}
                     <tr className="bg-neutral-50/80">
                       <td
                         colSpan={DRILL_COLS.length + 3}
@@ -419,7 +515,6 @@ export default async function HiNaesinDashboard() {
                             isAllDone ? 'opacity-60' : '',
                           ].join(' ')}
                         >
-                          {/* 지문명 */}
                           <td className="px-4 py-3">
                             <p className="text-sm font-medium text-neutral-800 truncate max-w-[180px]">
                               {p.title}
@@ -432,7 +527,6 @@ export default async function HiNaesinDashboard() {
                             )}
                           </td>
 
-                          {/* 드릴 셀 */}
                           {DRILL_COLS.map((col) => {
                             const cell = p.cols[col.type];
                             return (
@@ -442,7 +536,6 @@ export default async function HiNaesinDashboard() {
                             );
                           })}
 
-                          {/* 진도 % */}
                           <td className="px-3 py-3 text-center">
                             <span className={[
                               'text-xs font-bold',
@@ -454,7 +547,6 @@ export default async function HiNaesinDashboard() {
                             </span>
                           </td>
 
-                          {/* 시작 버튼 */}
                           <td className="px-3 py-3">
                             <form action={startHiNaesinDrillSessionAction}>
                               <input type="hidden" name="passage_id" value={p.passageId} />
