@@ -79,6 +79,10 @@ export async function bulkCreateHiNaesinPassagesAction(
   const blocks = parseBlocks(rawText);
   if (blocks.length === 0) throw new Error('파싱된 지문이 없습니다. === 구분자를 확인해주세요.');
 
+  // 국문 파싱 (없으면 빈 배열)
+  const rawKo = str(fd, 'passages_ko_raw');
+  const koBlocks = rawKo ? rawKo.split(/={3,}/g).map((b) => b.trim()).filter(Boolean) : [];
+
   // 공통 메타
   const commonMeta = {
     source_type: sourceType,
@@ -94,11 +98,12 @@ export async function bulkCreateHiNaesinPassagesAction(
     created_by:    user.id,
   };
 
-  const rows = blocks.map((b) => ({
+  const rows = blocks.map((b, i) => ({
     ...commonMeta,
     title:           b.title,
     question_number: b.questionNumber,
     passage_text:    b.passageText,
+    translation_ko:  koBlocks[i] ?? null,
   }));
 
   const { error } = await supabase

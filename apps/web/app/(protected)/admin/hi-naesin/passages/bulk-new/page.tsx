@@ -108,44 +108,45 @@ export default function HiNaesinBulkNewPage() {
         </section>
 
         {/* ── 지문 입력 ── */}
-        <section className="rounded-2xl border bg-white p-5 space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-semibold text-neutral-900">지문 입력</h2>
-              <p className="mt-0.5 text-xs text-neutral-500">
-                지문 사이를 <code className="rounded bg-neutral-100 px-1 font-mono text-xs">===</code> 로 구분하세요. 첫 줄이 짧으면 제목으로, <code className="rounded bg-neutral-100 px-1 font-mono text-xs">#34</code> 이면 문제번호로 처리됩니다.
-              </p>
-            </div>
+        <section className="rounded-2xl border bg-white p-5 space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-900">지문 입력</h2>
+            <p className="mt-0.5 text-xs text-neutral-500">
+              지문 사이를 <code className="rounded bg-neutral-100 px-1 font-mono text-xs">===</code> 로 구분하세요.
+              영문/국문 순서를 맞춰주세요 — 1번 영문 ↔ 1번 국문.
+            </p>
           </div>
 
-          {/* 예시 토글 */}
-          <details className="rounded-xl border border-dashed p-3">
-            <summary className="cursor-pointer text-xs font-medium text-neutral-500">
-              입력 예시 보기
-            </summary>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 text-xs">
-              <div>
-                <p className="mb-1 font-semibold text-neutral-600">모의고사</p>
-                <pre className="whitespace-pre-wrap rounded-lg bg-neutral-50 p-3 font-mono text-neutral-700 leading-relaxed">
-                  {EXAMPLE_MOCK}
-                </pre>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* 영문 */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700">영문 EN</span>
+                <span className="text-xs text-neutral-400">첫 줄이 짧으면 제목, <code className="font-mono">#34</code> 이면 문제번호</span>
               </div>
-              <div>
-                <p className="mb-1 font-semibold text-neutral-600">교과서</p>
-                <pre className="whitespace-pre-wrap rounded-lg bg-neutral-50 p-3 font-mono text-neutral-700 leading-relaxed">
-                  {EXAMPLE_TEXTBOOK}
-                </pre>
-              </div>
+              <textarea
+                name="passages_raw"
+                required
+                rows={20}
+                placeholder={`#34\nEvery morning, Sarah makes a decision...\n\n===\n\n#35\nThe relationship between language...`}
+                className="w-full rounded-xl border px-3 py-2.5 font-mono text-sm leading-relaxed outline-none focus:ring-2 focus:ring-sky-200 resize-y"
+              />
             </div>
-          </details>
 
-          <textarea
-            name="passages_raw"
-            required
-            rows={20}
-            placeholder={`첫 번째 지문 내용\n\n===\n\n두 번째 지문 내용\n\n===\n\n세 번째 지문 내용`}
-            className="w-full rounded-xl border px-3 py-2.5 font-mono text-sm leading-relaxed outline-none focus:ring-2 focus:ring-neutral-300 resize-y"
-          />
+            {/* 국문 */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">국문 KO</span>
+                <span className="text-xs text-neutral-400">영문과 순서 동일하게, 없으면 비워도 됨</span>
+              </div>
+              <textarea
+                name="passages_ko_raw"
+                rows={20}
+                placeholder={`매일 아침, Sarah는 작지만 중요한 결정을 내립니다...\n\n===\n\n언어와 사고의 관계는 수세기 동안 철학자들을 매혹시켜 왔습니다...`}
+                className="w-full rounded-xl border px-3 py-2.5 font-mono text-sm leading-relaxed outline-none focus:ring-2 focus:ring-emerald-200 resize-y"
+              />
+            </div>
+          </div>
         </section>
 
         <div className="flex items-center justify-between">
