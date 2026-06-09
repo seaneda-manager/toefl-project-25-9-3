@@ -43,8 +43,8 @@ function parseBlocks(raw: string): Array<{
     if (/^#\d+/.test(firstLine)) {
       questionNumber = numOrNull(firstLine.replace('#', '').trim());
       bodyStart = 1;
-    } else if (firstLine && !/^[A-Z]/.test(firstLine.slice(0, 1)) === false && firstLine.length < 100) {
-      // 첫 줄이 짧고 대문자 시작이면 제목일 가능성 — 단순 휴리스틱
+    } else if (firstLine && firstLine.length < 100 && lines.length > 1) {
+      // 첫 줄이 짧으면 제목으로 처리 (영어/한글 모두 지원)
       title = firstLine;
       bodyStart = 1;
     }
