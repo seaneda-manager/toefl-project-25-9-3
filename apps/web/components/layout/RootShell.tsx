@@ -6,17 +6,33 @@ import { usePathname } from "next/navigation";
 import ClientSiteHeader from "@/components/layout/ClientSiteHeader";
 
 const APP_PREFIXES = [
-  "/home",   // ✅ add this
+  // ── (protected) 라우트 ──────────────────────────────────
+  "/student",
+  "/teacher",
+  "/admin",
+  "/dashboard",
+  "/settings",
+  "/profile",
+  "/home",
+  "/hi-naesin",
+  "/naesin",
+  "/vocab",
+  "/voca",
+  "/reading",
+  "/reading-2026",
+  "/listening",
+  "/listening-2026",
+  "/speaking",
+  "/speaking-2026",
+  "/writing",
+  "/writing-2026",
+  "/grammar-2026",
+  "/toefl-2026",
+  "/dev",
+  // ── 기타 앱 영역 ────────────────────────────────────────
   "/toefl",
   "/lingox",
-  "/admin",
-  "/vocab",
-  "/reading",
-  "/listening",
-  "/speaking",
-  "/writing",
-  "/dashboard",
-  "/teacher",
+  "/focus",
 ];
 
 function isAppRoute(pathname: string) {

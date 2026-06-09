@@ -108,32 +108,34 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
   }, [pathname]);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-neutral-100 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      {/* 왼쪽: 사이드바 토글 + 풀스크린 + 로고 + breadcrumb */}
-      <div className="flex items-center gap-1">
+    <header className="flex h-14 items-center justify-between border-b border-neutral-100 bg-white px-3 md:px-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      {/* 왼쪽: 로고 + breadcrumb (모바일에서 사이드바/풀스크린 버튼 숨김) */}
+      <div className="flex items-center gap-1 min-w-0">
+        {/* 사이드바 토글 — 데스크탑만 */}
         <button
           type="button"
           onClick={toggleSidebar}
-          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+          className="hidden md:flex rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
           aria-label="Toggle sidebar"
         >
           ☰
         </button>
 
+        {/* 풀스크린 — 데스크탑만 */}
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+          className="hidden md:flex rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
           aria-label="Toggle fullscreen"
         >
           {isFullscreen ? '⤢' : '⛶'}
         </button>
 
-        <div className="mx-2 h-5 w-px bg-neutral-200" />
+        <div className="hidden md:block mx-2 h-5 w-px bg-neutral-200" />
 
         {/* 로고 */}
-        <div className="flex items-center gap-2">
-          <Image src="/LEXiOX.png" alt="LEXiOX" height={44} width={150} className="h-11 w-auto" priority unoptimized />
+        <div className="flex items-center gap-2 shrink-0">
+          <Image src="/LEXiOX.png" alt="LEXiOX" height={36} width={120} className="h-9 w-auto" priority unoptimized />
           {role === 'admin' && (
             <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
               Admin
@@ -141,12 +143,12 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
           )}
         </div>
 
-        {/* Breadcrumb */}
+        {/* Breadcrumb — 데스크탑만 */}
         {breadcrumb && (
           <>
-            <ChevronRight className="mx-1 h-3.5 w-3.5 text-neutral-300" />
+            <ChevronRight className="hidden md:block mx-1 h-3.5 w-3.5 text-neutral-300 shrink-0" />
             <span className={[
-              'text-sm font-semibold',
+              'hidden md:block text-sm font-semibold truncate',
               breadcrumb.skill ? SKILL_LABEL_COLOR[breadcrumb.skill] : 'text-neutral-600',
             ].join(' ')}>
               {breadcrumb.label}
@@ -155,12 +157,12 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
         )}
       </div>
 
-      {/* 오른쪽: 언어토글 + 이메일 + 프로필 동그라미 + Sign out */}
-      <div className="flex items-center gap-3 text-sm">
+      {/* 오른쪽: 언어토글 + 프로필 + Sign out */}
+      <div className="flex items-center gap-2 text-sm shrink-0">
         <button
           type="button"
           onClick={toggleLang}
-          className="rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-500 hover:bg-neutral-50 transition-colors"
+          className="rounded-lg border border-neutral-200 px-2 py-1 text-xs font-semibold text-neutral-500 hover:bg-neutral-50 transition-colors"
         >
           {lang === 'ko' ? 'EN' : '한'}
         </button>
@@ -169,18 +171,18 @@ export default function TopbarClient({ email: initialEmail, role }: Props) {
           {email || 'guest'}
         </span>
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white shadow-sm">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white shadow-sm shrink-0">
           {initial}
         </div>
 
         <button
           type="button"
-          className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 transition-colors"
+          className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 transition-colors"
           onClick={handleSignOut}
           disabled={isPending}
           aria-busy={isPending || undefined}
         >
-          {isPending ? 'Signing out…' : 'Sign out'}
+          {isPending ? '...' : 'Sign out'}
         </button>
       </div>
     </header>
