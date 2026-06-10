@@ -111,42 +111,35 @@ export async function saveActivityWeakTags(
     return { ok: true, inserted: 0 };
   }
 
-  let inserted = 0;
+  const tagNames = tags.map((t) => t.weakTag);
 
-  for (const tag of tags) {
-    const existsRes = await supabase
-      .from("student_activity_weak_tags")
-      .select("id")
-      .eq("activity_id", input.activityId)
-      .eq("weak_tag", tag.weakTag)
-      .limit(1)
-      .maybeSingle();
+  const { data: existing, error: existsErr } = await supabase
+    .from("student_activity_weak_tags")
+    .select("weak_tag")
+    .eq("activity_id", input.activityId)
+    .in("weak_tag", tagNames);
 
-    if (existsRes.error) {
-      return { ok: false, error: existsRes.error.message, inserted };
-    }
+  if (existsErr) return { ok: false, error: existsErr.message, inserted: 0 };
 
-    if (existsRes.data?.id) {
-      continue;
-    }
+  const existingSet = new Set((existing ?? []).map((r: any) => r.weak_tag));
+  const toInsert = tags.filter((t) => !existingSet.has(t.weakTag));
 
-    const insertRes = await supabase.from("student_activity_weak_tags").insert({
+  if (toInsert.length === 0) return { ok: true, inserted: 0 };
+
+  const { error: insertErr } = await supabase.from("student_activity_weak_tags").insert(
+    toInsert.map((tag) => ({
       activity_id: input.activityId,
       student_id: input.studentId,
       weak_tag: tag.weakTag,
       severity: tag.severity ?? null,
       source: tag.source ?? null,
       meta: tag.meta ?? {},
-    });
+    })),
+  );
 
-    if (insertRes.error) {
-      return { ok: false, error: insertRes.error.message, inserted };
-    }
+  if (insertErr) return { ok: false, error: insertErr.message, inserted: 0 };
 
-    inserted += 1;
-  }
-
-  return { ok: true, inserted };
+  return { ok: true, inserted: toInsert.length };
 }
 
 export async function createPrescriptionsFromWeakTags(
@@ -164,31 +157,37 @@ export async function createPrescriptionsFromWeakTags(
     return { ok: true, created: 0 };
   }
 
-  let created = 0;
-
-  for (const tag of tags) {
+  const mappedTags = tags.flatMap((tag) => {
     const mapped = WEAK_TAG_TO_PRESCRIPTION[tag.weakTag];
-    if (!mapped) continue;
+    return mapped ? [{ tag, mapped }] : [];
+  });
 
-    const existsRes = await supabase
-      .from("student_prescriptions")
-      .select("id")
-      .eq("student_id", input.studentId)
-      .eq("activity_id", input.activityId)
-      .eq("weak_tag", tag.weakTag)
-      .eq("prescription_type", mapped.prescriptionType)
-      .limit(1)
-      .maybeSingle();
+  if (mappedTags.length === 0) return { ok: true, created: 0 };
 
-    if (existsRes.error) {
-      return { ok: false, error: existsRes.error.message, created };
-    }
+  const { data: existing, error: existsErr } = await supabase
+    .from("student_prescriptions")
+    .select("weak_tag, prescription_type")
+    .eq("student_id", input.studentId)
+    .eq("activity_id", input.activityId)
+    .in(
+      "weak_tag",
+      mappedTags.map((m) => m.tag.weakTag),
+    );
 
-    if (existsRes.data?.id) {
-      continue;
-    }
+  if (existsErr) return { ok: false, error: existsErr.message, created: 0 };
 
-    const insertRes = await supabase.from("student_prescriptions").insert({
+  const existingSet = new Set(
+    (existing ?? []).map((r: any) => `${r.weak_tag}|${r.prescription_type}`),
+  );
+
+  const toInsert = mappedTags.filter(
+    ({ tag, mapped }) => !existingSet.has(`${tag.weakTag}|${mapped.prescriptionType}`),
+  );
+
+  if (toInsert.length === 0) return { ok: true, created: 0 };
+
+  const { error: insertErr } = await supabase.from("student_prescriptions").insert(
+    toInsert.map(({ tag, mapped }) => ({
       student_id: input.studentId,
       activity_id: input.activityId,
       weak_tag: tag.weakTag,
@@ -203,16 +202,12 @@ export async function createPrescriptionsFromWeakTags(
         source: tag.source ?? null,
         ...(mapped.payload ?? {}),
       },
-    });
+    })),
+  );
 
-    if (insertRes.error) {
-      return { ok: false, error: insertRes.error.message, created };
-    }
+  if (insertErr) return { ok: false, error: insertErr.message, created: 0 };
 
-    created += 1;
-  }
-
-  return { ok: true, created };
+  return { ok: true, created: toInsert.length };
 }
 
 export async function saveWeakTagsAndCreatePrescriptions(
