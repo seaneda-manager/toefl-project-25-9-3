@@ -54,53 +54,48 @@ export async function upsertReadingSet(json: unknown) {
     if (error) throw error;
   }
 
-  for (let i = 0; i < parsed.passages.length; i++) {
-    const p = parsed.passages[i];
+  const passageRows = parsed.passages.map((p, i) => ({
+    id: p.id,
+    set_id: parsed.id,
+    title: p.title,
+    content: joinParagraphs(p.paragraphs),
+    ord: i + 1,
+  }));
+  const { error: pErr } = await supabase.from("reading_passages").insert(passageRows);
+  if (pErr) throw pErr;
 
-    {
-      const { error: pErr } = await supabase.from("reading_passages").insert({
-        id: p.id,
-        set_id: parsed.id,
-        title: p.title,
-        content: joinParagraphs(p.paragraphs),
-        ord: i + 1,
-      });
-      if (pErr) throw pErr;
-    }
+  const questionRows = parsed.passages.flatMap((p, _i) =>
+    p.questions.map((q, j) => ({
+      id: q.id,
+      passage_id: p.id,
+      number: q.number,
+      type: q.type,
+      stem: q.stem,
+      meta: q.meta ?? {},
+      explanation: (q.meta as any)?.explanation ?? null,
+      ord: j + 1,
+    })),
+  );
+  if (questionRows.length > 0) {
+    const { error: qErr } = await supabase.from("reading_questions").insert(questionRows);
+    if (qErr) throw qErr;
+  }
 
-    for (let j = 0; j < p.questions.length; j++) {
-      const q = p.questions[j];
-      const explanationFromMeta =
-        (q.meta as any)?.explanation != null ? (q.meta as any).explanation : null;
-
-      {
-        const { error: qErr } = await supabase.from("reading_questions").insert({
-          id: q.id,
-          passage_id: p.id,
-          number: q.number,
-          type: q.type,
-          stem: q.stem,
-          meta: q.meta ?? {},
-          explanation: explanationFromMeta,
-          ord: j + 1,
-        });
-        if (qErr) throw qErr;
-      }
-
-      const choices = q.choices ?? [];
-      for (let k = 0; k < choices.length; k++) {
-        const c = choices[k];
-        const { error: cErr } = await supabase.from("reading_choices").insert({
-          id: c.id,
-          question_id: q.id,
-          text: c.text,
-          is_correct: !!c.isCorrect,
-          explain: null,
-          ord: k + 1,
-        });
-        if (cErr) throw cErr;
-      }
-    }
+  const choiceRows = parsed.passages.flatMap((p) =>
+    p.questions.flatMap((q) =>
+      (q.choices ?? []).map((c, k) => ({
+        id: c.id,
+        question_id: q.id,
+        text: c.text,
+        is_correct: !!c.isCorrect,
+        explain: null,
+        ord: k + 1,
+      })),
+    ),
+  );
+  if (choiceRows.length > 0) {
+    const { error: cErr } = await supabase.from("reading_choices").insert(choiceRows);
+    if (cErr) throw cErr;
   }
 
   return { ok: true } as const;
@@ -125,55 +120,64 @@ export async function loadReadingSet(setId: string): Promise<RSet | null> {
 
   if (!set || !passages) return null;
 
+  const passageIds = passages.map((p) => p.id);
+
+  const { data: allQuestions, error: qErr } = await supabase
+    .from("reading_questions")
+    .select("*")
+    .in("passage_id", passageIds)
+    .order("ord", { ascending: true });
+  if (qErr) throw qErr;
+
+  const questionIds = (allQuestions ?? []).map((q: any) => q.id);
+
+  const { data: choices, error: choicesErr } =
+    questionIds.length > 0
+      ? await supabase
+          .from("reading_choices")
+          .select("*")
+          .in("question_id", questionIds)
+          .order("ord", { ascending: true })
+      : { data: [] as any[], error: null };
+  if (choicesErr) throw choicesErr;
+
+  const choicesByQuestion = new Map<string, any[]>();
+  for (const c of choices ?? []) {
+    const key = String(c.question_id);
+    if (!choicesByQuestion.has(key)) choicesByQuestion.set(key, []);
+    choicesByQuestion.get(key)!.push(c);
+  }
+
+  const questionsByPassage = new Map<string, any[]>();
+  for (const q of allQuestions ?? []) {
+    const key = String(q.passage_id);
+    if (!questionsByPassage.has(key)) questionsByPassage.set(key, []);
+    questionsByPassage.get(key)!.push(q);
+  }
+
   const result: RSet = {
     id: set.id,
     label: set.label ?? "",
     source: set.source ?? "",
     version: set.version ?? 1,
-    passages: [],
-  };
-
-  for (const p of passages) {
-    const { data: qs, error: qErr } = await supabase
-      .from("reading_questions")
-      .select("*")
-      .eq("passage_id", p.id)
-      .order("ord", { ascending: true });
-    if (qErr) throw qErr;
-
-    const questions = [] as RSet["passages"][number]["questions"];
-
-    for (const q of qs ?? []) {
-      const { data: cs, error: cErr } = await supabase
-        .from("reading_choices")
-        .select("*")
-        .eq("question_id", q.id)
-        .order("ord", { ascending: true });
-      if (cErr) throw cErr;
-
-      const metaMerged = mergeExplanationMeta(q?.meta, q?.explanation, undefined);
-
-      questions.push({
+    passages: passages.map((p) => ({
+      id: String(p.id),
+      title: p.title ?? "",
+      paragraphs: toParagraphs(p.content),
+      questions: (questionsByPassage.get(String(p.id)) ?? []).map((q: any) => ({
         id: String(q.id),
         number: q.number ?? 0,
         type: q.type,
         stem: q.stem ?? "",
-        meta: metaMerged ?? {},
-        choices: (cs ?? []).map((c: any) => ({
+        meta: mergeExplanationMeta(q?.meta, q?.explanation, undefined) ?? {},
+        choices: (choicesByQuestion.get(String(q.id)) ?? []).map((c: any) => ({
           id: String(c.id),
           text: c.text ?? "",
           isCorrect: coerceIsCorrect(c.is_correct),
         })),
-      });
-    }
-
-    result.passages.push({
-      id: String(p.id),
-      title: p.title ?? "",
-      paragraphs: toParagraphs(p.content),
-      questions,
-    });
-  }
+      })),
+    })),
+  };
 
   return result;
 }
