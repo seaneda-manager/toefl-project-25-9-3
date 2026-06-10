@@ -158,6 +158,7 @@ const ADMIN_PATH_TAB_MAP: [string, string][] = [
   ['/admin/landing',                 'LEXiOX-TOEFL'],
   ['/admin/naesin',                  'LEXiOX-내신'],
   ['/admin/hi-naesin',               'LEXiOX-내신'],
+  ['/admin/middle-naesin',           'LEXiOX-내신'],
   ['/admin/content/listening/jr',    'LEXiOX-Jr.'],
   ['/admin/vocab',                   'LEXiOX-어휘'],
   ['/voca/admin',                    'LEXiOX-어휘'],
@@ -165,6 +166,7 @@ const ADMIN_PATH_TAB_MAP: [string, string][] = [
   ['/teacher',                       '선생님 도구'],
   ['/admin/students',                '선생님 도구'],
   ['/admin/homework',                '선생님 도구'],
+  ['/admin/lectures',                '선생님 도구'],
 ];
 
 function guessAdminTabFromPath(pathname: string): string {
@@ -251,12 +253,9 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'LEXiOX-TOEFL', href: '/admin/content/grammar-2026',          label: 'Grammar 편집기' },
         { section: 'LEXiOX-TOEFL', href: '/admin/landing',                       label: '랜딩 편집기' },
 
-        { section: 'LEXiOX-내신', href: '/admin/naesin',                         label: '내신 허브' },
-        { section: 'LEXiOX-내신', href: '/admin/naesin/drill-demo',              label: '드릴 미리보기' },
-
-        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages',             label: 'Hi-내신 지문 목록' },
-        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages/new',         label: 'Hi-내신 단건 등록' },
-        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages/bulk-new',    label: 'Hi-내신 챕터 일괄' },
+        { section: 'LEXiOX-내신', href: '/admin/naesin',                         label: '고등내신 허브' },
+        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages',             label: '고등 지문 관리' },
+        { section: 'LEXiOX-내신', href: '/admin/middle-naesin',                  label: '중학내신 허브' },
 
         { section: 'LEXiOX-Jr.', href: '/admin/content/listening/jr',            label: 'Listening (Jr.) 편집기' },
         { section: 'LEXiOX-Jr.', href: '/admin/naesin/passages',                 label: 'Jr. 지문 관리' },
@@ -281,6 +280,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '선생님 도구', href: '/teacher/students',          label: '학생 현황' },
         { section: '선생님 도구', href: '/teacher/reports/students',  label: '학생 활동 리포트' },
         { section: '선생님 도구', href: '/admin/homework',            label: '📷 숙제 채점 관리' },
+        { section: '선생님 도구', href: '/admin/lectures',           label: '🎬 강의 관리' },
       ];
     }
 
@@ -311,6 +311,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '어휘', href: '/vocab', label: '단어 학습' },
 
         { section: '숙제', href: '/student/homework', label: '숙제 채점' },
+        { section: '숙제', href: '/student/lectures', label: '🎬 강의' },
 
         { section: '설정', href: '/settings', label: '설정' },
       ];
@@ -328,6 +329,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: '내 현황', href: '/student',            label: '대시보드' },
         { section: '내 현황', href: '/student/homework',   label: '숙제 채점' },
+        { section: '내 현황', href: '/student/lectures',  label: '🎬 강의' },
         { section: '내 현황', href: '/student/tests',      label: '시험 목록' },
         { section: '내 현황', href: '/student/review',     label: '복습' },
         { section: '내 현황', href: '/student/progress',   label: '진도 현황' },
@@ -347,6 +349,7 @@ export default function SidebarClient({ role, program = null }: Props) {
       { section: '내 학습', href: '/student/review',    label: '복습' },
       { section: '내 학습', href: '/student/progress',  label: '진도 현황' },
       { section: '내 학습', href: '/student/homework',  label: '숙제' },
+      { section: '내 학습', href: '/student/lectures',  label: '🎬 강의' },
 
       { section: '학습 콘텐츠', href: '/home',                  label: 'Home' },
       { section: '학습 콘텐츠', href: '/reading-2026/study',   label: 'Reading',   skill: 'reading'   as SkillColor },

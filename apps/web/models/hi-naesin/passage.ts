@@ -3,7 +3,7 @@
 export const HI_NAESIN_SOURCE_TYPES = ['mock_exam', 'textbook', 'external_book'] as const;
 export type HiNaesinSourceType = (typeof HI_NAESIN_SOURCE_TYPES)[number];
 
-export const HI_NAESIN_GRADES = ['H1', 'H2', 'H3'] as const;
+export const HI_NAESIN_GRADES = ['M1', 'M2', 'M3', 'H1', 'H2', 'H3'] as const;
 export type HiNaesinGrade = (typeof HI_NAESIN_GRADES)[number];
 
 export type HiNaesinPassage = {
@@ -92,6 +92,9 @@ export function sourceTypeLabel(t: HiNaesinSourceType): string {
 
 export function gradeLabel(g: HiNaesinGrade): string {
   switch (g) {
+    case 'M1': return '중1';
+    case 'M2': return '중2';
+    case 'M3': return '중3';
     case 'H1': return '고1';
     case 'H2': return '고2';
     case 'H3': return '고3';

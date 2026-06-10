@@ -60,24 +60,18 @@ export default async function HiNaesinPassageListPage({
             고등 내신 지문 라이브러리 — 모의고사 · 교과서 · 외부교재
           </p>
         </div>
-        <div className="flex gap-2 self-start flex-wrap">
-          <Link
-            href="/admin/hi-naesin/vocab/bulk"
-            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-          >
-            + 단어 일괄 추가
-          </Link>
+        <div className="flex gap-2 self-start">
           <Link
             href="/admin/hi-naesin/passages/bulk-new"
-            className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
           >
-            + 챕터별 일괄 등록
+            챕터 일괄 등록
           </Link>
           <Link
             href="/admin/hi-naesin/passages/new"
-            className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
+            className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
           >
-            + 단건 등록
+            + 지문 추가
           </Link>
         </div>
       </header>
@@ -113,6 +107,9 @@ export default async function HiNaesinPassageListPage({
             className="rounded-xl border px-3 py-2 text-sm outline-none"
           >
             <option value="">전체 학년</option>
+            <option value="M1">중1</option>
+            <option value="M2">중2</option>
+            <option value="M3">중3</option>
             <option value="H1">고1</option>
             <option value="H2">고2</option>
             <option value="H3">고3</option>

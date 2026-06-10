@@ -1,86 +1,95 @@
-'use client';
+import Link from 'next/link';
+import { getServerSupabase } from '@/lib/supabase/server';
 
-import { useRouter } from 'next/navigation';
+export const dynamic = 'force-dynamic';
 
-export default function AdminNaesinPage() {
-  const router = useRouter();
-  const go = (path: string) => router.push(path);
+export default async function AdminNaesinPage() {
+  const supabase = await getServerSupabase();
+
+  const { count: passageCount } = await supabase
+    .from('hi_naesin_passages')
+    .select('id', { count: 'exact', head: true });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Naesin Admin</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          내신 리딩 운영, 시험 범위 조립, 이후 Grammar / Listening / Writing 확장을 위한 허브입니다.
-        </p>
+    <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
+      <header>
+        <div className="text-xs uppercase tracking-wide text-neutral-500">Admin / 내신</div>
+        <h1 className="mt-1 text-2xl font-semibold text-neutral-900">내신 드릴 관리</h1>
+      </header>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* 지문 관리 — 핵심 진입점 */}
+        <Link
+          href="/admin/hi-naesin/passages"
+          className="group flex flex-col gap-3 rounded-2xl border bg-white p-6 shadow-sm hover:border-neutral-400 hover:shadow-md transition"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-2xl">📄</span>
+            {passageCount != null && (
+              <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-neutral-600">
+                {passageCount}개
+              </span>
+            )}
+          </div>
+          <div>
+            <div className="font-semibold text-neutral-900">지문 관리</div>
+            <p className="mt-1 text-xs text-neutral-500">
+              지문 등록 → 드릴 설정 → 학생 배정
+            </p>
+          </div>
+          <div className="mt-auto pt-2 text-xs font-medium text-neutral-900 group-hover:underline">
+            지문 목록 열기 →
+          </div>
+        </Link>
+
+        {/* 챕터 일괄 등록 */}
+        <Link
+          href="/admin/hi-naesin/passages/bulk-new"
+          className="group flex flex-col gap-3 rounded-2xl border bg-white p-6 shadow-sm hover:border-neutral-400 hover:shadow-md transition"
+        >
+          <span className="text-2xl">📦</span>
+          <div>
+            <div className="font-semibold text-neutral-900">챕터 일괄 등록</div>
+            <p className="mt-1 text-xs text-neutral-500">
+              교과서 한 단원의 지문 여러 개를 한 번에 등록합니다.
+            </p>
+          </div>
+          <div className="mt-auto pt-2 text-xs font-medium text-neutral-900 group-hover:underline">
+            일괄 등록 열기 →
+          </div>
+        </Link>
+
+        {/* 단어 일괄 추가 */}
+        <Link
+          href="/admin/hi-naesin/vocab/bulk"
+          className="group flex flex-col gap-3 rounded-2xl border bg-white p-6 shadow-sm hover:border-neutral-400 hover:shadow-md transition"
+        >
+          <span className="text-2xl">🔤</span>
+          <div>
+            <div className="font-semibold text-neutral-900">단어 일괄 추가</div>
+            <p className="mt-1 text-xs text-neutral-500">
+              지문에 연결된 단어장을 CSV 또는 직접 입력으로 추가합니다.
+            </p>
+          </div>
+          <div className="mt-auto pt-2 text-xs font-medium text-neutral-900 group-hover:underline">
+            단어 관리 열기 →
+          </div>
+        </Link>
+
+        {/* 지문 직접 추가 */}
+        <Link
+          href="/admin/hi-naesin/passages/new"
+          className="group flex flex-col gap-3 rounded-2xl border border-dashed bg-neutral-50 p-6 hover:bg-white hover:border-neutral-400 transition"
+        >
+          <span className="text-2xl">＋</span>
+          <div>
+            <div className="font-semibold text-neutral-900">지문 단건 추가</div>
+            <p className="mt-1 text-xs text-neutral-500">
+              지문 하나를 직접 입력해서 등록합니다.
+            </p>
+          </div>
+        </Link>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">시험 범위 관리</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            학교 / 학년 / 학기 / 시험유형별 scope를 만들고, 범위 item을 조립합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/naesin/scopes')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              시험 범위 관리
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/naesin/scopes/new')}
-              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-800 hover:bg-neutral-50"
-            >
-              새 범위 만들기
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Reading 2026 Editor</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            Reading 2026 콘텐츠를 생성하고, 이후 내신 리딩 자산과 연결해갈 수 있는 입구입니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/content/reading-2026/new')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              Reading 2026 Editor
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">내신 운영 로드맵</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            Drill, Final Review, Mock Test, Assignment, Student / Parent 관리로 확장할 예정입니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <span className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-neutral-500">
-              Grammar Soon
-            </span>
-            <span className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-neutral-500">
-              Listening Soon
-            </span>
-            <span className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-neutral-500">
-              Writing Soon
-            </span>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm md:col-span-2 xl:col-span-3">
-          <h2 className="text-sm font-semibold">현재 연결된 흐름</h2>
-          <p className="mt-2 text-xs leading-6 text-neutral-600">
-            시험 범위 관리 → scope 상세 → scope item 추가/수정/정렬/복제/삭제 흐름까지 연결되어 있습니다.
-            이제 이 허브를 기준으로 Reading 관련 관리자 기능과 내신 운영 기능을 점점 이어 붙이면 됩니다.
-          </p>
-        </section>
-      </div>
-    </div>
+    </main>
   );
 }

@@ -30,6 +30,12 @@ const TABS: Tab[] = [
     match: (p) => p.startsWith('/student/homework'),
   },
   {
+    href: '/student/lectures',
+    label: '강의',
+    icon: '🎬',
+    match: (p) => p.startsWith('/student/lectures'),
+  },
+  {
     href: '/settings',
     label: '설정',
     icon: '⚙️',
