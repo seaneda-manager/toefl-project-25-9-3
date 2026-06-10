@@ -75,6 +75,14 @@ export async function upsertContentAction(formData: FormData) {
   redirect(`/admin/middle-naesin/units/${unit_id}`);
 }
 
+export async function confirmUnitAction(formData: FormData) {
+  const supabase = await getServerSupabase();
+  const id = formData.get('id') as string;
+  await supabase.from('middle_naesin_units').update({ is_published: true }).eq('id', id);
+  revalidatePath(`/admin/middle-naesin/units/${id}`);
+  redirect(`/admin/middle-naesin/units/${id}`);
+}
+
 export async function deleteContentAction(formData: FormData) {
   const supabase = await getServerSupabase();
   const id      = formData.get('id') as string;

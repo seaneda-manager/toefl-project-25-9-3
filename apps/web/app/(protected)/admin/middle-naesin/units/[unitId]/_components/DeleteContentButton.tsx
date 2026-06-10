@@ -1,6 +1,6 @@
 'use client';
 
-import { deleteContentAction } from '../../actions';
+import { deleteContentAction } from '../../../actions';
 
 export function DeleteContentButton({ id, unitId }: { id: string; unitId: string }) {
   return (

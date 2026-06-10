@@ -63,6 +63,9 @@ export default function HiNaesinBulkNewPage() {
             </Field>
             <Field label="학년 *" name="grade" as="select">
               <option value="">선택</option>
+              <option value="M1">중1</option>
+              <option value="M2">중2</option>
+              <option value="M3">중3</option>
               <option value="H1">고1</option>
               <option value="H2">고2</option>
               <option value="H3">고3</option>
