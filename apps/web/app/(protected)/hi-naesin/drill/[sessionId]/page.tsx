@@ -96,7 +96,7 @@ export default async function HiNaesinDrillPage({
   const [
     { data: passageData },
     { data: allDrillsRaw },
-    { data: respondedRaw },
+    { data: allResponsesRaw },
     { data: writingDrillsRaw },
   ] = await Promise.all([
     supabase
@@ -111,7 +111,7 @@ export default async function HiNaesinDrillPage({
       .order('order_index'),
     supabase
       .from('hi_naesin_drill_responses')
-      .select('drill_id')
+      .select('drill_id, response_text, response_choice, is_correct, score_pct, feedback_text')
       .eq('session_id', sessionId),
     supabase
       .from('hi_naesin_drills')
@@ -122,7 +122,9 @@ export default async function HiNaesinDrillPage({
   ]);
 
   const allDrills    = (allDrillsRaw ?? []) as DrillRow[];
-  const respondedSet = new Set((respondedRaw ?? []).map((r) => r.drill_id));
+  const allResponses = (allResponsesRaw ?? []) as ResponseRow[];
+  const responseMap  = new Map(allResponses.map((r) => [r.drill_id, r]));
+  const respondedSet = new Set(allResponses.map((r) => r.drill_id));
 
   if (allDrills.length === 0) {
     return (
@@ -180,15 +182,7 @@ export default async function HiNaesinDrillPage({
   const currentTypeIdx = availableTypes.indexOf(currentType);
   const nextType       = availableTypes[currentTypeIdx + 1] ?? null;
 
-  // ── 현재 드릴 응답 로드 ───────────────────────────────
-  const { data: responseData } = await supabase
-    .from('hi_naesin_drill_responses')
-    .select('drill_id, response_text, response_choice, is_correct, score_pct, feedback_text')
-    .eq('session_id', sessionId)
-    .eq('drill_id', drill.id)
-    .maybeSingle();
-
-  const response   = responseData as ResponseRow | null;
+  const response   = responseMap.get(drill.id) ?? null;
   const isAnswered = response !== null;
 
   // ── 자기채점 / 다음 버튼 여부 ─────────────────────────
@@ -206,14 +200,9 @@ export default async function HiNaesinDrillPage({
     string,
     { response_text: string | null; is_correct: boolean | null; score_pct: number | null }
   >();
-  if (writingDrills.length > 0) {
-    const wIds = writingDrills.map((d) => d.id);
-    const { data: wResp } = await supabase
-      .from('hi_naesin_drill_responses')
-      .select('drill_id, response_text, is_correct, score_pct')
-      .eq('session_id', sessionId)
-      .in('drill_id', wIds);
-    for (const r of wResp ?? []) writingResponseMap.set(r.drill_id, r);
+  for (const d of writingDrills) {
+    const r = responseMap.get(d.id);
+    if (r) writingResponseMap.set(d.id, r);
   }
 
   // ── 렌더 ──────────────────────────────────────────────
