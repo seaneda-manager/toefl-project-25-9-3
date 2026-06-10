@@ -1752,10 +1752,17 @@ export async function syncImportedDaySetsToTrackAction(params: {
   const upserts: Array<{ track_id: string; day_index: number; set_id: string }> = [];
   const emptyDays: Array<{ day: number; setId: string; title: string }> = [];
 
+  const allSetIds = dayIndexes.map((day) => dayToSet.get(day)!.setId);
+  const { data: nonEmptyRows, error: cntErr } = await (supabase as any)
+    .from("vocab_set_items")
+    .select("set_id")
+    .in("set_id", allSetIds);
+  if (cntErr) throw new Error(`vocab_set_items batch check failed: ${cntErr.message ?? ""}`);
+  const nonEmptySetIds = new Set((nonEmptyRows ?? []).map((r: any) => String(r.set_id)));
+
   for (const day of dayIndexes) {
     const info = dayToSet.get(day)!;
-    const cnt = await getSetItemCount(supabase, info.setId);
-    if (cnt <= 0) {
+    if (!nonEmptySetIds.has(info.setId)) {
       emptyDays.push({ day, setId: info.setId, title: info.title });
       continue;
     }
@@ -1880,7 +1887,8 @@ export async function bulkCreateStudentVocabPlansAction(params: {
     for (const rawId of params.studentIds) {
       const name = nameMap.get(rawId) ?? rawId;
       try {
-        const studentId = await resolveAcademyStudentIdOrThrow(supabase, rawId);
+        // rawId is already an academy_students.id (confirmed by the batch fetch above)
+        const studentId = rawId;
 
         const { data: plan, error: perr } = await supabase
           .from("student_vocab_plans")
