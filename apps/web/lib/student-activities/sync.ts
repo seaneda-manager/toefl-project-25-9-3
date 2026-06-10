@@ -338,19 +338,8 @@ export async function syncStudentTaskActivitiesBatch(
     return { ok: false, error: res.error.message, synced: 0 };
   }
 
-  let synced = 0;
-
-  for (const row of (res.data ?? []) as Array<{ id: string }>) {
-    const result = await syncStudentTaskActivityById(supabase, row.id);
-
-    if ("error" in result) {
-      return { ok: false, error: result.error, synced };
-    }
-
-    synced += 1;
-  }
-
-  return { ok: true, synced };
+  const rows = (res.data ?? []) as Array<{ id: string }>;
+  return runBatchSync(rows, (row) => syncStudentTaskActivityById(supabase, row.id));
 }
 
 export async function syncReadingSessionActivitiesBatch(
@@ -367,17 +356,23 @@ export async function syncReadingSessionActivitiesBatch(
     return { ok: false, error: res.error.message, synced: 0 };
   }
 
+  const rows = (res.data ?? []) as Array<{ id: string }>;
+  return runBatchSync(rows, (row) => syncReadingSessionActivityById(supabase, row.id));
+}
+
+async function runBatchSync<T>(
+  rows: T[],
+  fn: (row: T) => Promise<SyncResult>,
+  concurrency = 10,
+): Promise<BatchSyncResult> {
   let synced = 0;
-
-  for (const row of (res.data ?? []) as Array<{ id: string }>) {
-    const result = await syncReadingSessionActivityById(supabase, row.id);
-
-    if ("error" in result) {
-      return { ok: false, error: result.error, synced };
+  for (let i = 0; i < rows.length; i += concurrency) {
+    const chunk = rows.slice(i, i + concurrency);
+    const results = await Promise.all(chunk.map(fn));
+    for (const result of results) {
+      if ("error" in result) return { ok: false, error: result.error, synced };
+      synced += 1;
     }
-
-    synced += 1;
   }
-
   return { ok: true, synced };
 }
