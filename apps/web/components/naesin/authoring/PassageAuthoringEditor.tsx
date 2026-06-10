@@ -581,12 +581,7 @@ export default function PassageAuthoringEditor({ initialDoc }: Props) {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="text-sm font-semibold text-neutral-900">JSON Preview</div>
-          <pre className="max-h-[720px] overflow-auto rounded-2xl bg-neutral-950 p-4 text-xs leading-6 text-neutral-100">
-            {JSON.stringify(doc, null, 2)}
-          </pre>
-        </div>
+
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
