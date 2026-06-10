@@ -31,9 +31,15 @@ function getClient() {
 }
 
 function parseJsonBlock(text: string): unknown {
-  const match = text.match(/```(?:json)?\s*([\s\S]*?)```/) ?? text.match(/(\{[\s\S]*\})/);
-  if (!match) throw new Error("JSON 블록을 찾을 수 없습니다.");
-  return JSON.parse(match[1]);
+  // 코드블록 안 JSON 우선 추출
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) return JSON.parse(fenced[1]);
+
+  // 코드블록 없으면 첫 { ~ 마지막 } 추출
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error("JSON 블록을 찾을 수 없습니다.");
+  return JSON.parse(text.slice(start, end + 1));
 }
 
 function buildPrompt(sentences: { id: string; text: string }[]): string {
@@ -171,8 +177,8 @@ export async function generatePassageWorkoutAction(params: {
     const client = getClient();
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 8000,
+      model: "claude-sonnet-4-6",
+      max_tokens: 16000,
       messages: [
         {
           role: "user",
