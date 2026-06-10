@@ -176,21 +176,40 @@ export async function generatePassageWorkoutAction(params: {
 
     const client = getClient();
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 16000,
-      messages: [
-        {
-          role: "user",
-          content: buildPrompt(sentences.map((s: any) => ({ id: s.id, text: s.text }))),
-        },
-      ],
-    });
+    // 문장을 6개씩 배치로 나눠 처리 (응답 토큰 초과 방지)
+    const BATCH_SIZE = 6;
+    const sentenceList = sentences.map((s: any) => ({ id: s.id, text: s.text }));
+    const batches: typeof sentenceList[] = [];
+    for (let i = 0; i < sentenceList.length; i += BATCH_SIZE) {
+      batches.push(sentenceList.slice(i, i + BATCH_SIZE));
+    }
 
-    const responseText = (message.content[0] as any)?.text ?? "";
-    const generated = parseJsonBlock(responseText) as GeneratedWorkout;
+    const merged: GeneratedWorkout = {
+      structureAnalysis: [],
+      translation: [],
+      composition: [],
+      sentenceFunctions: [],
+      wordAnalysis: [],
+    };
 
-    if (!generated.translation || !generated.structureAnalysis) {
+    for (const batch of batches) {
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 16000,
+        messages: [{ role: "user", content: buildPrompt(batch) }],
+      });
+      const responseText = (message.content[0] as any)?.text ?? "";
+      const part = parseJsonBlock(responseText) as GeneratedWorkout;
+      merged.structureAnalysis.push(...(part.structureAnalysis ?? []));
+      merged.translation.push(...(part.translation ?? []));
+      merged.composition.push(...(part.composition ?? []));
+      merged.sentenceFunctions.push(...(part.sentenceFunctions ?? []));
+      merged.wordAnalysis.push(...(part.wordAnalysis ?? []));
+    }
+
+    const generated = merged;
+
+    if (!generated.translation.length || !generated.structureAnalysis.length) {
       return { ok: false, error: "AI 응답 파싱 실패: 필수 필드 누락" };
     }
 
