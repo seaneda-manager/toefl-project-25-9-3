@@ -59,7 +59,7 @@ create table if not exists student_point_ledger (
 create index if not exists idx_ledger_student on student_point_ledger(student_id);
 create index if not exists idx_ledger_time    on student_point_ledger(earned_at desc);
 
--- ── 4. 데일리 태스크 (text 컬럼, ENUM 없음) ────────────────────
+-- ── 4. 데일리 태스크 ──────────────────────────────────────────
 create table if not exists daily_tasks (
   id            uuid primary key default gen_random_uuid(),
   student_id    uuid not null references auth.users(id) on delete cascade,
@@ -100,7 +100,7 @@ create table if not exists perk_redemptions (
   perk_id      uuid not null references perk_catalog(id),
   points_spent integer not null,
   status       text not null default 'pending'
-                 check (status in ('pending','approved','fulfilled','rejected')),
+               check (status in ('pending','approved','fulfilled','rejected')),
   admin_note   text,
   requested_at timestamptz not null default now(),
   resolved_at  timestamptz
@@ -115,7 +115,7 @@ create table if not exists student_avatars (
   updated_at      timestamptz not null default now()
 );
 
--- ── 8. RLS ────────────────────────────────────────────────────
+-- ── 8. RLS 활성화 ─────────────────────────────────────────────
 alter table student_gamification  enable row level security;
 alter table student_point_ledger  enable row level security;
 alter table daily_tasks           enable row level security;
@@ -123,43 +123,41 @@ alter table perk_catalog          enable row level security;
 alter table perk_redemptions      enable row level security;
 alter table student_avatars       enable row level security;
 
-do $$ begin
-  create policy "student_own_gamification" on student_gamification
-    for all using ((select auth.uid()) = student_id);
-exception when duplicate_object then null;
+-- ── 9. RLS 정책 (pg_policies 체크 후 EXECUTE로 생성) ──────────
+do $$
+begin
+  -- student_gamification
+  if not exists (select 1 from pg_policies where tablename = 'student_gamification' and policyname = 'student_own_gamification') then
+    execute 'create policy student_own_gamification on student_gamification for all using (auth.uid() = student_id)';
+  end if;
+
+  -- student_point_ledger
+  if not exists (select 1 from pg_policies where tablename = 'student_point_ledger' and policyname = 'student_own_ledger') then
+    execute 'create policy student_own_ledger on student_point_ledger for select using (auth.uid() = student_id)';
+  end if;
+
+  -- daily_tasks
+  if not exists (select 1 from pg_policies where tablename = 'daily_tasks' and policyname = 'student_own_daily_task') then
+    execute 'create policy student_own_daily_task on daily_tasks for all using (auth.uid() = student_id)';
+  end if;
+
+  -- perk_catalog
+  if not exists (select 1 from pg_policies where tablename = 'perk_catalog' and policyname = 'perk_catalog_read') then
+    execute 'create policy perk_catalog_read on perk_catalog for select using (is_active = true)';
+  end if;
+
+  -- perk_redemptions
+  if not exists (select 1 from pg_policies where tablename = 'perk_redemptions' and policyname = 'student_own_redemptions') then
+    execute 'create policy student_own_redemptions on perk_redemptions for all using (auth.uid() = student_id)';
+  end if;
+
+  -- student_avatars
+  if not exists (select 1 from pg_policies where tablename = 'student_avatars' and policyname = 'student_own_avatar') then
+    execute 'create policy student_own_avatar on student_avatars for all using (auth.uid() = student_id)';
+  end if;
 end $$;
 
-do $$ begin
-  create policy "student_own_ledger" on student_point_ledger
-    for select using ((select auth.uid()) = student_id);
-exception when duplicate_object then null;
-end $$;
-
-do $$ begin
-  create policy "student_own_daily_task" on daily_tasks
-    for all using ((select auth.uid()) = student_id);
-exception when duplicate_object then null;
-end $$;
-
-do $$ begin
-  create policy "perk_catalog_read" on perk_catalog
-    for select using (is_active = true);
-exception when duplicate_object then null;
-end $$;
-
-do $$ begin
-  create policy "student_own_redemptions" on perk_redemptions
-    for all using ((select auth.uid()) = student_id);
-exception when duplicate_object then null;
-end $$;
-
-do $$ begin
-  create policy "student_own_avatar" on student_avatars
-    for all using ((select auth.uid()) = student_id);
-exception when duplicate_object then null;
-end $$;
-
--- ── 9. 레벨 계산 함수 ────────────────────────────────────────
+-- ── 10. 레벨 계산 함수 ───────────────────────────────────────
 create or replace function calc_level(pts integer) returns integer
 language sql immutable as $$
   select case
@@ -176,7 +174,7 @@ language sql immutable as $$
   end;
 $$;
 
--- ── 10. 포인트 적립 함수 ─────────────────────────────────────
+-- ── 11. 포인트 적립 함수 ─────────────────────────────────────
 create or replace function award_points(
   p_student_id uuid,
   p_rule_id    text,
@@ -192,50 +190,63 @@ declare
   v_streak       integer;
   v_streak_bonus integer;
   v_total        integer;
+  v_prev_points  integer;
+  v_new_total    integer;
 begin
+  -- 규칙 조회
   select base_points into v_base
   from point_rules
   where id = p_rule_id and is_active = true;
 
-  if v_base is null then return 0; end if;
+  if v_base is null then
+    return 0;
+  end if;
 
-  select current_streak into v_streak
+  -- 현재 스트릭 조회
+  select current_streak, total_points
+    into v_streak, v_prev_points
   from student_gamification
-  where student_gamification.student_id = p_student_id;
+  where student_id = p_student_id;
 
   v_streak       := coalesce(v_streak, 0);
+  v_prev_points  := coalesce(v_prev_points, 0);
   v_streak_bonus := (v_base * least(v_streak, 5) * 10) / 100;
   v_total        := v_base + p_bonus + v_streak_bonus;
+  v_new_total    := v_prev_points + v_total;
 
+  -- ledger 기록
   insert into student_point_ledger
     (student_id, rule_id, points, bonus_points, source_ref, metadata)
   values
     (p_student_id, p_rule_id, v_base + v_streak_bonus, p_bonus, p_source_ref, p_metadata);
 
-  insert into student_gamification
-    (student_id, total_points, level, current_streak, longest_streak, last_activity_date)
-  values
-    (p_student_id, v_total, calc_level(v_total), 1, 1, current_date)
-  on conflict on constraint student_gamification_pkey do update set
-    total_points       = student_gamification.total_points + v_total,
-    level              = calc_level(student_gamification.total_points + v_total),
+  -- 기존 행 업데이트 시도
+  update student_gamification set
+    total_points       = v_new_total,
+    level              = calc_level(v_new_total),
     current_streak     = case
-                           when student_gamification.last_activity_date = current_date - 1
-                             then student_gamification.current_streak + 1
-                           when student_gamification.last_activity_date = current_date
-                             then student_gamification.current_streak
+                           when last_activity_date = current_date - 1 then current_streak + 1
+                           when last_activity_date = current_date      then current_streak
                            else 1
                          end,
     longest_streak     = greatest(
-                           student_gamification.longest_streak,
+                           longest_streak,
                            case
-                             when student_gamification.last_activity_date = current_date - 1
-                               then student_gamification.current_streak + 1
+                             when last_activity_date = current_date - 1 then current_streak + 1
                              else 1
                            end
                          ),
     last_activity_date = current_date,
-    updated_at         = now();
+    updated_at         = now()
+  where student_id = p_student_id;
+
+  -- 없으면 신규 삽입
+  if not found then
+    insert into student_gamification
+      (student_id, total_points, level, current_streak, longest_streak, last_activity_date)
+    values
+      (p_student_id, v_total, calc_level(v_total), 1, 1, current_date);
+  end if;
 
   return v_total;
 end;
