@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import TopbarClient from '@/components/dashboard/TopbarClient';
 import SidebarClient from '@/components/dashboard/SidebarClient';
-import AdminTabBar from '@/components/dashboard/AdminTabBar';
 import MobileLexioxTabBar from '@/components/dashboard/MobileLexioxTabBar';
 import PWAInstallBanner from '@/components/PWAInstallBanner';
 import { LangProvider } from '@/contexts/LangContext';
@@ -50,7 +49,6 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
       <div className="h-screen overflow-hidden grid grid-rows-[auto_1fr] bg-neutral-50 text-neutral-900">
         <div>
           <TopbarClient email={email} role={role} />
-          {role === 'admin' && <AdminTabBar />}
         </div>
         <div className="grid grid-cols-[auto_1fr] min-h-0">
           <aside className="hidden md:block h-full overflow-y-auto">

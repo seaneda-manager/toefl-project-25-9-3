@@ -13,10 +13,9 @@ type Props   = { role: Role; program?: Program };
 // ── Section type: all section keys used across roles ─────────────
 type NavSection =
   // Admin
-  | '관리자' | 'LEXiOX-TOEFL' | 'LEXiOX-내신' | 'LEXiOX-Jr.'
-  | 'LEXiOX-어휘' | '콘텐츠' | '선생님 도구'
+  | '대시보드' | 'TOEFL' | '내신관리' | 'Jr.' | '어휘관리' | '콘텐츠 허브' | '선생님 도구' | '시스템'
   // Teacher
-  | '학생 관리'
+  | '콘텐츠' | '학생 관리'
   // Student — program-specific
   | '내신' | 'Hi-내신' | '어휘' | '숙제'   // lingx
   | '학습' | '내 현황'          // toefl / gap
@@ -26,13 +25,15 @@ type NavSection =
 
 // ── 한/영 섹션 라벨 매핑 ─────────────────────────────────────────
 const SECTION_EN: Record<NavSection, string> = {
-  '관리자': 'Admin',
-  'LEXiOX-TOEFL': 'LEXiOX-TOEFL',
-  'LEXiOX-내신': 'LEXiOX-Naesin',
-  'LEXiOX-Jr.': 'LEXiOX-Jr.',
-  'LEXiOX-어휘': 'LEXiOX-Vocab',
+  '대시보드': 'Dashboard',
+  'TOEFL': 'TOEFL',
+  '내신관리': 'Naesin',
+  'Jr.': 'Jr.',
+  '어휘관리': 'Vocab',
   '콘텐츠': 'Content',
-  '선생님 도구': 'Teacher Tools',
+  '콘텐츠 허브': 'Content Hub',
+  '선생님 도구': 'Teacher',
+  '시스템': 'System',
   '학생 관리': 'Students',
   '내신': 'Naesin',
   'Hi-내신': 'Hi-Naesin',
@@ -43,6 +44,17 @@ const SECTION_EN: Record<NavSection, string> = {
   '내 학습': 'My Learning',
   '학습 콘텐츠': 'Content',
   '설정': 'Settings',
+};
+
+// ── Admin section → group label (for visual grouping) ────────────
+const SECTION_GROUP: Record<string, string> = {
+  'TOEFL':       'CONTENT',
+  '내신관리':    'CONTENT',
+  'Jr.':         'CONTENT',
+  '어휘관리':    'CONTENT',
+  '콘텐츠 허브': 'CONTENT',
+  '선생님 도구': 'TEACHER',
+  '시스템':      'SYSTEM',
 };
 
 type SkillColor = 'reading' | 'listening' | 'speaking' | 'writing';
@@ -76,8 +88,8 @@ function normalizePath(s: string | null | undefined) {
 
 function collapsedLabel(section: string) {
   const map: Record<string, string> = {
-    '관리자': 'A', 'LEXiOX-TOEFL': 'TF', 'LEXiOX-내신': 'N',
-    'LEXiOX-Jr.': 'Jr', 'LEXiOX-어휘': 'V', '콘텐츠': '콘', '선생님 도구': 'T',
+    '대시보드': 'D', 'TOEFL': 'TF', '내신관리': 'N',
+    'Jr.': 'Jr', '어휘관리': 'V', '콘텐츠 허브': '콘', '선생님 도구': 'T', '시스템': 'S',
     '학생 관리': '관',
     '내신': '내', 'Hi-내신': 'Hi', '어휘': '어', '숙제': '숙', '학습': '학', '내 현황': '현',
     '내 학습': '나', '학습 콘텐츠': '콘',
@@ -96,13 +108,15 @@ type SectionTheme = {
 };
 
 const SECTION_THEME: Record<string, SectionTheme> = {
-  '관리자':       { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
-  'LEXiOX-TOEFL': { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
-  'LEXiOX-내신':  { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
-  'LEXiOX-Jr.':   { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
-  'LEXiOX-어휘':  { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
+  '대시보드':     { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
+  'TOEFL':        { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
+  '내신관리':     { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
+  'Jr.':          { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
+  '어휘관리':     { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
   '콘텐츠':       { header: 'text-sky-600',     active: 'border-sky-400     bg-sky-50     text-sky-700',     hover: 'hover:bg-sky-50     hover:text-sky-900',     chevron: 'text-sky-300',     dot: 'bg-sky-400'     },
+  '콘텐츠 허브':  { header: 'text-sky-600',     active: 'border-sky-400     bg-sky-50     text-sky-700',     hover: 'hover:bg-sky-50     hover:text-sky-900',     chevron: 'text-sky-300',     dot: 'bg-sky-400'     },
   '선생님 도구':  { header: 'text-amber-600',   active: 'border-amber-400   bg-amber-50   text-amber-700',   hover: 'hover:bg-amber-50   hover:text-amber-900',   chevron: 'text-amber-300',   dot: 'bg-amber-400'   },
+  '시스템':       { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
   '학생 관리':    { header: 'text-teal-600',    active: 'border-teal-400    bg-teal-50    text-teal-700',    hover: 'hover:bg-teal-50    hover:text-teal-900',    chevron: 'text-teal-300',    dot: 'bg-teal-400'    },
   '내신':         { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
   'Hi-내신':      { header: 'text-cyan-600',    active: 'border-cyan-400    bg-cyan-50    text-cyan-700',    hover: 'hover:bg-cyan-50    hover:text-cyan-900',    chevron: 'text-cyan-300',    dot: 'bg-cyan-400'    },
@@ -149,32 +163,6 @@ const SKILL_DOT: Record<SkillColor, string> = {
   writing:   'bg-teal-400',
 };
 
-// ── Admin tab detection (mirrors AdminTabBar logic) ──────────
-const ADMIN_PATH_TAB_MAP: [string, string][] = [
-  ['/admin/content/reading-2026',    'LEXiOX-TOEFL'],
-  ['/admin/content/listening/toefl', 'LEXiOX-TOEFL'],
-  ['/admin/content/writing-2026',    'LEXiOX-TOEFL'],
-  ['/admin/content/grammar-2026',    'LEXiOX-TOEFL'],
-  ['/admin/landing',                 'LEXiOX-TOEFL'],
-  ['/admin/naesin',                  'LEXiOX-내신'],
-  ['/admin/hi-naesin',               'LEXiOX-내신'],
-  ['/admin/middle-naesin',           'LEXiOX-내신'],
-  ['/admin/content/listening/jr',    'LEXiOX-Jr.'],
-  ['/admin/vocab',                   'LEXiOX-어휘'],
-  ['/voca/admin',                    'LEXiOX-어휘'],
-  ['/admin/content',                 '콘텐츠'],
-  ['/teacher',                       '선생님 도구'],
-  ['/admin/students',                '선생님 도구'],
-  ['/admin/homework',                '선생님 도구'],
-  ['/admin/lectures',                '선생님 도구'],
-];
-
-function guessAdminTabFromPath(pathname: string): string {
-  for (const [prefix, tab] of ADMIN_PATH_TAB_MAP) {
-    if (pathname.startsWith(prefix)) return tab;
-  }
-  return '관리자';
-}
 
 // ── Component ────────────────────────────────────────────────────
 export default function SidebarClient({ role, program = null }: Props) {
@@ -184,18 +172,14 @@ export default function SidebarClient({ role, program = null }: Props) {
 
   const [collapsed, setCollapsed]   = useState(false);
   const [legacyOpen, setLegacyOpen] = useState(false);
-  const [adminTab, setAdminTab]     = useState<string>(() => {
-    if (role !== 'admin') return '';
-    return guessAdminTabFromPath(pathnameRaw);
-  });
 
   // ── Initial open-section state ──────────────────────────────
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     if (role === 'admin') {
       return {
-        '관리자': true, 'LEXiOX-TOEFL': true, 'LEXiOX-내신': true,
-        'LEXiOX-Jr.': true, 'LEXiOX-어휘': true,
-        '콘텐츠': true, '선생님 도구': true,
+        '대시보드': true, 'TOEFL': true, '내신관리': true,
+        'Jr.': true, '어휘관리': true,
+        '콘텐츠 허브': true, '선생님 도구': true, '시스템': true,
       };
     }
     if (role === 'teacher') {
@@ -244,43 +228,45 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Admin ─────────────────────────────────────────────────
     if (role === 'admin') {
       return [
-        { section: '관리자',         href: '/admin',                             label: '관리자 홈' },
-        { section: '관리자',         href: '/admin/users',                       label: '사용자 관리' },
+        { section: '대시보드' as NavSection, href: '/admin', label: '대시보드' },
 
-        { section: 'LEXiOX-TOEFL', href: '/admin/content/reading-2026/new',        label: 'Reading 편집기' },
-        { section: 'LEXiOX-TOEFL', href: '/admin/content/listening/toefl',       label: 'Listening 편집기' },
-        { section: 'LEXiOX-TOEFL', href: '/admin/content/writing-2026/new',      label: 'Writing 편집기' },
-        { section: 'LEXiOX-TOEFL', href: '/admin/content/grammar-2026',          label: 'Grammar 편집기' },
-        { section: 'LEXiOX-TOEFL', href: '/admin/landing',                       label: '랜딩 편집기' },
+        { section: 'TOEFL' as NavSection, href: '/admin/content/reading-2026',    label: 'Reading' },
+        { section: 'TOEFL' as NavSection, href: '/admin/content/listening/toefl', label: 'Listening' },
+        { section: 'TOEFL' as NavSection, label: 'Writing',                        disabled: true },
+        { section: 'TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
 
-        { section: 'LEXiOX-내신', href: '/admin/naesin',                         label: '고등내신 허브' },
-        { section: 'LEXiOX-내신', href: '/admin/hi-naesin/passages',             label: '고등 지문 관리' },
-        { section: 'LEXiOX-내신', href: '/admin/middle-naesin',                  label: '중학내신 허브' },
+        { section: '내신관리' as NavSection, href: '/admin/naesin',               label: '고등내신 드릴' },
+        { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',   label: '고등 지문 관리' },
+        { section: '내신관리' as NavSection, href: '/admin/middle-naesin/units',  label: '중학 단원 관리' },
+        { section: '내신관리' as NavSection, href: '/admin/naesin/drill-demo',    label: '드릴 미리보기' },
 
-        { section: 'LEXiOX-Jr.', href: '/admin/content/listening/jr',            label: 'Listening (Jr.) 편집기' },
-        { section: 'LEXiOX-Jr.', href: '/admin/naesin/passages',                 label: 'Jr. 지문 관리' },
-        { section: 'LEXiOX-Jr.', label: 'Jr. 커리큘럼 (준비중)',                 disabled: true },
+        { section: 'Jr.' as NavSection, href: '/admin/content/listening/jr', label: 'Listening' },
+        { section: 'Jr.' as NavSection, href: '/admin/naesin/passages',       label: '지문 관리' },
+        { section: 'Jr.' as NavSection, label: '커리큘럼',                    disabled: true },
 
-        { section: 'LEXiOX-어휘', href: '/admin/vocab/sets',        label: '단어 책 목록' },
-        { section: 'LEXiOX-어휘', href: '/admin/vocab/words',        label: '단어 목록' },
-        { section: 'LEXiOX-어휘', href: '/admin/vocab/words/import', label: '단어 가져오기' },
-        { section: 'LEXiOX-어휘', href: '/admin/vocab/import',       label: '책 CSV 업로드' },
-        { section: 'LEXiOX-어휘', href: '/admin/vocab/Tracks',       label: '트랙 배포 (학생)' },
-        { section: 'LEXiOX-어휘', href: '/admin/vocab/progress',    label: '학생 진행 현황' },
-        { section: 'LEXiOX-어휘', href: '/voca/admin',               label: '어휘 관리 (구)' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/sets',        label: '단어 책 관리' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/words',        label: '단어 목록' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/words/import', label: '단어 가져오기' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/import',       label: 'CSV 업로드' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/Tracks',       label: '트랙 배포' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/progress',     label: '학생 진행 현황' },
 
-        { section: '콘텐츠', href: '/admin/content/new?kind=reading',   label: 'Reading 세트 추가' },
-        { section: '콘텐츠', href: '/admin/content/list?kind=reading',  label: 'Reading 세트 목록' },
-        { section: '콘텐츠', href: '/admin/content/new?kind=listening', label: 'Listening 세트 추가' },
-        { section: '콘텐츠', href: '/admin/content/list?kind=listening',label: 'Listening 세트 목록' },
+        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/new?kind=reading',    label: 'Reading 세트 추가' },
+        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/list?kind=reading',   label: 'Reading 세트 목록' },
+        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/new?kind=listening',  label: 'Listening 세트 추가' },
+        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/list?kind=listening', label: 'Listening 세트 목록' },
 
-        { section: '선생님 도구', href: '/teacher/home',              label: '선생님 홈' },
-        { section: '선생님 도구', href: '/admin/students',            label: '학생 추가/관리' },
-        { section: '선생님 도구', href: '/teacher/tasks',             label: '할 일 관리' },
-        { section: '선생님 도구', href: '/teacher/students',          label: '학생 현황' },
-        { section: '선생님 도구', href: '/teacher/reports/students',  label: '학생 활동 리포트' },
-        { section: '선생님 도구', href: '/admin/homework',            label: '📷 숙제 채점 관리' },
-        { section: '선생님 도구', href: '/admin/lectures',           label: '🎬 강의 관리' },
+        { section: '선생님 도구' as NavSection, href: '/teacher/home',             label: '선생님 홈' },
+        { section: '선생님 도구' as NavSection, href: '/admin/students',           label: '학생 추가/관리' },
+        { section: '선생님 도구' as NavSection, href: '/teacher/tasks',            label: '할 일 관리' },
+        { section: '선생님 도구' as NavSection, href: '/teacher/students',         label: '학생 현황' },
+        { section: '선생님 도구' as NavSection, href: '/teacher/reports/students', label: '활동 리포트' },
+        { section: '선생님 도구' as NavSection, href: '/admin/homework',           label: '숙제 채점' },
+        { section: '선생님 도구' as NavSection, href: '/admin/lectures',           label: '강의 관리' },
+
+        { section: '시스템' as NavSection, href: '/admin/users',   label: '사용자/권한' },
+        { section: '시스템' as NavSection, href: '/admin/landing', label: '랜딩 페이지' },
+        { section: '시스템' as NavSection, href: '/admin/settings', label: '설정' },
       ];
     }
 
@@ -304,6 +290,8 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴' },
         { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황' },
         { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리' },
+
+        { section: '내신' as NavSection, href: '/naesin/middle', label: '중학 내신 드릴' },
 
         { section: '학습', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'Grammar' },
@@ -368,12 +356,8 @@ export default function SidebarClient({ role, program = null }: Props) {
       if (!map.has(it.section)) map.set(it.section, []);
       map.get(it.section)!.push(it);
     }
-    const all = [...map.entries()] as [string, NavItem[]][];
-    if (role === 'admin' && adminTab !== '') {
-      return all.filter(([section]) => section === adminTab);
-    }
-    return all;
-  }, [items, role, adminTab]);
+    return [...map.entries()] as [string, NavItem[]][];
+  }, [items]);
 
   // ── Sidebar events ────────────────────────────────────────────
   useEffect(() => {
@@ -381,17 +365,6 @@ export default function SidebarClient({ role, program = null }: Props) {
     document.addEventListener('toggle-sidebar', handler);
     return () => document.removeEventListener('toggle-sidebar', handler);
   }, []);
-
-  useEffect(() => {
-    if (role !== 'admin') return;
-    const handler = (e: Event) => setAdminTab((e as CustomEvent<string>).detail);
-    document.addEventListener('change-admin-tab', handler);
-    return () => document.removeEventListener('change-admin-tab', handler);
-  }, [role]);
-
-  useEffect(() => {
-    if (role === 'admin') setAdminTab(guessAdminTabFromPath(pathnameRaw));
-  }, [pathnameRaw, role]);
 
   useEffect(() => {
     if (isExamRoute) setCollapsed(true);
@@ -418,9 +391,19 @@ export default function SidebarClient({ role, program = null }: Props) {
           const open      = openSections[section] ?? true;
           const showItems = collapsed || open;
           const theme     = getSectionTheme(section);
+          const groupLabel = SECTION_GROUP[section];
+          const prevGroupLabel = idx > 0 ? SECTION_GROUP[groups[idx - 1][0]] : undefined;
+          const showGroupHeader = !collapsed && groupLabel && groupLabel !== prevGroupLabel;
 
           return (
             <div key={section} className={['', idx > 0 ? 'mt-1 border-t border-neutral-100 pt-1' : ''].join(' ')}>
+              {showGroupHeader && (
+                <div className="px-3 pt-3 pb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    {groupLabel}
+                  </span>
+                </div>
+              )}
               {/* Section header */}
               <button
                 type="button"

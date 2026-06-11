@@ -12,8 +12,10 @@ type Props = {
   title: string;
   currentStage: DrillStage;
   autosaveStatus: AutosaveStatus;
+  guideOpen?: boolean;
   onPrevStage: () => void;
   onNextStage: () => void;
+  onToggleGuide?: () => void;
 };
 
 function autosaveLabel(status: AutosaveStatus) {
@@ -33,8 +35,10 @@ export default function DrillTopBar({
   title,
   currentStage,
   autosaveStatus,
+  guideOpen = true,
   onPrevStage,
   onNextStage,
+  onToggleGuide,
 }: Props) {
   const currentIndex = DRILL_STAGE_ORDER.indexOf(currentStage);
 
@@ -67,6 +71,17 @@ export default function DrillTopBar({
           >
             {autosaveLabel(autosaveStatus)}
           </div>
+
+          {onToggleGuide && (
+            <button
+              type="button"
+              onClick={onToggleGuide}
+              title={guideOpen ? "가이드 숨기기" : "가이드 보기"}
+              className="rounded-xl border px-3 py-2 text-sm text-neutral-500 hover:bg-neutral-50"
+            >
+              {guideOpen ? "가이드 ✕" : "가이드"}
+            </button>
+          )}
 
           <button
             type="button"

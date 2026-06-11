@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
   flattenPassageSentences,
   type DrillStage,
@@ -37,8 +38,12 @@ export default function PassagePanel({
   onWordToggle,
 }: Props) {
   const sentences = flattenPassageSentences(passage);
-
   const selectedWordIds = new Set(unknownWords.map((w) => w.id));
+  const activeRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [currentSentenceIndex]);
 
   let runningSentenceIndex = -1;
 
@@ -71,6 +76,7 @@ export default function PassagePanel({
                 return (
                   <button
                     key={sentence.id}
+                    ref={isCurrent ? activeRef : undefined}
                     type="button"
                     onClick={() => onSentenceSelect(sentenceIndex)}
                     className={[
@@ -100,25 +106,20 @@ export default function PassagePanel({
                           const isSelected = selectedWordIds.has(id);
 
                           return (
-                            <span key={`${sentence.id}-${tokenIndex}`} className="inline-block">
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onWordToggle({
-                                    sentenceIndex,
-                                    tokenIndex,
-                                    rawWord: chunk,
-                                  });
-                                }}
-                                className={[
-                                  "cursor-pointer rounded px-1 py-0.5",
-                                  isSelected
-                                    ? "bg-amber-200 font-medium text-amber-950"
-                                    : "hover:bg-amber-50",
-                                ].join(" ")}
-                              >
-                                {chunk}
-                              </span>
+                            <span
+                              key={`${sentence.id}-${tokenIndex}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onWordToggle({ sentenceIndex, tokenIndex, rawWord: chunk });
+                              }}
+                              className={[
+                                "cursor-pointer rounded px-0.5 py-0.5",
+                                isSelected
+                                  ? "bg-amber-200 font-medium text-amber-950"
+                                  : "hover:bg-amber-50",
+                              ].join(" ")}
+                            >
+                              {chunk}
                             </span>
                           );
                         }

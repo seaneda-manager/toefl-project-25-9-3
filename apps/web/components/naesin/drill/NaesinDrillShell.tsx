@@ -176,6 +176,7 @@ export default function NaesinDrillShell({
     useState<StructureMistakeMap>({});
   const [autosaveStatus, setAutosaveStatus] =
     useState<AutosaveStatus>("idle");
+  const [guideOpen, setGuideOpen] = useState(true);
 
   const sentences = useMemo(
     () => flattenPassageSentences(initialPassage),
@@ -905,10 +906,11 @@ export default function NaesinDrillShell({
           title={initialPassage.title}
           currentStage={currentStage}
           autosaveStatus={autosaveStatus}
+          guideOpen={guideOpen}
           onPrevStage={() => moveStage("prev")}
           onNextStage={() => moveStage("next")}
+          onToggleGuide={() => setGuideOpen((v) => !v)}
         />
-
         <Stage7GrammarJudgment passage={initialPassage} />
       </div>
     );
@@ -921,10 +923,11 @@ export default function NaesinDrillShell({
           title={initialPassage.title}
           currentStage={currentStage}
           autosaveStatus={autosaveStatus}
+          guideOpen={guideOpen}
           onPrevStage={() => moveStage("prev")}
           onNextStage={() => moveStage("next")}
+          onToggleGuide={() => setGuideOpen((v) => !v)}
         />
-
         <Stage8ReadAloudMemory passage={initialPassage} />
       </div>
     );
@@ -936,11 +939,18 @@ export default function NaesinDrillShell({
         title={initialPassage.title}
         currentStage={currentStage}
         autosaveStatus={autosaveStatus}
+        guideOpen={guideOpen}
         onPrevStage={() => moveStage("prev")}
         onNextStage={() => moveStage("next")}
+        onToggleGuide={() => setGuideOpen((v) => !v)}
       />
 
-      <div className="grid gap-4 xl:grid-cols-[1.05fr_1.2fr_0.7fr]">
+      <div className={[
+        "grid gap-4",
+        guideOpen
+          ? "xl:grid-cols-[1fr_1.4fr_0.65fr]"
+          : "xl:grid-cols-[1fr_2fr]",
+      ].join(" ")}>
         <PassagePanel
           passage={initialPassage}
           currentStage={currentStage}
@@ -1049,21 +1059,23 @@ export default function NaesinDrillShell({
           ) : null}
         </div>
 
-        <RightGuidePanel
-          currentStage={currentStage}
-          totalSentences={sentences.length}
-          currentSentenceIndex={currentSentenceIndex}
-          unknownWords={unknownWords}
-          structureLogs={structureLogs}
-          translationLogs={translationLogs}
-          compositionLogs={compositionLogs}
-          currentSentenceMistakes={currentStructureMistakes}
-          structureWeaknessSummary={structureWeaknessSummary}
-          translationStatusSummary={translationStatusSummary}
-          translationCurrentSnapshot={translationCurrentSnapshot}
-          compositionStatusSummary={compositionStatusSummary}
-          compositionCurrentSnapshot={compositionCurrentSnapshot}
-        />
+        {guideOpen && (
+          <RightGuidePanel
+            currentStage={currentStage}
+            totalSentences={sentences.length}
+            currentSentenceIndex={currentSentenceIndex}
+            unknownWords={unknownWords}
+            structureLogs={structureLogs}
+            translationLogs={translationLogs}
+            compositionLogs={compositionLogs}
+            currentSentenceMistakes={currentStructureMistakes}
+            structureWeaknessSummary={structureWeaknessSummary}
+            translationStatusSummary={translationStatusSummary}
+            translationCurrentSnapshot={translationCurrentSnapshot}
+            compositionStatusSummary={compositionStatusSummary}
+            compositionCurrentSnapshot={compositionCurrentSnapshot}
+          />
+        )}
       </div>
     </div>
   );

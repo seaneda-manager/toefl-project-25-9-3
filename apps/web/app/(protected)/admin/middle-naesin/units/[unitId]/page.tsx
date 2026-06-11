@@ -55,9 +55,15 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ uni
           </Link>
           <Link
             href={`/admin/middle-naesin/units/${unitId}/preview`}
+            className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
+          >
+            미리보기
+          </Link>
+          <Link
+            href={`/admin/middle-naesin/units/${unitId}/drill`}
             className="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
           >
-            미리보기 →
+            드릴 →
           </Link>
         </div>
       </header>
