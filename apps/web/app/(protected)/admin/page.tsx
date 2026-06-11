@@ -64,7 +64,7 @@ export default function AdminPage() {
       </div>
 
       {/* TOEFL */}
-      <GroupLabel label="TOEFL" />
+      <GroupLabel label="Updated-TOEFL" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <DashCard
           title="Reading"
