@@ -261,6 +261,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '선생님 도구' as NavSection, href: '/admin/homework',           label: '숙제 채점' },
         { section: '선생님 도구' as NavSection, href: '/admin/lectures',           label: '강의 관리' },
 
+        { section: '시스템' as NavSection, href: '/admin/perks',    label: 'Perk 관리' },
         { section: '시스템' as NavSection, href: '/admin/users',   label: '사용자/권한' },
         { section: '시스템' as NavSection, href: '/admin/landing', label: '랜딩 페이지' },
         { section: '시스템' as NavSection, href: '/admin/settings', label: '설정' },
@@ -298,7 +299,8 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '숙제', href: '/student/homework', label: '숙제 채점' },
         { section: '숙제', href: '/student/lectures', label: '🎬 강의' },
 
-        { section: '설정', href: '/settings', label: '설정' },
+        { section: '설정', href: '/student/perks', label: 'Perk 샵' },
+        { section: '설정', href: '/settings',      label: '설정' },
       ];
     }
 
