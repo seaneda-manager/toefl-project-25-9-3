@@ -235,10 +235,9 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'TOEFL' as NavSection, label: 'Writing',                        disabled: true },
         { section: 'TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
 
-        { section: '내신관리' as NavSection, href: '/admin/naesin',               label: '고등내신 드릴' },
-        { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',   label: '고등 지문 관리' },
-        { section: '내신관리' as NavSection, href: '/admin/middle-naesin/units',  label: '중학 단원 관리' },
-        { section: '내신관리' as NavSection, href: '/admin/naesin/drill-demo',    label: '드릴 미리보기' },
+        { section: '내신관리' as NavSection, href: '/admin/naesin',               label: '고등 드릴 관리' },
+        { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',   label: '고등 지문' },
+        { section: '내신관리' as NavSection, href: '/admin/middle-naesin/units',  label: '중학 단원·드릴' },
 
         { section: 'Jr.' as NavSection, href: '/admin/content/listening/jr', label: 'Listening' },
         { section: 'Jr.' as NavSection, href: '/admin/naesin/passages',       label: '지문 관리' },
