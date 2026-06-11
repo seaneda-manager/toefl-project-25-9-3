@@ -13,7 +13,7 @@ type Props   = { role: Role; program?: Program };
 // ── Section type: all section keys used across roles ─────────────
 type NavSection =
   // Admin
-  | '대시보드' | 'TOEFL' | '내신관리' | 'Jr.' | '어휘관리' | '콘텐츠 허브' | '선생님 도구' | '시스템'
+  | '대시보드' | 'TOEFL' | '내신관리' | 'Jr.' | '어휘관리' | '선생님 도구' | '시스템'
   // Teacher
   | '콘텐츠' | '학생 관리'
   // Student — program-specific
@@ -31,7 +31,7 @@ const SECTION_EN: Record<NavSection, string> = {
   'Jr.': 'Jr.',
   '어휘관리': 'Vocab',
   '콘텐츠': 'Content',
-  '콘텐츠 허브': 'Content Hub',
+
   '선생님 도구': 'Teacher',
   '시스템': 'System',
   '학생 관리': 'Students',
@@ -52,7 +52,6 @@ const SECTION_GROUP: Record<string, string> = {
   '내신관리':    'CONTENT',
   'Jr.':         'CONTENT',
   '어휘관리':    'CONTENT',
-  '콘텐츠 허브': 'CONTENT',
   '선생님 도구': 'TEACHER',
   '시스템':      'SYSTEM',
 };
@@ -69,6 +68,10 @@ type NavItem = {
 
 // Shown only to admin / teacher / unassigned students
 const LEGACY_ITEMS = [
+  { href: '/admin/content/new?kind=reading',    label: 'Reading 세트 추가' },
+  { href: '/admin/content/list?kind=reading',   label: 'Reading 세트 목록' },
+  { href: '/admin/content/new?kind=listening',  label: 'Listening 세트 추가' },
+  { href: '/admin/content/list?kind=listening', label: 'Listening 세트 목록' },
   { href: '/reading',   label: 'Reading (Legacy)' },
   { href: '/listening', label: 'Listening (Legacy)' },
   { href: '/speaking',  label: 'Speaking (Legacy)' },
@@ -114,7 +117,7 @@ const SECTION_THEME: Record<string, SectionTheme> = {
   'Jr.':          { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
   '어휘관리':     { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
   '콘텐츠':       { header: 'text-sky-600',     active: 'border-sky-400     bg-sky-50     text-sky-700',     hover: 'hover:bg-sky-50     hover:text-sky-900',     chevron: 'text-sky-300',     dot: 'bg-sky-400'     },
-  '콘텐츠 허브':  { header: 'text-sky-600',     active: 'border-sky-400     bg-sky-50     text-sky-700',     hover: 'hover:bg-sky-50     hover:text-sky-900',     chevron: 'text-sky-300',     dot: 'bg-sky-400'     },
+
   '선생님 도구':  { header: 'text-amber-600',   active: 'border-amber-400   bg-amber-50   text-amber-700',   hover: 'hover:bg-amber-50   hover:text-amber-900',   chevron: 'text-amber-300',   dot: 'bg-amber-400'   },
   '시스템':       { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
   '학생 관리':    { header: 'text-teal-600',    active: 'border-teal-400    bg-teal-50    text-teal-700',    hover: 'hover:bg-teal-50    hover:text-teal-900',    chevron: 'text-teal-300',    dot: 'bg-teal-400'    },
@@ -249,11 +252,6 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '어휘관리' as NavSection, href: '/admin/vocab/import',       label: 'CSV 업로드' },
         { section: '어휘관리' as NavSection, href: '/admin/vocab/Tracks',       label: '트랙 배포' },
         { section: '어휘관리' as NavSection, href: '/admin/vocab/progress',     label: '학생 진행 현황' },
-
-        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/new?kind=reading',    label: 'Reading 세트 추가' },
-        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/list?kind=reading',   label: 'Reading 세트 목록' },
-        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/new?kind=listening',  label: 'Listening 세트 추가' },
-        { section: '콘텐츠 허브' as NavSection, href: '/admin/content/list?kind=listening', label: 'Listening 세트 목록' },
 
         { section: '선생님 도구' as NavSection, href: '/teacher/home',             label: '선생님 홈' },
         { section: '선생님 도구' as NavSection, href: '/admin/students',           label: '학생 추가/관리' },
