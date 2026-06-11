@@ -299,8 +299,9 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '숙제', href: '/student/homework', label: '숙제 채점' },
         { section: '숙제', href: '/student/lectures', label: '🎬 강의' },
 
-        { section: '설정', href: '/student/perks', label: 'Perk 샵' },
-        { section: '설정', href: '/settings',      label: '설정' },
+        { section: '설정', href: '/student/progress', label: '포인트 히스토리' },
+        { section: '설정', href: '/student/perks',    label: 'Perk 샵' },
+        { section: '설정', href: '/settings',         label: '설정' },
       ];
     }
 
