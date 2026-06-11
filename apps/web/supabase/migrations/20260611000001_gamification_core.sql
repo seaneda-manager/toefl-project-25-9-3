@@ -70,14 +70,17 @@ create index if not exists idx_ledger_student_id on student_point_ledger(student
 create index if not exists idx_ledger_earned_at  on student_point_ledger(earned_at desc);
 
 -- ── 4. 데일리 태스크 ──────────────────────────────────────────
-create type if not exists daily_task_type as enum (
-  'current_events_q',
-  'email_writing',
-  'listen_repeat',
-  'writing',
-  'random_interview',
-  'mock_lecturing'
-);
+do $$ begin
+  create type daily_task_type as enum (
+    'current_events_q',
+    'email_writing',
+    'listen_repeat',
+    'writing',
+    'random_interview',
+    'mock_lecturing'
+  );
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists daily_tasks (
   id            uuid primary key default gen_random_uuid(),
@@ -96,11 +99,14 @@ create table if not exists daily_tasks (
 create index if not exists idx_daily_tasks_student_date on daily_tasks(student_id, task_date desc);
 
 -- ── 5. Perk 카탈로그 ──────────────────────────────────────────
-create type if not exists perk_type as enum (
-  'avatar_item',
-  'theme',
-  'physical'
-);
+do $$ begin
+  create type perk_type as enum (
+    'avatar_item',
+    'theme',
+    'physical'
+  );
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists perk_catalog (
   id            uuid primary key default gen_random_uuid(),
@@ -116,12 +122,15 @@ create table if not exists perk_catalog (
 );
 
 -- ── 6. Perk 교환 내역 ─────────────────────────────────────────
-create type if not exists redemption_status as enum (
-  'pending',    -- 신청됨
-  'approved',   -- 승인 (실물은 준비 중)
-  'fulfilled',  -- 지급 완료
-  'rejected'    -- 반려
-);
+do $$ begin
+  create type redemption_status as enum (
+    'pending',
+    'approved',
+    'fulfilled',
+    'rejected'
+  );
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists perk_redemptions (
   id            uuid primary key default gen_random_uuid(),
