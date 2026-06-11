@@ -1,252 +1,181 @@
-'use client';
+import Link from 'next/link';
 
-import { useRouter } from 'next/navigation';
+type CardProps = {
+  title: string;
+  description: string;
+  links: { label: string; href: string; primary?: boolean }[];
+  color?: string;
+};
+
+function DashCard({ title, description, links, color = 'border-neutral-200' }: CardProps) {
+  return (
+    <section className={`flex flex-col rounded-2xl border bg-white p-5 shadow-sm ${color}`}>
+      <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
+      <p className="mt-1.5 flex-1 text-xs leading-relaxed text-neutral-500">{description}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {links.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className={[
+              'rounded-xl px-3 py-1.5 text-xs font-medium transition',
+              l.primary
+                ? 'bg-neutral-900 text-white hover:bg-neutral-700'
+                : 'border border-neutral-200 text-neutral-700 hover:bg-neutral-50',
+            ].join(' ')}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SoonCard({ title, description }: { title: string; description: string }) {
+  return (
+    <section className="flex flex-col rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-5">
+      <div className="flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-neutral-400">{title}</h2>
+        <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-neutral-400">
+          Soon
+        </span>
+      </div>
+      <p className="mt-1.5 text-xs leading-relaxed text-neutral-400">{description}</p>
+    </section>
+  );
+}
+
+function GroupLabel({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-2">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{label}</span>
+      <div className="h-px flex-1 bg-neutral-100" />
+    </div>
+  );
+}
 
 export default function AdminPage() {
-  const router = useRouter();
-  const go = (path: string) => router.push(path);
-
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5 px-2 py-6">
       <div>
-        <h1 className="text-xl font-semibold">Admin Panel</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          Reading / Listening / Speaking / Writing 콘텐츠와 내신 운영 기능을 관리하는 공간입니다.
-        </p>
+        <h1 className="text-xl font-semibold text-neutral-900">Admin</h1>
+        <p className="mt-1 text-sm text-neutral-500">LexioX 콘텐츠 · 학생 · 시스템 관리</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">내신 허브</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            내신 리딩 운영과 시험 범위(scope) 조립 기능으로 들어가는 메인 허브입니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/naesin')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              Open Naesin Hub
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/naesin/scopes')}
-              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-800 hover:bg-neutral-50"
-            >
-              시험 범위 관리
-            </button>
-          </div>
-        </section>
+      {/* TOEFL */}
+      <GroupLabel label="TOEFL" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <DashCard
+          title="Reading"
+          description="2026형 TOEFL Reading 지문·문제 세트를 생성하고 수정합니다."
+          links={[
+            { label: '새 세트', href: '/admin/content/new?kind=reading', primary: true },
+            { label: '목록', href: '/admin/content/list?kind=reading' },
+            { label: '에디터', href: '/admin/content/reading-2026' },
+          ]}
+        />
+        <DashCard
+          title="Listening"
+          description="TOEFL / Jr. Listening 오디오·스크립트·문제 세트를 관리합니다."
+          links={[
+            { label: '새 세트', href: '/admin/content/new?kind=listening', primary: true },
+            { label: '목록', href: '/admin/content/list?kind=listening' },
+            { label: 'TOEFL', href: '/admin/content/listening/toefl' },
+            { label: 'Jr.', href: '/admin/content/listening/jr' },
+          ]}
+        />
+        <DashCard
+          title="Grammar"
+          description="LEXiOX-Gram 챕터별 설명·드릴·Stylistic 문제를 편집합니다."
+          links={[
+            { label: '에디터 열기', href: '/admin/content/grammar-2026', primary: true },
+          ]}
+          color="border-indigo-100"
+        />
+        <SoonCard title="Speaking" description="Listening & Repeat, Interview 형 Speaking 과제 관리." />
+        <SoonCard title="Writing" description="Writing 과제 템플릿·채점 기준·샘플 답안 관리." />
+      </div>
 
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Reading Sets</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            지문 / 문제 / 해설이 포함된 Reading 세트를 생성하고 수정합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/content/new?kind=reading')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              New Reading Set
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/content/list?kind=reading')}
-              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-800 hover:bg-neutral-50"
-            >
-              View All
-            </button>
-          </div>
-        </section>
+      {/* 내신 */}
+      <GroupLabel label="내신" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <DashCard
+          title="고등 드릴 관리"
+          description="고등내신 드릴 세션·지문 연결·단계 설정을 관리합니다."
+          links={[
+            { label: '드릴 관리', href: '/admin/naesin', primary: true },
+          ]}
+          color="border-emerald-100"
+        />
+        <DashCard
+          title="고등 지문"
+          description="Hi-Naesin 지문을 등록·편집·공개합니다."
+          links={[
+            { label: '지문 목록', href: '/admin/hi-naesin/passages', primary: true },
+            { label: '새 지문', href: '/admin/hi-naesin/passages/new' },
+          ]}
+          color="border-emerald-100"
+        />
+        <DashCard
+          title="중학 단원·드릴"
+          description="중학내신 단원을 등록하고 드릴을 미리봅니다."
+          links={[
+            { label: '단원 목록', href: '/admin/middle-naesin/units', primary: true },
+            { label: '새 단원', href: '/admin/middle-naesin/units/new' },
+          ]}
+          color="border-emerald-100"
+        />
+      </div>
 
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Reading 2026 Editor</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            2026형 Reading 콘텐츠 편집기로 바로 진입합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/content/reading-2026/new')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              Open Editor
-            </button>
-          </div>
-        </section>
+      {/* 어휘 */}
+      <GroupLabel label="어휘" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <DashCard
+          title="단어책"
+          description="단어 세트·목록을 관리하고 CSV로 가져옵니다."
+          links={[
+            { label: '단어책 목록', href: '/admin/vocab/sets', primary: true },
+            { label: '단어 목록', href: '/admin/vocab/words' },
+            { label: 'CSV 업로드', href: '/admin/vocab/import' },
+          ]}
+        />
+        <DashCard
+          title="트랙 배포"
+          description="학생에게 어휘 트랙을 배포하고 진행 현황을 확인합니다."
+          links={[
+            { label: '트랙 배포', href: '/admin/vocab/Tracks', primary: true },
+            { label: '진행 현황', href: '/admin/vocab/progress' },
+          ]}
+        />
+      </div>
 
-        <section className="flex flex-col rounded-xl border border-indigo-100 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">LEXiOX-Gram Editor</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            Grammar 챕터(유닛) 별 설명·드릴·Stylistic 문제를 편집합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/content/grammar-2026')}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700"
-            >
-              Open Editor
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Listening Sets</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            대화 / 강의 오디오와 스크립트, 문제 세트를 생성하고 수정합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/content/new?kind=listening')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              New Listening Set
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/content/list?kind=listening')}
-              className="rounded-lg border border-neutral-300 px-3 py-1.5 text-neutral-800 hover:bg-neutral-50"
-            >
-              View All
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Speaking 2026</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            Listening &amp; Repeat, Take an Interview 등 2026형 Speaking 과제를 관리합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/speaking-2026')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              Open Manager
-            </button>
-            <span className="text-[11px] text-neutral-400">(* 라우트는 나중에 연결해도 됨)</span>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Writing 2026</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            2026형 Writing 과제 템플릿과 채점 기준, 샘플 답안을 관리합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/writing-2026')}
-              className="rounded-lg bg-neutral-900 px-3 py-1.5 font-medium text-white hover:bg-neutral-800"
-            >
-              Open Manager
-            </button>
-            <span className="text-[11px] text-neutral-400">(* 라우트는 나중에 연결해도 됨)</span>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-emerald-900">프랜차이즈 허브</h2>
-          <p className="mt-2 flex-1 text-xs text-emerald-700">
-            가맹점 공지, 교육 모듈 이수, Q&A 처리, 자료 배포를 관리하는 본사 운영 센터입니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/franchise')}
-              className="rounded-lg bg-emerald-900 px-3 py-1.5 font-medium text-white hover:bg-emerald-800"
-            >
-              허브 열기
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/franchise/announcements')}
-              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
-            >
-              공지사항
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/franchise/training')}
-              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
-            >
-              교육 센터
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/franchise/qna')}
-              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
-            >
-              Q&A
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/franchise/resources')}
-              className="rounded-lg border border-emerald-300 px-3 py-1.5 text-emerald-800 hover:bg-emerald-100"
-            >
-              자료실
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border border-violet-100 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">학생 풀이 결과</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            학생별 독해 세션 풀이 이력과 문항별 정오답을 확인합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/results')}
-              className="rounded-lg bg-violet-700 px-3 py-1.5 font-medium text-white hover:bg-violet-800"
-            >
-              Results
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/students')}
-              className="rounded-lg border border-violet-200 px-3 py-1.5 text-violet-800 hover:bg-violet-50"
-            >
-              Students
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border border-sky-100 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold">Analytics</h2>
-          <p className="mt-2 flex-1 text-xs text-neutral-600">
-            전체 현황 · 지문별 오답률 · 클래스 비교 · 기간별 추이를 탭으로 확인합니다.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => go('/admin/analytics')}
-              className="rounded-lg bg-sky-700 px-3 py-1.5 font-medium text-white hover:bg-sky-800"
-            >
-              Open Analytics
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/admin/reports')}
-              className="rounded-lg border border-sky-200 px-3 py-1.5 text-sky-800 hover:bg-sky-50"
-            >
-              Reports
-            </button>
-          </div>
-        </section>
-
-        <section className="flex flex-col rounded-xl border bg-white p-4 shadow-sm md:col-span-2 lg:col-span-3">
-          <h2 className="text-sm font-semibold">최근 작업 &amp; 운영 영역</h2>
-          <p className="mt-2 text-xs text-neutral-600">
-            내신 허브, 결과 분석, Reading/Listening/Speaking/Writing 운영 기능이 연결되어 있습니다.
-          </p>
-        </section>
+      {/* 운영 */}
+      <GroupLabel label="운영" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <DashCard
+          title="학생 관리"
+          description="학생 추가·권한 설정·활동 리포트를 확인합니다."
+          links={[
+            { label: '학생 목록', href: '/admin/students', primary: true },
+            { label: '활동 리포트', href: '/teacher/reports/students' },
+          ]}
+        />
+        <DashCard
+          title="결과 확인"
+          description="학생별 풀이 이력과 문항별 정오답을 확인합니다."
+          links={[
+            { label: '결과 보기', href: '/admin/results', primary: true },
+          ]}
+        />
+        <DashCard
+          title="시스템"
+          description="사용자 권한·랜딩 페이지·설정을 관리합니다."
+          links={[
+            { label: '사용자/권한', href: '/admin/users', primary: true },
+            { label: '설정', href: '/admin/settings' },
+          ]}
+        />
       </div>
     </div>
   );
