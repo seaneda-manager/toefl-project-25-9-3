@@ -1,6 +1,7 @@
 // apps/web/app/api/listening/finish/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from "@/lib/supabaseServer";
+import { awardPoints } from "@/lib/gamification/awardPoints";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +27,8 @@ export async function POST(req: NextRequest) {
     if (!data || data.length === 0) {
       return NextResponse.json({ ok: false, error: 'not found or forbidden' }, { status: 404 });
     }
+
+    void awardPoints({ studentId: user.id, ruleId: 'listening_session', sourceRef: sessionId });
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e: any) {

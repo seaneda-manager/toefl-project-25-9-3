@@ -1,6 +1,7 @@
 // apps/web/app/api/reading-2026/save-result/route.ts
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { awardPoints } from "@/lib/gamification/awardPoints";
 
 type SaveBody = {
   testId: string;
@@ -80,6 +81,8 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    void awardPoints({ studentId: user.id, ruleId: 'reading_session', sourceRef: testId });
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {

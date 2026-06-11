@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getServerSupabase } from '@/lib/supabase/server';
+import { awardPoints } from '@/lib/gamification/awardPoints';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -180,6 +181,14 @@ ${answerKeyText}
         },
         { onConflict: 'homework_id,student_id' },
       );
+
+    // 포인트 적립: 제출 + 오답 교정 기회 제공
+    void awardPoints({
+      studentId: user.id,
+      ruleId:    'homework_submit',
+      sourceRef: homeworkId,
+      metadata:  { score_pct: result.score_pct, correct: result.correct_count, total: result.total_count },
+    });
 
     return NextResponse.json({ ok: true, result });
   } catch (err) {

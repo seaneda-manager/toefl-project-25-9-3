@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { awardPoints } from "@/lib/gamification/awardPoints";
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +13,8 @@ export async function POST(req: Request) {
       { student_id: user.id, unit_id },
       { onConflict: "student_id,unit_id" }
     );
+
+    void awardPoints({ studentId: user.id, ruleId: 'grammar_unit', sourceRef: unit_id });
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {

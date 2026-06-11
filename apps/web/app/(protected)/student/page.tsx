@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
+import DailyTaskCard from "@/components/gamification/DailyTaskCard";
 
 export const dynamic = "force-dynamic";
 
@@ -221,6 +222,22 @@ export default async function StudentPage() {
 
   const readingDone = (readingResults ?? []).length;
 
+  // ── 6. 게임화 상태 ────────────────────────────────────────────
+  const { data: gamification } = await supabase
+    .from('student_gamification')
+    .select('total_points, level, current_streak, longest_streak')
+    .eq('student_id', user.id)
+    .maybeSingle();
+
+  // ── 7. 오늘의 데일리 태스크 ───────────────────────────────────
+  const todayStr = new Date().toISOString().split('T')[0];
+  const { data: dailyTask } = await supabase
+    .from('daily_tasks')
+    .select('id, task_type, prompt, completed_at, points_earned')
+    .eq('student_id', user.id)
+    .eq('task_date', todayStr)
+    .maybeSingle();
+
   // 오늘 요일 라벨
   const todayDow   = new Date().getDay();
   const DOW_KO     = ['일', '월', '화', '수', '목', '금', '토'];
@@ -266,6 +283,18 @@ export default async function StudentPage() {
           </span>
         </div>
       </Link>
+
+      {/* ── 포인트 / 레벨 ────────────────────────────────────── */}
+      {gamification && (
+        <div className="grid grid-cols-3 gap-3">
+          <StatPill label="포인트" value={`${gamification.total_points.toLocaleString()} P`} color="amber" />
+          <StatPill label="레벨" value={`Lv ${gamification.level}`} color="indigo" />
+          <StatPill label="연속 학습" value={`${gamification.current_streak}일`} color="emerald" />
+        </div>
+      )}
+
+      {/* ── 데일리 태스크 ────────────────────────────────────── */}
+      <DailyTaskCard task={dailyTask ?? null} />
 
       {/* ── 커리큘럼 헤더 ─────────────────────────────────────── */}
       <header
@@ -463,6 +492,23 @@ export default async function StudentPage() {
 }
 
 // ── Sub-components ──────────────────────────────────────────────
+
+type PillColor = 'amber' | 'indigo' | 'emerald';
+const PILL_COLOR: Record<PillColor, string> = {
+  amber:   'bg-amber-50 border-amber-200 text-amber-800',
+  indigo:  'bg-indigo-50 border-indigo-200 text-indigo-800',
+  emerald: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+};
+
+function StatPill({ label, value, color }: { label: string; value: string; color: PillColor }) {
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-center ${PILL_COLOR[color]}`}>
+      <p className="text-xs opacity-70">{label}</p>
+      <p className="text-base font-bold mt-0.5">{value}</p>
+    </div>
+  );
+}
+
 
 function NaesinStat({
   label,

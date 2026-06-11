@@ -1,6 +1,7 @@
 // apps/web/app/api/vocab/exam-results/route.ts
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { awardPoints } from "@/lib/gamification/awardPoints";
 
 type ExamSavePayload = {
   totalQuestions: number;
@@ -75,6 +76,13 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+
+  void awardPoints({
+    studentId: user.id,
+    ruleId:    'vocab_exam',
+    bonus:     correctAuto === totalQuestions ? 5 : 0,
+    metadata:  { correct: correctAuto, total: totalQuestions, rate: rateAuto },
+  });
 
   return NextResponse.json({ ok: true });
 }
