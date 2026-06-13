@@ -13,7 +13,7 @@ type Props   = { role: Role; program?: Program };
 // ── Section type: all section keys used across roles ─────────────
 type NavSection =
   // Admin
-  | '대시보드' | 'TOEFL' | '내신관리' | 'Jr.' | '어휘관리' | '선생님 도구' | '시스템'
+  | '대시보드' | 'Updated TOEFL' | '내신관리' | 'Jr.' | '어휘관리' | '선생님 도구' | '시스템'
   // Teacher
   | '콘텐츠' | '학생 관리'
   // Student — program-specific
@@ -26,7 +26,7 @@ type NavSection =
 // ── 한/영 섹션 라벨 매핑 ─────────────────────────────────────────
 const SECTION_EN: Record<NavSection, string> = {
   '대시보드': 'Dashboard',
-  'TOEFL': 'TOEFL',
+  'Updated TOEFL': 'Updated TOEFL',
   '내신관리': 'Naesin',
   'Jr.': 'Jr.',
   '어휘관리': 'Vocab',
@@ -48,7 +48,7 @@ const SECTION_EN: Record<NavSection, string> = {
 
 // ── Admin section → group label (for visual grouping) ────────────
 const SECTION_GROUP: Record<string, string> = {
-  'TOEFL':       'CONTENT',
+  'Updated TOEFL': 'CONTENT',
   '내신관리':    'CONTENT',
   'Jr.':         'CONTENT',
   '어휘관리':    'CONTENT',
@@ -91,7 +91,7 @@ function normalizePath(s: string | null | undefined) {
 
 function collapsedLabel(section: string) {
   const map: Record<string, string> = {
-    '대시보드': 'D', 'TOEFL': 'TF', '내신관리': 'N',
+    '대시보드': 'D', 'Updated TOEFL': 'UT', '내신관리': 'N',
     'Jr.': 'Jr', '어휘관리': 'V', '콘텐츠 허브': '콘', '선생님 도구': 'T', '시스템': 'S',
     '학생 관리': '관',
     '내신': '내', 'Hi-내신': 'Hi', '어휘': '어', '숙제': '숙', '학습': '학', '내 현황': '현',
@@ -112,7 +112,7 @@ type SectionTheme = {
 
 const SECTION_THEME: Record<string, SectionTheme> = {
   '대시보드':     { header: 'text-slate-500',   active: 'border-slate-400   bg-slate-50   text-slate-700',   hover: 'hover:bg-slate-50   hover:text-slate-900',   chevron: 'text-slate-300',   dot: 'bg-slate-400'   },
-  'TOEFL':        { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
+  'Updated TOEFL': { header: 'text-blue-600',    active: 'border-blue-400    bg-blue-50    text-blue-700',    hover: 'hover:bg-blue-50    hover:text-blue-900',    chevron: 'text-blue-300',    dot: 'bg-blue-400'    },
   '내신관리':     { header: 'text-emerald-600', active: 'border-emerald-400 bg-emerald-50 text-emerald-700', hover: 'hover:bg-emerald-50 hover:text-emerald-900', chevron: 'text-emerald-300', dot: 'bg-emerald-400' },
   'Jr.':          { header: 'text-orange-500',  active: 'border-orange-400  bg-orange-50  text-orange-700',  hover: 'hover:bg-orange-50  hover:text-orange-900',  chevron: 'text-orange-300',  dot: 'bg-orange-400'  },
   '어휘관리':     { header: 'text-violet-600',  active: 'border-violet-400  bg-violet-50  text-violet-700',  hover: 'hover:bg-violet-50  hover:text-violet-900',  chevron: 'text-violet-300',  dot: 'bg-violet-400'  },
@@ -180,7 +180,7 @@ export default function SidebarClient({ role, program = null }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     if (role === 'admin') {
       return {
-        '대시보드': true, 'TOEFL': true, '내신관리': true,
+        '대시보드': true, 'Updated TOEFL': true, '내신관리': true,
         'Jr.': true, '어휘관리': true,
         '콘텐츠 허브': true, '선생님 도구': true, '시스템': true,
       };
@@ -233,10 +233,11 @@ export default function SidebarClient({ role, program = null }: Props) {
       return [
         { section: '대시보드' as NavSection, href: '/admin', label: '대시보드' },
 
-        { section: 'TOEFL' as NavSection, href: '/admin/content/reading-2026',    label: 'Reading' },
-        { section: 'TOEFL' as NavSection, href: '/admin/content/listening/toefl', label: 'Listening' },
-        { section: 'TOEFL' as NavSection, label: 'Writing',                        disabled: true },
-        { section: 'TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/reading-2026',    label: 'Reading' },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/listening/toefl', label: 'Listening' },
+        { section: 'Updated TOEFL' as NavSection, label: 'Speaking',                       disabled: true },
+        { section: 'Updated TOEFL' as NavSection, label: 'Writing',                        disabled: true },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
 
         { section: '내신관리' as NavSection, href: '/admin/naesin',               label: '고등 드릴 관리' },
         { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',   label: '고등 지문' },
