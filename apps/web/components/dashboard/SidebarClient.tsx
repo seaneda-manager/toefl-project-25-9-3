@@ -3,8 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import {
+  ChevronRight,
+  LayoutDashboard, BookOpen, Headphones, Mic, PenLine, BookText,
+  ClipboardList, FileText, GraduationCap, Library, List, Download,
+  Upload, Send, BarChart2, Home, UserPlus, CheckSquare, Users,
+  ClipboardCheck, PlayCircle, Gift, ShieldCheck, Globe, Settings,
+  type LucideProps,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
+
+type Icon = React.ComponentType<LucideProps>;
 
 type Role    = 'student' | 'teacher' | 'admin';
 type Program = 'gap' | 'toefl' | 'lexiox' | null;
@@ -64,6 +73,7 @@ type NavItem = {
   href?: string;
   disabled?: boolean;
   skill?: SkillColor;
+  icon?: Icon;
 };
 
 // Shown only to admin / teacher / unassigned students
@@ -231,41 +241,41 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Admin ─────────────────────────────────────────────────
     if (role === 'admin') {
       return [
-        { section: '대시보드' as NavSection, href: '/admin', label: '대시보드' },
+        { section: '대시보드' as NavSection, href: '/admin', label: '대시보드', icon: LayoutDashboard },
 
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-reading',    label: 'Reading' },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-listening', label: 'Listening' },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-speaking', label: 'Speaking' },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-writing', label: 'Writing' },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-reading',   label: 'Reading',   icon: BookOpen },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-listening', label: 'Listening', icon: Headphones },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-speaking',  label: 'Speaking',  icon: Mic },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-writing',   label: 'Writing',   icon: PenLine },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',      label: 'Grammar',   icon: BookText },
 
-        { section: '내신관리' as NavSection, href: '/admin/naesin',               label: '고등 드릴 관리' },
-        { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',   label: '고등 지문' },
-        { section: '내신관리' as NavSection, href: '/admin/middle-naesin/units',  label: '중학 단원·드릴' },
+        { section: '내신관리' as NavSection, href: '/admin/naesin',              label: '고등 드릴 관리', icon: ClipboardList },
+        { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',  label: '고등 지문',      icon: FileText },
+        { section: '내신관리' as NavSection, href: '/admin/middle-naesin/units', label: '중학 단원·드릴', icon: GraduationCap },
 
-        { section: 'Jr.' as NavSection, href: '/admin/content/listening/jr', label: 'Listening' },
-        { section: 'Jr.' as NavSection, href: '/admin/naesin/passages',       label: '지문 관리' },
-        { section: 'Jr.' as NavSection, label: '커리큘럼',                    disabled: true },
+        { section: 'Jr.' as NavSection, href: '/admin/content/listening/jr', label: 'Listening', icon: Headphones },
+        { section: 'Jr.' as NavSection, href: '/admin/naesin/passages',      label: '지문 관리',  icon: FileText },
+        { section: 'Jr.' as NavSection, label: '커리큘럼', disabled: true },
 
-        { section: '어휘관리' as NavSection, href: '/admin/vocab/sets',        label: '단어 책 관리' },
-        { section: '어휘관리' as NavSection, href: '/admin/vocab/words',        label: '단어 목록' },
-        { section: '어휘관리' as NavSection, href: '/admin/vocab/words/import', label: '단어 가져오기' },
-        { section: '어휘관리' as NavSection, href: '/admin/vocab/import',       label: 'CSV 업로드' },
-        { section: '어휘관리' as NavSection, href: '/admin/vocab/Tracks',       label: '트랙 배포' },
-        { section: '어휘관리' as NavSection, href: '/admin/vocab/progress',     label: '학생 진행 현황' },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/sets',        label: '단어 책 관리',    icon: Library },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/words',        label: '단어 목록',       icon: List },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/words/import', label: '단어 가져오기',   icon: Download },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/import',       label: 'CSV 업로드',      icon: Upload },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/Tracks',       label: '트랙 배포',       icon: Send },
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/progress',     label: '학생 진행 현황',  icon: BarChart2 },
 
-        { section: '선생님 도구' as NavSection, href: '/teacher/home',             label: '선생님 홈' },
-        { section: '선생님 도구' as NavSection, href: '/admin/students',           label: '학생 추가/관리' },
-        { section: '선생님 도구' as NavSection, href: '/teacher/tasks',            label: '할 일 관리' },
-        { section: '선생님 도구' as NavSection, href: '/teacher/students',         label: '학생 현황' },
-        { section: '선생님 도구' as NavSection, href: '/teacher/reports/students', label: '활동 리포트' },
-        { section: '선생님 도구' as NavSection, href: '/admin/homework',           label: '숙제 채점' },
-        { section: '선생님 도구' as NavSection, href: '/admin/lectures',           label: '강의 관리' },
+        { section: '선생님 도구' as NavSection, href: '/teacher/home',             label: '선생님 홈',    icon: Home },
+        { section: '선생님 도구' as NavSection, href: '/admin/students',           label: '학생 추가/관리', icon: UserPlus },
+        { section: '선생님 도구' as NavSection, href: '/teacher/tasks',            label: '할 일 관리',   icon: CheckSquare },
+        { section: '선생님 도구' as NavSection, href: '/teacher/students',         label: '학생 현황',    icon: Users },
+        { section: '선생님 도구' as NavSection, href: '/teacher/reports/students', label: '활동 리포트',  icon: BarChart2 },
+        { section: '선생님 도구' as NavSection, href: '/admin/homework',           label: '숙제 채점',    icon: ClipboardCheck },
+        { section: '선생님 도구' as NavSection, href: '/admin/lectures',           label: '강의 관리',    icon: PlayCircle },
 
-        { section: '시스템' as NavSection, href: '/admin/perks',    label: 'Perk 관리' },
-        { section: '시스템' as NavSection, href: '/admin/users',   label: '사용자/권한' },
-        { section: '시스템' as NavSection, href: '/admin/landing', label: '랜딩 페이지' },
-        { section: '시스템' as NavSection, href: '/admin/settings', label: '설정' },
+        { section: '시스템' as NavSection, href: '/admin/perks',    label: 'Perk 관리',  icon: Gift },
+        { section: '시스템' as NavSection, href: '/admin/users',    label: '사용자/권한', icon: ShieldCheck },
+        { section: '시스템' as NavSection, href: '/admin/landing',  label: '랜딩 페이지', icon: Globe },
+        { section: '시스템' as NavSection, href: '/admin/settings', label: '설정',       icon: Settings },
       ];
     }
 
@@ -483,9 +493,15 @@ export default function SidebarClient({ role, program = null }: Props) {
                           aria-current={active ? 'page' : undefined}
                           className={linkClasses}
                         >
+                          {it.icon && (
+                            <it.icon className={[
+                              'shrink-0 transition-colors',
+                              collapsed ? 'h-4 w-4' : 'h-3.5 w-3.5 mr-2',
+                            ].join(' ')} />
+                          )}
                           {!collapsed && (
                             <>
-                              <span className="truncate">{it.label}</span>
+                              <span className="truncate flex-1">{it.label}</span>
                               <ChevronRight
                                 className={[
                                   'h-3.5 w-3.5 shrink-0 transition-colors',
@@ -496,7 +512,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                               />
                             </>
                           )}
-                          {collapsed && (
+                          {collapsed && !it.icon && (
                             <span
                               aria-hidden
                               className={[
