@@ -47,6 +47,25 @@ export async function assignPassageAction(
   return { ok: true };
 }
 
+// ── Drill 타입 토글 ────────────────────────────────────────
+export async function updateEnabledDrillTypesAction(
+  passageId: string,
+  assignmentId: string,
+  enabledTypes: string[] | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const adminDb = getServiceSupabase();
+
+  const { error } = await adminDb
+    .from('hi_naesin_assignments')
+    .update({ enabled_drill_types: enabledTypes })
+    .eq('id', assignmentId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidate(passageId);
+  return { ok: true };
+}
+
 // ── 배정 취소 ──────────────────────────────────────────────
 export async function removeAssignmentAction(
   passageId: string,

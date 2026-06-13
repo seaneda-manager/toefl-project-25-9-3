@@ -28,6 +28,7 @@ import {
 import {
   assignPassageAction,
   removeAssignmentAction,
+  updateEnabledDrillTypesAction,
 } from './assign-actions';
 
 export const dynamic = 'force-dynamic';
@@ -74,7 +75,7 @@ export default async function HiNaesinPassageEditPage({
       ? supabase.from('hi_naesin_variant_choices').select('*').in('question_id', questionIds)
       : Promise.resolve({ data: [], error: null }),
     supabase.from('hi_naesin_passage_sentences').select('*').eq('passage_id', id).order('order_index'),
-    supabase.from('hi_naesin_assignments').select('id, student_id, assignment_type, status, due_at, note, assigned_at').eq('passage_id', id).order('assigned_at', { ascending: false }),
+    supabase.from('hi_naesin_assignments').select('id, student_id, assignment_type, status, due_at, note, assigned_at, enabled_drill_types').eq('passage_id', id).order('assigned_at', { ascending: false }),
     supabase.from('profiles').select('id, full_name, email').eq('role', 'student').order('full_name'),
   ]);
 
@@ -97,6 +98,7 @@ export default async function HiNaesinPassageEditPage({
   const assignments = (assignmentsData ?? []) as Array<{
     id: string; student_id: string; assignment_type: string;
     status: string; due_at: string | null; note: string | null; assigned_at: string;
+    enabled_drill_types: string[] | null;
   }>;
   const students = (studentsData ?? []) as Array<{ id: string; full_name: string | null; email: string | null }>;
   const studentMap = new Map(students.map((s) => [s.id, s]));
@@ -538,26 +540,76 @@ export default async function HiNaesinPassageEditPage({
                     a.status === 'submitted' ? 'text-emerald-600' :
                     a.status === 'started'   ? 'text-amber-600' :
                     'text-neutral-500';
+                  const isDrill = a.assignment_type === 'drill' || a.assignment_type === 'full';
+                  const enabledTypes = a.enabled_drill_types; // null = 전체
+                  const ALL_DRILL_TYPES = [
+                    { key: 'vocab',          label: '단어' },
+                    { key: 'translation',    label: '해석' },
+                    { key: 'fill_blank',     label: '빈칸' },
+                    { key: 'writing',        label: '작문' },
+                    { key: 'grammar_choice', label: '문법' },
+                  ] as const;
                   return (
-                    <div key={a.id} className="flex items-center justify-between px-4 py-3 hover:bg-neutral-50">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-neutral-800 truncate">
-                          {stu?.full_name ?? stu?.email ?? a.student_id.slice(0, 8)}
-                        </p>
-                        <p className="text-xs text-neutral-400">
-                          {typeLabel} · <span className={statusColor}>{a.status}</span>
-                          {a.due_at && ` · 마감 ${new Date(a.due_at).toLocaleDateString('ko-KR')}`}
-                        </p>
-                        {a.note && <p className="text-xs text-neutral-400 truncate">{a.note}</p>}
+                    <div key={a.id} className="px-4 py-3 hover:bg-neutral-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-neutral-800 truncate">
+                            {stu?.full_name ?? stu?.email ?? a.student_id.slice(0, 8)}
+                          </p>
+                          <p className="text-xs text-neutral-400">
+                            {typeLabel} · <span className={statusColor}>{a.status}</span>
+                            {a.due_at && ` · 마감 ${new Date(a.due_at).toLocaleDateString('ko-KR')}`}
+                          </p>
+                          {a.note && <p className="text-xs text-neutral-400 truncate">{a.note}</p>}
+                        </div>
+                        <form action={removeAssignmentAction.bind(null, id, a.id)}>
+                          <button
+                            type="submit"
+                            className="ml-4 shrink-0 rounded-lg border border-red-200 px-3 py-1 text-xs text-red-500 hover:bg-red-50"
+                          >
+                            취소
+                          </button>
+                        </form>
                       </div>
-                      <form action={removeAssignmentAction.bind(null, id, a.id)}>
-                        <button
-                          type="submit"
-                          className="ml-4 shrink-0 rounded-lg border border-red-200 px-3 py-1 text-xs text-red-500 hover:bg-red-50"
-                        >
-                          취소
-                        </button>
-                      </form>
+
+                      {/* Drill 타입 토글 */}
+                      {isDrill && (
+                        <div className="flex flex-wrap gap-1.5 pl-0.5">
+                          {ALL_DRILL_TYPES.map(({ key, label }) => {
+                            const isOn = enabledTypes === null || enabledTypes.includes(key);
+                            // 켜기: null이면 해당 타입 제외한 나머지로 변경 / 배열이면 추가
+                            const nextOn = enabledTypes === null
+                              ? ALL_DRILL_TYPES.map(t => t.key).filter(k => k !== key)  // 나머지 전부 켜고 이것만 끄기
+                              : enabledTypes.filter(k => k !== key);                     // 목록에서 제거
+                            const nextOff = enabledTypes === null
+                              ? null                                                       // 이미 전체 켜짐
+                              : [...enabledTypes, key];                                   // 목록에 추가
+                            const nextTypes = isOn ? nextOn : nextOff;
+                            // nextTypes가 전체와 같으면 null로 정규화
+                            const allKeys = ALL_DRILL_TYPES.map(t => t.key);
+                            const normalized = (nextTypes !== null && allKeys.every(k => nextTypes.includes(k)))
+                              ? null : nextTypes;
+                            return (
+                              <form
+                                key={key}
+                                action={updateEnabledDrillTypesAction.bind(null, id, a.id, normalized)}
+                              >
+                                <button
+                                  type="submit"
+                                  className={[
+                                    'rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors',
+                                    isOn
+                                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                                      : 'border-neutral-300 bg-white text-neutral-400 line-through',
+                                  ].join(' ')}
+                                >
+                                  {label}
+                                </button>
+                              </form>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

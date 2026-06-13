@@ -39,7 +39,7 @@ export default async function HiNaesinDrillPage({
 
   const { data: session } = await supabase
     .from('hi_naesin_sessions')
-    .select('id, passage_id, status')
+    .select('id, passage_id, status, assignment_id')
     .eq('id', sessionId)
     .single();
 
@@ -52,6 +52,7 @@ export default async function HiNaesinDrillPage({
     { data: passageData },
     { data: allDrillsRaw },
     { data: allResponsesRaw },
+    { data: assignmentData },
   ] = await Promise.all([
     supabase.from('hi_naesin_passages').select('title').eq('id', session.passage_id).single(),
     supabase.from('hi_naesin_drills')
@@ -61,6 +62,9 @@ export default async function HiNaesinDrillPage({
     supabase.from('hi_naesin_drill_responses')
       .select('drill_id, response_text, response_choice, is_correct, score_pct, feedback_text')
       .eq('session_id', sessionId),
+    session.assignment_id
+      ? supabase.from('hi_naesin_assignments').select('enabled_drill_types').eq('id', session.assignment_id).single()
+      : Promise.resolve({ data: null }),
   ]);
 
   const allDrills    = (allDrillsRaw ?? []) as DrillRow[];
@@ -80,8 +84,10 @@ export default async function HiNaesinDrillPage({
     if (!drillsByType[d.drill_type]) drillsByType[d.drill_type] = [];
     drillsByType[d.drill_type].push(d);
   }
+  const enabledDrillTypes = (assignmentData as any)?.enabled_drill_types as string[] | null ?? null;
   const availableTypes = (TYPE_ORDER as readonly string[]).filter(
-    (t) => (drillsByType[t]?.length ?? 0) > 0,
+    (t) => (drillsByType[t]?.length ?? 0) > 0
+      && (enabledDrillTypes === null || enabledDrillTypes.includes(t)),
   );
   const respondedSet = new Set(allResponses.map((r) => r.drill_id));
 

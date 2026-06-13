@@ -257,12 +257,12 @@ function ResultTable({
 
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr className="[&>th]:px-4 [&>th]:py-3">
-                <th>학생</th>
+                <th className="w-24">학생</th>
                 <th>지문/세트</th>
-                <th>모드</th>
+                <th className="w-16">모드</th>
                 <th>{scoreLabel}</th>
                 <th>시작</th>
                 <th>완료</th>
@@ -283,7 +283,7 @@ function ResultTable({
                   return (
                     <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50 [&>td]:px-4 [&>td]:py-3">
                       <td className="font-medium text-slate-900">{row.student}</td>
-                      <td className="max-w-[200px] truncate text-slate-700">{row.passage}</td>
+                      <td className="text-slate-700">{row.passage}</td>
                       <td className="text-slate-500">{row.mode}</td>
                       <td className="font-semibold text-slate-900">
                         {row.score != null ? `${row.score}${scoreUnit}` : "-"}
