@@ -24,16 +24,16 @@ export default function HomeSelector() {
 
   const handleStart = () => {
     if (mode === 'study') {
-      if (section === 'reading') go('/reading-2026/study');
-      else if (section === 'listening') go('/listening-2026/study');
+      if (section === 'reading') go('/updated-reading/study');
+      else if (section === 'listening') go('/updated-listening/study');
       else if (section === 'speaking') go('/speaking-2026/study');
       else if (section === 'writing') go('/writing-2026/study');
       else alert('알 수 없는 섹션입니다.');
       return;
     }
 
-    if (section === 'reading') go('/reading-2026/test');
-    else if (section === 'listening') go('/listening-2026/test');
+    if (section === 'reading') go('/updated-reading/test');
+    else if (section === 'listening') go('/updated-listening/test');
     else if (section === 'speaking') alert('Speaking test UI는 준비 중입니다.');
     else if (section === 'writing') go('/writing-2026/test');
     else alert('알 수 없는 섹션입니다.');

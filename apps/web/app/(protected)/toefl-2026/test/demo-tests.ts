@@ -10,7 +10,7 @@ export const demoReadingTest2026: RReadingTest2026 = demoAdaptiveReadingTest;
 // ✅ 리스닝/스피킹은 아직 러너/모델 확정 전이니 느슨하게 시작
 export const demoListeningTest2026 = {
   meta: {
-    id: "listening-2026-demo-1",
+    id: "updated-listening-demo-1",
     label: "Listening 2026 Demo",
   },
   sections: [],

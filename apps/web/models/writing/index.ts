@@ -17,9 +17,29 @@ export interface WWritingTestMeta {
 
 /** 2026 Writing에서 지원할 Task 타입 */
 export type WWritingTaskKind =
-  | "micro_writing" // 10개의 짧은 쓰기
+  | "fill_in_blank" // 빈칸 채우기 형태의 작문
+  | "micro_writing" // 10개의 짧은 쓰기 (레거시)
   | "email" // Email Writing
   | "academic_discussion"; // Academic Discussion
+
+/* ------------------------------------
+ * 0. Fill-in-Blank Writing
+ * ----------------------------------*/
+
+export interface WFillBlankItem {
+  id: string;
+  taskKind: "fill_in_blank";
+  title: string;
+  /** HTML with {{BLANK_1}}, {{BLANK_2}} … placeholders */
+  promptHtml: string;
+  blanks: {
+    id: string;
+    placeholder?: string;
+    sampleAnswer: string;
+    minWords?: number;
+  }[];
+  recommendedTimeSeconds?: number;
+}
 
 /* ------------------------------------
  * 1. Micro Writing (10개 짧은 쓰기)
@@ -102,6 +122,7 @@ export interface WAcademicWritingItem {
  * ----------------------------------*/
 
 export type WWritingItem =
+  | WFillBlankItem
   | WMicroWritingItem
   | WEmailWritingItem
   | WAcademicWritingItem;

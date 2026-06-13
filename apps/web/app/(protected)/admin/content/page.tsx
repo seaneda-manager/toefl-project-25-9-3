@@ -302,7 +302,7 @@ function mapReadingTestToContentRow(row: ReadingTestDbRow): ContentRow {
     linkedScopes: 0,
     status: inferStatus(payload),
     updatedAt: formatUpdatedAt(row.updated_at),
-    editorHref: `/admin/content/reading-2026/${row.id}`,
+    editorHref: `/admin/content/updated-reading/${row.id}`,
   };
 }
 
@@ -372,7 +372,7 @@ export default async function AdminContentPage({
             새 콘텐츠
           </Link>
           <Link
-            href="/admin/content/reading-2026"
+            href="/admin/content/updated-reading"
             className="rounded-lg border px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
           >
             Reading 2026 전용 목록

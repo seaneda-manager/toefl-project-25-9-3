@@ -216,8 +216,8 @@ export default function SidebarClient({ role, program = null }: Props) {
     const p = normalizePath(pathnameRaw);
     const exam = /(study|test|adaptive-demo|demo)/;
     return (
-      (/\/reading-2026\//.test(p)  && exam.test(p)) ||
-      (/\/listening-2026\//.test(p) && exam.test(p)) ||
+      (/\/updated-reading\//.test(p)  && exam.test(p)) ||
+      (/\/updated-listening\//.test(p) && exam.test(p)) ||
       (/\/speaking-2026\//.test(p) && exam.test(p)) ||
       (/\/writing-2026\//.test(p)  && exam.test(p)) ||
       (/\/voca\//.test(p)          && exam.test(p)) ||
@@ -233,10 +233,10 @@ export default function SidebarClient({ role, program = null }: Props) {
       return [
         { section: '대시보드' as NavSection, href: '/admin', label: '대시보드' },
 
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/reading-2026',    label: 'Reading' },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/listening-2026', label: 'Listening' },
-        { section: 'Updated TOEFL' as NavSection, label: 'Speaking',                       disabled: true },
-        { section: 'Updated TOEFL' as NavSection, label: 'Writing',                        disabled: true },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-reading',    label: 'Reading' },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-listening', label: 'Listening' },
+        { section: 'Updated TOEFL' as NavSection, label: 'Speaking',                              disabled: true },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-writing', label: 'Writing' },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
 
         { section: '내신관리' as NavSection, href: '/admin/naesin',               label: '고등 드릴 관리' },
@@ -292,7 +292,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: '내신' as NavSection, href: '/naesin/middle', label: '중학 내신 드릴' },
 
-        { section: '학습', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
+        { section: '학습', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'Grammar' },
 
         { section: '어휘', href: '/vocab', label: '단어 학습' },
@@ -309,10 +309,10 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: TOEFL / GAP ─────────────────────────────────
     if (program === 'toefl' || program === 'gap') {
       return [
-        { section: '학습', href: '/reading-2026',   label: 'Reading',   skill: 'reading'   as SkillColor },
-        { section: '학습', href: '/listening-2026', label: 'Listening', skill: 'listening' as SkillColor },
-        { section: '학습', href: '/speaking-2026/study',  label: 'Speaking',  skill: 'speaking'  as SkillColor },
-        { section: '학습', href: '/writing-2026/study',   label: 'Writing',   skill: 'writing'   as SkillColor },
+        { section: '학습', href: '/updated-reading',        label: 'Reading',   skill: 'reading'   as SkillColor },
+        { section: '학습', href: '/updated-listening',      label: 'Listening', skill: 'listening' as SkillColor },
+        { section: '학습', href: '/speaking-2026/study',    label: 'Speaking',  skill: 'speaking'  as SkillColor },
+        { section: '학습', href: '/updated-writing/test',   label: 'Writing',   skill: 'writing'   as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram' },
         { section: '학습', href: '/vocab',                 label: '단어 학습' },
 
@@ -341,10 +341,10 @@ export default function SidebarClient({ role, program = null }: Props) {
       { section: '내 학습', href: '/student/lectures',  label: '🎬 강의' },
 
       { section: '학습 콘텐츠', href: '/home',                  label: 'Home' },
-      { section: '학습 콘텐츠', href: '/reading-2026/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
-      { section: '학습 콘텐츠', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
-      { section: '학습 콘텐츠', href: '/speaking-2026/study',  label: 'Speaking',  skill: 'speaking'  as SkillColor },
-      { section: '학습 콘텐츠', href: '/writing-2026/study',   label: 'Writing',   skill: 'writing'   as SkillColor },
+      { section: '학습 콘텐츠', href: '/updated-reading/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
+      { section: '학습 콘텐츠', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
+      { section: '학습 콘텐츠', href: '/speaking-2026/study',     label: 'Speaking',  skill: 'speaking'  as SkillColor },
+      { section: '학습 콘텐츠', href: '/updated-writing/test',    label: 'Writing',   skill: 'writing'   as SkillColor },
 
       { section: '설정', href: '/settings', label: '설정' },
     ];

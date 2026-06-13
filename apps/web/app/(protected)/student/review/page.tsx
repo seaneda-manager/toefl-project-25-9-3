@@ -138,7 +138,7 @@ export default async function StudentReviewPage() {
             <p className="mt-1">
               먼저{" "}
               <Link
-                href="/reading-2026/study"
+                href="/updated-reading/study"
                 className="font-semibold text-emerald-700 underline"
               >
                 Reading 2026 연습

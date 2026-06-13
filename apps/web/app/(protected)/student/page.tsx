@@ -427,7 +427,7 @@ export default async function StudentPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {/* Reading */}
           <SkillCard
-            href="/reading-2026/study"
+            href="/updated-reading/study"
             label="Reading"
             emoji="📖"
             detail={readingDone > 0 ? `완료 ${readingDone}회` : "학습 시작하기"}
@@ -445,7 +445,7 @@ export default async function StudentPage() {
 
           {/* Listening */}
           <SkillCard
-            href="/listening-2026/study"
+            href="/updated-listening/study"
             label="Listening"
             emoji="🎧"
             detail="학습 시작하기"

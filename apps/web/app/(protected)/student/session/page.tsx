@@ -234,7 +234,7 @@ export default async function StudentSessionPage() {
       sublabel: '듣기 문제 풀기',
       icon:     '🎧',
       isDone:   listeningDoneToday,
-      href:     '/listening-2026/study',
+      href:     '/updated-listening/study',
       ctaLabel: listeningDoneToday ? '추가 학습' : '리스닝 시작 →',
       detail:   listeningDoneToday ? '완료' : undefined,
       color:    'violet',

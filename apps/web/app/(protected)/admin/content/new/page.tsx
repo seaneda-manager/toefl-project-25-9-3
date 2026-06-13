@@ -179,7 +179,7 @@ export default function AdminContentNewPage() {
 
           {isReading ? (
             <Link
-              href="/admin/content/reading-2026/new"
+              href="/admin/content/updated-reading/new"
               className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
             >
               Reading 2026 생성기로 이동
@@ -356,7 +356,7 @@ export default function AdminContentNewPage() {
         <div className="mt-4">
           {isReading ? (
             <Link
-              href="/admin/content/reading-2026/new"
+              href="/admin/content/updated-reading/new"
               className="inline-flex rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
             >
               Reading 2026 생성기로 이동

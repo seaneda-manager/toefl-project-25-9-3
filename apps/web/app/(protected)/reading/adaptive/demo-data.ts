@@ -4,7 +4,7 @@ import type { RReadingTest2026 } from "@/models/reading";
 
 export const demoAdaptiveReadingTest: RReadingTest2026 = {
   meta: {
-    id: "reading-2026-demo-1",
+    id: "updated-reading-demo-1",
     label: "2026 Adaptive Reading Demo",
     examEra: "ibt_2026",
     source: "demo",

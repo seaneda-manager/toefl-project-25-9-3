@@ -6,7 +6,7 @@ import type { RReadingTest2026 } from "@/models/reading";
 
 const demoAdaptiveTest: RReadingTest2026 = {
   meta: {
-    id: "reading-2026-demo-1",
+    id: "updated-reading-demo-1",
     label: "Adaptive Reading – 2 Stage Demo",
     examEra: "2026",
   },

@@ -15,7 +15,7 @@ import type {
 
 export const adaptiveReadingTest2026: RReadingTest2026 = {
   meta: {
-    id: "reading-2026-placement-v1",
+    id: "updated-reading-placement-v1",
     label: "Reading 2026 – Adaptive Placement Test",
     examEra: "ibt_2026", // ✅ 실제 ExamEra union 확인해서 값만 맞추면 됨
   } as any, // ✅ 타입 우회 (나중에 ExamEra 값 확정되면 as any 지워도 됨)

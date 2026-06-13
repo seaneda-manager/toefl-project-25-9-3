@@ -68,7 +68,7 @@ export default function ReadingTestForm({
             <input
               {...register("meta.id" as const)}
               className="w-full rounded-md border px-2 py-1.5 text-sm"
-              placeholder="예: reading-2026-placement-v1"
+              placeholder="예: updated-reading-placement-v1"
             />
           </div>
 

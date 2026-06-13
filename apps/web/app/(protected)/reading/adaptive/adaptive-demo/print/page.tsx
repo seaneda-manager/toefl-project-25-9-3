@@ -11,7 +11,7 @@ import type {
 // 프린트용 시험지 데이터
 const adaptiveReadingTest2026: RReadingTest2026 = {
   meta: {
-    id: "reading-2026-stage1-demo",
+    id: "updated-reading-stage1-demo",
     label: "2026 Reading Stage 1 – Demo Set",
     examEra: "ibt_2026",
     source: "internal-demo",

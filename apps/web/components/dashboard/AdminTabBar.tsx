@@ -24,7 +24,7 @@ const TABS: { key: AdminTab; label: string; color: string; activeColor: string }
 
 // path prefix → which tab it belongs to
 const PATH_TAB_MAP: [string, AdminTab][] = [
-  ['/admin/content/reading-2026',  'LEXiOX-TOEFL'],
+  ['/admin/content/updated-reading',  'LEXiOX-TOEFL'],
   ['/admin/content/listening/toefl', 'LEXiOX-TOEFL'],
   ['/admin/content/writing-2026',  'LEXiOX-TOEFL'],
   ['/admin/content/grammar-2026',  'LEXiOX-TOEFL'],

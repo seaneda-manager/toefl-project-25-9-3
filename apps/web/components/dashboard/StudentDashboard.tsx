@@ -62,9 +62,9 @@ export default function StudentDashboard({ name, readingResults }: Props) {
       <section className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">최근 Reading 2026 결과</h2>
-          {/* 나중에 /reading-2026/result/history 같은 페이지로 연결 */}
+          {/* 나중에 /updated-reading/result/history 같은 페이지로 연결 */}
           <a
-            href="/reading-2026/result/history"
+            href="/updated-reading/result/history"
             className="text-xs text-blue-600 hover:underline"
           >
             전체 보기
@@ -99,7 +99,7 @@ export default function StudentDashboard({ name, readingResults }: Props) {
                 </div>
                 <div className="mt-2 flex justify-end">
                   <a
-                    href={`/reading-2026/result/${r.id}`}
+                    href={`/updated-reading/result/${r.id}`}
                     className="rounded border px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50"
                   >
                     리포트 보기

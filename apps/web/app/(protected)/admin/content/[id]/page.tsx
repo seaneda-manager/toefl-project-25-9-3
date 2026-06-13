@@ -25,7 +25,7 @@ export default async function AdminContentDetailBridgePage({ params }: PageProps
     .maybeSingle();
 
   if (reading2026) {
-    redirect(`/admin/content/reading-2026/${reading2026.id}`);
+    redirect(`/admin/content/updated-reading/${reading2026.id}`);
   }
 
   console.error("AdminContentDetailBridgePage: unsupported content id", {
@@ -95,7 +95,7 @@ export default async function AdminContentDetailBridgePage({ params }: PageProps
               </Link>
 
               <Link
-                href="/admin/content/reading-2026"
+                href="/admin/content/updated-reading"
                 className="rounded-lg border px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 Reading 2026 목록
@@ -110,7 +110,7 @@ export default async function AdminContentDetailBridgePage({ params }: PageProps
         <ul className="mt-3 space-y-2 text-sm text-neutral-700">
           <li>• 공통 Content Hub는 진입 허브 역할</li>
           <li>• 실제 편집은 섹션별 editor route를 우선 사용</li>
-          <li>• Reading은 기존 <code className="rounded bg-neutral-100 px-1 py-0.5">/admin/content/reading-2026/[id]</code> 재사용</li>
+          <li>• Reading은 기존 <code className="rounded bg-neutral-100 px-1 py-0.5">/admin/content/updated-reading/[id]</code> 재사용</li>
           <li>• Listening / Speaking / Writing / Grammar / Vocab은 이후 단계에서 연결</li>
         </ul>
       </section>

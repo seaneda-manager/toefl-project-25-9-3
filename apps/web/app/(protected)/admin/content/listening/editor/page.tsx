@@ -40,7 +40,7 @@ export default function ListeningContentEditorPage() {
           <div className="rounded-md border bg-slate-50 p-3 text-xs font-mono text-slate-700">
             <pre className="whitespace-pre-wrap">
 {`{
-  "id": "listening-2026-demo-1",
+  "id": "updated-listening-demo-1",
   "meta": { "examEra": "ibt_2026" },
   "modules": [
     { "id": "L-mod-1", "stage": 1, "items": [...] },

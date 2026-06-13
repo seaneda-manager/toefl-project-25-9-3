@@ -72,7 +72,7 @@ export default function AdminPage() {
           links={[
             { label: '새 세트', href: '/admin/content/new?kind=reading', primary: true },
             { label: '목록', href: '/admin/content/list?kind=reading' },
-            { label: '에디터', href: '/admin/content/reading-2026' },
+            { label: '에디터', href: '/admin/content/updated-reading' },
           ]}
         />
         <DashCard

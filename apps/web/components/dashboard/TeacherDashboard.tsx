@@ -80,7 +80,7 @@ export default function TeacherDashboard({ name, readingResults }: Props) {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">최근 Reading 2026 응시 기록</h2>
           <a
-            href="/teacher/reading-2026/results"
+            href="/teacher/updated-reading/results"
             className="text-xs text-blue-600 hover:underline"
           >
             전체 보기
@@ -124,7 +124,7 @@ export default function TeacherDashboard({ name, readingResults }: Props) {
                     </td>
                     <td className="px-3 py-2 text-right">
                       <a
-                        href={`/reading-2026/result/${r.id}`}
+                        href={`/updated-reading/result/${r.id}`}
                         className="rounded border px-2 py-0.5 text-[11px] font-medium hover:bg-gray-50"
                       >
                         리포트

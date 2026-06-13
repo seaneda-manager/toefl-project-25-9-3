@@ -375,7 +375,7 @@ export default function MockTestPlayer({
       if (onFinish) {
         await onFinish(payload);
       } else {
-        await fetch("/api/reading-2026/result", {
+        await fetch("/api/updated-reading/result", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
