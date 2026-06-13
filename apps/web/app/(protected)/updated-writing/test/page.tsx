@@ -33,7 +33,7 @@ export default async function UpdatedWritingTestPage() {
 
   return (
     <div className="-m-4 md:-m-6 h-[calc(100%+2rem)] md:h-[calc(100%+3rem)]">
-      <WritingTestClient test={data.payload as WWritingTest2026} />
+      <WritingTestClient test={data.payload as WWritingTest2026} testId={data.id} />
     </div>
   );
 }

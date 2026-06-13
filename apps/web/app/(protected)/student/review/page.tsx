@@ -43,6 +43,33 @@ export default async function StudentReviewPage() {
     }, {});
   }
 
+  // Writing 결과
+  const { data: writingRaw } = await supabase
+    .from("writing_2026_sessions")
+    .select("id,test_id,created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  const writingTestIds = [...new Set((writingRaw ?? []).map((r) => r.test_id).filter(Boolean))] as string[];
+  let writingLabelMap: Record<string, string> = {};
+  if (writingTestIds.length > 0) {
+    const { data: tests } = await supabase
+      .from("writing_tests")
+      .select("id,label")
+      .in("id", writingTestIds);
+    writingLabelMap = (tests ?? []).reduce<Record<string, string>>((acc, t) => {
+      if (t?.id) acc[t.id] = t.label ?? t.id;
+      return acc;
+    }, {});
+  }
+
+  const writingRows = (writingRaw ?? []).map((r) => ({
+    id: r.id,
+    label: (r.test_id && writingLabelMap[r.test_id]) || r.test_id || "Unknown",
+    createdAt: r.created_at,
+  }));
+
   // Speaking 결과
   const { data: speakingRaw } = await supabase
     .from("speaking_results_2026")
@@ -144,17 +171,24 @@ export default async function StudentReviewPage() {
         {[]}
       </SkillSection>
 
-      {/* Writing - 결과 테이블 준비 중 */}
+      {/* Writing */}
       <SkillSection
         icon={<PenLine className="h-4 w-4 text-teal-500" />}
         title="Writing"
         color="teal"
-        empty
+        empty={writingRows.length === 0}
         emptyHref="/updated-writing/test"
         emptyLabel="Writing 연습 시작하기"
-        soon
       >
-        {[]}
+        {writingRows.map((r) => (
+          <ResultRow
+            key={r.id}
+            label={r.label}
+            meta={r.createdAt ? new Date(r.createdAt).toLocaleString("ko-KR") : "-"}
+            href={`/student/review/writing/${r.id}`}
+            color="teal"
+          />
+        ))}
       </SkillSection>
     </main>
   );
