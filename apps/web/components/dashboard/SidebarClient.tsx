@@ -381,9 +381,9 @@ export default function SidebarClient({ role, program = null }: Props) {
   return (
     <div
       className={[
-        'flex h-full flex-col bg-white transition-all duration-300',
+        'flex flex-col bg-white transition-all duration-300 h-full',
         widthClass,
-        !collapsed || !isExamRoute ? 'border-r border-neutral-100' : '',
+        !collapsed || !isExamRoute ? '' : '',
       ].join(' ')}
     >
       <nav className="flex-1 overflow-y-auto py-2 text-sm">
@@ -440,7 +440,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                         <li key={`${section}-${it.label}-${itemIdx}`}>
                           <div
                             className={[
-                              'flex items-center rounded-lg mx-2 px-3 py-1.5 text-sm',
+                              'flex items-center rounded-lg mx-3 px-3 py-1.5 text-sm',
                               collapsed ? 'justify-center' : 'justify-between',
                               'text-neutral-300',
                             ].join(' ')}
@@ -462,7 +462,7 @@ export default function SidebarClient({ role, program = null }: Props) {
                     const skillActive  = active && it.skill ? SKILL_ACTIVE[it.skill]  : '';
                     const skillHover   = !active && it.skill ? SKILL_HOVER[it.skill]   : '';
                     const linkClasses = [
-                      'group flex items-center rounded-lg mx-2 px-3 py-1.5 text-sm transition-colors',
+                      'group flex items-center rounded-lg mx-3 px-3 py-1.5 text-sm transition-colors',
                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/70',
                       collapsed ? 'justify-center' : 'justify-between',
                       active
