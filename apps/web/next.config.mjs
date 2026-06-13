@@ -3,16 +3,16 @@ const nextConfig = {
   reactStrictMode: true,
 
   async redirects() {
-    const old2new = [
-      [‘/reading-2026’, ‘/updated-reading’],
-      [‘/listening-2026’, ‘/updated-listening’],
-      [‘/admin/content/reading-2026’, ‘/admin/content/updated-reading’],
-      [‘/admin/content/listening-2026’, ‘/admin/content/updated-listening’],
+    return [
+      { source: ‘/reading-2026’,                    destination: ‘/updated-reading’,                    permanent: true },
+      { source: ‘/reading-2026/:path*’,              destination: ‘/updated-reading/:path*’,              permanent: true },
+      { source: ‘/listening-2026’,                   destination: ‘/updated-listening’,                   permanent: true },
+      { source: ‘/listening-2026/:path*’,            destination: ‘/updated-listening/:path*’,            permanent: true },
+      { source: ‘/admin/content/reading-2026’,       destination: ‘/admin/content/updated-reading’,       permanent: true },
+      { source: ‘/admin/content/reading-2026/:path*’,destination: ‘/admin/content/updated-reading/:path*’,permanent: true },
+      { source: ‘/admin/content/listening-2026’,     destination: ‘/admin/content/updated-listening’,     permanent: true },
+      { source: ‘/admin/content/listening-2026/:path*’,destination: ‘/admin/content/updated-listening/:path*’,permanent: true },
     ];
-    return old2new.flatMap(([src, dst]) => [
-      { source: src, destination: dst, permanent: true },
-      { source: `${src}/:path*`, destination: `${dst}/:path*`, permanent: true },
-    ]);
   },
 
   // ✅ Build unblocker (we’ll fix lint/type errors after shipping)
