@@ -114,17 +114,17 @@ export default function AdminListeningEditor(props: any) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(values),
     });
-    alert(res.ok ? 'Saved!' : 'Save failed');
+    alert(res.ok ? '저장되었습니다!' : '저장에 실패했습니다');
   };
 
   const importJSON = async () => {
-    const text = prompt('Paste JSON');
+    const text = prompt('JSON을 붙여넣기 하세요');
     if (!text) return;
     try {
       const obj = JSON.parse(text) as ListeningSet;
       reset(obj as unknown as ListeningSetForm);
     } catch {
-      alert('Invalid JSON');
+      alert('올바르지 않은 JSON입니다');
     }
   };
 
@@ -144,21 +144,21 @@ export default function AdminListeningEditor(props: any) {
 
   return (
     <div className="mx-auto max-w-4xl p-6 space-y-6">
-      <h1 className="text-xl font-semibold">Listening Admin — {params.setId}</h1>
+      <h1 className="text-xl font-semibold">리스닝 관리 — {params.setId}</h1>
 
       <div className="flex gap-2">
         <button type="button" className="px-3 py-1.5 border rounded" onClick={importJSON}>
-          Import JSON
+          JSON 불러오기
         </button>
         <button type="button" className="px-3 py-1.5 border rounded" onClick={exportJSON}>
-          Export JSON
+          JSON 내보내기
         </button>
         <button
           type="button"
           className="px-3 py-1.5 bg-black text-white rounded"
           onClick={handleSubmit(onSubmit)}
         >
-          Save
+          저장
         </button>
       </div>
 
@@ -166,15 +166,15 @@ export default function AdminListeningEditor(props: any) {
       <section className="border rounded p-4 space-y-3 bg-white">
         <div className="grid grid-cols-3 gap-3">
           <label className="block col-span-1">
-            Set ID
+            세트 ID
             <input className="input" {...register('setId')} />
           </label>
           <label className="block">
-            TPO #
+            TPO 번호
             <input className="input" type="number" {...register('tpo', { valueAsNumber: true })} />
           </label>
           <label className="block">
-            Title
+            제목
             <input className="input" {...register('title')} />
           </label>
         </div>
@@ -218,9 +218,9 @@ export default function AdminListeningEditor(props: any) {
 
       {/* Conversation */}
       <section className="border rounded p-4 space-y-3 bg-white">
-        <h2 className="font-semibold">Conversation</h2>
+        <h2 className="font-semibold">대화 (Conversation)</h2>
         <label className="block">
-          Audio URL
+          오디오 URL
           <input
             className="input"
             {...register('conversation.audioUrl')}
@@ -228,7 +228,7 @@ export default function AdminListeningEditor(props: any) {
           />
         </label>
         <label className="block">
-          Image URL
+          이미지 URL
           <input
             className="input"
             {...register('conversation.imageUrl')}
@@ -236,7 +236,7 @@ export default function AdminListeningEditor(props: any) {
           />
         </label>
         <label className="block">
-          Transcript (스크립트 전문)
+          스크립트 전문
           <textarea
             className="input min-h-[120px] font-mono text-xs"
             placeholder="A: Good morning, I wanted to ask about...&#10;B: Of course, what's your question?"
@@ -245,7 +245,7 @@ export default function AdminListeningEditor(props: any) {
         </label>
 
         <div className="flex justify-between items-center">
-          <b>Questions ({convQs.fields.length})</b>
+          <b>문제 ({convQs.fields.length})</b>
           <button
             type="button"
             className="px-2 py-1 border rounded"
@@ -258,7 +258,7 @@ export default function AdminListeningEditor(props: any) {
               } as any)
             }
           >
-            + Add
+            + 추가
           </button>
         </div>
 
@@ -266,7 +266,7 @@ export default function AdminListeningEditor(props: any) {
           <div key={f.id} className="rounded border p-3 space-y-2 bg-slate-50">
             <div className="flex gap-2 items-start">
               <label className="block flex-1">
-                Prompt (문제)
+                문제
                 <textarea className="input" {...register(`conversation.questions.${i}.prompt` as const)} />
               </label>
               <div className="flex flex-col gap-2 w-36 shrink-0">
@@ -315,9 +315,9 @@ export default function AdminListeningEditor(props: any) {
 
       {/* Lecture */}
       <section className="border rounded p-4 space-y-3 bg-white">
-        <h2 className="font-semibold">Lecture</h2>
+        <h2 className="font-semibold">강의 (Lecture)</h2>
         <label className="block">
-          Audio URL
+          오디오 URL
           <input
             className="input"
             {...register('lecture.audioUrl')}
@@ -325,18 +325,18 @@ export default function AdminListeningEditor(props: any) {
           />
         </label>
         <label className="block">
-          Image URL
+          이미지 URL
           <input className="input" {...register('lecture.imageUrl')} placeholder="/img/demo-lect.jpg" />
         </label>
         <label className="block">
-          Transcript (스크립트 전문)
+          스크립트 전문
           <textarea className="input min-h-[120px] font-mono text-xs"
             placeholder="Professor: Today we're going to discuss..."
             {...register('lecture.transcript' as any)} />
         </label>
 
         <div className="flex justify-between items-center">
-          <b>Questions ({lectQs.fields.length})</b>
+          <b>문제 ({lectQs.fields.length})</b>
           <button
             type="button"
             className="px-2 py-1 border rounded"
@@ -349,7 +349,7 @@ export default function AdminListeningEditor(props: any) {
               } as any)
             }
           >
-            + Add
+            + 추가
           </button>
         </div>
 
@@ -357,7 +357,7 @@ export default function AdminListeningEditor(props: any) {
           <div key={f.id} className="rounded border p-3 space-y-2 bg-slate-50">
             <div className="flex gap-2 items-start">
               <label className="block flex-1">
-                Prompt (문제)
+                문제
                 <textarea className="input" {...register(`lecture.questions.${i}.prompt` as const)} />
               </label>
               <div className="flex flex-col gap-2 w-36 shrink-0">
@@ -417,7 +417,7 @@ function ChoicesEditor<
           <input type="checkbox" {...register(`${base}.${idx}.correct` as const)} />
           <input
             className="input flex-1"
-            placeholder={`${id}) choice text`}
+            placeholder={`${id}) 선택지 텍스트`}
             {...register(`${base}.${idx}.text` as const)}
           />
           <input
