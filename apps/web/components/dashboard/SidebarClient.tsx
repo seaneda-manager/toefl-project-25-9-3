@@ -234,7 +234,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '대시보드' as NavSection, href: '/admin', label: '대시보드' },
 
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/reading-2026',    label: 'Reading' },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/listening/toefl', label: 'Listening' },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/listening-2026', label: 'Listening' },
         { section: 'Updated TOEFL' as NavSection, label: 'Speaking',                       disabled: true },
         { section: 'Updated TOEFL' as NavSection, label: 'Writing',                        disabled: true },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
