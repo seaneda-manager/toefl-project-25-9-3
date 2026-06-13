@@ -99,27 +99,27 @@ export async function POST(req: NextRequest) {
     const client = new Anthropic();
 
     const message = await client.messages.create({
-      model:      'claude-sonnet-4-5',
+      model:      'claude-haiku-4-5-20251001',
       max_tokens: 2048,
-      system: `당신은 한국 영어학원의 숙제 채점 보조 AI입니다.
+      system: [
+        {
+          type: 'text',
+          text: `당신은 한국 영어학원의 숙제 채점 보조 AI입니다.
 학생이 손으로 쓴 숙제 사진을 분석하여 정답과 비교합니다.
 결과는 반드시 지정된 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요.`,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       messages: [
         {
           role: 'user',
           content: [
             {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64 },
-            },
-            {
               type: 'text',
-              text: `위 이미지는 학생이 제출한 "${homework.title}" (${subjectHint}) 숙제 사진입니다.
+              text: `숙제: "${homework.title}" (${subjectHint})
 
 【정답지】
 ${answerKeyText}
-
-이미지에서 학생이 쓴 답을 문항 번호별로 읽어내고, 위 정답과 비교하여 채점해 주세요.
 
 채점 기준:
 - 철자가 완전히 같아야 정답 (대소문자 무시)
@@ -149,11 +149,16 @@ ${answerKeyText}
   "score_pct": 80,
   "overall_feedback": "전반적인 평가를 한국어로 1-2문장"
 }`,
+              cache_control: { type: 'ephemeral' },
+            },
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 },
             },
           ],
         },
       ],
-    });
+    } as Parameters<typeof client.messages.create>[0]);
 
     // ── 5. JSON 파싱 ─────────────────────────────────────────────
     const raw = message.content[0].type === 'text' ? message.content[0].text : '';

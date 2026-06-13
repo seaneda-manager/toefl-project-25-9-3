@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabaseServer';
 import TopbarClient from '@/components/dashboard/TopbarClient';
 import SidebarClient from '@/components/dashboard/SidebarClient';
+import SidebarProfile from '@/components/dashboard/SidebarProfile';
 import MobileLexioxTabBar from '@/components/dashboard/MobileLexioxTabBar';
 import PWAInstallBanner from '@/components/PWAInstallBanner';
 import { LangProvider } from '@/contexts/LangContext';
@@ -27,10 +28,12 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
   // 🔹 profiles.role + program에서 역할/프로그램 가져오기
   let role: Role = 'student';
   let program: Program = null;
+  let avatarUrl: string | null = null;
+  let fullName: string | null = null;
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, program')
+      .select('role, program, full_name, avatar_url')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -40,6 +43,8 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     if (profile?.program === 'gap' || profile?.program === 'toefl' || profile?.program === 'lexiox') {
       program = profile.program;
     }
+    avatarUrl  = profile?.avatar_url  ?? null;
+    fullName   = profile?.full_name   ?? null;
   }
 
   const showMobileTabBar = role === 'student' && program === 'lexiox';
@@ -51,8 +56,13 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
           <TopbarClient email={email} role={role} />
         </div>
         <div className="grid grid-cols-[auto_1fr] min-h-0">
-          <aside className="hidden md:block h-full overflow-y-auto">
-            <SidebarClient role={role} program={program} />
+          <aside className="hidden md:flex md:flex-col h-full min-h-0 border-r border-neutral-100">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <SidebarClient role={role} program={program} />
+            </div>
+            <div className="shrink-0">
+              <SidebarProfile name={fullName ?? email} avatarUrl={avatarUrl} />
+            </div>
           </aside>
           <main className={[
             'min-h-0 overflow-y-auto p-4 md:p-6',

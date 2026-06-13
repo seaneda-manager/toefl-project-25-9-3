@@ -44,7 +44,9 @@ create index if not exists idx_middle_naesin_contents_type   on public.middle_na
 alter table public.middle_naesin_units     enable row level security;
 alter table public.middle_naesin_contents  enable row level security;
 
+drop policy if exists "open" on public.middle_naesin_units;
 create policy "open" on public.middle_naesin_units    for all using (true) with check (true);
+drop policy if exists "open" on public.middle_naesin_contents;
 create policy "open" on public.middle_naesin_contents for all using (true) with check (true);
 
 -- updated_at trigger helper (reuse if exists)
@@ -53,10 +55,12 @@ returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end;
 $$;
 
+drop trigger if exists trg_middle_naesin_units_updated_at on public.middle_naesin_units;
 create trigger trg_middle_naesin_units_updated_at
   before update on public.middle_naesin_units
   for each row execute function public.set_updated_at();
 
+drop trigger if exists trg_middle_naesin_contents_updated_at on public.middle_naesin_contents;
 create trigger trg_middle_naesin_contents_updated_at
   before update on public.middle_naesin_contents
   for each row execute function public.set_updated_at();

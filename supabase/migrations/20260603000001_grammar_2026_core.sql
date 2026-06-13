@@ -82,11 +82,17 @@ alter table grammar_2026_stylistic_items enable row level security;
 alter table grammar_2026_student_responses enable row level security;
 
 -- 공개 읽기 (로그인 사용자)
+drop policy if exists "auth users read grammar units" on grammar_2026_units;
 create policy "auth users read grammar units" on grammar_2026_units for select to authenticated using (true);
+drop policy if exists "auth users read segments" on grammar_2026_explanation_segments;
 create policy "auth users read segments" on grammar_2026_explanation_segments for select to authenticated using (true);
+drop policy if exists "auth users read drills" on grammar_2026_drills;
 create policy "auth users read drills" on grammar_2026_drills for select to authenticated using (true);
+drop policy if exists "auth users read stylistic" on grammar_2026_stylistic_items;
 create policy "auth users read stylistic" on grammar_2026_stylistic_items for select to authenticated using (true);
 
 -- 학생 응답: 본인 것만 읽기/쓰기
+drop policy if exists "students read own responses" on grammar_2026_student_responses;
 create policy "students read own responses" on grammar_2026_student_responses for select to authenticated using (auth.uid() = student_id);
+drop policy if exists "students insert own responses" on grammar_2026_student_responses;
 create policy "students insert own responses" on grammar_2026_student_responses for insert to authenticated with check (auth.uid() = student_id);

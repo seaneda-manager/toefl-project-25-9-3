@@ -159,7 +159,7 @@ export async function analyzeWeaknessAction(): Promise<WeaknessAnalysisResult> {
 
   const totalSessions = submittedSessions.length;
 
-  const prompt = `당신은 고등학생 영어 내신 학습 코치입니다. 아래는 학생의 내신 드릴 학습 데이터입니다. 이 데이터를 바탕으로 학생의 핵심 약점을 분석하고, 구체적이고 실용적인 학습 방향을 제시해 주세요.
+  const prompt = `아래는 학생의 내신 드릴 학습 데이터입니다.
 
 [학습 현황]
 - 완료 세션: ${totalSessions}회
@@ -198,9 +198,15 @@ ${writingFeedbackSection}
     });
 
     const message = await client.messages.create({
-      model: 'claude-opus-4-8',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1500,
-      thinking: { type: 'adaptive' },
+      system: [
+        {
+          type: 'text',
+          text: '당신은 고등학생 영어 내신 학습 코치입니다. 학생의 학습 데이터를 분석하여 핵심 약점과 구체적인 학습 방향을 한국어로 친근하게 제시합니다. 마크다운 형식으로 가독성 있게 작성하세요.',
+          cache_control: { type: 'ephemeral' },
+        },
+      ] as Parameters<typeof client.messages.create>[0]['system'],
       messages: [{ role: 'user', content: prompt }],
     });
 

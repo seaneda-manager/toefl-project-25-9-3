@@ -35,6 +35,7 @@ alter table photo_homework enable row level security;
 alter table photo_homework_submissions enable row level security;
 
 -- photo_homework: 선생님/어드민은 모두 접근, 학생은 활성 숙제만 읽기
+drop policy if exists "teacher_admin_all_homework" on photo_homework;
 create policy "teacher_admin_all_homework"
   on photo_homework for all
   using (
@@ -45,6 +46,7 @@ create policy "teacher_admin_all_homework"
     )
   );
 
+drop policy if exists "student_read_active_homework" on photo_homework;
 create policy "student_read_active_homework"
   on photo_homework for select
   using (
@@ -57,10 +59,12 @@ create policy "student_read_active_homework"
   );
 
 -- photo_homework_submissions: 학생은 자신 것만, 선생님/어드민은 모두
+drop policy if exists "student_own_submissions" on photo_homework_submissions;
 create policy "student_own_submissions"
   on photo_homework_submissions for all
   using (student_id = auth.uid());
 
+drop policy if exists "teacher_admin_all_submissions" on photo_homework_submissions;
 create policy "teacher_admin_all_submissions"
   on photo_homework_submissions for all
   using (

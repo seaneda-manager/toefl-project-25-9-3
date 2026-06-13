@@ -17,11 +17,13 @@ create index if not exists idx_naesin_exam_schedule_student
 alter table naesin_exam_schedule enable row level security;
 
 -- 학생: 자신 것 읽기
+drop policy if exists "student_read_own_exam_schedule" on naesin_exam_schedule;
 create policy "student_read_own_exam_schedule"
   on naesin_exam_schedule for select
   using (student_id = auth.uid());
 
 -- 선생님/어드민: 전부
+drop policy if exists "teacher_admin_all_exam_schedule" on naesin_exam_schedule;
 create policy "teacher_admin_all_exam_schedule"
   on naesin_exam_schedule for all
   using (
