@@ -98,6 +98,7 @@ export default async function SpeakingReviewDetailPage({ params }: PageProps) {
       <ScriptAndFeedback
         resultId={result.id}
         initialScript={result.script ?? null}
+        initialPrompt={result.prompt ?? null}
         approxWords={result.approx_words ?? null}
         approxSentences={result.approx_sentences ?? null}
         initialFeedback={(result.meta as { ai_feedback?: string } | null)?.ai_feedback ?? null}

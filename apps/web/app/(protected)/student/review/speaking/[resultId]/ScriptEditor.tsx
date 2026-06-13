@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import type { ReactNode } from "react";
 import { Pencil, Check, X, Loader2 } from "lucide-react";
 
 export default function ScriptEditor({
@@ -9,12 +10,14 @@ export default function ScriptEditor({
   approxWords,
   approxSentences,
   onScriptChanged,
+  reRecordSlot,
 }: {
   resultId: string;
   initialScript: string | null;
   approxWords?: number | null;
   approxSentences?: number | null;
   onScriptChanged?: () => void;
+  reRecordSlot?: ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(initialScript ?? "");
@@ -116,6 +119,8 @@ export default function ScriptEditor({
       {error && (
         <p className="mt-2 text-xs text-red-600">{error}</p>
       )}
+
+      {!editing && reRecordSlot}
     </section>
   );
 }
