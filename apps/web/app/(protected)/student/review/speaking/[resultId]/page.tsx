@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { ArrowLeft, Mic, Star } from "lucide-react";
-import AiFeedbackPanel from "./AiFeedbackPanel";
+import ScriptAndFeedback from "./ScriptAndFeedback";
 
 export const dynamic = "force-dynamic";
 
@@ -94,27 +94,14 @@ export default async function SpeakingReviewDetailPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* 내 답변 스크립트 */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-xs font-semibold text-gray-600">내 답변</div>
-          <div className="flex gap-3 text-[11px] text-gray-400">
-            {result.approx_words != null && <span>{result.approx_words} words</span>}
-            {result.approx_sentences != null && <span>{result.approx_sentences} sentences</span>}
-          </div>
-        </div>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
-          {result.script || <span className="text-gray-400">스크립트 없음</span>}
-        </p>
-      </section>
-
-      {/* AI 첨삭 */}
-      {result.script && (
-        <AiFeedbackPanel
-          resultId={result.id}
-          initialFeedback={(result.meta as { ai_feedback?: string } | null)?.ai_feedback ?? null}
-        />
-      )}
+      {/* 내 답변 스크립트 + AI 첨삭 */}
+      <ScriptAndFeedback
+        resultId={result.id}
+        initialScript={result.script ?? null}
+        approxWords={result.approx_words ?? null}
+        approxSentences={result.approx_sentences ?? null}
+        initialFeedback={(result.meta as { ai_feedback?: string } | null)?.ai_feedback ?? null}
+      />
     </main>
   );
 }

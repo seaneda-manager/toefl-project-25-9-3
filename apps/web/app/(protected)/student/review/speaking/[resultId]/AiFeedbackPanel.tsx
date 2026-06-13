@@ -6,9 +6,11 @@ import { Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 export default function AiFeedbackPanel({
   resultId,
   initialFeedback,
+  scriptChanged,
 }: {
   resultId: string;
   initialFeedback?: string | null;
+  scriptChanged?: boolean;
 }) {
   const [feedback, setFeedback] = useState<string | null>(initialFeedback ?? null);
   const [loading, setLoading] = useState(false);
@@ -45,9 +47,14 @@ export default function AiFeedbackPanel({
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-violet-500" />
           <span className="text-sm font-semibold text-violet-800">AI 첨삭</span>
-          {feedback && (
+          {feedback && !scriptChanged && (
             <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-violet-600">
               완료
+            </span>
+          )}
+          {feedback && scriptChanged && (
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600">
+              스크립트 변경됨
             </span>
           )}
         </div>
