@@ -118,7 +118,7 @@ export default async function Reading2026TestPage({ searchParams }: PageProps) {
   } as unknown) as RReadingTest2026;
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="-m-4 md:-m-6 h-[calc(100%+2rem)] md:h-[calc(100%+3rem)]">
       <ReadingAdaptiveRunner2026 test={demoTest} />
     </div>
   );
