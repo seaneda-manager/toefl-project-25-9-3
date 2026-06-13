@@ -33,6 +33,16 @@ export async function POST(req: Request) {
     let error = null;
 
     if (exists.data) {
+      // Lock 체크
+      const { data: lockRow } = await supabase
+        .from("reading_tests_2026")
+        .select("is_locked")
+        .eq("id", test.meta.id)
+        .single();
+      if ((lockRow as any)?.is_locked) {
+        return NextResponse.json({ ok: false, error: "이 시험은 Lock되어 수정할 수 없습니다." }, { status: 403 });
+      }
+
       // UPDATE
       const { error: updateErr } = await supabase
         .from("reading_tests_2026")
