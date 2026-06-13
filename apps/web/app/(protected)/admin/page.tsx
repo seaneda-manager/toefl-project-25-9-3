@@ -93,8 +93,24 @@ export default function AdminPage() {
           ]}
           color="border-indigo-100"
         />
-        <SoonCard title="Speaking" description="Listening & Repeat, Interview 형 Speaking 과제 관리." />
-        <SoonCard title="Writing" description="Writing 과제 템플릿·채점 기준·샘플 답안 관리." />
+        <DashCard
+          title="Speaking"
+          description="Listening & Repeat, Interview 형 Speaking 과제 관리."
+          links={[
+            { label: '새 시험', href: '/admin/content/updated-speaking/new', primary: true },
+            { label: '목록', href: '/admin/content/updated-speaking' },
+          ]}
+          color="border-orange-100"
+        />
+        <DashCard
+          title="Writing"
+          description="Writing 과제 템플릿·채점 기준·샘플 답안 관리."
+          links={[
+            { label: '새 시험', href: '/admin/content/updated-writing/new', primary: true },
+            { label: '목록', href: '/admin/content/updated-writing' },
+          ]}
+          color="border-teal-100"
+        />
       </div>
 
       {/* 내신 */}
