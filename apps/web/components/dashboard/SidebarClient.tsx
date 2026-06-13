@@ -309,8 +309,8 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: TOEFL / GAP ─────────────────────────────────
     if (program === 'toefl' || program === 'gap') {
       return [
-        { section: '학습', href: '/reading-2026/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
-        { section: '학습', href: '/listening-2026/study', label: 'Listening', skill: 'listening' as SkillColor },
+        { section: '학습', href: '/reading-2026',   label: 'Reading',   skill: 'reading'   as SkillColor },
+        { section: '학습', href: '/listening-2026', label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/speaking-2026/study',  label: 'Speaking',  skill: 'speaking'  as SkillColor },
         { section: '학습', href: '/writing-2026/study',   label: 'Writing',   skill: 'writing'   as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram' },
