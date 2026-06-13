@@ -235,7 +235,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-reading',    label: 'Reading' },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-listening', label: 'Listening' },
-        { section: 'Updated TOEFL' as NavSection, label: 'Speaking',                              disabled: true },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-speaking', label: 'Speaking' },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-writing', label: 'Writing' },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',    label: 'Grammar' },
 
