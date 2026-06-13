@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { ArrowLeft, Mic, Star } from "lucide-react";
+import AiFeedbackPanel from "./AiFeedbackPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function SpeakingReviewDetailPage({ params }: PageProps) {
 
   const { data: result, error } = await supabase
     .from("speaking_results_2026")
-    .select("*")
+    .select("id,test_id,task_id,mode,prompt,script,content_score,fluency_score,language_score,pronunciation_score,approx_words,approx_sentences,created_at,meta")
     .eq("id", resultId)
     .maybeSingle();
 
@@ -106,6 +107,14 @@ export default async function SpeakingReviewDetailPage({ params }: PageProps) {
           {result.script || <span className="text-gray-400">스크립트 없음</span>}
         </p>
       </section>
+
+      {/* AI 첨삭 */}
+      {result.script && (
+        <AiFeedbackPanel
+          resultId={result.id}
+          initialFeedback={(result.meta as { ai_feedback?: string } | null)?.ai_feedback ?? null}
+        />
+      )}
     </main>
   );
 }
