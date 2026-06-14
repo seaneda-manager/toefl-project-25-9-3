@@ -39,6 +39,13 @@ const AUTH_ROUTES = [
   "/auth/update-password/callback",
 ];
 
+const ONBOARDING_BYPASS = [
+  "/onboarding",
+  "/api/onboarding",
+  "/auth",
+  "/api/",
+];
+
 const PUBLIC_FILE = /\.(.*)$/;
 const DEV_ALLOW = process.env.NEXT_PUBLIC_LEGACY_ALLOW === "1";
 
@@ -149,6 +156,24 @@ export async function middleware(req: NextRequest) {
     const safeTarget = normalizePath(nextRaw ?? "/home");
     const redirectRes = NextResponse.redirect(new URL(safeTarget, req.url), 307);
     return applySupabaseCookies(baseRes, redirectRes);
+  }
+
+  // authed + protected + no tribe → redirect to /onboarding
+  if (isAuthed && isProtected(pathname)) {
+    const bypass = ONBOARDING_BYPASS.some((p) => pathname.startsWith(p));
+    if (!bypass) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tribe")
+        .eq("id", session!.user.id)
+        .maybeSingle();
+
+      if (profile && !profile.tribe) {
+        const onboardUrl = new URL("/onboarding", req.url);
+        const redirectRes = NextResponse.redirect(onboardUrl, 307);
+        return applySupabaseCookies(baseRes, redirectRes);
+      }
+    }
   }
 
   // normal pass-through, with possibly refreshed cookies
