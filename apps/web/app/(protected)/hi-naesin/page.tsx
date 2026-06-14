@@ -516,7 +516,7 @@ export default async function HiNaesinDashboard() {
                           ].join(' ')}
                         >
                           <td className="px-4 py-3">
-                            <p className="text-sm font-medium text-neutral-800 truncate max-w-[180px]">
+                            <p className="text-sm font-medium text-neutral-800 line-clamp-2 min-w-[140px] max-w-[260px]">
                               {p.title}
                             </p>
                             {p.grade && (

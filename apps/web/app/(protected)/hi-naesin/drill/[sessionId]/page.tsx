@@ -111,6 +111,7 @@ export default async function HiNaesinDrillPage({
       initialResponses={allResponses}
       initialType={currentType}
       initialStep={initialStep}
+      enabledDrillTypes={enabledDrillTypes}
     />
   );
 }

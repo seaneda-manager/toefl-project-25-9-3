@@ -61,6 +61,7 @@ export default function DrillClient({
   initialResponses,
   initialType,
   initialStep,
+  enabledDrillTypes,
 }: {
   sessionId: string;
   passageTitle: string;
@@ -68,6 +69,7 @@ export default function DrillClient({
   initialResponses: ResponseRow[];
   initialType: string;
   initialStep: number;
+  enabledDrillTypes: string[] | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -91,8 +93,11 @@ export default function DrillClient({
   }, [allDrills]);
 
   const availableTypes = useMemo(
-    () => (TYPE_ORDER as readonly string[]).filter((t) => (drillsByType[t]?.length ?? 0) > 0),
-    [drillsByType],
+    () => (TYPE_ORDER as readonly string[]).filter(
+      (t) => (drillsByType[t]?.length ?? 0) > 0
+        && (enabledDrillTypes === null || enabledDrillTypes.includes(t)),
+    ),
+    [drillsByType, enabledDrillTypes],
   );
 
   // ── 탐색 상태 ─────────────────────────────────────────
