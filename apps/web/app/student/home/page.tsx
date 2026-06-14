@@ -3,6 +3,8 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { getDrillRoute } from "@/lib/student-activities/routes";
 import { markPrescriptionInProgress } from "@/lib/student-activities/prescription-actions";
 import Link from "next/link";
+import { PaxHomeWidget } from "@/components/avatar/PaxHomeWidget";
+import type { Tribe } from "@/components/avatar/PaxAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -133,6 +135,17 @@ export default async function StudentPage() {
 
   const studentKeys = await resolveStudentKeys(supabase, user.id);
 
+  // 프로필 + 게임화 상태
+  const [{ data: profile }, { data: gamification }] = await Promise.all([
+    supabase.from("profiles").select("full_name, tribe").eq("id", user.id).maybeSingle(),
+    supabase.from("student_gamification").select("level, streak_days").eq("student_id", user.id).maybeSingle(),
+  ]);
+
+  const tribe = (profile?.tribe ?? null) as Tribe | null;
+  const level = gamification?.level ?? 1;
+  const streak = gamification?.streak_days ?? 0;
+  const displayName = (profile?.full_name as string | null) ?? null;
+
   const [
     { data: activities, error: activitiesError },
     { data: prescriptions, error: prescriptionsError },
@@ -184,15 +197,7 @@ export default async function StudentPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
-      <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-violet-700">Student</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-          학생 홈 (Timeline)
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          활동 타임라인과 자동 추천 학습을 한 화면에서 보여줍니다.
-        </p>
-      </header>
+      <PaxHomeWidget tribe={tribe} level={level} streak={streak} name={displayName} />
 
 
       <section className="grid gap-4 md:grid-cols-2">
