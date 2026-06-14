@@ -296,6 +296,8 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: LEXiOX ───────────────────────────────────────
     if (program === 'lexiox') {
       return [
+        { section: '내 현황', href: '/student/home', label: '홈', icon: Home },
+
         { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴' },
         { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황' },
         { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리' },
@@ -319,6 +321,8 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Student: TOEFL / GAP ─────────────────────────────────
     if (program === 'toefl' || program === 'gap') {
       return [
+        { section: '내 현황', href: '/student/home', label: '홈', icon: Home },
+
         { section: '학습', href: '/updated-reading',        label: 'Reading',   skill: 'reading'   as SkillColor },
         { section: '학습', href: '/updated-listening',      label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/speaking-2026/study',    label: 'Speaking',  skill: 'speaking'  as SkillColor },
@@ -339,6 +343,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
     // ── Student: 미지정 (기존 계정 / 하위호환) ──────────────
     return [
+      { section: '내 학습', href: '/student/home', label: '홈', icon: Home },
       { section: '내 학습', href: '/student',           label: '대시보드' },
       { section: '내 학습', href: '/hi-naesin',         label: '내신 드릴' },
       { section: '내 학습', href: '/hi-naesin/stats',   label: '학습 현황' },
