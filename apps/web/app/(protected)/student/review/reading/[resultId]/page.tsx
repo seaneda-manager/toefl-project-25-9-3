@@ -6,11 +6,12 @@ import type {
   RReadingModule,
   RReadingItem,
   RAcademicPassageItem,
+  RCompleteWordsItem,
   RQuestion,
   RChoice,
 } from "@/models/reading";
 import { ArrowLeft, FileQuestion } from "lucide-react";
-import ReadingReviewV2, { type FlatQuestion } from "./ReadingReviewV2";
+import ReadingReviewV2, { type FlatQuestion, type CwReviewItem } from "./ReadingReviewV2";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,26 @@ type AnswerPayload = {
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function buildCwItems(test: RReadingTest2026): CwReviewItem[] {
+  const result: CwReviewItem[] = [];
+  for (const mod of test.modules ?? []) {
+    for (const item of mod.items) {
+      if (item.taskKind !== "complete_words") continue;
+      const cw = item as RCompleteWordsItem;
+      result.push({
+        id: cw.id,
+        paragraphHtml: cw.paragraphHtml,
+        blanks: cw.blanks.map((b) => ({
+          id: b.id,
+          order: b.order,
+          correctToken: b.correctToken,
+        })),
+      });
+    }
+  }
+  return result;
 }
 
 function buildFlatQuestions(test: RReadingTest2026): FlatQuestion[] {
@@ -91,6 +112,7 @@ export default async function StudentReadingReviewDetailPage({ params }: PagePro
 
   const test = testRow.payload as RReadingTest2026;
   const flatQuestions = buildFlatQuestions(test);
+  const cwItems = buildCwItems(test);
 
   const answers: AnswerPayload[] = Array.isArray(resultRow.answers)
     ? (resultRow.answers as AnswerPayload[])
@@ -145,6 +167,7 @@ export default async function StudentReadingReviewDetailPage({ params }: PagePro
       <ReadingReviewV2
         flatQuestions={flatQuestions}
         answerMap={answerMap}
+        cwItems={cwItems}
       />
     </main>
   );

@@ -7,6 +7,7 @@ import type {
   RReadingTest2026,
   RReadingModule,
   RAcademicPassageItem,
+  RCompleteWordsItem,
   RQuestion,
   RChoice,
 } from "@/models/reading";
@@ -39,6 +40,7 @@ export type AdaptiveConfig = {
 
 type Phase =
   | "direction"
+  | "complete_words" // Complete the Words tasks before stage1
   | "stage1_testing"
   | "stage_break"   // neutral break between stages; student doesn't see difficulty
   | "stage2_testing"
@@ -233,13 +235,25 @@ export default function MockTestPlayer({
 }: Props) {
   const isAdaptive = !!adaptiveConfig;
 
+  // Complete the Words items — collected from both modules
+  const cwItems = useMemo<RCompleteWordsItem[]>(() => {
+    const result: RCompleteWordsItem[] = [];
+    for (const mod of test.modules) {
+      for (const item of mod.items) {
+        if (item.taskKind === "complete_words") result.push(item as RCompleteWordsItem);
+      }
+    }
+    return result;
+  }, [test.modules]);
+
   // Stage 1 questions — always from test.modules[0]
   const stage1Questions = useMemo(
     () => flattenModule(test.modules[0], 1, 0, 0),
     [test.modules]
   );
 
-  const [phase, setPhase] = useState<Phase>("direction");
+  const [phase, setPhase] = useState<Phase>(cwItems.length > 0 ? "direction" : "direction");
+  const [cwIdx, setCwIdx] = useState(0); // which complete_words item we're on
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
@@ -360,14 +374,22 @@ export default function MockTestPlayer({
     setPhase("result");
 
     setSubmitting(true);
+    // Complete Words answers: keys starting with "cw__"
+    const cwAnswers = Object.entries(answers)
+      .filter(([k]) => k.startsWith("cw__"))
+      .map(([questionId, chosenChoiceId]) => ({ questionId, chosenChoiceId: chosenChoiceId as string }));
+
     const payload = {
       testId,
       isAdaptive,
       stage2Difficulty: stage2Difficulty ?? undefined,
-      answers: finalQs.map((q) => ({
-        questionId: q.id,
-        chosenChoiceId: answers[q.id] ?? null,
-      })),
+      answers: [
+        ...cwAnswers,
+        ...finalQs.map((q) => ({
+          questionId: q.id,
+          chosenChoiceId: answers[q.id] ?? null,
+        })),
+      ],
       finishedAt: new Date().toISOString(),
     };
 
@@ -487,12 +509,136 @@ export default function MockTestPlayer({
           <button
             onClick={() => {
               setCurrentIdx(0);
-              setPhase("stage1_testing");
+              if (cwItems.length > 0) {
+                setCwIdx(0);
+                setPhase("complete_words");
+              } else {
+                setPhase("stage1_testing");
+              }
             }}
             className="w-full rounded-lg bg-black py-2.5 text-sm font-semibold text-white hover:bg-gray-800"
           >
             시험 시작
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Complete the Words Screen ──────────────────────────────────────
+
+  if (phase === "complete_words") {
+    const cwItem = cwItems[cwIdx];
+    if (!cwItem) {
+      setPhase("stage1_testing");
+      return null;
+    }
+
+    function cwKey(blankId: string) {
+      return `cw__${cwItem.id}__${blankId}`;
+    }
+
+    function setCwAnswer(blankId: string, val: string) {
+      setAnswers((prev) => ({ ...prev, [cwKey(blankId)]: val }));
+    }
+
+    const allFilled = cwItem.blanks.every((b) => !!(answers[cwKey(b.id)] ?? "").trim());
+
+    function goNextCw() {
+      if (cwIdx < cwItems.length - 1) {
+        setCwIdx((i) => i + 1);
+      } else {
+        setPhase("stage1_testing");
+      }
+    }
+
+    // Render paragraph with blanks replaced by inputs
+    function renderParagraph() {
+      // Replace [__] markers in order with input fields
+      let html = cwItem.paragraphHtml;
+      let blankIdx = 0;
+
+      // Split on [__] placeholder
+      const parts = html.split(/\[__\]/);
+      return (
+        <p className="text-sm leading-loose text-gray-900">
+          {parts.map((part, i) => {
+            const blank = cwItem.blanks[blankIdx];
+            blankIdx++;
+            return (
+              <span key={i}>
+                <span dangerouslySetInnerHTML={{ __html: part }} />
+                {i < parts.length - 1 && blank && (
+                  <input
+                    type="text"
+                    value={(answers[cwKey(blank.id)] ?? "") as string}
+                    onChange={(e) => setCwAnswer(blank.id, e.target.value)}
+                    placeholder="___"
+                    className="mx-1 inline-block w-20 rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-center text-sm font-semibold text-emerald-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
+                  />
+                )}
+              </span>
+            );
+          })}
+        </p>
+      );
+    }
+
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f5f7f8] px-4 py-12">
+        <div className="w-full max-w-2xl">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Complete the Words {cwIdx + 1} / {cwItems.length}
+              </span>
+            </div>
+            <span className="text-xs text-gray-400">Reading 시작 전</span>
+          </div>
+
+          <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 mb-1">Complete the Words</h2>
+              <p className="text-xs text-gray-500">빈칸에 알맞은 단어를 입력하세요.</p>
+            </div>
+
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50/30 p-4">
+              {renderParagraph()}
+            </div>
+
+            {/* Blank hint list */}
+            <div className="space-y-2">
+              {cwItem.blanks.map((b, i) => (
+                <div key={b.id} className="flex items-center gap-3 text-sm">
+                  <span className="w-5 shrink-0 text-center text-xs font-bold text-emerald-600">
+                    {i + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={(answers[cwKey(b.id)] ?? "") as string}
+                    onChange={(e) => setCwAnswer(b.id, e.target.value)}
+                    placeholder={`빈칸 ${i + 1}`}
+                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => cwIdx > 0 ? setCwIdx((i) => i - 1) : setPhase("direction")}
+                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                ← 이전
+              </button>
+              <button
+                onClick={goNextCw}
+                className="rounded-lg bg-black px-6 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+              >
+                {cwIdx < cwItems.length - 1 ? "다음 →" : "Reading 시작 →"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

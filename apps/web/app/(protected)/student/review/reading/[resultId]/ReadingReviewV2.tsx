@@ -33,6 +33,12 @@ function QTypeBadge({ type }: { type: string }) {
 
 // ── Types ────────────────────────────────────────────────────────────
 
+export type CwReviewItem = {
+  id: string;
+  paragraphHtml: string;
+  blanks: { id: string; order: number; correctToken: string }[];
+};
+
 export type FlatQuestion = {
   id: string;
   number: number;
@@ -52,16 +58,22 @@ type AnswerMap = Map<string, string | null>; // questionId → chosenChoiceId
 export default function ReadingReviewV2({
   flatQuestions,
   answerMap,
+  cwItems = [],
 }: {
   flatQuestions: FlatQuestion[];
   answerMap: Record<string, string | null>;
+  cwItems?: CwReviewItem[];
 }) {
-  // Group questions by passageHtml
   const groups = groupByPassage(flatQuestions);
   const aMap = new Map(Object.entries(answerMap));
 
   return (
     <div className="space-y-8">
+      {/* Complete the Words 섹션 */}
+      {cwItems.length > 0 && (
+        <CompleteWordsReview cwItems={cwItems} answerMap={aMap} />
+      )}
+      {/* Academic Passage 섹션 */}
       {groups.map((group, gi) => (
         <PassageGroup key={gi} group={group} answerMap={aMap} />
       ))}
@@ -315,6 +327,93 @@ function QuestionCard({ q, chosenId }: { q: FlatQuestion; chosenId: string | nul
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
+
+// ── Complete the Words Review ─────────────────────────────────────────
+
+function CompleteWordsReview({
+  cwItems,
+  answerMap,
+}: {
+  cwItems: CwReviewItem[];
+  answerMap: Map<string, string | null>;
+}) {
+  const totalBlanks = cwItems.reduce((s, it) => s + it.blanks.length, 0);
+  const correctBlanks = cwItems.reduce((s, it) =>
+    s + it.blanks.filter((b) => {
+      const key = `cw__${it.id}__${b.id}`;
+      const typed = (answerMap.get(key) ?? "").trim().toLowerCase();
+      return typed === b.correctToken.toLowerCase();
+    }).length, 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
+        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs">Complete the Words</span>
+        <span className="text-xs font-normal text-gray-500">{correctBlanks}/{totalBlanks} 정답</span>
+      </div>
+
+      {cwItems.map((item) => (
+        <CwItemCard key={item.id} item={item} answerMap={answerMap} />
+      ))}
+    </div>
+  );
+}
+
+function CwItemCard({
+  item,
+  answerMap,
+}: {
+  item: CwReviewItem;
+  answerMap: Map<string, string | null>;
+}) {
+  function renderParagraph() {
+    const parts = item.paragraphHtml.split(/\[__\]/);
+    return (
+      <p className="text-sm leading-loose text-gray-900">
+        {parts.map((part, i) => {
+          const blank = item.blanks[i];
+          if (!blank) return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+          const key = `cw__${item.id}__${blank.id}`;
+          const typed = (answerMap.get(key) ?? "").trim();
+          const isCorrect = typed.toLowerCase() === blank.correctToken.toLowerCase();
+          const isEmpty = !typed;
+
+          return (
+            <span key={i}>
+              <span dangerouslySetInnerHTML={{ __html: part }} />
+              <span className="mx-1 inline-flex flex-col items-center align-middle">
+                <span className={[
+                  "inline-block rounded px-2 py-0.5 text-xs font-bold",
+                  isCorrect
+                    ? "bg-green-100 text-green-800"
+                    : isEmpty
+                    ? "bg-gray-100 text-gray-400"
+                    : "bg-red-100 text-red-800",
+                ].join(" ")}>
+                  {isEmpty ? "___" : typed}
+                </span>
+                {!isCorrect && !isEmpty && (
+                  <span className="text-[10px] text-green-700">→ {blank.correctToken}</span>
+                )}
+                {isEmpty && (
+                  <span className="text-[10px] text-green-700">→ {blank.correctToken}</span>
+                )}
+              </span>
+            </span>
+          );
+        })}
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+        {renderParagraph()}
+      </div>
+    </div>
+  );
+}
 
 function groupByPassage(questions: FlatQuestion[]) {
   const seen = new Map<string, { passageHtml: string; passageText: string; questions: FlatQuestion[] }>();
