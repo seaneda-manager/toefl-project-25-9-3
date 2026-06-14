@@ -23,7 +23,22 @@ export async function startHiNaesinDrillSessionAction(
     .eq('status', 'started')
     .maybeSingle();
 
+  // 배정 ID 조회
+  const { data: assignment } = await supabase
+    .from('hi_naesin_assignments')
+    .select('id')
+    .eq('student_id', user.id)
+    .eq('passage_id', passageId)
+    .maybeSingle();
+
+  // 진행 중인 세션 재사용 (assignment_id도 업데이트)
   if (existing?.id) {
+    if (assignment?.id) {
+      await supabase
+        .from('hi_naesin_sessions')
+        .update({ assignment_id: assignment.id })
+        .eq('id', existing.id);
+    }
     redirect(`/hi-naesin/drill/${existing.id}?step=0`);
   }
 
@@ -31,10 +46,11 @@ export async function startHiNaesinDrillSessionAction(
   const { data, error } = await supabase
     .from('hi_naesin_sessions')
     .insert({
-      student_id:   user.id,
-      passage_id:   passageId,
-      session_type: 'drill',
-      status:       'started',
+      student_id:    user.id,
+      passage_id:    passageId,
+      session_type:  'drill',
+      status:        'started',
+      assignment_id: assignment?.id ?? null,
     })
     .select('id')
     .single();
