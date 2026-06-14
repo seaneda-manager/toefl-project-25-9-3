@@ -367,12 +367,14 @@ function CwItemCard({
   answerMap: Map<string, string | null>;
 }) {
   function renderParagraph() {
-    const parts = item.paragraphHtml.split(/\[__\]/);
+    // Strip HTML tags, split on __ markers
+    const plain = item.paragraphHtml.replace(/<[^>]+>/g, "");
+    const parts = plain.split("__");
     return (
-      <p className="text-sm leading-loose text-gray-900">
+      <p className="text-sm leading-loose text-gray-900 whitespace-pre-wrap">
         {parts.map((part, i) => {
           const blank = item.blanks[i];
-          if (!blank) return <span key={i} dangerouslySetInnerHTML={{ __html: part }} />;
+          if (!blank) return <span key={i}>{part}</span>;
           const key = `cw__${item.id}__${blank.id}`;
           const typed = (answerMap.get(key) ?? "").trim();
           const isCorrect = typed.toLowerCase() === blank.correctToken.toLowerCase();
@@ -380,10 +382,10 @@ function CwItemCard({
 
           return (
             <span key={i}>
-              <span dangerouslySetInnerHTML={{ __html: part }} />
-              <span className="mx-1 inline-flex flex-col items-center align-middle">
+              {part}
+              <span className="mx-0.5 inline-flex flex-col items-center align-middle">
                 <span className={[
-                  "inline-block rounded px-2 py-0.5 text-xs font-bold",
+                  "inline-block rounded px-1.5 py-0 text-xs font-bold leading-5",
                   isCorrect
                     ? "bg-green-100 text-green-800"
                     : isEmpty
@@ -392,11 +394,8 @@ function CwItemCard({
                 ].join(" ")}>
                   {isEmpty ? "___" : typed}
                 </span>
-                {!isCorrect && !isEmpty && (
-                  <span className="text-[10px] text-green-700">→ {blank.correctToken}</span>
-                )}
-                {isEmpty && (
-                  <span className="text-[10px] text-green-700">→ {blank.correctToken}</span>
+                {(!isCorrect || isEmpty) && (
+                  <span className="text-[10px] leading-tight text-green-700">→ {blank.correctToken}</span>
                 )}
               </span>
             </span>

@@ -552,29 +552,28 @@ export default function MockTestPlayer({
       }
     }
 
-    // Render paragraph with blanks replaced by inputs
+    // Render paragraph: strip HTML tags, split on __ occurrences, interleave inputs
+    // e.g. "challeng__g" → "challeng" + <input> + "g"
     function renderParagraph() {
-      // Replace [__] markers in order with input fields
-      let html = cwItem.paragraphHtml;
-      let blankIdx = 0;
-
-      // Split on [__] placeholder
-      const parts = html.split(/\[__\]/);
+      // Strip tags to get plain text, preserving __ markers
+      const plain = cwItem.paragraphHtml.replace(/<[^>]+>/g, "");
+      // Split on __ (each occurrence = one blank in order)
+      const parts = plain.split("__");
       return (
-        <p className="text-sm leading-loose text-gray-900">
+        <p className="text-sm leading-loose text-gray-900 whitespace-pre-wrap">
           {parts.map((part, i) => {
-            const blank = cwItem.blanks[blankIdx];
-            blankIdx++;
+            const blank = cwItem.blanks[i]; // blanks[i] corresponds to the i-th __
             return (
               <span key={i}>
-                <span dangerouslySetInnerHTML={{ __html: part }} />
-                {i < parts.length - 1 && blank && (
+                {part}
+                {blank && (
                   <input
                     type="text"
+                    maxLength={6}
                     value={(answers[cwKey(blank.id)] ?? "") as string}
                     onChange={(e) => setCwAnswer(blank.id, e.target.value)}
-                    placeholder="___"
-                    className="mx-1 inline-block w-20 rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-center text-sm font-semibold text-emerald-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
+                    placeholder="__"
+                    className="mx-0.5 inline-block w-12 rounded border border-emerald-300 bg-emerald-50 px-1 py-0 text-center text-sm font-bold text-emerald-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
                   />
                 )}
               </span>
