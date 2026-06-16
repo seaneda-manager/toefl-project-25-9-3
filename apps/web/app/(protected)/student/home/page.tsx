@@ -187,14 +187,6 @@ export default async function StudentPage() {
   const todos = activityRows.filter((a) => a.status === "todo");
   const recent = activityRows.slice(0, 5);
 
-  const debugInfo = {
-    authUserId: user.id,
-    studentKeys,
-    activityCount: activityRows.length,
-    prescriptionCount: prescriptionRows.length,
-    prescriptionStudentIds: prescriptionRows.map((p) => p.student_id),
-  };
-
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <PaxHomeWidget tribe={tribe} level={level} streak={streak} name={displayName} />
@@ -244,13 +236,6 @@ export default async function StudentPage() {
             </span>
           </div>
         </Link>
-      </section>
-
-      <section className="rounded-3xl border border-red-300 bg-red-50 p-4 shadow-sm">
-        <div className="mb-2 text-sm font-bold text-red-700">DEBUG</div>
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all text-xs text-red-900">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">

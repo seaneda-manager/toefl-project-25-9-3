@@ -35,8 +35,7 @@ const AUTH_ROUTES = [
   "/auth/login",
   "/auth/signup",
   "/auth/callback",
-  "/auth/update-password",
-  "/auth/update-password/callback",
+  // /auth/update-password is intentionally excluded — must be accessible while logged in
 ];
 
 const ONBOARDING_BYPASS = [

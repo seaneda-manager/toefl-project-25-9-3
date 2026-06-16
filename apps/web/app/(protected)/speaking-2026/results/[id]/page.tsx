@@ -121,9 +121,15 @@ export default async function Speaking2026ResultDetailPage({ params }: Props) {
         </section>
       )}
 
-      <footer className="pt-2">
+      <footer className="flex items-center justify-between pt-2">
         <Link href="/speaking-2026/results" className="text-xs text-emerald-700 hover:underline">
           ← 결과 목록으로 돌아가기
+        </Link>
+        <Link
+          href={`/speaking-2026/results/${id}/feedback`}
+          className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+        >
+          채점 결과 보기 →
         </Link>
       </footer>
     </main>

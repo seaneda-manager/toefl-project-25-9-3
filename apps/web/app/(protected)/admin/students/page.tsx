@@ -203,6 +203,7 @@ async function createAcademyStudentAction(formData: FormData) {
 
   let authUserId: string | null = null;
   let profileId: string | null = null;
+  let actionError: string | null = null;
 
   try {
     if (wantsAuthAccount) {
@@ -220,24 +221,12 @@ async function createAcademyStudentAction(formData: FormData) {
           },
         });
 
-      if (authError) {
-        redirect(
-          buildStudentsRedirect({
-            error: sanitizeRedirectMessage(authError.message || "Auth user create failed."),
-          })
-        );
-      }
+      if (authError) throw new Error(authError.message || "Auth user create failed.");
 
       authUserId = createdAuth.user?.id ?? null;
       profileId = authUserId;
 
-      if (!authUserId) {
-        redirect(
-          buildStudentsRedirect({
-            error: sanitizeRedirectMessage("Auth user id was not returned."),
-          })
-        );
-      }
+      if (!authUserId) throw new Error("Auth user id was not returned.");
 
       const { error: profileError } = await admin
         .from("profiles")
@@ -253,11 +242,7 @@ async function createAcademyStudentAction(formData: FormData) {
 
       if (profileError) {
         await admin.auth.admin.deleteUser(authUserId).catch(() => {});
-        redirect(
-          buildStudentsRedirect({
-            error: sanitizeRedirectMessage(profileError.message || "profiles upsert failed."),
-          })
-        );
+        throw new Error(profileError.message || "profiles upsert failed.");
       }
     }
 
@@ -294,23 +279,14 @@ async function createAcademyStudentAction(formData: FormData) {
         const admin = getServiceSupabase();
         await admin.auth.admin.deleteUser(authUserId).catch(() => {});
       }
-
-      redirect(
-        buildStudentsRedirect({
-          error: sanitizeRedirectMessage(
-            academyError.message || "academy_students insert failed."
-          ),
-        })
-      );
+      throw new Error(academyError.message || "academy_students insert failed.");
     }
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error during student create.";
-    redirect(
-      buildStudentsRedirect({
-        error: sanitizeRedirectMessage(message),
-      })
-    );
+    actionError = error instanceof Error ? error.message : "Unknown error during student create.";
+  }
+
+  if (actionError) {
+    redirect(buildStudentsRedirect({ error: sanitizeRedirectMessage(actionError) }));
   }
 
   revalidatePath("/admin/students");
@@ -387,6 +363,8 @@ async function updateAcademyStudentAction(formData: FormData) {
   const authUserId = asString((existing as Record<string, unknown>).auth_user_id);
   const profileId = asString((existing as Record<string, unknown>).profile_id) || authUserId;
 
+  let updateError: string | null = null;
+
   try {
     if (authUserId) {
       const admin = getServiceSupabase();
@@ -409,14 +387,7 @@ async function updateAcademyStudentAction(formData: FormData) {
         authUpdatePayload
       );
 
-      if (authError) {
-        redirect(
-          buildStudentsRedirect({
-            edit: studentId,
-            error: sanitizeRedirectMessage(authError.message || "Auth update failed."),
-          })
-        );
-      }
+      if (authError) throw new Error(authError.message || "Auth update failed.");
 
       if (profileId) {
         const { error: profileError } = await admin
@@ -431,14 +402,7 @@ async function updateAcademyStudentAction(formData: FormData) {
             { onConflict: "id" }
           );
 
-        if (profileError) {
-          redirect(
-            buildStudentsRedirect({
-              edit: studentId,
-              error: sanitizeRedirectMessage(profileError.message || "profiles upsert failed."),
-            })
-          );
-        }
+        if (profileError) throw new Error(profileError.message || "profiles upsert failed.");
       }
     }
 
@@ -456,28 +420,18 @@ async function updateAcademyStudentAction(formData: FormData) {
       notes,
     };
 
-    const { error: updateError } = await supabase
+    const { error: dbError } = await supabase
       .from("academy_students")
       .update(updatePayload as never)
       .eq("id", studentId);
 
-    if (updateError) {
-      redirect(
-        buildStudentsRedirect({
-          edit: studentId,
-          error: sanitizeRedirectMessage(updateError.message || "Student update failed."),
-        })
-      );
-    }
+    if (dbError) throw new Error(dbError.message || "Student update failed.");
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error during student update.";
-    redirect(
-      buildStudentsRedirect({
-        edit: studentId,
-        error: sanitizeRedirectMessage(message),
-      })
-    );
+    updateError = error instanceof Error ? error.message : "Unknown error during student update.";
+  }
+
+  if (updateError) {
+    redirect(buildStudentsRedirect({ edit: studentId, error: sanitizeRedirectMessage(updateError) }));
   }
 
   revalidatePath("/admin/students");
@@ -543,46 +497,29 @@ async function resetAcademyStudentPasswordAction(formData: FormData) {
     );
   }
 
+  let resetError: string | null = null;
+
   try {
     const admin = getServiceSupabase();
 
-    const { error: resetError } = await admin.auth.admin.updateUserById(authUserId, {
+    const { error: pwError } = await admin.auth.admin.updateUserById(authUserId, {
       password: tempPassword,
     });
 
-    if (resetError) {
-      redirect(
-        buildStudentsRedirect({
-          edit: studentId,
-          error: sanitizeRedirectMessage(resetError.message || "Password reset failed."),
-        })
-      );
-    }
+    if (pwError) throw new Error(pwError.message || "Password reset failed.");
 
-    const { error: updateError } = await supabase
+    const { error: flagError } = await supabase
       .from("academy_students")
       .update({ must_change_password: true } as never)
       .eq("id", studentId);
 
-    if (updateError) {
-      redirect(
-        buildStudentsRedirect({
-          edit: studentId,
-          error: sanitizeRedirectMessage(
-            updateError.message || "Failed to mark must_change_password."
-          ),
-        })
-      );
-    }
+    if (flagError) throw new Error(flagError.message || "Failed to mark must_change_password.");
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error during password reset.";
-    redirect(
-      buildStudentsRedirect({
-        edit: studentId,
-        error: sanitizeRedirectMessage(message),
-      })
-    );
+    resetError = error instanceof Error ? error.message : "Unknown error during password reset.";
+  }
+
+  if (resetError) {
+    redirect(buildStudentsRedirect({ edit: studentId, error: sanitizeRedirectMessage(resetError) }));
   }
 
   revalidatePath("/admin/students");
@@ -664,17 +601,27 @@ export default async function AdminStudentsPage({
   const errorMessage = pickSearchParam(params, "error");
   const editId = pickSearchParam(params, "edit");
 
+  const PAGE_SIZE = 30;
+  const pageParam = pickSearchParam(params, "page");
+  const page = Math.max(0, parseInt(pageParam ?? "0", 10) || 0);
+  const from = page * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   const { supabase } = await requireAdmin();
 
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from("academy_students")
     .select(
-      "id, full_name, display_name, email, login_id, school, grade, level, phone, parent_phone, memo, notes, is_active, deactivated_at, deactivated_reason, must_change_password, auth_user_id, profile_id, created_at, updated_at"
+      "id, full_name, display_name, email, login_id, school, grade, level, phone, parent_phone, memo, notes, is_active, deactivated_at, deactivated_reason, must_change_password, auth_user_id, profile_id, created_at, updated_at",
+      { count: "exact" }
     )
     .order("updated_at", { ascending: false })
-    .limit(300);
+    .range(from, to);
 
   const rows = (data ?? []) as Record<string, unknown>[];
+  const totalCount = count ?? 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
   const editingRow =
     rows.find((row) => asString(row.id) === editId) ?? null;
 
@@ -729,7 +676,7 @@ export default async function AdminStudentsPage({
         <div className="rounded-2xl border bg-white p-5">
           <div className="text-xs font-semibold text-neutral-500">전체 학생</div>
           <div className="mt-2 text-3xl font-bold text-neutral-900">
-            {rows.length}
+            {totalCount}
           </div>
         </div>
 
@@ -1113,6 +1060,35 @@ export default async function AdminStudentsPage({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t px-5 py-4">
+            <p className="text-xs text-neutral-500">
+              {from + 1}–{Math.min(to + 1, totalCount)} / {totalCount}명
+            </p>
+            <div className="flex gap-2">
+              {page > 0 ? (
+                <Link
+                  href={`/admin/students?page=${page - 1}${editId ? `&edit=${editId}` : ""}`}
+                  className="rounded-xl border px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                >
+                  ← 이전
+                </Link>
+              ) : null}
+              <span className="flex items-center px-2 text-xs text-neutral-500">
+                {page + 1} / {totalPages}
+              </span>
+              {page + 1 < totalPages ? (
+                <Link
+                  href={`/admin/students?page=${page + 1}${editId ? `&edit=${editId}` : ""}`}
+                  className="rounded-xl border px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                >
+                  다음 →
+                </Link>
+              ) : null}
+            </div>
           </div>
         )}
       </section>
