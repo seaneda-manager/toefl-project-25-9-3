@@ -616,7 +616,8 @@ export default async function AdminStudentsPage({
       { count: "exact" }
     )
     .order("updated_at", { ascending: false })
-    .range(from, to);
+    .range(from, to)
+    .limit(PAGE_SIZE);
 
   const rows = (data ?? []) as Record<string, unknown>[];
   const totalCount = count ?? 0;
