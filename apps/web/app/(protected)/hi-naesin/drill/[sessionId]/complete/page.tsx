@@ -204,6 +204,15 @@ export default async function HiNaesinDrillCompletePage({
 
       {/* 버튼 */}
       <div className="flex flex-col gap-3">
+        {wrong > 0 && (
+          <Link
+            href={`/hi-naesin/drill/${sessionId}/review`}
+            className="rounded-xl border-2 border-red-300 bg-red-50 px-6 py-3 text-sm font-semibold text-red-700 text-center hover:bg-red-100"
+          >
+            오답 해설 보기 ({wrong}개) →
+          </Link>
+        )}
+
         {/* 변형문제가 있으면 링크 표시 */}
         <VariantLink passageId={session.passage_id} />
 
