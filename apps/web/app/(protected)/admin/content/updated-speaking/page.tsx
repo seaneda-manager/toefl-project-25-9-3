@@ -57,6 +57,12 @@ export default async function SpeakingAdminListPage() {
                   {t.is_locked && (
                     <span className="rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">🔒 Locked</span>
                   )}
+                  <Link
+                    href={`/admin/content/updated-speaking/${t.id}/edit`}
+                    className="rounded-lg border px-3 py-1 text-[11px] font-medium text-slate-700 hover:bg-orange-50"
+                  >
+                    에셋 편집
+                  </Link>
                 </div>
               </div>
             ))}
