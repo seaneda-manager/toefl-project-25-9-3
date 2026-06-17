@@ -14,50 +14,57 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'topic required' }, { status: 400 });
     }
 
-    const prompt = `You are an expert Updated TOEFL Speaking content creator. Generate a complete Speaking test JSON.
+    const prompt = `You are an expert Updated TOEFL Speaking content creator. Generate a complete Speaking test JSON with exactly 2 tasks.
 
 Topic area: ${topic}
 
-Return ONLY valid JSON, no markdown. Use this exact structure:
+Task 1 — Listen and Repeat (듣고 따라말하기):
+- Pick a realistic everyday situation related to the topic (e.g. "laundry room", "computer lab", "campus bookstore", "welcome center employee training")
+- Write 6 natural English sentences a person in that situation would say
+- Each sentence: 12-20 words, natural spoken English, not too complex
+- Student repeats each sentence immediately after hearing it (beep → speak → beep)
+- speakingSeconds: 10 per sentence
+
+Task 2 — Interview:
+- Write 5 questions on varied topics (education, lifestyle, technology, society, personal experience, environment, etc.)
+- Questions should be open-ended, inviting the student to share opinions or experiences
+- speakingSeconds: 45 per question
+
+Return ONLY valid JSON, no markdown, no explanation:
 
 {
   "id": "auto",
-  "label": "Updated Speaking – [short topic label]",
+  "label": "Updated Speaking – [short descriptive label]",
   "tasks": [
     {
-      "id": "task-repeat-1",
-      "type": "repeat",
-      "prompt": "A natural English sentence related to ${topic} that a student should repeat aloud (15-20 words).",
-      "preparationSeconds": 5,
-      "speakingSeconds": 15
+      "id": "task-listen-repeat",
+      "type": "listen_repeat",
+      "situation": "[situation name, e.g. Laundry Room]",
+      "situationDescription": "[1-2 sentences describing the scenario]",
+      "sentences": [
+        { "id": "s1", "text": "...", "speakingSeconds": 10 },
+        { "id": "s2", "text": "...", "speakingSeconds": 10 },
+        { "id": "s3", "text": "...", "speakingSeconds": 10 },
+        { "id": "s4", "text": "...", "speakingSeconds": 10 },
+        { "id": "s5", "text": "...", "speakingSeconds": 10 },
+        { "id": "s6", "text": "...", "speakingSeconds": 10 }
+      ]
     },
     {
-      "id": "task-repeat-2",
-      "type": "repeat",
-      "prompt": "Another natural sentence related to ${topic} (15-20 words).",
-      "preparationSeconds": 5,
-      "speakingSeconds": 15
-    },
-    {
-      "id": "task-independent-1",
-      "type": "independent",
-      "question": "Do you agree or disagree with the following statement? [Make a statement about ${topic}]. Use specific reasons and examples to support your answer.",
-      "preparationSeconds": 15,
-      "speakingSeconds": 45
-    },
-    {
-      "id": "task-integrated-1",
-      "type": "integrated",
-      "readingText": "A short academic paragraph (80-100 words) about a concept related to ${topic}. Include a specific term or idea that the lecture will reference.",
-      "listeningText": "Now listen to part of a lecture on the same topic. Professor: [Write a 80-100 word lecture excerpt that challenges or elaborates on the reading passage, introducing a contrasting perspective or additional example]",
-      "question": "The professor discusses [topic concept]. Explain how the professor's points relate to what you read in the passage.",
-      "preparationSeconds": 30,
-      "speakingSeconds": 60
+      "id": "task-interview",
+      "type": "interview",
+      "questions": [
+        { "id": "q1", "text": "...", "topic": "education", "speakingSeconds": 45 },
+        { "id": "q2", "text": "...", "topic": "lifestyle", "speakingSeconds": 45 },
+        { "id": "q3", "text": "...", "topic": "technology", "speakingSeconds": 45 },
+        { "id": "q4", "text": "...", "topic": "society", "speakingSeconds": 45 },
+        { "id": "q5", "text": "...", "topic": "personal experience", "speakingSeconds": 45 }
+      ]
     }
   ]
 }
 
-Make all content specific and realistic for the topic: "${topic}". The repeat tasks should be natural conversational or academic sentences. The independent task should be a genuine opinion question. The integrated task should have a reading passage and lecture that clearly connect.`;
+Make all content specific and realistic for the topic area: "${topic}".`;
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
@@ -70,10 +77,9 @@ Make all content specific and realistic for the topic: "${topic}". The repeat ta
     const jsonEnd = raw.lastIndexOf('}');
     const payload = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
 
-    const id = randomUUID();
-    payload.id = id;
+    payload.id = randomUUID();
 
-    return NextResponse.json({ ok: true, id, payload });
+    return NextResponse.json({ ok: true, id: payload.id, payload });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
