@@ -14,6 +14,29 @@ type Props = {
 };
 
 type UploadState = "idle" | "uploading" | "done" | "error";
+type GenState = "idle" | "generating" | "preview" | "uploading" | "error";
+
+// ── HuggingFace 이미지 생성 helper ─────────────────────────────────
+async function generateImage(prompt: string): Promise<string> {
+  const res = await fetch("/api/admin/generate-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error ?? "Generation failed");
+  return data.imageUrl as string; // base64 data URL
+}
+
+// base64 dataURL → File 객체로 변환
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
+  const binary = atob(base64);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new File([arr], filename, { type: mime });
+}
 
 // ── 파일 업로드 helper ──────────────────────────────────────────────
 async function uploadFile(file: File, folder: string): Promise<string> {
@@ -151,6 +174,48 @@ export default function SpeakingEditClient({ test: initial, isLocked }: Props) {
       return next;
     });
 
+  // ── AI 이미지 생성 ────────────────────────────────────────────
+  const [genState, setGenState] = useState<GenState>("idle");
+  const [genPrompt, setGenPrompt] = useState("");
+  const [genPreviewUrl, setGenPreviewUrl] = useState<string | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const defaultPrompt = listenRepeat
+    ? `Top-down illustrated site map of a ${listenRepeat.situation}. Clearly labeled areas in English. Clean flat illustration style, simple colors, room layout with walls and doors visible. No people.`
+    : "";
+
+  const handleGenerate = async () => {
+    const prompt = genPrompt || defaultPrompt;
+    if (!prompt) return;
+    setGenState("generating");
+    setGenError(null);
+    setGenPreviewUrl(null);
+    try {
+      const url = await generateImage(prompt);
+      setGenPreviewUrl(url);
+      setGenState("preview");
+    } catch (e: any) {
+      setGenError(e.message);
+      setGenState("error");
+    }
+  };
+
+  const handleUseGenerated = async () => {
+    if (!genPreviewUrl) return;
+    setGenState("uploading");
+    try {
+      const file = dataUrlToFile(genPreviewUrl, `sitemap-${Date.now()}.png`);
+      const url = await uploadFile(file, "site-maps");
+      updateListenRepeat((t) => ({ ...t, imageUrl: url }));
+      setGenState("idle");
+      setGenPreviewUrl(null);
+      setSiteMapState("done");
+    } catch (e: any) {
+      setGenError(e.message);
+      setGenState("error");
+    }
+  };
+
   // ── 이미지 업로드 ─────────────────────────────────────────────
   const [siteMapState, setSiteMapState] = useState<UploadState>("idle");
   const [gifState, setGifState] = useState<UploadState>("idle");
@@ -219,9 +284,55 @@ export default function SpeakingEditClient({ test: initial, isLocked }: Props) {
             <h2 className="text-sm font-semibold text-slate-900">듣고 따라말하기 — Site Map</h2>
           </div>
 
-          {/* 이미지 업로드 */}
+          {/* AI 이미지 생성 */}
+          <div className="space-y-3 rounded-lg border border-violet-100 bg-violet-50/50 p-4">
+            <p className="text-xs font-semibold text-violet-700">✨ AI로 Site Map 생성 (HuggingFace)</p>
+            <textarea
+              rows={3}
+              placeholder={defaultPrompt}
+              value={genPrompt}
+              onChange={(e) => setGenPrompt(e.target.value)}
+              className="w-full rounded-lg border bg-white px-3 py-2 text-xs text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-400"
+            />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleGenerate}
+                disabled={genState === "generating" || genState === "uploading"}
+                className="rounded-lg bg-violet-500 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-600 disabled:opacity-50"
+              >
+                {genState === "generating" ? "생성 중… (30초~2분)" : "생성하기"}
+              </button>
+              {genError && <p className="text-xs text-red-500">{genError}</p>}
+            </div>
+
+            {genPreviewUrl && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-slate-600">생성된 이미지 미리보기</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={genPreviewUrl} alt="Generated site map" className="w-full rounded-lg border" />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUseGenerated}
+                    disabled={genState === "uploading"}
+                    className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+                  >
+                    {genState === "uploading" ? "저장 중…" : "이 이미지 사용"}
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={genState === "generating" || genState === "uploading"}
+                    className="rounded-lg border px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    다시 생성
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 이미지 직접 업로드 */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-600">Site Map 이미지 업로드</p>
+            <p className="text-xs font-semibold text-slate-600">또는 직접 업로드</p>
             <div className="flex items-center gap-3">
               <label className={`cursor-pointer rounded-lg border px-4 py-2 text-xs font-medium
                 ${siteMapState === "uploading" ? "opacity-50 pointer-events-none" : "hover:bg-slate-50"}`}>
