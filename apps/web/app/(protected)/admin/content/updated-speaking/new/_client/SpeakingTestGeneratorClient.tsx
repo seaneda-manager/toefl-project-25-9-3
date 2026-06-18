@@ -13,20 +13,21 @@ type Phase = "input" | "generating" | "edit" | "saving" | "locked";
 export default function SpeakingTestGeneratorClient() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("input");
-  const [topic, setTopic] = useState("");
+  const [listenRepeatTopic, setListenRepeatTopic] = useState("");
+  const [interviewTopic, setInterviewTopic] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [test, setTest] = useState<SpeakingTest2026 | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const handleGenerate = useCallback(async () => {
-    if (!topic.trim()) return;
+    if (!listenRepeatTopic.trim() || !interviewTopic.trim()) return;
     setError(null);
     setPhase("generating");
     try {
       const res = await fetch("/api/admin/updated-speaking/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ listenRepeatTopic, interviewTopic }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Generation failed");
@@ -36,7 +37,7 @@ export default function SpeakingTestGeneratorClient() {
       setError(e.message);
       setPhase("input");
     }
-  }, [topic]);
+  }, [listenRepeatTopic, interviewTopic]);
 
   const handleSave = useCallback(async () => {
     if (!test) return;
@@ -116,7 +117,7 @@ export default function SpeakingTestGeneratorClient() {
         <div className="flex justify-center gap-3">
           <button onClick={() => router.push("/admin/content/updated-speaking")}
             className="rounded-lg border px-4 py-2 text-xs hover:bg-gray-50">목록으로</button>
-          <button onClick={() => { setPhase("input"); setTopic(""); setTest(null); setSavedId(null); }}
+          <button onClick={() => { setPhase("input"); setListenRepeatTopic(""); setInterviewTopic(""); setTest(null); setSavedId(null); }}
             className="rounded-lg border border-orange-500 bg-orange-500 px-4 py-2 text-xs text-white hover:bg-orange-600">새 시험 만들기</button>
         </div>
       </div>
@@ -129,28 +130,53 @@ export default function SpeakingTestGeneratorClient() {
   return (
     <div className="space-y-6">
       {/* Topic 입력 */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
+      <section className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
         <h2 className="text-sm font-semibold">토픽 입력</h2>
-        <div className="flex gap-2">
-          <input
-            className="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:bg-gray-50"
-            placeholder="예: Campus life / Environment / Technology / Daily routines"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-            disabled={phase === "generating"}
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={!topic.trim() || phase === "generating"}
-            className="rounded-lg border border-orange-500 bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
-          >
-            {phase === "generating" ? "생성 중…" : test ? "재생성" : "AI 생성"}
-          </button>
+
+        <div className="space-y-3">
+          {/* Task 1 토픽 */}
+          <label className="block space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">Task 1</span>
+              <span className="text-xs font-medium text-slate-700">듣고 따라말하기 — 상황 (Situation)</span>
+            </div>
+            <input
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-gray-50"
+              placeholder="예: laundry room, ski resort, campus bookstore, chemistry lab safety"
+              value={listenRepeatTopic}
+              onChange={(e) => setListenRepeatTopic(e.target.value)}
+              disabled={phase === "generating"}
+            />
+          </label>
+
+          {/* Task 2 토픽 */}
+          <label className="block space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700">Task 2</span>
+              <span className="text-xs font-medium text-slate-700">인터뷰 — 주제 (Topic)</span>
+            </div>
+            <input
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:bg-gray-50"
+              placeholder="예: festivals, technology habits, environmental choices, campus life"
+              value={interviewTopic}
+              onChange={(e) => setInterviewTopic(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+              disabled={phase === "generating"}
+            />
+          </label>
         </div>
+
+        <button
+          onClick={handleGenerate}
+          disabled={!listenRepeatTopic.trim() || !interviewTopic.trim() || phase === "generating"}
+          className="w-full rounded-lg border border-orange-500 bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
+        >
+          {phase === "generating" ? "생성 중…" : test ? "재생성" : "AI 생성"}
+        </button>
+
         {phase === "generating" && (
           <p className="text-xs text-gray-500 animate-pulse">
-            Claude가 Listen &amp; Repeat + Interview 문제를 생성 중입니다 (약 15-30초)…
+            Claude가 Listen &amp; Repeat (7문장) + Interview (4문제) 생성 중입니다 (약 15-30초)…
           </p>
         )}
         {error && <p className="text-xs text-rose-600">{error}</p>}

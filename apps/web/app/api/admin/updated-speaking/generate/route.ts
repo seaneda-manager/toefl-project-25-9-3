@@ -9,62 +9,72 @@ const client = new Anthropic();
 
 export async function POST(req: Request) {
   try {
-    const { topic } = await req.json() as { topic: string };
-    if (!topic?.trim()) {
-      return NextResponse.json({ ok: false, error: 'topic required' }, { status: 400 });
+    const { listenRepeatTopic, interviewTopic } = await req.json() as {
+      listenRepeatTopic: string;
+      interviewTopic: string;
+    };
+
+    if (!listenRepeatTopic?.trim() || !interviewTopic?.trim()) {
+      return NextResponse.json({ ok: false, error: 'Both topics required' }, { status: 400 });
     }
 
     const prompt = `You are an expert Updated TOEFL Speaking content creator. Generate a complete Speaking test JSON with exactly 2 tasks.
 
-Topic area: ${topic}
-
 Task 1 — Listen and Repeat (듣고 따라말하기):
-- Pick a realistic everyday situation related to the topic (e.g. "laundry room", "computer lab", "campus bookstore", "welcome center employee training")
-- Write 6 natural English sentences a person in that situation would say
-- Each sentence: 12-20 words, natural spoken English, not too complex
-- Student repeats each sentence immediately after hearing it (beep → speak → beep)
-- speakingSeconds: 10 per sentence
+Situation topic: "${listenRepeatTopic}"
+- Pick a realistic campus/everyday situation based on this topic (e.g. "laundry room", "computer lab", "ski resort welcome center", "campus bookstore employee training")
+- Write EXACTLY 7 sentences with increasing difficulty (3 levels):
+  • Sentences 1-2 (Easy): 9-11 syllables, simple and direct
+  • Sentences 3-5 (Medium): 14-16 syllables, moderate complexity
+  • Sentences 6-7 (Hard): 19-23 syllables, longer with more detail
+- Sentences must be natural spoken English that someone in that situation would actually say
+- No preparation time — student hears sentence then immediately repeats it
+- speakingSeconds: 8 for sentences 1-2, 10 for sentences 3-5, 14 for sentences 6-7
 
 Task 2 — Interview:
-- Write 5 questions on varied topics (education, lifestyle, technology, society, personal experience, environment, etc.)
-- Questions should be open-ended, inviting the student to share opinions or experiences
+Interview topic: "${interviewTopic}"
+- Write EXACTLY 4 questions on this topic, increasing in depth:
+  • Q8 (Personal experience): specific recent experience related to the topic
+  • Q9 (Personal preference/feeling): opinion or preference about the topic
+  • Q10 (General/comparative): broader comparison or impact related to the topic
+  • Q11 (Social/logical opinion): societal or policy-level opinion about the topic
+- Questions are open-ended, conversational (as an avatar interviewer would ask)
+- No preparation time — student answers immediately after question ends
 - speakingSeconds: 45 per question
 
 Return ONLY valid JSON, no markdown, no explanation:
 
 {
   "id": "auto",
-  "label": "Updated Speaking – [short descriptive label]",
+  "label": "Updated Speaking – [short descriptive label combining both topics]",
   "tasks": [
     {
       "id": "task-listen-repeat",
       "type": "listen_repeat",
-      "situation": "[situation name, e.g. Laundry Room]",
+      "situation": "[situation name]",
       "situationDescription": "[1-2 sentences describing the scenario]",
       "sentences": [
-        { "id": "s1", "text": "...", "speakingSeconds": 10 },
-        { "id": "s2", "text": "...", "speakingSeconds": 10 },
+        { "id": "s1", "text": "...", "speakingSeconds": 8 },
+        { "id": "s2", "text": "...", "speakingSeconds": 8 },
         { "id": "s3", "text": "...", "speakingSeconds": 10 },
         { "id": "s4", "text": "...", "speakingSeconds": 10 },
         { "id": "s5", "text": "...", "speakingSeconds": 10 },
-        { "id": "s6", "text": "...", "speakingSeconds": 10 }
+        { "id": "s6", "text": "...", "speakingSeconds": 14 },
+        { "id": "s7", "text": "...", "speakingSeconds": 14 }
       ]
     },
     {
       "id": "task-interview",
       "type": "interview",
       "questions": [
-        { "id": "q1", "text": "...", "topic": "education", "speakingSeconds": 45 },
-        { "id": "q2", "text": "...", "topic": "lifestyle", "speakingSeconds": 45 },
-        { "id": "q3", "text": "...", "topic": "technology", "speakingSeconds": 45 },
-        { "id": "q4", "text": "...", "topic": "society", "speakingSeconds": 45 },
-        { "id": "q5", "text": "...", "topic": "personal experience", "speakingSeconds": 45 }
+        { "id": "q8",  "text": "...", "topic": "${interviewTopic}", "speakingSeconds": 45 },
+        { "id": "q9",  "text": "...", "topic": "${interviewTopic}", "speakingSeconds": 45 },
+        { "id": "q10", "text": "...", "topic": "${interviewTopic}", "speakingSeconds": 45 },
+        { "id": "q11", "text": "...", "topic": "${interviewTopic}", "speakingSeconds": 45 }
       ]
     }
   ]
-}
-
-Make all content specific and realistic for the topic area: "${topic}".`;
+}`;
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
