@@ -43,13 +43,13 @@ Topic: "${emailTopic}"
 - hints: exactly 3 bullet points describing what the email must include
 - wordLimit: { min: 100, max: 120 }
 
-Task 3 — Academic Discussion (10 minutes):
+Task 3 — Academic Discussion × 2 questions (Q11 and Q12), 5 minutes EACH:
 Topic: "${academicTopic}"
-- professorName: full name with title (e.g., "Dr. Anna Smith")
-- professorPrompt: 1-2 sentence discussion question (thought-provoking, open-ended)
-- studentPosts: exactly 2 students with contrasting viewpoints
-  • Each: id, author (first name only), content (2-3 sentences, natural student writing)
-- wordLimit: { min: 100, max: 200 }
+- Generate TWO SEPARATE academic_discussion items (task-acad-1 and task-acad-2)
+- Each has: professorName, professorPrompt, 2 student posts, wordLimit
+- Q11 and Q12 should have DIFFERENT professors and DIFFERENT angles on the same broad topic
+- recommendedTimeSeconds: 300 (5 minutes each, NOT 600)
+- wordLimit: { min: 100, max: 200 } for both
 
 Return ONLY valid JSON, no markdown, no explanation:
 
@@ -99,22 +99,35 @@ Return ONLY valid JSON, no markdown, no explanation:
     {
       "id": "task-acad-1",
       "taskKind": "academic_discussion",
-      "professorName": "Dr. Anna Smith",
+      "professorName": "Dr. [Name 1]",
       "context": "Your professor has posted a discussion question in the online class forum.",
       "professorPrompt": "...",
       "studentPosts": [
-        { "id": "post-1", "author": "Tanya", "content": "..." },
-        { "id": "post-2", "author": "Marco", "content": "..." }
+        { "id": "post-1", "author": "[Name A]", "content": "..." },
+        { "id": "post-2", "author": "[Name B]", "content": "..." }
       ],
       "wordLimit": { "min": 100, "max": 200 },
-      "recommendedTimeSeconds": 600
+      "recommendedTimeSeconds": 300
+    },
+    {
+      "id": "task-acad-2",
+      "taskKind": "academic_discussion",
+      "professorName": "Dr. [Name 2, different professor]",
+      "context": "Your professor has posted a discussion question in the online class forum.",
+      "professorPrompt": "...(different angle on same broad topic)...",
+      "studentPosts": [
+        { "id": "post-3", "author": "[Name C]", "content": "..." },
+        { "id": "post-4", "author": "[Name D]", "content": "..." }
+      ],
+      "wordLimit": { "min": 100, "max": 200 },
+      "recommendedTimeSeconds": 300
     }
   ]
 }`;
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 6000,
+      max_tokens: 7500,
       messages: [{ role: 'user', content: prompt }],
     });
 

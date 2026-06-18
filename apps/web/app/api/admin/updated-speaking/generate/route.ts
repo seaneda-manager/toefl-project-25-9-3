@@ -59,8 +59,8 @@ Return ONLY valid JSON, no markdown, no explanation:
         { "id": "s3", "text": "...", "speakingSeconds": 10 },
         { "id": "s4", "text": "...", "speakingSeconds": 10 },
         { "id": "s5", "text": "...", "speakingSeconds": 10 },
-        { "id": "s6", "text": "...", "speakingSeconds": 14 },
-        { "id": "s7", "text": "...", "speakingSeconds": 14 }
+        { "id": "s6", "text": "...", "speakingSeconds": 12 },
+        { "id": "s7", "text": "...", "speakingSeconds": 12 }
       ]
     },
     {

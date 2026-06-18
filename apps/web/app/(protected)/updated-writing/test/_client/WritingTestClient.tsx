@@ -10,7 +10,8 @@ export default function WritingTestClient({ test, testId }: { test: WWritingTest
   async function handleFinish(answers: {
     task1Scores: { questionId: string; correct: boolean; userSequence: string[] }[];
     task2Text: string;
-    task3Text: string;
+    task3aText: string;
+    task3bText: string;
   }) {
     try {
       const res = await fetch("/api/writing/save-session", {
@@ -21,7 +22,8 @@ export default function WritingTestClient({ test, testId }: { test: WWritingTest
           answers: {
             task_1_score_raw: answers.task1Scores.filter((s) => s.correct).length,
             task_2_submission: answers.task2Text,
-            task_3_submission: answers.task3Text,
+            task_3a_submission: answers.task3aText,
+            task_3b_submission: answers.task3bText,
           },
         }),
       });

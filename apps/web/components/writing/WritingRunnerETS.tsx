@@ -2,9 +2,9 @@
 
 /**
  * Updated TOEFL Writing Runner — ETS UI 스펙 구현
- * Task 1: Build a Sentence  (9문항, 6분)
- * Task 2: Write an Email    (1문항, 7분)
- * Task 3: Academic Discussion (1문항, 10분)
+ * Task 1: Build a Sentence        (9문항, 6분 글로벌 타이머, Back/Next 자유 이동)
+ * Task 2: Write an Email          (1문항, 7분)
+ * Task 3: Academic Discussion ×2  (각 5분 개별 타이머)
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -17,14 +17,15 @@ import type {
 } from "@/models/writing";
 
 // ── 타입 ──────────────────────────────────────────────────────────────
-type TestPhase = "task1" | "task2" | "task3" | "done";
+type TestPhase = "task1" | "task2" | "task3a" | "task3b" | "done";
 
 type Props = {
   test: WWritingTest2026;
   onFinish?: (answers: {
     task1Scores: { questionId: string; correct: boolean; userSequence: string[] }[];
     task2Text: string;
-    task3Text: string;
+    task3aText: string;
+    task3bText: string;
   }) => void;
 };
 
@@ -69,6 +70,8 @@ function ETSLayout({
   questionLabel,
   totalQuestions,
   currentQuestion,
+  onBack,
+  backDisabled,
   onNext,
   nextDisabled,
   children,
@@ -78,6 +81,8 @@ function ETSLayout({
   questionLabel?: string;
   totalQuestions?: number;
   currentQuestion?: number;
+  onBack?: () => void;
+  backDisabled?: boolean;
   onNext: () => void;
   nextDisabled?: boolean;
   children: React.ReactNode;
@@ -92,10 +97,17 @@ function ETSLayout({
         <span style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF" }}>
           {title ?? "Updated TOEFL iBT - Writing"}
         </span>
-        <div className="flex items-center" style={{ gap: 12 }}>
-          <button className="rounded border border-slate-400 bg-transparent text-white" style={{ width: 70, height: 36, fontSize: 13 }}>
-            Help
-          </button>
+        <div className="flex items-center" style={{ gap: 8 }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              disabled={backDisabled}
+              className="rounded border border-slate-400 bg-transparent text-white disabled:opacity-30"
+              style={{ width: 90, height: 36, fontSize: 13 }}
+            >
+              &lt; Back
+            </button>
+          )}
           <button
             onClick={onNext}
             disabled={nextDisabled}
@@ -145,26 +157,33 @@ function BuildASentence({
   onComplete: (scores: { questionId: string; correct: boolean; userSequence: string[] }[]) => void;
 }) {
   const [qIndex, setQIndex] = useState(0);
-  // 각 문항별 선택된 청크 순서
-  const [selected, setSelected] = useState<string[]>([]);
-  const [scores, setScores] = useState<{ questionId: string; correct: boolean; userSequence: string[] }[]>([]);
+
+  // 전역 답안 저장: 문항 index → 선택된 청크 배열 (Back해도 유지)
+  const [allSelected, setAllSelected] = useState<Record<number, string[]>>({});
+  const selected = allSelected[qIndex] ?? [];
 
   const q = item.questions[qIndex];
   const timeLimit = item.timeLimitSeconds ?? 360;
 
   const { display: timerDisplay } = useCountdown(timeLimit, () => {
-    // 타임아웃 → 현재 상태로 제출
     finishAll();
   });
 
-  // 청크를 한 번만 셔플 (문항 전환 시 재셔플)
-  const [shuffled, setShuffled] = useState<string[]>([]);
+  // 청크 셔플 (문항별 1회, 이미 셔플된 경우 재사용)
+  const [shuffledMap, setShuffledMap] = useState<Record<number, string[]>>({});
   useEffect(() => {
-    if (!q) return;
+    if (!q || shuffledMap[qIndex]) return;
     const arr = [...q.shuffledChunks].sort(() => Math.random() - 0.5);
-    setShuffled(arr);
-    setSelected([]);
-  }, [qIndex, q]);
+    setShuffledMap((prev) => ({ ...prev, [qIndex]: arr }));
+  }, [qIndex, q, shuffledMap]);
+  const shuffled = shuffledMap[qIndex] ?? q?.shuffledChunks ?? [];
+
+  const setSelected = (updater: (prev: string[]) => string[]) => {
+    setAllSelected((prev) => ({
+      ...prev,
+      [qIndex]: updater(prev[qIndex] ?? []),
+    }));
+  };
 
   const handleChunkClick = (chunk: string) => {
     if (selected.includes(chunk)) return;
@@ -175,25 +194,28 @@ function BuildASentence({
     setSelected((prev) => prev.filter((c) => c !== chunk));
   };
 
-  const handleNext = () => {
-    const correct = JSON.stringify(selected) === JSON.stringify(q.correctSequence);
-    const newScores = [...scores, { questionId: q.id, correct, userSequence: selected }];
-    setScores(newScores);
+  const handleBack = () => {
+    if (qIndex > 0) setQIndex((i) => i - 1);
+  };
 
+  const handleNext = () => {
     if (qIndex < item.questions.length - 1) {
       setQIndex((i) => i + 1);
     } else {
-      onComplete(newScores);
+      finishAll();
     }
   };
 
   const finishAll = () => {
-    const remaining = item.questions.slice(qIndex).map((qq) => ({
-      questionId: qq.id,
-      correct: false,
-      userSequence: qq.id === q?.id ? selected : [],
-    }));
-    onComplete([...scores, ...remaining]);
+    const finalScores = item.questions.map((qq, i) => {
+      const userSeq = allSelected[i] ?? [];
+      return {
+        questionId: qq.id,
+        correct: JSON.stringify(userSeq) === JSON.stringify(qq.correctSequence),
+        userSequence: userSeq,
+      };
+    });
+    onComplete(finalScores);
   };
 
   if (!q) return null;
@@ -204,8 +226,10 @@ function BuildASentence({
     <ETSLayout
       timerDisplay={timerDisplay}
       questionLabel={`Question ${questionNumber} of ${item.questions.length}`}
-      totalQuestions={item.questions.length}
+      totalQuestions={11}
       currentQuestion={questionNumber}
+      onBack={handleBack}
+      backDisabled={qIndex === 0}
       onNext={handleNext}
     >
       <div style={{ maxWidth: 1400, margin: "30px auto", padding: "0 24px", display: "flex", flexDirection: "column", gap: 24 }}>
@@ -428,13 +452,16 @@ function WriteAnEmail({
 // ══════════════════════════════════════════════════════════════════════
 function AcademicDiscussion({
   item,
+  questionNumber = 11,
   onComplete,
 }: {
   item: WAcademicWritingItem;
+  questionNumber?: number;
   onComplete: (text: string) => void;
 }) {
   const [text, setText] = useState("");
-  const timeLimit = item.recommendedTimeSeconds ?? 600;
+  // 스펙: 문항당 5분(300초) 개별 타이머
+  const timeLimit = item.recommendedTimeSeconds ?? 300;
   const { display: timerDisplay } = useCountdown(timeLimit, () => onComplete(text));
   const wordCount = countWords(text);
   const min = item.wordLimit?.min ?? 100;
@@ -446,9 +473,9 @@ function AcademicDiscussion({
   return (
     <ETSLayout
       timerDisplay={timerDisplay}
-      questionLabel="Question 11 of 11"
-      totalQuestions={11}
-      currentQuestion={11}
+      questionLabel={`Question ${questionNumber} of 12`}
+      totalQuestions={12}
+      currentQuestion={questionNumber}
       onNext={() => onComplete(text)}
     >
       <div style={{ maxWidth: 1600, margin: "20px auto", padding: "0 24px", display: "flex", flexDirection: "column", gap: 20 }}>
@@ -543,27 +570,35 @@ export default function WritingRunnerETS({ test, onFinish }: Props) {
   const [phase, setPhase] = useState<TestPhase>("task1");
   const [task1Scores, setTask1Scores] = useState<{ questionId: string; correct: boolean; userSequence: string[] }[]>([]);
   const [task2Text, setTask2Text] = useState("");
-  const [task3Text, setTask3Text] = useState("");
+  const [task3aText, setTask3aText] = useState("");
 
   const buildItem = test.items.find((i) => i.taskKind === "build_a_sentence") as WBuildSentenceItem | undefined;
   const emailItem = test.items.find((i) => i.taskKind === "email") as WEmailWritingItem | undefined;
-  const academicItem = test.items.find((i) => i.taskKind === "academic_discussion") as WAcademicWritingItem | undefined;
+  // Academic Discussion: 최대 2개 (Q11, Q12)
+  const academicItems = test.items.filter((i) => i.taskKind === "academic_discussion") as WAcademicWritingItem[];
+  const academic1 = academicItems[0];
+  const academic2 = academicItems[1];
 
   const handleTask1Complete = useCallback((scores: typeof task1Scores) => {
     setTask1Scores(scores);
-    setPhase(emailItem ? "task2" : academicItem ? "task3" : "done");
-  }, [emailItem, academicItem]);
+    setPhase(emailItem ? "task2" : academic1 ? "task3a" : "done");
+  }, [emailItem, academic1]);
 
   const handleTask2Complete = useCallback((text: string) => {
     setTask2Text(text);
-    setPhase(academicItem ? "task3" : "done");
-  }, [academicItem]);
+    setPhase(academic1 ? "task3a" : "done");
+  }, [academic1]);
 
-  const handleTask3Complete = useCallback((text: string) => {
-    setTask3Text(text);
+  const handleTask3aComplete = useCallback((text: string) => {
+    setTask3aText(text);
+    setPhase(academic2 ? "task3b" : "done");
+    if (!academic2) onFinish?.({ task1Scores, task2Text, task3aText: text, task3bText: "" });
+  }, [academic2, task1Scores, task2Text, onFinish]);
+
+  const handleTask3bComplete = useCallback((text: string) => {
     setPhase("done");
-    onFinish?.({ task1Scores, task2Text, task3Text: text });
-  }, [task1Scores, task2Text, onFinish]);
+    onFinish?.({ task1Scores, task2Text, task3aText, task3bText: text });
+  }, [task1Scores, task2Text, task3aText, onFinish]);
 
   if (phase === "done") {
     return (
@@ -577,18 +612,18 @@ export default function WritingRunnerETS({ test, onFinish }: Props) {
     );
   }
 
-  if (phase === "task1" && buildItem) {
-    return <BuildASentence item={buildItem} onComplete={handleTask1Complete} />;
+  if (phase === "task1" && buildItem) return <BuildASentence item={buildItem} onComplete={handleTask1Complete} />;
+  if (phase === "task2" && emailItem) return <WriteAnEmail item={emailItem} onComplete={handleTask2Complete} />;
+  if (phase === "task3a" && academic1) {
+    return <AcademicDiscussion item={academic1} questionNumber={11} onComplete={handleTask3aComplete} />;
   }
-  if (phase === "task2" && emailItem) {
-    return <WriteAnEmail item={emailItem} onComplete={handleTask2Complete} />;
-  }
-  if (phase === "task3" && academicItem) {
-    return <AcademicDiscussion item={academicItem} onComplete={handleTask3Complete} />;
+  if (phase === "task3b" && academic2) {
+    return <AcademicDiscussion item={academic2} questionNumber={12} onComplete={handleTask3bComplete} />;
   }
 
   // fallback: 해당 task 없으면 skip
-  if (phase === "task1") { setPhase(emailItem ? "task2" : "task3"); return null; }
-  if (phase === "task2") { setPhase("task3"); return null; }
+  if (phase === "task1") { setPhase(emailItem ? "task2" : "task3a"); return null; }
+  if (phase === "task2") { setPhase("task3a"); return null; }
+  if (phase === "task3a") { setPhase(academic2 ? "task3b" : "done"); return null; }
   return null;
 }
