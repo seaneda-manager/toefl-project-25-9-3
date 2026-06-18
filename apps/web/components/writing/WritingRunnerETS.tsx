@@ -347,8 +347,8 @@ function WriteAnEmail({
   return (
     <ETSLayout
       timerDisplay={timerDisplay}
-      questionLabel="Question 10 of 11"
-      totalQuestions={11}
+      questionLabel="Question 10 of 12"
+      totalQuestions={12}
       currentQuestion={10}
       onNext={() => onComplete(text)}
     >
