@@ -19,11 +19,33 @@ export interface WWritingTestMeta {
 export type WWritingTaskKind =
   | "fill_in_blank" // 빈칸 채우기 형태의 작문
   | "micro_writing" // 10개의 짧은 쓰기 (레거시)
+  | "build_a_sentence" // Updated TOEFL Task 1: 단어 뭉치 배열
   | "email" // Email Writing
   | "academic_discussion"; // Academic Discussion
 
 /* ------------------------------------
- * 0. Fill-in-Blank Writing
+ * 0. Build a Sentence (Updated TOEFL Task 1)
+ * ----------------------------------*/
+
+export interface WBuildSentenceQuestion {
+  id: string;
+  contextLeadIn: string;   // 문장 앞부분 (고정 텍스트)
+  contextLeadOut: string;  // 문장 뒷부분 (고정 텍스트)
+  shuffledChunks: string[]; // 셔플된 단어 뭉치 (정답 + 잉여 1개 포함)
+  unnecessaryChunk?: string; // 잉여 단어 뭉치 (채점용, 화면에 노출 금지)
+  correctSequence: string[]; // 정답 순서 (채점용)
+}
+
+export interface WBuildSentenceItem {
+  id: string;
+  taskKind: "build_a_sentence";
+  instruction?: string;
+  questions: WBuildSentenceQuestion[]; // 9문항
+  timeLimitSeconds?: number; // 기본 360초 (6분)
+}
+
+/* ------------------------------------
+ * 1. Fill-in-Blank Writing
  * ----------------------------------*/
 
 export interface WFillBlankItem {
@@ -122,6 +144,7 @@ export interface WAcademicWritingItem {
  * ----------------------------------*/
 
 export type WWritingItem =
+  | WBuildSentenceItem
   | WFillBlankItem
   | WMicroWritingItem
   | WEmailWritingItem
