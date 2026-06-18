@@ -9,73 +9,112 @@ const client = new Anthropic();
 
 export async function POST(req: Request) {
   try {
-    const { topic } = await req.json() as { topic: string };
-    if (!topic?.trim()) {
-      return NextResponse.json({ ok: false, error: 'topic required' }, { status: 400 });
+    const { buildSentenceTopic, emailTopic, academicTopic } = await req.json() as {
+      buildSentenceTopic: string;
+      emailTopic: string;
+      academicTopic: string;
+    };
+
+    if (!buildSentenceTopic?.trim() || !emailTopic?.trim() || !academicTopic?.trim()) {
+      return NextResponse.json({ ok: false, error: 'All 3 topics required' }, { status: 400 });
     }
 
     const prompt = `You are an expert Updated TOEFL Writing content creator. Generate a complete Updated TOEFL Writing test JSON with exactly 3 tasks.
 
-Topic area: ${topic}
+Task 1 — Build a Sentence (9 questions, 6-minute global timer):
+Topic/context: "${buildSentenceTopic}"
+- Create 9 sentence completion questions all sharing the same general context/situation
+- Each question has:
+  • contextLeadIn: first part of the sentence (ends naturally where answer goes)
+  • contextLeadOut: last part of the sentence (starts naturally after answer)
+  • shuffledChunks: exactly 4 items (3 correct sequence chunks + 1 unnecessary chunk)
+  • unnecessaryChunk: the one chunk that does NOT belong in the correct answer
+  • correctSequence: array of 3 chunks in the correct order
+- The chunks should be 2-5 word phrases (not single words)
+- Sentences should be natural, academic English related to the topic
+- Difficulty: first 3 easy, middle 3 medium, last 3 harder
 
-Return ONLY valid JSON, no markdown, no explanation. Use this exact structure:
+Task 2 — Write an Email (7 minutes):
+Topic: "${emailTopic}"
+- recipient: full name and title (e.g., "Professor Sarah Henderson")
+- recipientEmail: realistic academic email (e.g., "s.henderson@university.edu")
+- subjectLine: realistic email subject line
+- situation: 2-3 sentences describing the scenario (student perspective)
+- hints: exactly 3 bullet points describing what the email must include
+- wordLimit: { min: 100, max: 120 }
+
+Task 3 — Academic Discussion (10 minutes):
+Topic: "${academicTopic}"
+- professorName: full name with title (e.g., "Dr. Anna Smith")
+- professorPrompt: 1-2 sentence discussion question (thought-provoking, open-ended)
+- studentPosts: exactly 2 students with contrasting viewpoints
+  • Each: id, author (first name only), content (2-3 sentences, natural student writing)
+- wordLimit: { min: 100, max: 200 }
+
+Return ONLY valid JSON, no markdown, no explanation:
 
 {
   "meta": {
     "id": "auto",
-    "label": "Updated Writing – [short topic label]",
+    "label": "Updated Writing – [short descriptive label]",
     "examEra": "ibt_2026"
   },
   "items": [
     {
-      "id": "task-fill-1",
-      "taskKind": "fill_in_blank",
-      "title": "Fill-in-Blank Writing",
-      "promptHtml": "<p>Read the passage and fill in the blanks with appropriate words or phrases.</p><p>The topic sentence of the paragraph is: {{BLANK_1}}. This is important because {{BLANK_2}}. In conclusion, {{BLANK_3}}.</p>",
-      "blanks": [
-        { "id": "BLANK_1", "placeholder": "write the topic sentence", "sampleAnswer": "sample answer here", "minWords": 5 },
-        { "id": "BLANK_2", "placeholder": "explain the reason", "sampleAnswer": "sample answer here", "minWords": 5 },
-        { "id": "BLANK_3", "placeholder": "write a conclusion", "sampleAnswer": "sample answer here", "minWords": 5 }
-      ],
-      "recommendedTimeSeconds": 600
+      "id": "task-build-1",
+      "taskKind": "build_a_sentence",
+      "instruction": "Read the context and arrange the word chunks to complete the sentence.",
+      "timeLimitSeconds": 360,
+      "questions": [
+        {
+          "id": "q1",
+          "contextLeadIn": "...",
+          "contextLeadOut": "...",
+          "shuffledChunks": ["chunk A", "chunk B", "chunk C", "unnecessary chunk"],
+          "unnecessaryChunk": "unnecessary chunk",
+          "correctSequence": ["chunk A", "chunk B", "chunk C"]
+        },
+        { "id": "q2", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q3", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q4", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q5", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q6", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q7", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q8", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] },
+        { "id": "q9", "contextLeadIn": "...", "contextLeadOut": "...", "shuffledChunks": [...], "unnecessaryChunk": "...", "correctSequence": [...] }
+      ]
     },
     {
       "id": "task-email-1",
       "taskKind": "email",
-      "situation": "You are a university student. [describe situation related to topic]",
-      "prompt": "Write an email to [recipient] asking about / requesting [something related to topic]. Make sure to include a greeting, the purpose of your email, specific questions or requests, and a polite closing.",
-      "hints": ["Introduce yourself briefly", "State your main request clearly", "Ask at least 2 specific questions", "Close politely"],
-      "wordLimit": { "min": 100, "max": 150 },
-      "recommendedTimeSeconds": 600
+      "recipient": "Professor Sarah Henderson",
+      "recipientEmail": "s.henderson@university.edu",
+      "subjectLine": "...",
+      "situation": "...",
+      "prompt": "Write a formal email to the professor.",
+      "hints": ["...", "...", "..."],
+      "wordLimit": { "min": 100, "max": 120 },
+      "recommendedTimeSeconds": 420
     },
     {
       "id": "task-acad-1",
       "taskKind": "academic_discussion",
-      "context": "Your professor has posted a discussion question in an online class forum about [topic].",
-      "professorPrompt": "This week we are discussing [topic-related question]. What is your view on this? Please share your perspective and explain your reasoning.",
+      "professorName": "Dr. Anna Smith",
+      "context": "Your professor has posted a discussion question in the online class forum.",
+      "professorPrompt": "...",
       "studentPosts": [
-        {
-          "id": "post-1",
-          "author": "Minjun",
-          "content": "I think [student 1 perspective on topic]. This is because [reason 1] and [reason 2]."
-        },
-        {
-          "id": "post-2",
-          "author": "Sofia",
-          "content": "In my opinion, [student 2 perspective, different from student 1]. For example, [specific example]."
-        }
+        { "id": "post-1", "author": "Tanya", "content": "..." },
+        { "id": "post-2", "author": "Marco", "content": "..." }
       ],
       "wordLimit": { "min": 100, "max": 200 },
       "recommendedTimeSeconds": 600
     }
   ]
-}
-
-Make all content specific and realistic for the topic: "${topic}". The fill-in-blank passage should have academic English with natural blanks. The email should have a clear, realistic scenario. The academic discussion should have a thought-provoking question with two contrasting student views.`;
+}`;
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }],
     });
 
