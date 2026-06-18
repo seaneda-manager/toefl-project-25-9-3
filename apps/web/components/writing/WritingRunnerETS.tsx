@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Updated TOEFL Writing Runner — ETS UI 스펙 구현
- * Task 1: Build a Sentence        (9문항, 6분 글로벌 타이머, Back/Next 자유 이동)
- * Task 2: Write an Email          (1문항, 7분)
- * Task 3: Academic Discussion ×2  (각 5분 개별 타이머)
+ * Updated TOEFL Writing Runner — ETS UI 스펙 [최종 확정]
+ * Task 1: Build a Sentence   (10문항 Q1~Q10, 6분 글로벌 타이머, Back/Next 자유 이동)
+ * Task 2: Write an Email     (1문항 Q11, 7분 독립 타이머, 100~120 단어)
+ * Task 3: Academic Discussion (1문항 Q12, 10분 독립 타이머, 120+ 단어)
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -17,15 +17,14 @@ import type {
 } from "@/models/writing";
 
 // ── 타입 ──────────────────────────────────────────────────────────────
-type TestPhase = "task1" | "task2" | "task3a" | "task3b" | "done";
+type TestPhase = "task1" | "task2" | "task3" | "done";
 
 type Props = {
   test: WWritingTest2026;
   onFinish?: (answers: {
     task1Scores: { questionId: string; correct: boolean; userSequence: string[] }[];
     task2Text: string;
-    task3aText: string;
-    task3bText: string;
+    task3Text: string;
   }) => void;
 };
 
@@ -347,9 +346,9 @@ function WriteAnEmail({
   return (
     <ETSLayout
       timerDisplay={timerDisplay}
-      questionLabel="Question 10 of 12"
+      questionLabel="Question 11 of 12"
       totalQuestions={12}
-      currentQuestion={10}
+      currentQuestion={11}
       onNext={() => onComplete(text)}
     >
       <div style={{ display: "flex", gap: 24, padding: "30px 40px", height: "100%" }}>
@@ -452,16 +451,14 @@ function WriteAnEmail({
 // ══════════════════════════════════════════════════════════════════════
 function AcademicDiscussion({
   item,
-  questionNumber = 11,
   onComplete,
 }: {
   item: WAcademicWritingItem;
-  questionNumber?: number;
   onComplete: (text: string) => void;
 }) {
   const [text, setText] = useState("");
-  // 스펙: 문항당 5분(300초) 개별 타이머
-  const timeLimit = item.recommendedTimeSeconds ?? 300;
+  // Q12, 10분(600초) 독립 타이머
+  const timeLimit = item.recommendedTimeSeconds ?? 600;
   const { display: timerDisplay } = useCountdown(timeLimit, () => onComplete(text));
   const wordCount = countWords(text);
   const min = item.wordLimit?.min ?? 100;
@@ -473,9 +470,9 @@ function AcademicDiscussion({
   return (
     <ETSLayout
       timerDisplay={timerDisplay}
-      questionLabel={`Question ${questionNumber} of 12`}
+      questionLabel="Question 12 of 12"
       totalQuestions={12}
-      currentQuestion={questionNumber}
+      currentQuestion={12}
       onNext={() => onComplete(text)}
     >
       <div style={{ maxWidth: 1600, margin: "20px auto", padding: "0 24px", display: "flex", flexDirection: "column", gap: 20 }}>
@@ -570,35 +567,25 @@ export default function WritingRunnerETS({ test, onFinish }: Props) {
   const [phase, setPhase] = useState<TestPhase>("task1");
   const [task1Scores, setTask1Scores] = useState<{ questionId: string; correct: boolean; userSequence: string[] }[]>([]);
   const [task2Text, setTask2Text] = useState("");
-  const [task3aText, setTask3aText] = useState("");
 
   const buildItem = test.items.find((i) => i.taskKind === "build_a_sentence") as WBuildSentenceItem | undefined;
   const emailItem = test.items.find((i) => i.taskKind === "email") as WEmailWritingItem | undefined;
-  // Academic Discussion: 최대 2개 (Q11, Q12)
-  const academicItems = test.items.filter((i) => i.taskKind === "academic_discussion") as WAcademicWritingItem[];
-  const academic1 = academicItems[0];
-  const academic2 = academicItems[1];
+  const academicItem = test.items.find((i) => i.taskKind === "academic_discussion") as WAcademicWritingItem | undefined;
 
   const handleTask1Complete = useCallback((scores: typeof task1Scores) => {
     setTask1Scores(scores);
-    setPhase(emailItem ? "task2" : academic1 ? "task3a" : "done");
-  }, [emailItem, academic1]);
+    setPhase(emailItem ? "task2" : academicItem ? "task3" : "done");
+  }, [emailItem, academicItem]);
 
   const handleTask2Complete = useCallback((text: string) => {
     setTask2Text(text);
-    setPhase(academic1 ? "task3a" : "done");
-  }, [academic1]);
+    setPhase(academicItem ? "task3" : "done");
+  }, [academicItem]);
 
-  const handleTask3aComplete = useCallback((text: string) => {
-    setTask3aText(text);
-    setPhase(academic2 ? "task3b" : "done");
-    if (!academic2) onFinish?.({ task1Scores, task2Text, task3aText: text, task3bText: "" });
-  }, [academic2, task1Scores, task2Text, onFinish]);
-
-  const handleTask3bComplete = useCallback((text: string) => {
+  const handleTask3Complete = useCallback((text: string) => {
     setPhase("done");
-    onFinish?.({ task1Scores, task2Text, task3aText, task3bText: text });
-  }, [task1Scores, task2Text, task3aText, onFinish]);
+    onFinish?.({ task1Scores, task2Text, task3Text: text });
+  }, [task1Scores, task2Text, onFinish]);
 
   if (phase === "done") {
     return (
@@ -614,16 +601,10 @@ export default function WritingRunnerETS({ test, onFinish }: Props) {
 
   if (phase === "task1" && buildItem) return <BuildASentence item={buildItem} onComplete={handleTask1Complete} />;
   if (phase === "task2" && emailItem) return <WriteAnEmail item={emailItem} onComplete={handleTask2Complete} />;
-  if (phase === "task3a" && academic1) {
-    return <AcademicDiscussion item={academic1} questionNumber={11} onComplete={handleTask3aComplete} />;
-  }
-  if (phase === "task3b" && academic2) {
-    return <AcademicDiscussion item={academic2} questionNumber={12} onComplete={handleTask3bComplete} />;
-  }
+  if (phase === "task3" && academicItem) return <AcademicDiscussion item={academicItem} onComplete={handleTask3Complete} />;
 
   // fallback: 해당 task 없으면 skip
-  if (phase === "task1") { setPhase(emailItem ? "task2" : "task3a"); return null; }
-  if (phase === "task2") { setPhase("task3a"); return null; }
-  if (phase === "task3a") { setPhase(academic2 ? "task3b" : "done"); return null; }
+  if (phase === "task1") { setPhase(emailItem ? "task2" : "task3"); return null; }
+  if (phase === "task2") { setPhase("task3"); return null; }
   return null;
 }
