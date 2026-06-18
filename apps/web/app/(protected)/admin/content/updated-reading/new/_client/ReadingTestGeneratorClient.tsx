@@ -15,21 +15,23 @@ function getAcademicItem(test: RReadingTest2026, stage: 1 | 2): RAcademicPassage
 export default function ReadingTestGeneratorClient() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("input");
-  const [topic, setTopic] = useState("");
+  const [cwTopic, setCwTopic] = useState("");
+  const [dailyLifeTopic, setDailyLifeTopic] = useState("");
+  const [academicTopic, setAcademicTopic] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [test, setTest] = useState<RReadingTest2026 | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
 
   // ── Generate ────────────────────────────────────────────────
   const handleGenerate = useCallback(async () => {
-    if (!topic.trim()) return;
+    if (!cwTopic.trim() || !dailyLifeTopic.trim() || !academicTopic.trim()) return;
     setError(null);
     setPhase("generating");
     try {
       const res = await fetch("/api/admin/updated-reading/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ cwTopic, dailyLifeTopic, academicTopic }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Generation failed");
@@ -39,7 +41,7 @@ export default function ReadingTestGeneratorClient() {
       setError(e.message);
       setPhase("input");
     }
-  }, [topic]);
+  }, [cwTopic, dailyLifeTopic, academicTopic]);
 
   // ── Field helpers ───────────────────────────────────────────
   const setLabel = (label: string) =>
@@ -147,7 +149,7 @@ export default function ReadingTestGeneratorClient() {
             목록으로
           </button>
           <button
-            onClick={() => { setPhase("input"); setTopic(""); setTest(null); setSavedId(null); }}
+            onClick={() => { setPhase("input"); setCwTopic(""); setDailyLifeTopic(""); setAcademicTopic(""); setTest(null); setSavedId(null); }}
             className="rounded-lg border border-emerald-500 bg-emerald-600 px-4 py-2 text-xs text-white hover:bg-emerald-700"
           >
             새 시험 만들기
@@ -159,28 +161,54 @@ export default function ReadingTestGeneratorClient() {
 
   return (
     <div className="space-y-6">
-      {/* Topic input */}
-      <section className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
-        <h2 className="text-sm font-semibold text-gray-900">토픽 입력</h2>
-        <div className="flex gap-2">
-          <input
-            className="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:bg-gray-50"
-            placeholder="예: The history of the printing press / Climate change and ocean ecosystems"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-            disabled={phase === "generating"}
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={!topic.trim() || phase === "generating"}
-            className="rounded-lg border border-emerald-500 bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {phase === "generating" ? "생성 중…" : test ? "재생성" : "AI 생성"}
-          </button>
+      {/* Topic input — 3 separate inputs */}
+      <section className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
+        <h2 className="text-sm font-semibold text-gray-900">토픽 입력 (3개)</h2>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-sky-700">① Complete the Words (단어 완성형)</label>
+            <input
+              className="w-full rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
+              placeholder="예: university campus life, library regulations"
+              value={cwTopic}
+              onChange={(e) => setCwTopic(e.target.value)}
+              disabled={phase === "generating"}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-teal-700">② Read in Daily Life (일상 실무형)</label>
+            <input
+              className="w-full rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:opacity-60"
+              placeholder="예: parking permit notice, cafeteria menu update"
+              value={dailyLifeTopic}
+              onChange={(e) => setDailyLifeTopic(e.target.value)}
+              disabled={phase === "generating"}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-violet-700">③ Academic Passage (학술 독해형)</label>
+            <input
+              className="w-full rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 disabled:opacity-60"
+              placeholder="예: The history of the printing press, Climate change and ocean ecosystems"
+              value={academicTopic}
+              onChange={(e) => setAcademicTopic(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+              disabled={phase === "generating"}
+            />
+          </div>
         </div>
+
+        <button
+          onClick={handleGenerate}
+          disabled={!cwTopic.trim() || !dailyLifeTopic.trim() || !academicTopic.trim() || phase === "generating"}
+          className="w-full rounded-lg border border-emerald-500 bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {phase === "generating" ? "생성 중…" : test ? "재생성 (MST)" : "AI 생성 (MST)"}
+        </button>
+
         {phase === "generating" && (
-          <p className="text-xs text-gray-500 animate-pulse">Claude가 지문과 문제를 생성 중입니다 (약 15-30초)…</p>
+          <p className="text-xs text-gray-500 animate-pulse">Claude가 Stage 1 + Stage 2 (Hard/Easy) 전체를 생성 중입니다 (약 30-60초)…</p>
         )}
         {error && <p className="text-xs text-rose-600">{error}</p>}
       </section>

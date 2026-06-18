@@ -8,6 +8,7 @@ import type {
   RReadingModule,
   RAcademicPassageItem,
   RCompleteWordsItem,
+  RDailyLifeItem,
   RQuestion,
   RChoice,
 } from "@/models/reading";
@@ -19,6 +20,8 @@ type FlatQuestion = {
   passageIdx: number;
   passageTitle: string;
   passageHtml: string;
+  passageContentHtml?: string; // daily_life 전용
+  passageKind: "academic_passage" | "daily_life";
   id: string;
   number: number;
   stem: string;
@@ -92,40 +95,76 @@ function flattenModule(
   let globalIdx = globalOffset;
 
   for (const item of mod.items) {
-    if (item.taskKind !== "academic_passage") continue;
+    if (item.taskKind === "academic_passage") {
+      const passage = item as RAcademicPassageItem;
+      const title = (passage as any).title ?? `Passage ${passageIdx + 1}`;
 
-    const passage = item as RAcademicPassageItem;
-    const title = (passage as any).title ?? `Passage ${passageIdx + 1}`;
+      for (const q of passage.questions ?? []) {
+        const meta = (q.meta ?? {}) as any;
+        const summaryMeta = meta.summary ?? {};
+        const isSummary = q.type === "summary";
 
-    for (const q of passage.questions ?? []) {
-      const meta = (q.meta ?? {}) as any;
-      const summaryMeta = meta.summary ?? {};
-      const isSummary = q.type === "summary";
+        result.push({
+          globalIdx,
+          passageIdx,
+          passageTitle: title,
+          passageHtml: passage.passageHtml ?? "",
+          passageKind: "academic_passage",
+          id: q.id,
+          number: q.number,
+          stem: q.stem,
+          type: q.type,
+          choices: (q.choices ?? []).map((c: RChoice) => ({
+            id: c.id,
+            text: c.text,
+            isCorrect: !!(c as any).isCorrect,
+          })),
+          isSummary,
+          summaryCorrectIndices: summaryMeta.correct ?? [],
+          summarySelectionCount: summaryMeta.selectionCount ?? 3,
+          stage,
+        });
 
-      result.push({
-        globalIdx,
-        passageIdx,
-        passageTitle: title,
-        passageHtml: passage.passageHtml ?? "",
-        id: q.id,
-        number: q.number,
-        stem: q.stem,
-        type: q.type,
-        choices: (q.choices ?? []).map((c: RChoice) => ({
-          id: c.id,
-          text: c.text,
-          isCorrect: !!(c as any).isCorrect,
-        })),
-        isSummary,
-        summaryCorrectIndices: summaryMeta.correct ?? [],
-        summarySelectionCount: summaryMeta.selectionCount ?? 3,
-        stage,
-      });
+        globalIdx++;
+      }
 
-      globalIdx++;
+      passageIdx++;
+    } else if (item.taskKind === "daily_life") {
+      const dl = item as RDailyLifeItem;
+      const title = (dl as any).title ?? `Daily Life ${passageIdx + 1}`;
+
+      for (const q of dl.questions ?? []) {
+        const meta = (q.meta ?? {}) as any;
+        const summaryMeta = meta.summary ?? {};
+        const isSummary = q.type === "summary";
+
+        result.push({
+          globalIdx,
+          passageIdx,
+          passageTitle: title,
+          passageHtml: "",
+          passageContentHtml: dl.contentHtml ?? "",
+          passageKind: "daily_life",
+          id: q.id,
+          number: q.number,
+          stem: q.stem,
+          type: q.type,
+          choices: (q.choices ?? []).map((c: RChoice) => ({
+            id: c.id,
+            text: c.text,
+            isCorrect: !!(c as any).isCorrect,
+          })),
+          isSummary,
+          summaryCorrectIndices: summaryMeta.correct ?? [],
+          summarySelectionCount: summaryMeta.selectionCount ?? 3,
+          stage,
+        });
+
+        globalIdx++;
+      }
+
+      passageIdx++;
     }
-
-    passageIdx++;
   }
 
   return result;
@@ -233,7 +272,13 @@ export default function MockTestPlayer({
   adaptiveConfig,
   onFinish,
 }: Props) {
-  const isAdaptive = !!adaptiveConfig;
+  // test.stage2Pool이 있으면 adaptive, 없으면 non-adaptive
+  const resolvedAdaptiveConfig = adaptiveConfig ?? (test.stage2Pool ? {
+    cutScore: test.stage2Pool.cutScore,
+    stage2Easy: test.stage2Pool.easy,
+    stage2Hard: test.stage2Pool.hard,
+  } : undefined);
+  const isAdaptive = !!resolvedAdaptiveConfig;
 
   // Complete the Words items — collected from both modules
   const cwItems = useMemo<RCompleteWordsItem[]>(() => {
@@ -325,34 +370,23 @@ export default function MockTestPlayer({
   function advanceToBreak() {
     clearInterval(timerRef.current!);
 
+    const passageOffset = (stage1Questions.at(-1)?.passageIdx ?? -1) + 1;
+    const qOffset = stage1Questions.length;
+
     if (!isAdaptive) {
-      // Non-adaptive: stage2 comes from test.modules[1]
-      const s2qs = flattenModule(
-        test.modules[1],
-        2,
-        stage1Questions.at(-1)!.passageIdx + 1,
-        stage1Questions.length
-      );
+      const s2qs = flattenModule(test.modules[1], 2, passageOffset, qOffset);
       setStage2Questions(s2qs);
       setStage2Difficulty(null);
       setPhase("stage_break");
     } else {
-      // Adaptive: score stage1, pick module
       const { correct, total } = computeStage1Score(stage1Questions, answers);
       const fraction = total > 0 ? correct / total : 0;
-      const difficulty =
-        fraction >= adaptiveConfig!.cutScore ? "hard" : "easy";
-      const mod =
-        difficulty === "hard"
-          ? adaptiveConfig!.stage2Hard
-          : adaptiveConfig!.stage2Easy;
+      const difficulty = fraction >= resolvedAdaptiveConfig!.cutScore ? "hard" : "easy";
+      const mod = difficulty === "hard"
+        ? resolvedAdaptiveConfig!.stage2Hard
+        : resolvedAdaptiveConfig!.stage2Easy;
 
-      const s2qs = flattenModule(
-        mod,
-        2,
-        stage1Questions.at(-1)!.passageIdx + 1,
-        stage1Questions.length
-      );
+      const s2qs = flattenModule(mod, 2, passageOffset, qOffset);
       setStage2Questions(s2qs);
       setStage2Difficulty(difficulty);
       setPhase("stage_break");
@@ -542,7 +576,7 @@ export default function MockTestPlayer({
       setAnswers((prev) => ({ ...prev, [cwKey(blankId)]: val }));
     }
 
-    const allFilled = cwItem.blanks.every((b) => !!(answers[cwKey(b.id)] ?? "").trim());
+    const allFilled = cwItem.blanks.every((b) => !!((answers[cwKey(b.id)] as string) ?? "").trim());
 
     function goNextCw() {
       if (cwIdx < cwItems.length - 1) {
@@ -552,28 +586,42 @@ export default function MockTestPlayer({
       }
     }
 
-    // Render paragraph: strip HTML tags, split on __ occurrences, interleave inputs
-    // e.g. "challeng__g" → "challeng" + <input> + "g"
+    // 지문 내 __ 마커를 인라인 인풋으로 교체
+    // 예: "peo__ple" → "peo" + <input maxLength=3> + "ple"
     function renderParagraph() {
-      // Strip tags to get plain text, preserving __ markers
       const plain = cwItem.paragraphHtml.replace(/<[^>]+>/g, "");
-      // Split on __ (each occurrence = one blank in order)
       const parts = plain.split("__");
       return (
-        <p className="text-sm leading-loose text-gray-900 whitespace-pre-wrap">
+        <p style={{ fontSize: 16, lineHeight: 2, color: "#1A1A1A", whiteSpace: "pre-wrap" }}>
           {parts.map((part, i) => {
-            const blank = cwItem.blanks[i]; // blanks[i] corresponds to the i-th __
+            const blank = cwItem.blanks[i];
+            const val = (answers[cwKey(blank?.id ?? "")] ?? "") as string;
+            const isCorrectLen = blank && val.length === blank.correctToken.length;
             return (
               <span key={i}>
                 {part}
                 {blank && (
                   <input
                     type="text"
-                    maxLength={6}
-                    value={(answers[cwKey(blank.id)] ?? "") as string}
+                    maxLength={blank.correctToken.length || 8}
+                    value={val}
                     onChange={(e) => setCwAnswer(blank.id, e.target.value)}
-                    placeholder="__"
-                    className="mx-0.5 inline-block w-12 rounded border border-emerald-300 bg-emerald-50 px-1 py-0 text-center text-sm font-bold text-emerald-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
+                    style={{
+                      display: "inline-block",
+                      width: Math.max(blank.correctToken.length * 11, 36),
+                      height: 24,
+                      borderTop: "none", borderLeft: "none", borderRight: "none",
+                      borderBottom: `2px solid ${isCorrectLen ? "#22C55E" : "#1A2B4C"}`,
+                      backgroundColor: "#F4F6F9",
+                      textAlign: "center",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "#1A2B4C",
+                      outline: "none",
+                      margin: "0 2px",
+                      verticalAlign: "middle",
+                      letterSpacing: 2,
+                    }}
                   />
                 )}
               </span>
@@ -584,61 +632,75 @@ export default function MockTestPlayer({
     }
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f5f7f8] px-4 py-12">
-        <div className="w-full max-w-2xl">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Complete the Words {cwIdx + 1} / {cwItems.length}
-              </span>
-            </div>
-            <span className="text-xs text-gray-400">Reading 시작 전</span>
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "Arial, Helvetica, sans-serif" }}>
+        {/* ETS Header */}
+        <header style={{
+          height: 60, backgroundColor: "#1A2B4C",
+          display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#FFFFFF" }}>{label}</span>
+            <span style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#FFFFFF", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20 }}>
+              COMPLETE THE WORDS {cwIdx + 1}/{cwItems.length}
+            </span>
           </div>
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Reading 시작 전</span>
+        </header>
 
-          <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-sm font-bold text-gray-800 mb-1">Complete the Words</h2>
-              <p className="text-xs text-gray-500">빈칸에 알맞은 단어를 입력하세요.</p>
+        {/* Body */}
+        <div style={{ flex: 1, backgroundColor: "#F4F6F9", display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
+          <div style={{ width: "100%", maxWidth: 900, backgroundColor: "#FFFFFF", borderRadius: 8, padding: 48, boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+
+            <div style={{ marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#1A2B4C", marginBottom: 6 }}>Complete the Words</h2>
+              <p style={{ fontSize: 14, color: "#666" }}>
+                각 빈칸에 단어의 나머지 철자를 입력하세요. 빈칸을 모두 채운 뒤 다음으로 이동합니다.
+              </p>
             </div>
 
-            <div className="rounded-lg border border-emerald-100 bg-emerald-50/30 p-4">
+            {/* 지문 + 인라인 인풋 */}
+            <div style={{ backgroundColor: "#F8F9FB", border: "1px solid #E8ECF0", borderRadius: 6, padding: "24px 28px", marginBottom: 32 }}>
               {renderParagraph()}
             </div>
 
-            {/* Blank hint list */}
-            <div className="space-y-2">
-              {cwItem.blanks.map((b, i) => (
-                <div key={b.id} className="flex items-center gap-3 text-sm">
-                  <span className="w-5 shrink-0 text-center text-xs font-bold text-emerald-600">
-                    {i + 1}
-                  </span>
-                  <input
-                    type="text"
-                    value={(answers[cwKey(b.id)] ?? "") as string}
-                    onChange={(e) => setCwAnswer(b.id, e.target.value)}
-                    placeholder={`빈칸 ${i + 1}`}
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-200"
-                  />
-                </div>
-              ))}
+            {/* 진행률 */}
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888", marginBottom: 6 }}>
+                <span>진행률</span>
+                <span>{cwItem.blanks.filter((b) => !!((answers[cwKey(b.id)] as string) ?? "").trim()).length} / {cwItem.blanks.length}</span>
+              </div>
+              <div style={{ height: 6, backgroundColor: "#E8ECF0", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", borderRadius: 3, backgroundColor: "#0073E6",
+                  width: `${(cwItem.blanks.filter((b) => !!((answers[cwKey(b.id)] as string) ?? "").trim()).length / cwItem.blanks.length) * 100}%`,
+                  transition: "width 0.3s",
+                }} />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <button
                 onClick={() => cwIdx > 0 ? setCwIdx((i) => i - 1) : setPhase("direction")}
-                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                style={{ height: 40, padding: "0 20px", fontSize: 13, fontWeight: 600, border: "1px solid #D0D5DD", borderRadius: 4, backgroundColor: "#FFFFFF", cursor: "pointer" }}
               >
                 ← 이전
               </button>
               <button
                 onClick={goNextCw}
-                className="rounded-lg bg-black px-6 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                style={{ height: 40, padding: "0 28px", fontSize: 13, fontWeight: 700, border: "none", borderRadius: 4, backgroundColor: "#0073E6", color: "#FFFFFF", cursor: "pointer" }}
               >
                 {cwIdx < cwItems.length - 1 ? "다음 →" : "Reading 시작 →"}
               </button>
             </div>
           </div>
         </div>
+
+        {/* ETS Footer */}
+        <footer style={{ height: 60, backgroundColor: "#F4F6F9", borderTop: "1px solid #E0E0E0", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
+          <span style={{ fontSize: 14, color: "#555" }}>
+            {allFilled ? "✓ 모든 빈칸 완료" : `빈칸 ${cwItem.blanks.filter((b) => !((answers[cwKey(b.id)] as string) ?? "").trim()).length}개 남음`}
+          </span>
+        </footer>
       </div>
     );
   }
@@ -968,46 +1030,49 @@ export default function MockTestPlayer({
 
   const header = (
     <>
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-semibold">{label}</span>
-        <span className={[
-          "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-          isStage1 ? "bg-gray-100 text-gray-600" : "bg-indigo-100 text-indigo-700",
-        ].join(" ")}>
-          Module {isStage1 ? "1" : "2"}
-        </span>
-        <span className="text-xs text-gray-400">
-          {answeredCount}/{activeQuestions.length} answered
+      {/* 좌: 라벨 + 모듈 배지 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#FFFFFF" }}>{label}</span>
+        <span style={{
+          backgroundColor: isStage1 ? "rgba(255,255,255,0.15)" : "#4F6BCD",
+          color: "#FFFFFF", fontSize: 11, fontWeight: 700,
+          padding: "2px 10px", borderRadius: 20, letterSpacing: 1,
+        }}>
+          MODULE {isStage1 ? "1" : "2"}
         </span>
       </div>
 
-      <div
-        className={[
-          "rounded-md px-3 py-1 font-mono text-sm font-bold tabular-nums",
-          isWarning ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-700",
-        ].join(" ")}
-      >
-        {formatTime(secondsLeft)}
-      </div>
-
-      <div className="flex items-center gap-2">
+      {/* 우: 버튼들 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
           onClick={() => setShowNavGrid((v) => !v)}
-          className="rounded-md border px-3 py-1 text-xs font-medium hover:bg-gray-50"
+          style={{
+            height: 32, padding: "0 14px", fontSize: 12, fontWeight: 500,
+            border: "1px solid rgba(255,255,255,0.3)", borderRadius: 4,
+            backgroundColor: "transparent", color: "#FFFFFF", cursor: "pointer",
+          }}
         >
           문제 목록
         </button>
         {isStage1 ? (
           <button
             onClick={advanceToBreak}
-            className="rounded-md bg-black px-3 py-1 text-xs font-semibold text-white hover:bg-gray-800"
+            style={{
+              height: 32, padding: "0 16px", fontSize: 12, fontWeight: 700,
+              border: "none", borderRadius: 4,
+              backgroundColor: "#0073E6", color: "#FFFFFF", cursor: "pointer",
+            }}
           >
-            Module 1 완료
+            Module 1 완료 →
           </button>
         ) : (
           <button
             onClick={() => setPhase("review")}
-            className="rounded-md bg-black px-3 py-1 text-xs font-semibold text-white hover:bg-gray-800"
+            style={{
+              height: 32, padding: "0 16px", fontSize: 12, fontWeight: 700,
+              border: "none", borderRadius: 4,
+              backgroundColor: "#0073E6", color: "#FFFFFF", cursor: "pointer",
+            }}
           >
             검토 / 제출
           </button>
@@ -1017,17 +1082,31 @@ export default function MockTestPlayer({
   );
 
   const passagePane = (
-    <div ref={passagePaneRef} className="h-full overflow-y-auto">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-        Module {isStage1 ? "1" : "2"} · Passage {currentQ.passageIdx + 1}
+    <div ref={passagePaneRef} style={{ height: "100%", overflowY: "auto" }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", marginBottom: 16 }}>
+        Module {isStage1 ? "1" : "2"} · {currentQ.passageKind === "daily_life" ? "Daily Life" : "Academic Passage"}
       </p>
-      {currentQ.passageTitle && (
-        <h2 className="mb-4 text-base font-bold">{currentQ.passageTitle}</h2>
+
+      {currentQ.passageKind === "daily_life" ? (
+        /* Daily Life: graphic card 렌더 */
+        <div
+          style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}
+          dangerouslySetInnerHTML={{ __html: currentQ.passageContentHtml ?? "" }}
+        />
+      ) : (
+        /* Academic Passage: 기존 prose 렌더 */
+        <>
+          {currentQ.passageTitle && (
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 20 }}>
+              {currentQ.passageTitle}
+            </h2>
+          )}
+          <div
+            style={{ fontSize: 16, lineHeight: 1.75, color: "#222" }}
+            dangerouslySetInnerHTML={{ __html: currentQ.passageHtml }}
+          />
+        </>
       )}
-      <div
-        className="prose prose-sm max-w-none leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: currentQ.passageHtml }}
-      />
     </div>
   );
 
@@ -1110,7 +1189,7 @@ export default function MockTestPlayer({
       )}
 
       {/* Choices */}
-      <div className="flex flex-col gap-2 text-sm">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {currentQ.choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
           const isSelected = currentQ.isSummary
@@ -1126,50 +1205,72 @@ export default function MockTestPlayer({
                   ? handleSummaryToggle(choice.id)
                   : handleSelect(choice.id)
               }
-              className={[
-                "flex items-start gap-2 rounded-lg border px-3 py-2 text-left transition",
-                isSelected
-                  ? isStage1
-                    ? "border-blue-500 bg-blue-50 text-blue-900"
-                    : "border-indigo-500 bg-indigo-50 text-indigo-900"
-                  : "border-gray-200 hover:bg-gray-50",
-              ].join(" ")}
+              style={{
+                display: "flex", alignItems: "flex-start", gap: 12,
+                padding: "14px 18px", textAlign: "left",
+                border: `1px solid ${isSelected ? "#0073E6" : "#E0E0E0"}`,
+                borderRadius: 6,
+                backgroundColor: isSelected ? "#E6F0FA" : "#FFFFFF",
+                color: "#333333", cursor: "pointer",
+                fontSize: 15, fontWeight: isSelected ? 600 : 400,
+                transition: "background-color 0.15s, border-color 0.15s",
+              }}
             >
-              <span className="mt-0.5 shrink-0 font-semibold text-gray-500">
+              <span style={{ flexShrink: 0, fontWeight: 700, color: isSelected ? "#0073E6" : "#888", fontSize: 14, marginTop: 1 }}>
                 {letter}.
               </span>
-              <span>{choice.text}</span>
+              <span style={{ lineHeight: 1.5 }}>{choice.text}</span>
             </button>
           );
         })}
       </div>
 
       {/* Navigation */}
-      <div className="mt-auto flex items-center justify-between pt-6">
+      <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 32 }}>
         <button
           onClick={goPrev}
           disabled={stageLocalIdx === 0}
-          className="rounded-lg border px-4 py-1.5 text-xs font-medium disabled:opacity-40 hover:bg-gray-50"
+          style={{
+            height: 36, padding: "0 18px", fontSize: 13, fontWeight: 600,
+            border: "1px solid #D0D5DD", borderRadius: 4,
+            backgroundColor: "#FFFFFF", color: stageLocalIdx === 0 ? "#C0C8D0" : "#333",
+            cursor: stageLocalIdx === 0 ? "default" : "pointer", opacity: stageLocalIdx === 0 ? 0.5 : 1,
+          }}
         >
-          ← Previous
+          &lt; Back
         </button>
-
-        <span className="text-xs text-gray-400">
-          {stageLocalIdx + 1} / {stageTotal}
-        </span>
 
         <button
           onClick={goNext}
-          className="rounded-lg bg-black px-4 py-1.5 text-xs font-semibold text-white hover:bg-gray-800"
+          style={{
+            height: 36, padding: "0 24px", fontSize: 13, fontWeight: 700,
+            border: "none", borderRadius: 4,
+            backgroundColor: "#0073E6", color: "#FFFFFF", cursor: "pointer",
+          }}
         >
           {isLastInStage
-            ? isStage1
-              ? "Module 2 →"
-              : "검토 →"
-            : "Next →"}
+            ? isStage1 ? "Module 2 >" : "검토 >"
+            : "Next >"}
         </button>
       </div>
     </div>
+  );
+
+  const footer = (
+    <>
+      <span style={{ fontSize: 15, color: "#333" }}>
+        Question {stageLocalIdx + 1} of {stageTotal}
+        <span style={{ marginLeft: 8, fontSize: 13, color: "#999" }}>
+          (Module {isStage1 ? "1" : "2"})
+        </span>
+      </span>
+      <span style={{
+        fontSize: 18, fontWeight: 700, color: isWarning ? "#DC2626" : "#333",
+        fontFamily: "monospace",
+      }}>
+        Time Remaining: {formatTime(secondsLeft)}
+      </span>
+    </>
   );
 
   return (
@@ -1177,6 +1278,7 @@ export default function MockTestPlayer({
       header={header}
       left={passagePane}
       right={questionPane}
+      footer={footer}
     />
   );
 }

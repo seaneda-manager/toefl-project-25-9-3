@@ -391,9 +391,17 @@ export interface RReadingModule {
   isPretest?: boolean; // 점수에 안 들어가는 pretest item 표시용 (나중 확장)
 }
 
+/** Adaptive Stage 2 pool: Stage 1 정답률에 따라 hard/easy 분기 */
+export interface RStage2Pool {
+  cutScore: number;          // 예: 0.7 (70% 이상 → hard)
+  hard: RReadingModule;      // High 모듈
+  easy: RReadingModule;      // Low-Mid 모듈
+}
+
 /** 2026 형식 전체 Reading 세트 (Runner에서 바로 사용 가능) */
 export interface RReadingTest2026 {
-  meta: RReadingTestMeta; // examEra === 'ibt_2026' 여야 함
-  modules: [RReadingModule, RReadingModule]; // [Stage1, Stage2]
+  meta: RReadingTestMeta;                      // examEra === 'ibt_2026' 여야 함
+  modules: [RReadingModule, RReadingModule];   // [Stage1, Stage2 기본값]
+  stage2Pool?: RStage2Pool;                    // 적응형 시험에서 사용
 }
 export * from "./naesin";
