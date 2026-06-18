@@ -22,12 +22,15 @@ export interface LListeningTestMeta {
   source?: string | null;
 }
 
-/** 2026 Listening에서 지원할 Task 타입 */
+/** 2026 Listening에서 지원할 Task 타입 (레거시 포함) */
 export type ListeningTaskKind =
-  | "short_response" // Listen and Choose a Response
+  | "short_response"
   | "conversation"
   | "announcement"
-  | "academic_talk";
+  | "academic_talk"
+  // ── 2026 Updated TOEFL 신유형 ──
+  | "academic_lecture"    // 기초 학술 강의 (4문항/세트, 60~90초)
+  | "campus_audio_log";   // 캠퍼스 안내방송/팟캐스트 (2문항/세트, 30~45초)
 
 /** 공통 베이스 (stage, 난이도 등) */
 export interface LBaseItem {
@@ -53,6 +56,54 @@ export interface LListeningModule {
 export interface LListeningTest2026 {
   meta: LListeningTestMeta; // examEra === 'ibt_2026' 여야 함
   modules: [LListeningModule, LListeningModule]; // [Stage1, Stage2]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Updated TOEFL Listening 2026 — 선형(Linear) 구조 (비적응형)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 문항 선택지 (multi-select 대응: isCorrect 배열 위치로 판별) */
+export interface LChoice2026 {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+/** 문항 (4지선다 또는 다중선택) */
+export interface LQuestion2026 {
+  id: string;
+  number: number;
+  type: "main_topic" | "detail" | "function" | "inference" | "attitude" | "multi_select" | "table";
+  stem: string;
+  choices: LChoice2026[];
+  /** 정답 인덱스 배열 (단일선택은 length 1, 다중선택은 length 2+) */
+  correctIndices: number[];
+  /** 다중선택 시 선택해야 할 개수 (기본 1) */
+  selectCount?: number;
+}
+
+/** 세트 하나 (오디오 1개 + 문항 N개) */
+export interface LListeningTrack2026 {
+  id: string;
+  taskKind: "conversation" | "academic_lecture" | "campus_audio_log";
+  title?: string;
+  /** 오디오 파일 URL (실제 테스트용) */
+  audioUrl: string;
+  /** 리스닝 화면에 보여줄 컨텍스트 이미지 URL */
+  illustrationUrl?: string;
+  /** 실제 오디오 재생 시간(초) — 프로그레스바 계산용 */
+  audioSeconds?: number;
+  /** 스크립트 (study 모드 / 관리자 검토용) */
+  transcript?: string;
+  questions: LQuestion2026[];
+  /** 문제 풀이 전체 제한 시간(초) — 기본 300 */
+  testingSeconds?: number;
+}
+
+/** Updated TOEFL Listening 선형 시험 */
+export interface LListeningTest2026Linear {
+  meta: LListeningTestMeta;
+  tracks: LListeningTrack2026[];
 }
 
 /* ------------------------------------
