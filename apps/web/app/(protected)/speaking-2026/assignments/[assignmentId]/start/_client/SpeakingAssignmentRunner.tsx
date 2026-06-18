@@ -92,9 +92,13 @@ export default function SpeakingAssignmentRunner({ assignmentId, test, testLabel
           id: s.id,
           sentence: s.text,
           audioUrl: s.audioUrl,
+          speakingSeconds: s.speakingSeconds,
+          region: s.region,
         }))}
+        globalImageUrl={listenRepeat.imageUrl}
         mode="test"
-        repeatSeconds={listenRepeat.sentences[0]?.speakingSeconds ?? 10}
+        totalQuestionOffset={1}
+        totalQuestions={11}
         onComplete={handleListenRepeatComplete}
       />
     );
@@ -108,9 +112,13 @@ export default function SpeakingAssignmentRunner({ assignmentId, test, testLabel
           question: q.text,
           audioUrl: q.audioUrl,
           answerSeconds: q.speakingSeconds,
+          topic: q.topic,
         }))}
+        interviewerGifUrl={interview.interviewerGifUrl}
         mode="test"
         defaultAnswerSeconds={45}
+        totalQuestionOffset={8}
+        totalQuestions={11}
         onComplete={handleInterviewComplete}
       />
     );
