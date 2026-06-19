@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
-import SectionGuide from '@/app/components/SectionGuide';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +45,6 @@ export default async function VocabHomePage() {
         .select('drill_id, is_correct')
         .in('drill_id', drillIds);
 
-      // latest response per drill_id (responses returned oldest→newest; reverse for latest-first)
       const responseMap = new Map<string, boolean>();
       for (const r of (responses ?? []).reverse()) {
         if (!responseMap.has(r.drill_id)) {
@@ -66,7 +64,6 @@ export default async function VocabHomePage() {
     : null;
 
   // ── 2. 단어장 plans ──────────────────────────────────────────────
-  // academy_students.id via profile_id = user.id (also try auth_user_id)
   let academyStudentId: string | undefined;
 
   const { data: acByProfile } = await supabase
@@ -149,219 +146,199 @@ export default async function VocabHomePage() {
     }
   }
 
+  const todayPlan = plans.find((p) => !p.isPaused && p.todayCount > 0);
+  const totalWords = plans.reduce((acc, p) => acc + p.todayCount, 0);
+
   return (
-    <main className="space-y-6 sm:space-y-8">
-      {/* 헤더 */}
-      <header>
-        <h1 className="text-xl font-bold text-neutral-900">단어 학습</h1>
+    <main
+      className="-m-4 md:-m-6 min-h-full"
+      style={{ background: '#1a3d30' }}
+    >
+      {/* ── 상단 인사 + 스트릭 ── */}
+      <header className="flex items-center justify-between px-5 pt-6 pb-2">
+        <div>
+          <p className="text-xs mb-1" style={{ color: '#5DCAA5' }}>단어 학습</p>
+          <h1 className="text-2xl font-medium leading-tight" style={{ color: '#E1F5EE' }}>
+            {todayPlan
+              ? <>오늘도<br /><span style={{ color: '#5DCAA5' }}>{totalWords}단어</span> 정복해요</>
+              : <>오늘 학습할<br /><span style={{ color: '#5DCAA5' }}>단어가 없어요</span></>
+            }
+          </h1>
+        </div>
+        <div
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
+          style={{ background: '#153229', border: '0.5px solid #2d6652', color: '#EF9F27' }}
+        >
+          🔥 7일 연속
+        </div>
       </header>
 
-      <SectionGuide
-        storageKey="guide-seen-vocab"
-        color="amber"
-        icon="🔤"
-        title="단어"
-        tagline="매일 꾸준히 — 내신 단어 + 단어장 플랜을 한곳에서 관리합니다."
-        outcomes={[
-          '내신 교과서 지문의 핵심 어휘를 정확한 뜻과 함께 암기할 수 있다',
-          '매일 정해진 단어를 반복 노출로 장기 기억에 저장할 수 있다',
-          '오답 단어를 집중 반복해 취약 어휘를 빠르게 제거할 수 있다',
-        ]}
-        steps={[
-          { icon: '📖', title: '내신 단어', desc: '지문별 단어 드릴 결과가 아래에 표시됩니다. 정답률과 오답 수로 복습 우선순위를 파악하세요.' },
-          { icon: '📚', title: '단어장 플랜', desc: '선생님이 배정한 Day 플랜을 따라 매일 새 단어를 학습합니다. "오늘 학습 가능" 배지가 있으면 바로 시작하세요.' },
-          { icon: '🔁', title: '오답 복습', desc: '틀린 단어는 [오답 복습] 버튼으로 집중 반복할 수 있습니다.' },
-        ]}
-        progress={naesin.total > 0 ? { done: naesin.studied, total: naesin.total, unit: '단어' } : undefined}
-        nextAction={
-          naesin.wrong > 0
-            ? { label: '오답 복습하기', href: '/hi-naesin/vocab?filter=wrong' }
-            : naesin.total - naesin.studied > 0
-            ? { label: '내신 단어 학습', href: '/hi-naesin/vocab?filter=unstudied' }
-            : plans.find((p) => p.todayCount > 0)
-            ? { label: '오늘 단어장 시작', href: '/vocab/session' }
-            : undefined
-        }
-      />
-
-      {/* ── 내신 단어 ───────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-700">내신 단어</h2>
-          {assignedPassageIds.length > 0 && (
-            <Link
-              href="/hi-naesin/vocab"
-              className="text-xs text-emerald-600 hover:underline"
-            >
-              전체 보기 →
-            </Link>
-          )}
-        </div>
-
-        {assignedPassageIds.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-neutral-400">
-            배정된 내신 지문이 없습니다.{' '}
-            <Link href="/hi-naesin" className="underline">드릴 목록으로</Link>
-          </div>
+      {/* ── CTA 카드 ── */}
+      <div className="px-5 pt-4 pb-5">
+        {todayPlan ? (
+          <Link href="/vocab/session" className="block rounded-2xl overflow-hidden relative"
+            style={{ background: '#5DCAA5' }}>
+            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-30"
+              style={{ background: '#9FE1CB' }} />
+            <div className="absolute -left-4 -bottom-6 w-20 h-20 rounded-full opacity-20"
+              style={{ background: '#1D9E75' }} />
+            <div className="relative z-10 flex items-center justify-between p-6">
+              <div>
+                <span className="text-xs rounded-full px-2.5 py-1 font-medium inline-block mb-2"
+                  style={{ background: '#085041', color: '#9FE1CB' }}>
+                  {todayPlan.trackTitle}
+                </span>
+                <div className="text-5xl font-medium leading-none" style={{ color: '#04342C' }}>
+                  {totalWords}
+                </div>
+                <div className="text-sm mt-1" style={{ color: '#085041' }}>오늘 학습할 단어</div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: '#04342C' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 4l14 8-14 8V4z" fill="#5DCAA5" />
+                </svg>
+              </div>
+            </div>
+          </Link>
         ) : (
-          <div className="rounded-2xl border bg-white p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <MiniStat label="전체 단어"  value={`${naesin.total}개`} />
-              <MiniStat
-                label="학습 완료"
-                value={`${naesin.studied}개`}
-                sub={naesin.total > 0
-                  ? `${Math.round((naesin.studied / naesin.total) * 100)}%`
-                  : undefined}
-              />
-              <MiniStat
-                label="정답률"
-                value={naesinAccuracy != null ? `${naesinAccuracy}%` : '—'}
-              />
-              <MiniStat
-                label="오답"
-                value={`${naesin.wrong}개`}
-                red={naesin.wrong > 0}
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {naesin.wrong > 0 && (
-                <Link
-                  href="/hi-naesin/vocab?filter=wrong"
-                  className="rounded-xl border border-red-200 px-4 py-1.5 text-xs text-red-600 hover:bg-red-50"
-                >
-                  오답 복습
-                </Link>
-              )}
-              {naesin.total - naesin.studied > 0 && (
-                <Link
-                  href="/hi-naesin/vocab?filter=unstudied"
-                  className="rounded-xl border px-4 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
-                >
-                  미학습 보기
-                </Link>
-              )}
-              <Link
-                href="/hi-naesin/vocab"
-                className="rounded-xl border px-4 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
-              >
-                전체 단어 보기
-              </Link>
-            </div>
+          <div className="rounded-2xl p-6 text-center" style={{ background: '#22503f', border: '0.5px solid #2d6652' }}>
+            <p className="text-sm" style={{ color: '#4da88a' }}>오늘 배정된 단어가 없습니다</p>
+            <p className="text-xs mt-1" style={{ color: '#3d7a63' }}>선생님이 단어장을 배정하면 여기에 표시됩니다</p>
           </div>
         )}
-      </section>
+      </div>
 
-      {/* ── 단어장 ──────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-neutral-700">단어장</h2>
+      {/* ── 내신 단어 stats ── */}
+      {assignedPassageIds.length > 0 && (
+        <section className="px-5 pb-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#4da88a' }}>
+              내신 단어
+            </span>
+            <Link href="/hi-naesin/vocab" className="text-xs" style={{ color: '#5DCAA5' }}>
+              자세히 →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <StatCard label="학습 완료" value={`${naesin.studied}`} unit="개" accent />
+            <StatCard label="복습 필요" value={`${naesin.wrong}`} unit="개" danger={naesin.wrong > 0} />
+            <StatCard label="정답률" value={naesinAccuracy != null ? `${naesinAccuracy}` : '—'} unit={naesinAccuracy != null ? '%' : ''} />
+            <StatCard label="전체 단어" value={`${naesin.total}`} unit="개" />
+          </div>
+          {naesin.wrong > 0 && (
+            <Link
+              href="/hi-naesin/vocab?filter=wrong"
+              className="mt-2 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-medium w-full"
+              style={{ background: '#22503f', border: '0.5px solid #2d6652', color: '#9FE1CB' }}
+            >
+              오답 복습하기
+            </Link>
+          )}
+        </section>
+      )}
+
+      {/* ── 단어장 플랜 ── */}
+      <section className="px-5 pb-8">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#4da88a' }}>
+            내 단어장
+          </span>
+        </div>
 
         {plans.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-neutral-400">
-            배정된 단어장이 없습니다.
+          <div className="rounded-2xl p-8 text-center" style={{ background: '#22503f', border: '0.5px dashed #2d6652' }}>
+            <p className="text-sm" style={{ color: '#4da88a' }}>배정된 단어장이 없습니다</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="flex flex-col gap-2">
             {plans.map((plan) => {
-              const progressPct = plan.totalDays > 0
+              const pct = plan.totalDays > 0
                 ? Math.min(Math.round((plan.cursor / plan.totalDays) * 100), 100)
                 : 0;
+              const isActive = !plan.isPaused && plan.todayCount > 0;
+              const circumference = 2 * Math.PI * 18;
+              const offset = circumference - (pct / 100) * circumference;
 
               return (
-                <div key={plan.id} className="rounded-2xl border bg-white p-5 space-y-3">
-                  {/* 제목 + 상태 */}
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-neutral-800 leading-snug">
+                <Link
+                  key={plan.id}
+                  href={isActive ? '/vocab/session' : '#'}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                  style={{
+                    background: isActive ? '#1e4a3a' : '#22503f',
+                    border: `0.5px solid ${isActive ? '#5DCAA5' : '#2d6652'}`,
+                  }}
+                >
+                  {/* 원형 진도 */}
+                  <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
+                    <circle cx="22" cy="22" r="18" fill="none" stroke="#2d6652" strokeWidth="3" />
+                    <circle
+                      cx="22" cy="22" r="18" fill="none"
+                      stroke={isActive ? '#5DCAA5' : '#3d7a63'}
+                      strokeWidth="3"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={offset}
+                      strokeLinecap="round"
+                    />
+                    <text
+                      x="22" y="22"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize="10"
+                      fill={isActive ? '#5DCAA5' : '#3d7a63'}
+                      style={{ transform: 'rotate(90deg)', transformOrigin: '22px 22px' }}
+                    >
+                      {plan.cursor}
+                    </text>
+                  </svg>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate"
+                      style={{ color: isActive ? '#C8EEE3' : '#3d7a63' }}>
                       {plan.trackTitle}
                     </p>
-                    {plan.isPaused ? (
-                      <span className="shrink-0 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] text-neutral-400">
-                        일시정지
-                      </span>
-                    ) : plan.todayCount > 0 ? (
-                      <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700">
-                        오늘 학습 가능
-                      </span>
-                    ) : (
-                      <span className="shrink-0 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] text-neutral-500">
-                        대기중
-                      </span>
-                    )}
+                    <p className="text-xs mt-0.5" style={{ color: '#4da88a' }}>
+                      Day {plan.cursor} / {plan.totalDays}
+                      {plan.isPaused ? ' · 일시정지' : plan.todayCount > 0 ? ' · 오늘 가능' : ' · 내일 오픈'}
+                    </p>
                   </div>
 
-                  {/* 진도 바 */}
-                  {plan.totalDays > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px] text-neutral-400">
-                        <span>Day {plan.cursor} / {plan.totalDays}</span>
-                        <span>{progressPct}%</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-neutral-100">
-                        <div
-                          className="h-1.5 rounded-full bg-emerald-400 transition-all"
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 시작 버튼 */}
-                  {!plan.isPaused && plan.todayCount > 0 ? (
-                    <Link
-                      href="/vocab/session"
-                      className="block rounded-xl bg-emerald-600 py-1.5 text-center text-xs font-semibold text-white hover:bg-emerald-700"
-                    >
-                      오늘 학습 시작
-                    </Link>
-                  ) : !plan.isPaused ? (
-                    <p className="text-[11px] text-neutral-400 text-center">
-                      다음 학습일에 새 단어가 열립니다
-                    </p>
-                  ) : null}
-                </div>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                    <path d="M6 3l5 5-5 5" stroke={isActive ? '#5DCAA5' : '#2d6652'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
               );
             })}
           </div>
         )}
       </section>
-
-      {/* ── 구동사 ──────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-700">구동사</h2>
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-0.5 text-[11px] text-neutral-400">
-            준비 중
-          </span>
-        </div>
-
-        <div className="rounded-2xl border border-dashed bg-neutral-50/60 p-8 text-center space-y-1.5">
-          <p className="text-sm font-medium text-neutral-500">구동사 학습 (Phrasal Verbs)</p>
-          <p className="text-xs text-neutral-400">
-            get up, look into, take off… 문맥 기반 구동사 드릴이 곧 추가됩니다.
-          </p>
-        </div>
-      </section>
     </main>
   );
 }
 
-// ── 서브 컴포넌트 ───────────────────────────────────────────────────
-function MiniStat({
-  label, value, sub, red,
+function StatCard({
+  label, value, unit, accent, danger,
 }: {
   label: string;
   value: string;
-  sub?: string;
-  red?: boolean;
+  unit?: string;
+  accent?: boolean;
+  danger?: boolean;
 }) {
+  const numColor = danger ? '#F09595' : accent ? '#5DCAA5' : '#E1F5EE';
   return (
-    <div>
-      <p className="text-xs text-neutral-400">{label}</p>
-      <p className={`mt-0.5 text-xl font-bold ${red ? 'text-red-500' : 'text-neutral-900'}`}>
-        {value}
-      </p>
-      {sub && <p className="text-[11px] text-neutral-400">{sub}</p>}
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{
+        background: accent ? '#1e4a3a' : '#22503f',
+        border: `0.5px solid ${accent ? '#5DCAA5' : '#2d6652'}`,
+      }}
+    >
+      <div className="text-2xl font-medium leading-none" style={{ color: numColor }}>
+        {value}<span className="text-sm ml-0.5" style={{ color: numColor }}>{unit}</span>
+      </div>
+      <div className="text-xs mt-1" style={{ color: '#4da88a' }}>{label}</div>
     </div>
   );
 }
