@@ -150,73 +150,65 @@ export default async function VocabHomePage() {
   const totalWords = plans.reduce((acc, p) => acc + p.todayCount, 0);
 
   return (
-    <main
-      className="-m-4 md:-m-6 min-h-full"
-      style={{ background: '#1a3d30' }}
-    >
+    <main className="space-y-5">
       {/* ── 상단 인사 + 스트릭 ── */}
-      <header className="flex items-center justify-between px-5 pt-6 pb-2">
+      <header className="flex items-center justify-between">
         <div>
-          <p className="text-xs mb-1" style={{ color: '#5DCAA5' }}>단어 학습</p>
-          <h1 className="text-2xl font-medium leading-tight" style={{ color: '#E1F5EE' }}>
+          <p className="text-xs font-medium mb-1 text-emerald-600">단어 학습</p>
+          <h1 className="text-2xl font-semibold leading-tight text-gray-900">
             {todayPlan
-              ? <>오늘도<br /><span style={{ color: '#5DCAA5' }}>{totalWords}단어</span> 정복해요</>
-              : <>오늘 학습할<br /><span style={{ color: '#5DCAA5' }}>단어가 없어요</span></>
+              ? <>오늘도 <span className="text-emerald-600">{totalWords}단어</span> 정복해요</>
+              : <>오늘 학습할 <span className="text-emerald-600">단어가 없어요</span></>
             }
           </h1>
         </div>
-        <div
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
-          style={{ background: '#153229', border: '0.5px solid #2d6652', color: '#EF9F27' }}
-        >
+        <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
           🔥 7일 연속
         </div>
       </header>
 
       {/* ── CTA 카드 ── */}
-      <div className="px-5 pt-4 pb-5">
-        {todayPlan ? (
-          <Link href="/vocab/session" className="block rounded-2xl overflow-hidden relative"
-            style={{ background: '#5DCAA5' }}>
-            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-30"
-              style={{ background: '#9FE1CB' }} />
-            <div className="absolute -left-4 -bottom-6 w-20 h-20 rounded-full opacity-20"
-              style={{ background: '#1D9E75' }} />
-            <div className="relative z-10 flex items-center justify-between p-6">
-              <div>
-                <span className="text-xs rounded-full px-2.5 py-1 font-medium inline-block mb-2"
-                  style={{ background: '#085041', color: '#9FE1CB' }}>
-                  {todayPlan.trackTitle}
-                </span>
-                <div className="text-5xl font-medium leading-none" style={{ color: '#04342C' }}>
-                  {totalWords}
-                </div>
-                <div className="text-sm mt-1" style={{ color: '#085041' }}>오늘 학습할 단어</div>
+      {todayPlan ? (
+        <Link href="/vocab/session" className="block rounded-2xl overflow-hidden relative"
+          style={{ background: '#5DCAA5' }}>
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-20"
+            style={{ background: '#9FE1CB' }} />
+          <div className="absolute -left-4 -bottom-6 w-20 h-20 rounded-full opacity-15"
+            style={{ background: '#1D9E75' }} />
+          <div className="relative z-10 flex items-center justify-between p-6">
+            <div>
+              <span className="text-xs rounded-full px-2.5 py-1 font-medium inline-block mb-2"
+                style={{ background: '#085041', color: '#9FE1CB' }}>
+                {todayPlan.trackTitle}
+              </span>
+              <div className="text-5xl font-semibold leading-none" style={{ color: '#04342C' }}>
+                {totalWords}
               </div>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: '#04342C' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M6 4l14 8-14 8V4z" fill="#5DCAA5" />
-                </svg>
-              </div>
+              <div className="text-sm mt-1 font-medium" style={{ color: '#085041' }}>오늘 학습할 단어</div>
             </div>
-          </Link>
-        ) : (
-          <div className="rounded-2xl p-6 text-center" style={{ background: '#22503f', border: '0.5px solid #2d6652' }}>
-            <p className="text-sm" style={{ color: '#4da88a' }}>오늘 배정된 단어가 없습니다</p>
-            <p className="text-xs mt-1" style={{ color: '#3d7a63' }}>선생님이 단어장을 배정하면 여기에 표시됩니다</p>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: '#04342C' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M6 4l14 8-14 8V4z" fill="#5DCAA5" />
+              </svg>
+            </div>
           </div>
-        )}
-      </div>
+        </Link>
+      ) : (
+        <div className="rounded-2xl p-6 text-center bg-white border border-gray-100 shadow-sm">
+          <p className="text-sm text-gray-500">오늘 배정된 단어가 없습니다</p>
+          <p className="text-xs mt-1 text-gray-400">선생님이 단어장을 배정하면 여기에 표시됩니다</p>
+        </div>
+      )}
 
       {/* ── 내신 단어 stats ── */}
       {assignedPassageIds.length > 0 && (
-        <section className="px-5 pb-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#4da88a' }}>
+        <section>
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-semibold tracking-widest uppercase text-gray-400">
               내신 단어
             </span>
-            <Link href="/hi-naesin/vocab" className="text-xs" style={{ color: '#5DCAA5' }}>
+            <Link href="/hi-naesin/vocab" className="text-xs text-emerald-600 hover:text-emerald-700">
               자세히 →
             </Link>
           </div>
@@ -229,8 +221,7 @@ export default async function VocabHomePage() {
           {naesin.wrong > 0 && (
             <Link
               href="/hi-naesin/vocab?filter=wrong"
-              className="mt-2 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-medium w-full"
-              style={{ background: '#22503f', border: '0.5px solid #2d6652', color: '#9FE1CB' }}
+              className="mt-2 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-medium w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
             >
               오답 복습하기
             </Link>
@@ -239,16 +230,16 @@ export default async function VocabHomePage() {
       )}
 
       {/* ── 단어장 플랜 ── */}
-      <section className="px-5 pb-8">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-medium tracking-widest uppercase" style={{ color: '#4da88a' }}>
+      <section>
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-xs font-semibold tracking-widest uppercase text-gray-400">
             내 단어장
           </span>
         </div>
 
         {plans.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center" style={{ background: '#22503f', border: '0.5px dashed #2d6652' }}>
-            <p className="text-sm" style={{ color: '#4da88a' }}>배정된 단어장이 없습니다</p>
+          <div className="rounded-2xl p-8 text-center bg-white border border-dashed border-gray-200">
+            <p className="text-sm text-gray-400">배정된 단어장이 없습니다</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -264,18 +255,15 @@ export default async function VocabHomePage() {
                 <Link
                   key={plan.id}
                   href={isActive ? '/vocab/session' : '#'}
-                  className="flex items-center gap-3 rounded-2xl px-4 py-3"
-                  style={{
-                    background: isActive ? '#1e4a3a' : '#22503f',
-                    border: `0.5px solid ${isActive ? '#5DCAA5' : '#2d6652'}`,
-                  }}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white border transition hover:shadow-sm"
+                  style={{ borderColor: isActive ? '#5DCAA5' : '#e5e7eb' }}
                 >
                   {/* 원형 진도 */}
                   <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="#2d6652" strokeWidth="3" />
+                    <circle cx="22" cy="22" r="18" fill="none" stroke="#e5e7eb" strokeWidth="3" />
                     <circle
                       cx="22" cy="22" r="18" fill="none"
-                      stroke={isActive ? '#5DCAA5' : '#3d7a63'}
+                      stroke={isActive ? '#5DCAA5' : '#d1d5db'}
                       strokeWidth="3"
                       strokeDasharray={circumference}
                       strokeDashoffset={offset}
@@ -286,7 +274,7 @@ export default async function VocabHomePage() {
                       textAnchor="middle"
                       dominantBaseline="central"
                       fontSize="10"
-                      fill={isActive ? '#5DCAA5' : '#3d7a63'}
+                      fill={isActive ? '#059669' : '#9ca3af'}
                       style={{ transform: 'rotate(90deg)', transformOrigin: '22px 22px' }}
                     >
                       {plan.cursor}
@@ -295,17 +283,17 @@ export default async function VocabHomePage() {
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate"
-                      style={{ color: isActive ? '#C8EEE3' : '#3d7a63' }}>
+                      style={{ color: isActive ? '#065f46' : '#6b7280' }}>
                       {plan.trackTitle}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: '#4da88a' }}>
+                    <p className="text-xs mt-0.5 text-gray-400">
                       Day {plan.cursor} / {plan.totalDays}
                       {plan.isPaused ? ' · 일시정지' : plan.todayCount > 0 ? ' · 오늘 가능' : ' · 내일 오픈'}
                     </p>
                   </div>
 
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                    <path d="M6 3l5 5-5 5" stroke={isActive ? '#5DCAA5' : '#2d6652'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M6 3l5 5-5 5" stroke={isActive ? '#5DCAA5' : '#d1d5db'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </Link>
               );
@@ -326,19 +314,16 @@ function StatCard({
   accent?: boolean;
   danger?: boolean;
 }) {
-  const numColor = danger ? '#F09595' : accent ? '#5DCAA5' : '#E1F5EE';
+  const numColor = danger ? '#ef4444' : accent ? '#059669' : '#111827';
   return (
     <div
-      className="rounded-2xl px-4 py-3"
-      style={{
-        background: accent ? '#1e4a3a' : '#22503f',
-        border: `0.5px solid ${accent ? '#5DCAA5' : '#2d6652'}`,
-      }}
+      className="rounded-2xl px-4 py-3 bg-white border"
+      style={{ borderColor: accent ? '#5DCAA5' : '#e5e7eb' }}
     >
-      <div className="text-2xl font-medium leading-none" style={{ color: numColor }}>
-        {value}<span className="text-sm ml-0.5" style={{ color: numColor }}>{unit}</span>
+      <div className="text-2xl font-semibold leading-none" style={{ color: numColor }}>
+        {value}<span className="text-sm ml-0.5">{unit}</span>
       </div>
-      <div className="text-xs mt-1" style={{ color: '#4da88a' }}>{label}</div>
+      <div className="text-xs mt-1 text-gray-400">{label}</div>
     </div>
   );
 }
