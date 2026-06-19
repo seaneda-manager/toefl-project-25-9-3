@@ -17,30 +17,28 @@ function safeWords(v: any): Word[] {
   return Array.isArray(v) ? (v as Word[]).filter(Boolean) : [];
 }
 
-/* ── Progress Bar ─────────────────────────────────────────── */
 function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
   return (
     <div className="w-full space-y-2">
       <div className="flex items-center justify-between text-sm font-semibold">
-        <span className="text-[#0F766E]">어휘 확인</span>
-        <span className="text-slate-400">
-          <span className="text-[#F97316] font-bold">{current}</span>
-          <span className="text-slate-300 mx-0.5">/</span>
-          {total}
+        <span style={{ color: "#5DCAA5" }}>어휘 확인</span>
+        <span>
+          <span className="font-bold" style={{ color: "#EF9F27" }}>{current}</span>
+          <span className="mx-0.5" style={{ color: "#2d6652" }}>/</span>
+          <span style={{ color: "#4da88a" }}>{total}</span>
         </span>
       </div>
-      <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
+      <div className="h-3 w-full rounded-full overflow-hidden" style={{ background: "#153229" }}>
         <div
-          className="h-full rounded-full bg-[#0F766E] transition-all duration-300 ease-out"
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full transition-all duration-300 ease-out"
+          style={{ width: `${pct}%`, background: "#5DCAA5" }}
         />
       </div>
     </div>
   );
 }
 
-/* ── Main ─────────────────────────────────────────────────── */
 export default function PrescreenBoard({
   words,
   onFinish,
@@ -91,8 +89,8 @@ export default function PrescreenBoard({
 
   if (!list.length) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 text-sm">
+      <div className="h-full w-full flex items-center justify-center" style={{ background: "#1a3d30" }}>
+        <div className="rounded-3xl p-8 text-center text-sm" style={{ background: "#22503f", border: "0.5px solid #2d6652", color: "#4da88a" }}>
           단어가 없습니다.
         </div>
       </div>
@@ -100,7 +98,7 @@ export default function PrescreenBoard({
   }
 
   return (
-    <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
+    <div className="h-full w-full flex items-center justify-center" style={{ background: "#1a3d30" }}>
       <div
         className="flex flex-col w-[min(600px,88%)] gap-6"
         key={animKey}
@@ -109,27 +107,30 @@ export default function PrescreenBoard({
         {/* 헤더 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-extrabold tracking-widest text-[#0F766E] uppercase">
+            <span className="text-sm font-extrabold tracking-widest uppercase" style={{ color: "#5DCAA5" }}>
               LEXiOX
             </span>
-            <span className="text-sm text-slate-300">·</span>
-            <span className="text-sm font-semibold text-slate-400">어휘 확인</span>
+            <span className="text-sm" style={{ color: "#2d6652" }}>·</span>
+            <span className="text-sm font-semibold" style={{ color: "#4da88a" }}>어휘 확인</span>
           </div>
           <ProgressBar current={i + 1} total={total} />
         </div>
 
         {/* 단어 카드 */}
-        <div className="rounded-3xl bg-white shadow-[0_4px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-8 py-10 text-center space-y-4">
-          {/* 단어 */}
-          <p className="text-[clamp(36px,6cqi,72px)] font-extrabold tracking-tight text-slate-900 leading-tight break-words">
+        <div
+          className="rounded-3xl px-8 py-10 text-center space-y-4"
+          style={{ background: "#22503f", border: "0.5px solid #2d6652", boxShadow: "0 4px 32px rgba(0,0,0,0.25)" }}
+        >
+          <p
+            className="font-extrabold tracking-tight leading-tight break-words"
+            style={{ fontSize: "clamp(36px,6cqi,72px)", color: "#E1F5EE" }}
+          >
             {cur?.text ?? ""}
           </p>
 
-          {/* 구분선 */}
-          <div className="w-10 h-[2px] bg-[#0F766E] mx-auto rounded-full opacity-40" />
+          <div className="w-10 h-[2px] mx-auto rounded-full" style={{ background: "#5DCAA5", opacity: 0.5 }} />
 
-          {/* 질문 */}
-          <p className="text-base font-semibold text-slate-500">
+          <p className="text-base font-semibold" style={{ color: "#4da88a" }}>
             이 단어를 알고 있나요?
           </p>
         </div>
@@ -139,16 +140,18 @@ export default function PrescreenBoard({
           <button
             type="button"
             onClick={() => commit(true)}
-            className="w-full rounded-2xl bg-[#0F766E] hover:bg-[#115E59] active:scale-[0.98] text-white font-bold text-lg py-5 transition-all duration-150 shadow-sm"
+            className="w-full rounded-2xl font-bold text-lg py-5 transition-all duration-150 active:scale-[0.98]"
+            style={{ background: "#5DCAA5", color: "#04342C" }}
           >
-            알아요 <span className="ml-2 opacity-50 text-xs font-semibold">(1)</span>
+            알아요 <span className="ml-2 text-xs font-semibold" style={{ opacity: 0.5 }}>(1)</span>
           </button>
           <button
             type="button"
             onClick={() => commit(false)}
-            className="w-full rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-bold text-lg py-5 transition-all duration-150 border border-slate-200 shadow-sm"
+            className="w-full rounded-2xl font-bold text-lg py-5 transition-all duration-150 active:scale-[0.98]"
+            style={{ background: "transparent", border: "1.5px solid #3d7a63", color: "#9FE1CB" }}
           >
-            아직 몰라요 <span className="ml-2 opacity-40 text-xs font-semibold">(2)</span>
+            아직 몰라요 <span className="ml-2 text-xs font-semibold" style={{ opacity: 0.4 }}>(2)</span>
           </button>
         </div>
       </div>

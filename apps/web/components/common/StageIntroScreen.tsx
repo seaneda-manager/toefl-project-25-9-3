@@ -18,6 +18,7 @@ type Props = {
   onDone?: () => void;
 
   children?: React.ReactNode;
+  theme?: "light" | "dark";
 };
 
 function isTypingTarget(el: EventTarget | null) {
@@ -41,7 +42,9 @@ export default function StageIntroScreen({
   doneLabel,
   onDone,
   children,
+  theme = "light",
 }: Props) {
+  const dark = theme === "dark";
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
@@ -61,32 +64,38 @@ export default function StageIntroScreen({
   const showTwo = Boolean(primaryLabel && secondaryLabel && (onPrimary || onSecondary));
   const showOne = Boolean(!showTwo && onDone);
 
+  const panelStyle = dark
+    ? { background: "#22503f", border: "1px solid rgba(93,202,165,0.15)", color: "#E1F5EE" }
+    : undefined;
+
+  const badgePillStyle = dark
+    ? { background: "rgba(26,61,48,0.7)", border: "1px solid rgba(255,255,255,0.12)", color: "#9FE1CB" }
+    : undefined;
+
   return (
-    <div className="lx-panel rounded-[28px] border border-slate-200 bg-white/95 shadow-sm text-slate-900">
-      {/* ✅ 스케일 래퍼(전체 내용이 창 크기 변화에 비례해서 같이 줄고 늘어남) */}
+    <div className="lx-panel rounded-[28px] shadow-sm" style={panelStyle ?? { border: "1px solid #e2e8f0", background: "rgba(255,255,255,0.95)", color: "#0f172a" }}>
       <div className="lx-panel-content">
         <div className="lx-panel-scroll">
-          {/* ✅ 헤더: 중첩 패널일 때 CSS로 숨길 수 있게 class를 분리 */}
           <div className="lx-panel-header p-8 pb-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-extrabold text-slate-900">
+            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-extrabold" style={badgePillStyle ?? { border: "1px solid #e2e8f0", background: "white", color: "#0f172a" }}>
               {badge ?? "Info"}
-              <span className="text-slate-500">(Keyboard supported)</span>
+              <span style={{ color: dark ? "#4da88a" : "#64748b" }}>(Keyboard supported)</span>
             </div>
 
             {title ? (
-              <div className="mt-6 text-[clamp(28px,3cqi,56px)] font-extrabold leading-tight text-slate-900">
+              <div className="mt-6 text-[clamp(28px,3cqi,56px)] font-extrabold leading-tight" style={{ color: dark ? "#E1F5EE" : "#0f172a" }}>
                 {title}
               </div>
             ) : null}
 
             {subtitle ? (
-              <div className="mt-2 text-[clamp(14px,1.5cqi,20px)] font-semibold text-slate-600">
+              <div className="mt-2 text-[clamp(14px,1.5cqi,20px)] font-semibold" style={{ color: dark ? "#4da88a" : "#475569" }}>
                 {subtitle}
               </div>
             ) : null}
 
             {hint ? (
-              <div className="mt-4 text-sm font-semibold text-slate-700">{hint}</div>
+              <div className="mt-4 text-sm font-semibold" style={{ color: dark ? "#9FE1CB" : "#334155" }}>{hint}</div>
             ) : null}
           </div>
 
@@ -97,17 +106,36 @@ export default function StageIntroScreen({
           {showTwo ? (
             <div className="px-8 pb-8">
               <div className="flex gap-4">
-                <button type="button" className="lx-btn lx-btn-primary" onClick={onPrimary}>
-                  {primaryLabel} <span className="ml-2 opacity-80">(1)</span>
-                </button>
-                <button type="button" className="lx-btn lx-btn-secondary" onClick={onSecondary}>
-                  {secondaryLabel} <span className="ml-2 opacity-70">(2)</span>
-                </button>
+                {dark ? (
+                  <>
+                    <button type="button" className="lx-btn" style={{ background: "#5DCAA5", color: "#04342C", fontWeight: 800 }} onClick={onPrimary}>
+                      {primaryLabel} <span className="ml-2 opacity-80">(1)</span>
+                    </button>
+                    <button type="button" className="lx-btn" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#9FE1CB", fontWeight: 800 }} onClick={onSecondary}>
+                      {secondaryLabel} <span className="ml-2 opacity-70">(2)</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="lx-btn lx-btn-primary" onClick={onPrimary}>
+                      {primaryLabel} <span className="ml-2 opacity-80">(1)</span>
+                    </button>
+                    <button type="button" className="lx-btn lx-btn-secondary" onClick={onSecondary}>
+                      {secondaryLabel} <span className="ml-2 opacity-70">(2)</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ) : showOne ? (
             <div className="px-8 pb-8">
-              <button type="button" className="lx-btn lx-btn-primary w-full" onClick={onDone}>
+              <button
+                type="button"
+                className="lx-btn w-full"
+                style={dark ? { background: "#5DCAA5", color: "#04342C", fontWeight: 800 } : undefined}
+                onClick={onDone}
+              >
+                {!dark && <span className="lx-btn-primary" />}
                 {doneLabel ?? "Continue"} <span className="ml-2 opacity-80">(Enter)</span>
               </button>
             </div>

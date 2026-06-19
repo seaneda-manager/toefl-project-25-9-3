@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { LearningWord } from "./learning.types";
@@ -23,7 +23,7 @@ function normEn(s: string) {
 function normKo(s: string) {
   return String(s ?? "")
     .replace(/\s+/g, "")
-    .replace(/[.,!?~`'"“”‘’(){}\[\]<>]/g, "")
+    .replace(/[.,!?~`'"""''(){}\[\]<>]/g, "")
     .trim();
 }
 
@@ -121,7 +121,7 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
   const meaningsKo = useMemo(() => pickMeaningsKo(w), [w]);
   const synonyms = useMemo(() => pickSynonyms(w), [w]);
 
-  // ✅ “희미하게 보여줄 정답”
+  // ✅ "희미하게 보여줄 정답"
   const meaning1Expected = meaningsKo[0] ?? "";
   const meaning2Expected = meaningsKo[1] ?? (meaningsKo[0] ?? "");
 
@@ -196,46 +196,50 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
       <button
         type="button"
         onClick={() => target && speak(target, accent)}
-        className="h-9 px-4 rounded-full font-extrabold bg-white/90 border border-black/10 hover:bg-white"
-        style={{ fontSize: "clamp(12px, 1.35cqi, 14px)" }}
+        className="h-9 px-4 rounded-full font-extrabold"
+        style={{ background: "rgba(26,61,48,0.8)", border: "1px solid rgba(93,202,165,0.3)", color: "#9FE1CB", fontSize: "clamp(12px, 1.35cqi, 14px)" }}
       >
         Play
       </button>
     </div>
   );
 
+  const cardStyle = { background: "rgba(26,61,48,0.6)", border: "0.5px solid rgba(255,255,255,0.1)" };
+  const labelStyle = { fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" };
+  const inputStyle = (ok: boolean, active: boolean) => ({
+    fontSize: "clamp(16px, 2.0cqi, 24px)",
+    background: "rgba(15,40,30,0.7)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    color: ok ? "#5DCAA5" : active ? "#E1F5EE" : "rgba(225,245,238,0.5)",
+  });
+
   return (
     <div className="h-full w-full">
       <StageScaffold
         stageKey="learning"
         stageLabel="Learning"
-        // ✅ 2) researcher 타이틀 제거: title은 아예 안 넘김
         subtitle="Type spelling, then enter two meanings to unlock synonyms."
         step={{ index: index + 1, total }}
         topRight={topRight}
-        // ✅ 4) Hint 제거: hint prop 자체를 안 넘김
         primary={{ label: "Next", onClick: onDoneWord, disabled: !nextEnabled }}
         align="center"
+        theme="dark"
       >
-        {/* 카드가 커져도 “의도적으로” 보이게 가운데 정렬 */}
         <div className="h-full w-full flex flex-col justify-center">
           <div className="w-full space-y-5">
-            {/* 5) Spelling: 정답은 희미하게, 타이핑하면 검게 */}
-            <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5">
-              <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                Spelling
-              </div>
+            {/* Spelling */}
+            <div className="rounded-2xl px-5 py-5" style={cardStyle}>
+              <div className="font-semibold" style={labelStyle}>Spelling</div>
 
               <div className="relative mt-3">
-                {/* faint answer */}
                 <div
                   className="absolute inset-0 grid place-items-center select-none pointer-events-none"
                   style={{
-                    color: WORD_PALE,
+                    color: "#2d6652",
                     fontWeight: 900,
                     fontSize: "clamp(28px, 4.0cqi, 56px)",
                     letterSpacing: "-0.02em",
-                    opacity: spelling.length > 0 ? 0.18 : 0.55,
+                    opacity: spelling.length > 0 ? 0.5 : 0.9,
                   }}
                 >
                   {target || "WORD"}
@@ -249,12 +253,8 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
                     if (e.key === "Enter" && normEn(spelling) === targetNorm) passSpelling();
                   }}
                   disabled={spellingOk}
-                  className={[
-                    "w-full rounded-2xl border border-black/10 bg-white/80 px-5 py-4 text-center outline-none",
-                    "font-extrabold focus:ring-2 focus:ring-black/10",
-                    spellingOk ? "text-neutral-400" : "text-neutral-900",
-                  ].join(" ")}
-                  style={{ fontSize: "clamp(18px, 2.3cqi, 30px)", letterSpacing: "-0.02em" }}
+                  className="w-full rounded-2xl px-5 py-4 text-center outline-none font-extrabold focus:ring-2"
+                  style={{ ...inputStyle(spellingOk, true), letterSpacing: "-0.02em", fontSize: "clamp(18px, 2.3cqi, 30px)" }}
                   placeholder=""
                   autoComplete="off"
                   spellCheck={false}
@@ -262,28 +262,26 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
               </div>
 
               {spellingOk ? (
-                <div className="mt-3 text-emerald-700 font-extrabold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+                <div className="mt-3 font-extrabold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#5DCAA5" }}>
                   ✅ Spelling OK
                 </div>
               ) : null}
             </div>
 
-            {/* 6~7) Meanings: 정답 한글이 희미하게, 그대로 치면 검게 + Syn 노출 */}
+            {/* Meanings */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Meaning 1 */}
-              <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5">
-                <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                  Meaning 1 (KO)
-                </div>
+              <div className="rounded-2xl px-5 py-5" style={cardStyle}>
+                <div className="font-semibold" style={labelStyle}>Meaning 1 (KO)</div>
 
                 <div className="relative mt-3">
                   <div
                     className="absolute inset-0 grid place-items-center select-none pointer-events-none"
                     style={{
-                      color: "#9CA3AF",
+                      color: "#2d6652",
                       fontWeight: 800,
                       fontSize: "clamp(16px, 2.0cqi, 24px)",
-                      opacity: meaning1.length > 0 ? 0.18 : 0.55,
+                      opacity: meaning1.length > 0 ? 0.5 : 0.9,
                     }}
                   >
                     {meaning1Expected || "—"}
@@ -301,13 +299,8 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
                       if (e.key === "Enter" && spellingOk) tryPassMeaning1(meaning1);
                     }}
                     disabled={!spellingOk || meaning1Ok}
-                    className={[
-                      "w-full rounded-2xl border px-4 py-3 text-center outline-none font-extrabold",
-                      "border-black/10 bg-white/80 focus:ring-2 focus:ring-black/10",
-                      !spellingOk ? "opacity-50" : "",
-                      meaning1Ok ? "text-neutral-400" : "text-neutral-900",
-                    ].join(" ")}
-                    style={{ fontSize: "clamp(16px, 2.0cqi, 24px)" }}
+                    className="w-full rounded-2xl px-4 py-3 text-center outline-none font-extrabold"
+                    style={{ ...inputStyle(meaning1Ok, spellingOk), opacity: !spellingOk ? 0.4 : 1 }}
                     placeholder=""
                     autoComplete="off"
                     spellCheck={false}
@@ -315,11 +308,10 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
                 </div>
 
                 {meaning1Ok ? (
-                  <div className="mt-3 inline-flex items-center justify-center rounded-full border border-black/10 bg-white/80 px-4 py-2 font-extrabold">
-                    <span className="text-neutral-700" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                      Syn:
-                    </span>
-                    <span className="ml-2" style={{ color: "#F2B84B", fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+                  <div className="mt-3 inline-flex items-center justify-center rounded-full px-4 py-2 font-extrabold"
+                    style={{ background: "rgba(15,40,30,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <span style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>Syn:</span>
+                    <span className="ml-2" style={{ color: "#EF9F27", fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
                       {syn1 || "—"}
                     </span>
                   </div>
@@ -327,19 +319,17 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
               </div>
 
               {/* Meaning 2 */}
-              <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5">
-                <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                  Meaning 2 (KO)
-                </div>
+              <div className="rounded-2xl px-5 py-5" style={cardStyle}>
+                <div className="font-semibold" style={labelStyle}>Meaning 2 (KO)</div>
 
                 <div className="relative mt-3">
                   <div
                     className="absolute inset-0 grid place-items-center select-none pointer-events-none"
                     style={{
-                      color: "#9CA3AF",
+                      color: "#2d6652",
                       fontWeight: 800,
                       fontSize: "clamp(16px, 2.0cqi, 24px)",
-                      opacity: meaning2.length > 0 ? 0.18 : 0.55,
+                      opacity: meaning2.length > 0 ? 0.5 : 0.9,
                     }}
                   >
                     {meaning2Expected || "—"}
@@ -357,13 +347,8 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
                       if (e.key === "Enter" && meaning1Ok) tryPassMeaning2(meaning2);
                     }}
                     disabled={!meaning1Ok || meaning2Ok}
-                    className={[
-                      "w-full rounded-2xl border px-4 py-3 text-center outline-none font-extrabold",
-                      "border-black/10 bg-white/80 focus:ring-2 focus:ring-black/10",
-                      !meaning1Ok ? "opacity-50" : "",
-                      meaning2Ok ? "text-neutral-400" : "text-neutral-900",
-                    ].join(" ")}
-                    style={{ fontSize: "clamp(16px, 2.0cqi, 24px)" }}
+                    className="w-full rounded-2xl px-4 py-3 text-center outline-none font-extrabold"
+                    style={{ ...inputStyle(meaning2Ok, meaning1Ok), opacity: !meaning1Ok ? 0.4 : 1 }}
                     placeholder=""
                     autoComplete="off"
                     spellCheck={false}
@@ -371,19 +356,16 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
                 </div>
 
                 {meaning2Ok ? (
-                  <div className="mt-3 inline-flex items-center justify-center rounded-full border border-black/10 bg-white/80 px-4 py-2 font-extrabold">
-                    <span className="text-neutral-700" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                      Syn:
-                    </span>
-                    <span className="ml-2" style={{ color: "#F2B84B", fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+                  <div className="mt-3 inline-flex items-center justify-center rounded-full px-4 py-2 font-extrabold"
+                    style={{ background: "rgba(15,40,30,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <span style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>Syn:</span>
+                    <span className="ml-2" style={{ color: "#EF9F27", fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
                       {syn2 || "—"}
                     </span>
                   </div>
                 ) : null}
               </div>
             </div>
-
-            {/* 8) Next는 이미 nextEnabled로 활성화 */}
           </div>
         </div>
       </StageScaffold>

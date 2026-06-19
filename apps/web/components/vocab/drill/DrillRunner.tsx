@@ -225,56 +225,52 @@ function InlineSynonymDrill({ task, onDone }: { task: DrillTask; onDone: (isCorr
 
   return (
     <div className="w-full h-full">
-      <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+      <div className="font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>
         {title}
       </div>
 
-      <div className="mt-2 text-neutral-900 font-extrabold" style={{ fontSize: "clamp(16px, 2.0cqi, 24px)" }}>
+      <div className="mt-2 font-extrabold" style={{ fontSize: "clamp(16px, 2.0cqi, 24px)", color: "#E1F5EE" }}>
         {instruction}{" "}
-        <span className="rounded-xl bg-white/70 border border-black/10 px-3 py-1 font-mono">{stem}</span>
+        <span className="rounded-xl px-3 py-1 font-mono" style={{ background: "rgba(15,40,30,0.7)", border: "1px solid rgba(255,255,255,0.1)", color: "#9FE1CB" }}>{stem}</span>
       </div>
 
-      {subHint ? <div className="mt-2 text-neutral-600" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>{subHint}</div> : null}
+      {subHint ? <div className="mt-2" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>{subHint}</div> : null}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {choices.slice(0, 6).map((c, i) => {
           const isPicked = picked === i;
           const isAnswer = i === answerIdx;
-          const show =
-            locked
-              ? isAnswer
-                ? "border-emerald-300 bg-emerald-50"
-                : isPicked
-                  ? "border-rose-300 bg-rose-50"
-                  : "border-black/10 bg-white/70"
-              : "border-black/10 bg-white/80";
+          const choiceStyle = locked
+            ? isAnswer
+              ? { border: "1.5px solid #5DCAA5", background: "#1e4a3a" }
+              : isPicked
+                ? { border: "1.5px solid #F09595", background: "rgba(61,21,21,0.6)" }
+                : { border: "0.5px solid rgba(255,255,255,0.08)", background: "rgba(26,61,48,0.4)", opacity: 0.6 }
+            : { border: "0.5px solid rgba(255,255,255,0.1)", background: "rgba(26,61,48,0.5)" };
 
           return (
             <button
               key={`${c}-${i}`}
               onClick={() => choose(i)}
               disabled={!canAnswer}
-              className={[
-                "rounded-2xl border px-4 py-4 text-left transition",
-                canAnswer ? "hover:bg-white" : "opacity-80",
-                show,
-              ].join(" ")}
+              className="rounded-2xl px-4 py-4 text-left transition"
+              style={choiceStyle}
               type="button"
             >
-              <div className="font-extrabold text-neutral-900" style={{ fontSize: "clamp(14px, 1.7cqi, 18px)" }}>
+              <div className="font-extrabold" style={{ fontSize: "clamp(14px, 1.7cqi, 18px)", color: "#E1F5EE" }}>
                 {c}
               </div>
               {locked && isAnswer ? (
-                <div className="mt-1 text-xs font-semibold text-emerald-700">Correct</div>
+                <div className="mt-1 text-xs font-semibold" style={{ color: "#5DCAA5" }}>Correct</div>
               ) : locked && isPicked && !isAnswer ? (
-                <div className="mt-1 text-xs font-semibold text-rose-700">Incorrect</div>
+                <div className="mt-1 text-xs font-semibold" style={{ color: "#F09595" }}>Incorrect</div>
               ) : null}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-4 text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+      <div className="mt-4 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#3d7a63" }}>
         Tap one choice. Auto-advances.
       </div>
     </div>
@@ -362,7 +358,8 @@ export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "
           hint="Upstream may be missing word_forms/collocations, or drillTypes were not created."
           primary={{ label: "Finish", onClick: finishOnce }}
           align="center"
-          
+          theme="dark"
+
         >
           <div className="rounded-2xl border border-black/5 bg-white/70 px-5 py-5 text-neutral-700 font-semibold">
             No drill tasks.
@@ -385,7 +382,8 @@ export default function DrillRunner({ userId: _userId, tasks, onFinish, mode = "
         hint={hint}
         secondary={{ label: "Skip", onClick: goNext, variant: "ghost" }}
         align="center"
-        
+        theme="dark"
+
       >
         <div className="w-full h-full">
           {dt === "SYNONYM" ? (

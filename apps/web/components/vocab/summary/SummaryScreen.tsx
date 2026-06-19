@@ -208,11 +208,12 @@ export default function SummaryScreen(props: AnyProps) {
         secondaryLabel="Skip Learning"
         onPrimary={() => fireNext(nextPayloadStudy)}
         onSecondary={() => fireNext(nextPayloadSkip)}
+        theme="dark"
       >
         {learnList.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 text-slate-700 font-semibold">
+          <div className="mt-4 rounded-2xl p-5 font-semibold" style={{ background: "rgba(26,61,48,0.6)", border: "0.5px solid rgba(255,255,255,0.1)", color: "#9FE1CB" }}>
             Nothing to study ✅
-            <div className="mt-2 text-sm text-slate-500">You can skip Learning and go straight to Speed.</div>
+            <div className="mt-2 text-sm" style={{ color: "#4da88a" }}>You can skip Learning and go straight to Speed.</div>
           </div>
         ) : (
           <div className="mt-4 space-y-6">
@@ -220,18 +221,19 @@ export default function SummaryScreen(props: AnyProps) {
             {unknownCount > 0 ? (
               <div className="space-y-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <div className="font-extrabold text-slate-900">
-                    Not Yet <span className="ml-2 text-slate-500 font-bold">({unknownCount})</span>
+                  <div className="font-extrabold" style={{ color: "#E1F5EE" }}>
+                    Not Yet <span className="ml-2 font-bold" style={{ color: "#4da88a" }}>({unknownCount})</span>
                   </div>
-                  <div className="text-slate-500 text-sm font-semibold">From Prescreen</div>
+                  <div className="text-sm font-semibold" style={{ color: "#4da88a" }}>From Prescreen</div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                <div className="rounded-2xl px-4 py-4" style={{ background: "rgba(15,40,30,0.6)", border: "0.5px solid rgba(255,255,255,0.1)" }}>
                   <ul className={gridUnknown.list}>
                     {unknownList.map((w, idx) => (
                       <li
                         key={`${getId(w) || getText(w) || "u"}-${idx}`}
-                        className={gridUnknown.item}
+                        className={gridUnknown.item.replace("text-slate-800", "")}
+                        style={{ color: "#C8EEE3" }}
                         title={getText(w) || ""}
                       >
                         {getText(w) || "—"}
@@ -246,19 +248,20 @@ export default function SummaryScreen(props: AnyProps) {
             {spellFailedCount > 0 ? (
               <div className="space-y-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <div className="font-extrabold text-slate-900">
+                  <div className="font-extrabold" style={{ color: "#E1F5EE" }}>
                     Spell Check Failed{" "}
-                    <span className="ml-2 text-slate-500 font-bold">({spellFailedCount})</span>
+                    <span className="ml-2 font-bold" style={{ color: "#4da88a" }}>({spellFailedCount})</span>
                   </div>
-                  <div className="text-slate-500 text-sm font-semibold">From Spelling</div>
+                  <div className="text-sm font-semibold" style={{ color: "#4da88a" }}>From Spelling</div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                <div className="rounded-2xl px-4 py-4" style={{ background: "rgba(15,40,30,0.6)", border: "0.5px solid rgba(255,255,255,0.1)" }}>
                   <ul className={gridFailed.list}>
                     {spellFailedList.map((w, idx) => (
                       <li
                         key={`${getId(w) || getText(w) || "f"}-${idx}`}
-                        className={gridFailed.item}
+                        className={gridFailed.item.replace("text-slate-800", "")}
+                        style={{ color: "#F09595" }}
                         title={getText(w) || ""}
                       >
                         {getText(w) || "—"}

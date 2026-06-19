@@ -90,29 +90,26 @@ function ChoiceButton({
   disabled: boolean;
   onClick: () => void;
 }) {
-  const cls =
-    state === "correct"
-      ? "border-emerald-300 bg-emerald-50"
-      : state === "wrong"
-        ? "border-rose-300 bg-rose-50"
-        : state === "dim"
-          ? "border-black/10 bg-white/60 opacity-70"
-          : "border-black/10 bg-white/80 hover:bg-white";
+  const styleMap = {
+    correct: { border: "1.5px solid #5DCAA5", background: "#1e4a3a" },
+    wrong: { border: "1.5px solid #F09595", background: "rgba(61,21,21,0.6)" },
+    dim: { border: "0.5px solid rgba(255,255,255,0.08)", background: "rgba(26,61,48,0.4)", opacity: 0.6 },
+    idle: { border: "0.5px solid rgba(255,255,255,0.1)", background: "rgba(26,61,48,0.5)" },
+  };
 
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={[
-        "rounded-2xl border px-4 py-4 text-left transition",
-        disabled ? "cursor-default" : "",
-        cls,
-      ].join(" ")}
+      className={["rounded-2xl px-4 py-4 text-left transition", disabled ? "cursor-default" : ""].join(" ")}
+      style={styleMap[state]}
     >
-      <div className="font-extrabold text-neutral-900" style={{ fontSize: "clamp(14px, 1.7cqi, 18px)" }}>
+      <div className="font-extrabold" style={{ fontSize: "clamp(14px, 1.7cqi, 18px)", color: "#E1F5EE" }}>
         {label}
       </div>
+      {state === "correct" ? <div className="mt-1 text-xs font-semibold" style={{ color: "#5DCAA5" }}>Correct</div> : null}
+      {state === "wrong" ? <div className="mt-1 text-xs font-semibold" style={{ color: "#F09595" }}>Incorrect</div> : null}
     </button>
   );
 }
@@ -171,22 +168,22 @@ export default function SentenceBlankDrill({
 
   return (
     <div className="w-full h-full">
-      <div className="text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+      <div className="font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>
         Fill in the Blanks
       </div>
 
-      <div className="mt-2 text-neutral-900 font-extrabold" style={{ fontSize: "clamp(16px, 2.0cqi, 24px)" }}>
+      <div className="mt-2 font-extrabold" style={{ fontSize: "clamp(16px, 2.0cqi, 24px)", color: "#E1F5EE" }}>
         {prompt}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-black/10 bg-white/75 px-5 py-5 text-left">
-        <div className="font-extrabold text-neutral-900" style={{ fontSize: "clamp(16px, 2.05cqi, 26px)" }}>
+      <div className="mt-4 rounded-2xl px-5 py-5 text-left" style={{ background: "rgba(15,40,30,0.6)", border: "0.5px solid rgba(255,255,255,0.1)" }}>
+        <div className="font-extrabold" style={{ fontSize: "clamp(16px, 2.05cqi, 26px)", color: "#E1F5EE" }}>
           {prettySentence.split("____").map((part, idx) => (
             <React.Fragment key={idx}>
               <span>{part}</span>
               {idx < prettySentence.split("____").length - 1 ? (
-                <span className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-3 py-1 mx-1 font-black">
-                  ____ 
+                <span className="inline-flex items-center justify-center rounded-xl px-3 py-1 mx-1 font-black" style={{ background: "rgba(26,61,48,0.8)", border: "1px solid rgba(93,202,165,0.2)", color: "#5DCAA5" }}>
+                  ____
                 </span>
               ) : null}
             </React.Fragment>
@@ -219,7 +216,7 @@ export default function SentenceBlankDrill({
         })}
       </div>
 
-      <div className="mt-4 text-neutral-600 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
+      <div className="mt-4 font-semibold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#3d7a63" }}>
         Tap one choice. Auto-advances.
       </div>
     </div>

@@ -103,45 +103,46 @@ export default function WordFormPickDrill({
   }
 
   return (
-    <div className="rounded-2xl border bg-white p-5">
-      <div className="text-xs font-semibold text-slate-500">WORD FORM</div>
+    <div className="rounded-2xl p-5" style={{ background: "rgba(15,40,30,0.6)", border: "0.5px solid rgba(255,255,255,0.1)" }}>
+      <div className="text-xs font-semibold" style={{ color: "#4da88a" }}>WORD FORM</div>
 
-      <div className="mt-2 text-lg font-semibold text-slate-900">
+      <div className="mt-2 text-lg font-semibold" style={{ color: "#E1F5EE" }}>
         {prompt}{" "}
-        <span className="rounded-lg bg-slate-100 px-2 py-0.5 font-mono">{stem}</span>
+        <span className="rounded-lg px-2 py-0.5 font-mono" style={{ background: "rgba(26,61,48,0.8)", color: "#9FE1CB" }}>{stem}</span>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {choices.slice(0, 6).map((c, i) => {
           const isPicked = picked === i;
           const isAnswer = i === answerIdx;
-          const cls = locked
+          const choiceStyle = locked
             ? isAnswer
-              ? "border-emerald-300 bg-emerald-50"
+              ? { border: "1.5px solid #5DCAA5", background: "#1e4a3a" }
               : isPicked
-                ? "border-rose-300 bg-rose-50"
-                : "border-slate-200"
-            : "border-slate-200 hover:bg-slate-50";
+                ? { border: "1.5px solid #F09595", background: "rgba(61,21,21,0.6)" }
+                : { border: "0.5px solid rgba(255,255,255,0.08)", background: "rgba(26,61,48,0.4)", opacity: 0.6 }
+            : { border: "0.5px solid rgba(255,255,255,0.1)", background: "rgba(26,61,48,0.5)" };
 
           return (
             <button
               key={`${c}-${i}`}
-              className={`rounded-xl border px-4 py-3 text-left text-sm transition ${cls}`}
+              className="rounded-xl px-4 py-3 text-left text-sm transition"
+              style={choiceStyle}
               disabled={locked}
               onClick={() => choose(i)}
             >
-              <div className="font-semibold text-slate-900">{c}</div>
+              <div className="font-semibold" style={{ color: "#E1F5EE" }}>{c}</div>
               {locked && isAnswer ? (
-                <div className="mt-1 text-xs font-semibold text-emerald-700">Correct</div>
+                <div className="mt-1 text-xs font-semibold" style={{ color: "#5DCAA5" }}>Correct</div>
               ) : locked && isPicked && !isAnswer ? (
-                <div className="mt-1 text-xs font-semibold text-rose-700">Incorrect</div>
+                <div className="mt-1 text-xs font-semibold" style={{ color: "#F09595" }}>Incorrect</div>
               ) : null}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-4 text-xs text-slate-500">Tap one choice. Auto-advances.</div>
+      <div className="mt-4 text-xs" style={{ color: "#3d7a63" }}>Tap one choice. Auto-advances.</div>
     </div>
   );
 }
