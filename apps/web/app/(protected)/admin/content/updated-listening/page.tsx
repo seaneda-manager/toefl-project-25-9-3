@@ -28,13 +28,21 @@ export default async function Listening2026AdminListPage() {
           <h1 className="text-xl font-bold">Listening 2026 – 시험 관리</h1>
           {error && <p className="mt-1 text-xs text-rose-600">{error.message}</p>}
         </div>
-        <Link
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/content/updated-listening/assign"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-teal-400 px-3 py-1.5 text-xs font-semibold text-teal-600 hover:bg-teal-50"
+          >
+            시험 배정
+          </Link>
+          <Link
           href="/admin/content/updated-listening/new"
           className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-violet-700"
         >
           <PlusCircle className="h-3.5 w-3.5" />
           새 시험 만들기
         </Link>
+        </div>
       </header>
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-sm">

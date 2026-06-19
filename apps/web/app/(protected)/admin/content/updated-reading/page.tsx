@@ -76,6 +76,12 @@ export default async function Reading2026AdminListPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <Link
+              href="/admin/content/updated-reading/assign"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-400 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+            >
+              시험 배정
+            </Link>
+            <Link
               href="/admin/content/updated-reading/new"
               className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
             >

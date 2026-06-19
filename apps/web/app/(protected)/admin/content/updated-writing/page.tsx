@@ -28,13 +28,21 @@ export default async function WritingAdminListPage() {
           <h1 className="text-xl font-bold">Updated Writing – 시험 관리</h1>
           {error && <p className="mt-1 text-xs text-rose-600">{error.message}</p>}
         </div>
-        <Link
-          href="/admin/content/updated-writing/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-700"
-        >
-          <PlusCircle className="h-3.5 w-3.5" />
-          새 시험 만들기
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/content/updated-writing/assign"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-violet-400 px-3 py-1.5 text-xs font-semibold text-violet-600 hover:bg-violet-50"
+          >
+            시험 배정
+          </Link>
+          <Link
+            href="/admin/content/updated-writing/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-700"
+          >
+            <PlusCircle className="h-3.5 w-3.5" />
+            새 시험 만들기
+          </Link>
+        </div>
       </header>
 
       <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
