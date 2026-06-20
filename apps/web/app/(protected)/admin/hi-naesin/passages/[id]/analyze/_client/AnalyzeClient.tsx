@@ -38,11 +38,27 @@ const TAB_LABELS: Record<Tab, string> = {
   blank: '빈칸추론',
 };
 
+function HighlightedPassage({ text, highlight }: { text: string; highlight: string | null }) {
+  if (!highlight) return <span className="whitespace-pre-wrap">{text}</span>;
+  const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return (
+    <span className="whitespace-pre-wrap">
+      {parts.map((part, i) =>
+        part.toLowerCase() === highlight.toLowerCase()
+          ? <mark key={i} className="rounded bg-amber-200 px-0.5">{part}</mark>
+          : part
+      )}
+    </span>
+  );
+}
+
 export default function AnalyzeClient({ passageId, passageText, passageTitle, initial }: Props) {
   const [tab, setTab] = useState<Tab>('grammar');
   const [data, setData] = useState<AnalysisRow | null>(initial);
   const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState('');
+  const [highlighted, setHighlighted] = useState<string | null>(null);
 
   function flash(m: string) { setMsg(m); setTimeout(() => setMsg(''), 3000); }
 
@@ -74,7 +90,9 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
       {/* Left: Passage */}
       <div className="w-[45%] overflow-y-auto border-r bg-white p-6">
         <h2 className="mb-4 text-base font-bold text-neutral-800">{passageTitle}</h2>
-        <p className="whitespace-pre-wrap text-sm leading-7 text-neutral-700">{passageText}</p>
+        <p className="text-sm leading-7 text-neutral-700">
+          <HighlightedPassage text={passageText} highlight={highlighted} />
+        </p>
       </div>
 
       {/* Right: Analysis */}
@@ -136,6 +154,7 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
                   items={data.grammar_items}
                   locked={locked}
                   passageId={passageId}
+                  onHighlight={setHighlighted}
                   onChange={(items) => setData({ ...data, grammar_items: items })}
                   onSave={(items) => {
                     startTransition(async () => {
@@ -150,6 +169,7 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
                   items={data.vocab_items}
                   locked={locked}
                   passageId={passageId}
+                  onHighlight={setHighlighted}
                   onChange={(items) => setData({ ...data, vocab_items: items })}
                   onSave={(items) => {
                     startTransition(async () => {
@@ -163,6 +183,7 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
                 <ConnectorSection
                   items={data.connector_items}
                   locked={locked}
+                  onHighlight={setHighlighted}
                   onChange={(items) => setData({ ...data, connector_items: items })}
                   onSave={(items) => {
                     startTransition(async () => {
@@ -176,6 +197,7 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
                 <BlankSection
                   items={data.blank_items}
                   locked={locked}
+                  onHighlight={setHighlighted}
                   onChange={(items) => setData({ ...data, blank_items: items })}
                   onSave={(items) => {
                     startTransition(async () => {
@@ -210,13 +232,14 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
 
 // ── Grammar Section ────────────────────────────────────────────────
 function GrammarSection({
-  items, locked, onChange, onSave,
+  items, locked, onChange, onSave, onHighlight,
 }: {
   items: GrammarItem[];
   locked: boolean;
   passageId: string;
   onChange: (items: GrammarItem[]) => void;
   onSave: (items: GrammarItem[]) => void;
+  onHighlight: (text: string | null) => void;
 }) {
   function update(i: number, field: keyof GrammarItem, val: string) {
     const next = items.map((it, idx) => idx === i ? { ...it, [field]: val } : it);
@@ -227,7 +250,12 @@ function GrammarSection({
   return (
     <div className="space-y-4">
       {items.map((item, i) => (
-        <div key={i} className="rounded-xl border bg-white p-4 shadow-sm">
+        <div
+          key={i}
+          className="cursor-pointer rounded-xl border bg-white p-4 shadow-sm hover:border-indigo-300 hover:shadow-md transition-shadow"
+          onMouseEnter={() => onHighlight(item.highlight)}
+          onMouseLeave={() => onHighlight(null)}
+        >
           <div className="mb-2 flex items-start justify-between gap-2">
             <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
               {item.label}
@@ -288,13 +316,14 @@ function GrammarSection({
 
 // ── Vocab Section ──────────────────────────────────────────────────
 function VocabSection({
-  items, locked, onChange, onSave,
+  items, locked, onChange, onSave, onHighlight,
 }: {
   items: VocabItem[];
   locked: boolean;
   passageId: string;
   onChange: (items: VocabItem[]) => void;
   onSave: (items: VocabItem[]) => void;
+  onHighlight: (text: string | null) => void;
 }) {
   function update(i: number, field: keyof VocabItem, val: string) {
     onChange(items.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
@@ -304,7 +333,12 @@ function VocabSection({
   return (
     <div className="space-y-3">
       {items.map((item, i) => (
-        <div key={i} className="rounded-xl border bg-white p-4 shadow-sm">
+        <div
+          key={i}
+          className="cursor-pointer rounded-xl border bg-white p-4 shadow-sm hover:border-indigo-300 hover:shadow-md transition-shadow"
+          onMouseEnter={() => onHighlight(item.word)}
+          onMouseLeave={() => onHighlight(null)}
+        >
           {locked ? (
             <div className="flex gap-4">
               <div className="min-w-[100px]">
@@ -346,12 +380,13 @@ function VocabSection({
 
 // ── Connector Section ──────────────────────────────────────────────
 function ConnectorSection({
-  items, locked, onChange, onSave,
+  items, locked, onChange, onSave, onHighlight,
 }: {
   items: ConnectorItem[];
   locked: boolean;
   onChange: (items: ConnectorItem[]) => void;
   onSave: (items: ConnectorItem[]) => void;
+  onHighlight: (text: string | null) => void;
 }) {
   function update(i: number, field: keyof ConnectorItem, val: string) {
     onChange(items.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
@@ -361,7 +396,12 @@ function ConnectorSection({
   return (
     <div className="space-y-4">
       {items.map((item, i) => (
-        <div key={i} className="rounded-xl border bg-white p-4 shadow-sm">
+        <div
+          key={i}
+          className="cursor-pointer rounded-xl border bg-white p-4 shadow-sm hover:border-sky-300 hover:shadow-md transition-shadow"
+          onMouseEnter={() => onHighlight(item.highlight)}
+          onMouseLeave={() => onHighlight(null)}
+        >
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="font-mono font-semibold text-neutral-900">"{item.highlight}"</span>
@@ -394,12 +434,13 @@ function ConnectorSection({
 
 // ── Blank Section ──────────────────────────────────────────────────
 function BlankSection({
-  items, locked, onChange, onSave,
+  items, locked, onChange, onSave, onHighlight,
 }: {
   items: BlankItem[];
   locked: boolean;
   onChange: (items: BlankItem[]) => void;
   onSave: (items: BlankItem[]) => void;
+  onHighlight: (text: string | null) => void;
 }) {
   function update(i: number, field: keyof BlankItem, val: string) {
     onChange(items.map((it, idx) => idx === i ? { ...it, [field]: val } : it));
@@ -409,7 +450,12 @@ function BlankSection({
   return (
     <div className="space-y-4">
       {items.map((item, i) => (
-        <div key={i} className="rounded-xl border bg-white p-4 shadow-sm">
+        <div
+          key={i}
+          className="cursor-pointer rounded-xl border bg-white p-4 shadow-sm hover:border-amber-300 hover:shadow-md transition-shadow"
+          onMouseEnter={() => onHighlight(item.highlight)}
+          onMouseLeave={() => onHighlight(null)}
+        >
           <div className="mb-2 flex items-start justify-between">
             <span className="rounded-md bg-amber-50 px-2 py-1 font-mono text-sm text-amber-800">"{item.highlight}"</span>
             {!locked && <button onClick={() => remove(i)} className="text-xs text-red-400 hover:text-red-600">삭제</button>}
