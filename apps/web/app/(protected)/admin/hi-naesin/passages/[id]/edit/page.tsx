@@ -130,12 +130,20 @@ export default async function HiNaesinPassageEditPage({
             <span>{passage.is_published ? '공개' : '비공개'}</span>
           </div>
         </div>
-        <Link
-          href="/admin/hi-naesin/passages"
-          className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
-        >
-          목록으로
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/admin/hi-naesin/passages/${id}/analyze`}
+            className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 hover:bg-indigo-100"
+          >
+            지문 분석
+          </Link>
+          <Link
+            href="/admin/hi-naesin/passages"
+            className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
+          >
+            목록으로
+          </Link>
+        </div>
       </header>
 
       {/* 탭 */}
