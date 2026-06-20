@@ -222,12 +222,23 @@ export default function DrillClient({
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-4 space-y-4">
+      {/* 상단 바: 목록 버튼 + 제목 */}
+      <div className="flex items-center gap-3">
+        <Link
+          href="/hi-naesin"
+          className="flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-200 transition-colors shrink-0"
+        >
+          ← 목록
+        </Link>
+        <p className="text-sm font-medium text-neutral-600 truncate">{passageTitle}</p>
+      </div>
+
       {/* 2-column layout */}
       <div className="grid grid-cols-1 gap-6 justify-center" style={{ gridTemplateColumns: 'min(720px, 100%) 480px' }}>
 
         {/* Left: Passage Panel (sticky) */}
-        <div className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+        <div className="lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
           <PassagePanel
             passageText={passageText}
             passageTranslation={passageTranslation}
@@ -238,16 +249,6 @@ export default function DrillClient({
 
         {/* Right: Drill content */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/hi-naesin"
-              className="flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-200 transition-colors"
-            >
-              ← 목록
-            </Link>
-            <p className="text-xs text-neutral-400 truncate ml-3">{passageTitle}</p>
-          </div>
-
           {/* 블록 탭 바 */}
           <div className="flex gap-1 rounded-2xl border bg-white p-1">
             {availableTypes.map((t) => {

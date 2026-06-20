@@ -69,9 +69,8 @@ export default function PassagePanel({ passageText, passageTranslation, highligh
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border bg-white p-6">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-widest text-neutral-400">지문</span>
-        {passageTranslation && (
+      {passageTranslation && (
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => setShowTranslation((v) => !v)}
@@ -79,8 +78,8 @@ export default function PassagePanel({ passageText, passageTranslation, highligh
           >
             {showTranslation ? '번역 숨기기' : '번역 보기'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="text-sm leading-8 text-neutral-800">
         <HighlightedText text={passageText} highlight={highlightText} type={highlightType} />
