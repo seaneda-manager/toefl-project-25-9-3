@@ -169,7 +169,7 @@ export default async function HiNaesinReviewPage({
   }
 
   return (
-    <main className="space-y-6 pb-8 max-w-4xl">
+    <main className="space-y-6 pb-8 max-w-2xl">
       {/* 헤더 */}
       <header className="flex items-center justify-between">
         <div>
