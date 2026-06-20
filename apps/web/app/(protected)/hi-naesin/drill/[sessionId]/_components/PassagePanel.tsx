@@ -70,12 +70,7 @@ export default function PassagePanel({ passageText, passageTranslation, highligh
   return (
     <div className="flex flex-col gap-4 rounded-2xl border bg-white p-6">
       <div className="flex items-center justify-between">
-        <Link
-          href="/hi-naesin/passages"
-          className="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
-        >
-          ← 목록
-        </Link>
+        <span className="text-xs font-semibold uppercase tracking-widest text-neutral-400">지문</span>
         {passageTranslation && (
           <button
             type="button"

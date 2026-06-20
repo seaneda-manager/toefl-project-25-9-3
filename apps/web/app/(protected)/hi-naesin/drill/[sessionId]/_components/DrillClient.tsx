@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import WritingHintReveal from '../WritingHintReveal';
 import PassagePanel from './PassagePanel';
 import {
@@ -237,7 +238,15 @@ export default function DrillClient({
 
         {/* Right: Drill content */}
         <div className="space-y-4">
-          <p className="text-xs text-neutral-400">{passageTitle}</p>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/hi-naesin/passages"
+              className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-800 transition-colors"
+            >
+              ← 목록
+            </Link>
+            <p className="text-xs text-neutral-400">{passageTitle}</p>
+          </div>
 
           {/* 블록 탭 바 */}
           <div className="flex gap-1 rounded-2xl border bg-white p-1">
