@@ -14,21 +14,23 @@ type Score = { total: number; correct: number };
 export default async function ListeningReviewPage(props: any) {
   const { params } = props as { params: { sessionId: string } };
 
-  const supabase = await getSupabaseServer(); // ??await 추�?
+  const supabase = await getSupabaseServer(); // ✅ await 추가
 
-  // ?�션ID??bigint 기�? number�??�용
+  // 세션ID는 bigint 기준 number로 사용
   const sid = Number(params.sessionId);
 
-  // ?�수 ??�?  const { data: scoreRow, error: scoreErr } = await supabase
+  // 점수 한 줄
+  const { data: scoreRow, error: scoreErr } = await supabase
     .rpc('listening_review_score', { session_id: sid })
     .returns<Score>()
     .single();
 
-  // 문항�?  const { data: rowsRaw, error } = await supabase
+  // 문항별
+  const { data: rowsRaw, error } = await supabase
     .rpc('listening_review_rows', { session_id: sid })
     .returns<unknown>();
 
-  // ?�류/비어?�음 ?�??(모킹)
+  // 오류/비어있음 대응 (모킹)
   if (error || scoreErr || !rowsRaw || !scoreRow) {
     const mock: Row[] = [
       { q_no: 1, question: 'Mock Q1', user_choice: 'A', correct_choice: 'B', is_correct: false },
@@ -53,7 +55,7 @@ export default async function ListeningReviewPage(props: any) {
     );
   }
 
-  // ??rows ?�규?? ??�� Row[]�?만들?�서 Table???�달
+  // ✅ rows 정규화: 항상 Row[]로 만들어서 Table에 전달
   const rows: Row[] = Array.isArray(rowsRaw)
     ? (rowsRaw as Row[])
     : (isRow(rowsRaw) ? [rowsRaw as Row] : []);
@@ -73,7 +75,7 @@ export default async function ListeningReviewPage(props: any) {
   );
 }
 
-// ?��???가?? 최소 ?�드(q_no) 기�??�로 Row ?�태?��? ?�인
+// 런타임 가드: 최소 필드(q_no) 기준으로 Row 형태인지 확인
 function isRow(x: unknown): x is Row {
   return typeof x === 'object' && x !== null && 'q_no' in x;
 }
@@ -96,15 +98,15 @@ function Table({ rows }: { rows: Row[] }) {
             <tr key={r.q_no} className="[&>td]:px-3 [&>td]:py-2 border-t">
               <td className="font-medium">{r.q_no}</td>
               <td>{r.question ?? '-'}</td>
-              <td>{r.user_choice ?? <span className="opacity-60">??/span>}</td>
-              <td>{r.correct_choice ?? <span className="opacity-60">??/span>}</td>
+              <td>{r.user_choice ?? <span className="opacity-60">—</span>}</td>
+              <td>{r.correct_choice ?? <span className="opacity-60">—</span>}</td>
               <td>
                 {r.is_correct === null ? (
-                  <span className="opacity-60">??/span>
+                  <span className="opacity-60">—</span>
                 ) : r.is_correct ? (
-                  <span className="text-green-600">??/span>
+                  <span className="text-green-600">✓</span>
                 ) : (
-                  <span className="text-red-600">??/span>
+                  <span className="text-red-600">✗</span>
                 )}
               </td>
             </tr>
