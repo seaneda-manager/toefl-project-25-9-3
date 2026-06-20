@@ -54,7 +54,7 @@ export default async function HiNaesinDrillPage({
     { data: allResponsesRaw },
     { data: assignmentData },
   ] = await Promise.all([
-    supabase.from('hi_naesin_passages').select('title').eq('id', session.passage_id).single(),
+    supabase.from('hi_naesin_passages').select('title, passage_text, translation_ko').eq('id', session.passage_id).single(),
     supabase.from('hi_naesin_drills')
       .select('id, drill_type, order_index, payload')
       .eq('passage_id', session.passage_id)
@@ -107,6 +107,8 @@ export default async function HiNaesinDrillPage({
     <DrillClient
       sessionId={sessionId}
       passageTitle={passageData?.title ?? '지문'}
+      passageText={passageData?.passage_text ?? ''}
+      passageTranslation={passageData?.translation_ko ?? null}
       allDrills={allDrills}
       initialResponses={allResponses}
       initialType={currentType}

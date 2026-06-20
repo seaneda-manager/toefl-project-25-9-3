@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import WritingHintReveal from '../WritingHintReveal';
+import PassagePanel from './PassagePanel';
 import {
   submitAnswerClientAction,
   selfCheckClientAction,
@@ -57,6 +58,8 @@ const DRILL_INSTRUCTION: Record<string, string> = {
 export default function DrillClient({
   sessionId,
   passageTitle,
+  passageText,
+  passageTranslation,
   allDrills,
   initialResponses,
   initialType,
@@ -65,6 +68,8 @@ export default function DrillClient({
 }: {
   sessionId: string;
   passageTitle: string;
+  passageText: string;
+  passageTranslation: string | null;
   allDrills: DrillRow[];
   initialResponses: ResponseRow[];
   initialType: string;
@@ -194,160 +199,198 @@ export default function DrillClient({
     if (r) writingResponseMap.set(d.id, r);
   }
 
+  // Derive highlight text for passage panel from current drill
+  const p = drill.payload;
+  let highlightText: string | null = null;
+  let highlightType: 'sentence' | 'word' | null = null;
+  if (currentType === 'translation') {
+    highlightText = (p as { sentenceEn?: string }).sentenceEn ?? null;
+    highlightType = 'sentence';
+  } else if (currentType === 'fill_blank') {
+    highlightText = (p as { sentenceTemplate?: string }).sentenceTemplate ?? null;
+    highlightType = 'sentence';
+  } else if (currentType === 'writing') {
+    highlightText = (p as { answerEn?: string }).answerEn ?? null;
+    highlightType = 'sentence';
+  } else if (currentType === 'vocab') {
+    highlightText = (p as { word?: string }).word ?? null;
+    highlightType = 'word';
+  } else if (currentType === 'grammar_choice') {
+    highlightText = (p as { sentenceTemplate?: string }).sentenceTemplate ?? null;
+    highlightType = 'sentence';
+  }
+
   return (
-    <main className="mx-auto max-w-2xl space-y-4 px-3 py-6 sm:px-4 sm:py-8">
-      <p className="text-xs text-neutral-400">{passageTitle}</p>
+    <div className="mx-auto max-w-[1600px] px-4 py-6">
+      {/* 2-column layout */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_480px]">
 
-      {/* 블록 탭 바 */}
-      <div className="flex gap-1 rounded-2xl border bg-white p-1">
-        {availableTypes.map((t) => {
-          const info      = typeInfoMap[t];
-          const isActive  = t === currentType;
-          const isComplete = info.done >= info.total && info.total > 0;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => {
-                setCurrentType(t);
-                setCurrentStep(info.firstUnanswered);
-              }}
-              className={[
-                'flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-center transition-colors',
-                isActive
-                  ? 'bg-neutral-900 text-white'
-                  : 'text-neutral-500 hover:bg-neutral-50',
-              ].join(' ')}
-            >
-              <span className="text-xs font-semibold leading-tight">{DRILL_LABEL[t] ?? t}</span>
-              <span className="text-[10px] leading-tight text-neutral-400">
-                {isComplete ? '✓' : `${info.done}/${info.total}`}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 블록 내 진행 바 */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs text-neutral-500">
-          <span className="font-semibold text-neutral-700">{DRILL_LABEL[currentType] ?? currentType}</span>
-          <span>{currentStep + 1} / {typeTotal}</span>
-        </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-          <div
-            className="h-full rounded-full bg-neutral-900 transition-all"
-            style={{ width: `${((currentStep + 1) / typeTotal) * 100}%` }}
+        {/* Left: Passage Panel (sticky) */}
+        <div className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+          <PassagePanel
+            passageText={passageText}
+            passageTranslation={passageTranslation}
+            highlightText={highlightText}
+            highlightType={highlightType}
           />
         </div>
-        <p className="text-xs text-neutral-400">{DRILL_INSTRUCTION[currentType]}</p>
-      </div>
 
-      {/* 드릴 카드 */}
-      <div className="rounded-2xl border bg-white p-6 space-y-5">
-        {currentType === 'translation' && (
-          <TranslationDrill
-            key={drill.id}
-            drill={drill}
-            response={response}
-            isAnswered={isAnswered}
-            onSubmit={handleSubmit}
-          />
-        )}
-        {currentType === 'fill_blank' && (
-          <FillBlankDrill
-            key={drill.id}
-            drill={drill}
-            response={response}
-            isAnswered={isAnswered}
-            onSubmit={handleSubmit}
-            onNext={goNext}
-            step={currentStep}
-            typeTotal={typeTotal}
-            nextType={nextType}
-          />
-        )}
-        {currentType === 'writing' && (
-          <WritingDrill
-            key={drill.id}
-            drill={drill}
-            response={response}
-            isAnswered={isAnswered}
-            onSubmit={handleSubmit}
-          />
-        )}
-        {currentType === 'vocab' && (
-          <VocabDrill
-            key={drill.id}
-            drill={drill}
-            response={response}
-            isAnswered={isAnswered}
-            onSubmit={handleSubmit}
-          />
-        )}
-        {currentType === 'grammar_choice' && (
-          <GrammarChoiceDrill
-            key={drill.id}
-            drill={drill}
-            response={response}
-            isAnswered={isAnswered}
-            onSubmit={handleSubmit}
-            onNext={goNext}
-            step={currentStep}
-            typeTotal={typeTotal}
-            nextType={nextType}
-          />
-        )}
-      </div>
+        {/* Right: Drill content */}
+        <div className="space-y-4">
+          <p className="text-xs text-neutral-400">{passageTitle}</p>
 
-      {/* 자기 채점 */}
-      {needsSelfCheck && (
-        <div className="rounded-2xl border bg-neutral-50 p-4 space-y-3">
-          <p className="text-sm font-medium text-neutral-700">내 답과 비교해보세요. 맞았나요?</p>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => handleSelfCheck(true)}
-              className="rounded-xl border border-emerald-300 bg-emerald-50 px-6 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
-            >
-              ✓ 맞음
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelfCheck(false)}
-              className="rounded-xl border border-red-200 bg-red-50 px-6 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
-            >
-              ✗ 틀림
-            </button>
+          {/* 블록 탭 바 */}
+          <div className="flex gap-1 rounded-2xl border bg-white p-1">
+            {availableTypes.map((t) => {
+              const info      = typeInfoMap[t];
+              const isActive  = t === currentType;
+              const isComplete = info.done >= info.total && info.total > 0;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setCurrentType(t);
+                    setCurrentStep(info.firstUnanswered);
+                  }}
+                  className={[
+                    'flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-center transition-colors',
+                    isActive
+                      ? 'bg-neutral-900 text-white'
+                      : 'text-neutral-500 hover:bg-neutral-50',
+                  ].join(' ')}
+                >
+                  <span className="text-xs font-semibold leading-tight">{DRILL_LABEL[t] ?? t}</span>
+                  <span className="text-[10px] leading-tight opacity-60">
+                    {isComplete ? '✓' : `${info.done}/${info.total}`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+
+          {/* 블록 내 진행 바 */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-neutral-500">
+              <span className="font-semibold text-neutral-700">{DRILL_LABEL[currentType] ?? currentType}</span>
+              <span>{currentStep + 1} / {typeTotal}</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className="h-full rounded-full bg-neutral-900 transition-all"
+                style={{ width: `${((currentStep + 1) / typeTotal) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-neutral-400">{DRILL_INSTRUCTION[currentType]}</p>
+          </div>
+
+          {/* 드릴 카드 */}
+          <div className="rounded-2xl border bg-white p-6 space-y-5">
+            {currentType === 'translation' && (
+              <TranslationDrill
+                key={drill.id}
+                drill={drill}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentType === 'fill_blank' && (
+              <FillBlankDrill
+                key={drill.id}
+                drill={drill}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+                onNext={goNext}
+                step={currentStep}
+                typeTotal={typeTotal}
+                nextType={nextType}
+              />
+            )}
+            {currentType === 'writing' && (
+              <WritingDrill
+                key={drill.id}
+                drill={drill}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentType === 'vocab' && (
+              <VocabDrill
+                key={drill.id}
+                drill={drill}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+              />
+            )}
+            {currentType === 'grammar_choice' && (
+              <GrammarChoiceDrill
+                key={drill.id}
+                drill={drill}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+                onNext={goNext}
+                step={currentStep}
+                typeTotal={typeTotal}
+                nextType={nextType}
+              />
+            )}
+          </div>
+
+          {/* 자기 채점 */}
+          {needsSelfCheck && (
+            <div className="rounded-2xl border bg-neutral-50 p-4 space-y-3">
+              <p className="text-sm font-medium text-neutral-700">내 답과 비교해보세요. 맞았나요?</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSelfCheck(true)}
+                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-6 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+                >
+                  ✓ 맞음
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelfCheck(false)}
+                  className="rounded-xl border border-red-200 bg-red-50 px-6 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
+                >
+                  ✗ 틀림
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 다음 버튼 */}
+          {showNextButton && (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={isPending}
+              className="w-full rounded-xl bg-neutral-900 py-3 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
+            >
+              {currentStep + 1 >= typeTotal
+                ? nextType
+                  ? `다음 블록: ${DRILL_LABEL[nextType]} →`
+                  : '결과 보기 →'
+                : '다음 →'}
+            </button>
+          )}
+
+          {/* 작문 누적 진행 */}
+          {writingDrills.length > 0 && (
+            <PassageProgress
+              writingDrills={writingDrills}
+              writingResponseMap={writingResponseMap}
+              currentDrillId={currentType === 'writing' ? drill.id : null}
+            />
+          )}
         </div>
-      )}
-
-      {/* 다음 버튼 */}
-      {showNextButton && (
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={isPending}
-          className="w-full rounded-xl bg-neutral-900 py-3 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
-        >
-          {currentStep + 1 >= typeTotal
-            ? nextType
-              ? `다음 블록: ${DRILL_LABEL[nextType]} →`
-              : '결과 보기 →'
-            : '다음 →'}
-        </button>
-      )}
-
-      {/* 작문 누적 진행 */}
-      {writingDrills.length > 0 && (
-        <PassageProgress
-          writingDrills={writingDrills}
-          writingResponseMap={writingResponseMap}
-          currentDrillId={currentType === 'writing' ? drill.id : null}
-        />
-      )}
-    </main>
+      </div>
+    </div>
   );
 }
 

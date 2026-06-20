@@ -186,10 +186,10 @@ export default async function HiNaesinReviewPage({ params }: { params: Params })
 
   if (!session) notFound();
 
-  const [{ data: passage }, { data: wrongResponses }] = await Promise.all([
+  const [{ data: passage }, { data: wrongResponses }, { data: allDrillsForSummary }] = await Promise.all([
     supabase
       .from('hi_naesin_passages')
-      .select('title')
+      .select('title, passage_text')
       .eq('id', session.passage_id)
       .single(),
     supabase
@@ -197,11 +197,17 @@ export default async function HiNaesinReviewPage({ params }: { params: Params })
       .select('drill_id, response_text, response_choice, is_correct, score_pct, feedback_text')
       .eq('session_id', sessionId)
       .or('is_correct.eq.false,score_pct.lt.70'),
+    supabase
+      .from('hi_naesin_drills')
+      .select('id, drill_type, order_index, payload')
+      .eq('passage_id', session.passage_id)
+      .in('drill_type', ['vocab', 'grammar_choice'])
+      .order('order_index'),
   ]);
 
   if (!wrongResponses || wrongResponses.length === 0) {
     return (
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-12 text-center">
+      <main className="mx-auto max-w-xl space-y-6 px-4 py-12 text-center">
         <div className="text-4xl">🎯</div>
         <h1 className="text-xl font-bold text-slate-900">오답이 없습니다!</h1>
         <p className="text-sm text-slate-500">모든 문제를 정확히 풀었어요.</p>
@@ -245,40 +251,111 @@ export default async function HiNaesinReviewPage({ params }: { params: Params })
     items: wrongItems.filter((i) => i.drill.drill_type === type),
   })).filter((g) => g.items.length > 0);
 
+  // Build key elements from all vocab + grammar drills
+  const vocabItems = (allDrillsForSummary ?? [])
+    .filter((d) => d.drill_type === 'vocab')
+    .map((d) => {
+      const p = d.payload as { word?: string; meaningKo?: string };
+      return { word: p.word ?? '', meaning: p.meaningKo ?? '' };
+    })
+    .filter((v) => v.word);
+
+  const grammarItems = (allDrillsForSummary ?? [])
+    .filter((d) => d.drill_type === 'grammar_choice')
+    .map((d) => {
+      const p = d.payload as { grammarCategory?: string; sentenceTemplate?: string };
+      return { category: p.grammarCategory ?? '', sentence: p.sentenceTemplate ?? '' };
+    })
+    .filter((g) => g.category || g.sentence);
+
   return (
-    <main className="mx-auto max-w-2xl space-y-8 px-4 py-10">
-      <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">오답 해설</p>
-        <h1 className="text-xl font-bold text-slate-900">{passage?.title ?? '지문'}</h1>
-        <p className="text-sm text-slate-500">틀린 문제 {wrongItems.length}개</p>
-      </header>
+    <div className="mx-auto max-w-[1600px] px-4 py-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_520px]">
 
-      {grouped.map(({ type, items }) => (
-        <section key={type} className="space-y-3">
-          <h2 className="text-sm font-bold text-slate-700">
-            {drillTypeLabel(type as HiNaesinDrillType)}
-            <span className="ml-2 text-xs font-normal text-slate-400">{items.length}개</span>
-          </h2>
-          {items.map((item) => (
-            <WrongCard key={item.drill.id} item={item} />
+        {/* Left: 지문 + 핵심 요소 */}
+        <div className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto space-y-4">
+          {/* 지문 */}
+          <div className="rounded-2xl border bg-white p-6 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">지문</p>
+            <p className="whitespace-pre-wrap text-sm leading-8 text-slate-800">
+              {passage?.passage_text ?? ''}
+            </p>
+          </div>
+
+          {/* 어휘 정리 */}
+          {vocabItems.length > 0 && (
+            <div className="rounded-2xl border bg-white p-6 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-rose-400">어휘 정리</p>
+              <div className="space-y-1.5">
+                {vocabItems.map((v, i) => (
+                  <div key={i} className="flex items-baseline gap-2 text-sm">
+                    <span className="font-semibold text-slate-800 shrink-0">{v.word}</span>
+                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-600">{v.meaning}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 문법 포인트 */}
+          {grammarItems.length > 0 && (
+            <div className="rounded-2xl border bg-white p-6 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-amber-500">문법 포인트</p>
+              <div className="space-y-3">
+                {grammarItems.map((g, i) => (
+                  <div key={i} className="space-y-1">
+                    {g.category && (
+                      <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                        {g.category}
+                      </span>
+                    )}
+                    {g.sentence && (
+                      <p className="text-xs leading-relaxed text-slate-600">{g.sentence}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: 오답 카드 */}
+        <div className="space-y-6">
+          <header className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">오답 해설</p>
+            <h1 className="text-xl font-bold text-slate-900">{passage?.title ?? '지문'}</h1>
+            <p className="text-sm text-slate-500">틀린 문제 {wrongItems.length}개</p>
+          </header>
+
+          {grouped.map(({ type, items }) => (
+            <section key={type} className="space-y-3">
+              <h2 className="text-sm font-bold text-slate-700">
+                {drillTypeLabel(type as HiNaesinDrillType)}
+                <span className="ml-2 text-xs font-normal text-slate-400">{items.length}개</span>
+              </h2>
+              {items.map((item) => (
+                <WrongCard key={item.drill.id} item={item} />
+              ))}
+            </section>
           ))}
-        </section>
-      ))}
 
-      <div className="flex flex-col gap-3 pt-2">
-        <Link
-          href={`/hi-naesin/drill/${sessionId}/complete`}
-          className="rounded-xl border px-6 py-3 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          ← 결과 페이지
-        </Link>
-        <Link
-          href="/hi-naesin"
-          className="rounded-xl bg-slate-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          대시보드
-        </Link>
+          <div className="flex flex-col gap-3 pt-2">
+            <Link
+              href={`/hi-naesin/drill/${sessionId}/complete`}
+              className="rounded-xl border px-6 py-3 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              ← 결과 페이지
+            </Link>
+            <Link
+              href="/hi-naesin"
+              className="rounded-xl bg-slate-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              대시보드
+            </Link>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
