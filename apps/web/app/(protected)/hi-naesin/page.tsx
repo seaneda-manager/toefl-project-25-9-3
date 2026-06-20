@@ -215,7 +215,7 @@ export default async function HiNaesinDashboard() {
   );
 
   return (
-    <main className="space-y-6 pb-12">
+    <main className="mx-auto max-w-4xl space-y-6 pb-12">
 
       <SectionGuide
         storageKey="guide-seen-hi-naesin"
