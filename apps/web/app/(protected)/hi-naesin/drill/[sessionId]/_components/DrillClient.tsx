@@ -224,7 +224,7 @@ export default function DrillClient({
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-6">
       {/* 2-column layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[400px_480px] justify-center">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_480px] justify-center">
 
         {/* Left: Passage Panel (sticky) */}
         <div className="lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
