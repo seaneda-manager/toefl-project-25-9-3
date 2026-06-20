@@ -87,6 +87,18 @@ export default async function HiNaesinDashboard() {
 
   const passageMap = new Map((passages ?? []).map((p: any) => [p.id as string, p]));
 
+  // ── 3b. 분석 자료 존재 여부 ───────────────────────────────
+  const { data: analyses } = await supabase
+    .from('hi_naesin_passage_analysis')
+    .select('passage_id, grammar_locked, vocab_locked, connector_locked, blank_locked')
+    .in('passage_id', assignedIds);
+
+  const analysisSet = new Set(
+    (analyses ?? [])
+      .filter((a: any) => a.grammar_locked || a.vocab_locked || a.connector_locked || a.blank_locked)
+      .map((a: any) => a.passage_id as string)
+  );
+
   // ── 4. 드릴 목록 (passage_id + drill_type + id) ───────────
   const { data: drills } = await supabase
     .from('hi_naesin_drills')
@@ -450,24 +462,34 @@ export default async function HiNaesinDashboard() {
                         </div>
                       )}
 
-                      <form action={startHiNaesinDrillSessionAction}>
-                        <input type="hidden" name="passage_id" value={p.passageId} />
-                        <button
-                          type="submit"
-                          className={[
-                            'w-full rounded-xl py-2 text-sm font-semibold transition',
-                            isAllDone
-                              ? 'border border-neutral-200 text-neutral-400 hover:bg-neutral-50'
-                              : p.sessionStatus === 'started'
-                              ? 'bg-amber-500 text-white hover:bg-amber-600'
-                              : p.totalDone > 0
-                              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                              : 'bg-neutral-900 text-white hover:bg-neutral-800',
-                          ].join(' ')}
-                        >
-                          {btnLabel}
-                        </button>
-                      </form>
+                      <div className="flex gap-2">
+                        {analysisSet.has(p.passageId) && (
+                          <Link
+                            href={`/hi-naesin/analyze/${p.passageId}`}
+                            className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 shrink-0"
+                          >
+                            지문 분석
+                          </Link>
+                        )}
+                        <form action={startHiNaesinDrillSessionAction} className="flex-1">
+                          <input type="hidden" name="passage_id" value={p.passageId} />
+                          <button
+                            type="submit"
+                            className={[
+                              'w-full rounded-xl py-2 text-sm font-semibold transition',
+                              isAllDone
+                                ? 'border border-neutral-200 text-neutral-400 hover:bg-neutral-50'
+                                : p.sessionStatus === 'started'
+                                ? 'bg-amber-500 text-white hover:bg-amber-600'
+                                : p.totalDone > 0
+                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                : 'bg-neutral-900 text-white hover:bg-neutral-800',
+                            ].join(' ')}
+                          >
+                            {btnLabel}
+                          </button>
+                        </form>
+                      </div>
                     </div>
                   </div>
                 );
