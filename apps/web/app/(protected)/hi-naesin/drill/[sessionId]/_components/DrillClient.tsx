@@ -241,11 +241,11 @@ export default function DrillClient({
           <div className="flex items-center justify-between">
             <Link
               href="/hi-naesin/passages"
-              className="flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-800 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-200 transition-colors"
             >
               ← 목록
             </Link>
-            <p className="text-xs text-neutral-400">{passageTitle}</p>
+            <p className="text-xs text-neutral-400 truncate ml-3">{passageTitle}</p>
           </div>
 
           {/* 블록 탭 바 */}
