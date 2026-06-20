@@ -215,7 +215,7 @@ export default async function HiNaesinDashboard() {
   );
 
   return (
-    <main className="space-y-6 pb-12">
+    <main className="space-y-6 pb-12 max-w-5xl">
 
       <SectionGuide
         storageKey="guide-seen-hi-naesin"
@@ -253,10 +253,10 @@ export default async function HiNaesinDashboard() {
       />
 
       {/* ── 상단: D-Day + 이어하기 ─────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start max-w-3xl">
 
         {/* D-Day 카드 */}
-        {nextExam ? (
+        {nextExam && (
           <div className={[
             'rounded-2xl border p-4 sm:w-52 shrink-0',
             dDay !== null && dDay <= 3
@@ -292,10 +292,6 @@ export default async function HiNaesinDashboard() {
                 +{examRows.length - 1}개 일정 더
               </p>
             )}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-neutral-200 p-4 sm:w-52 shrink-0 flex flex-col items-center justify-center gap-1">
-            <p className="text-xs text-neutral-400">시험 날짜 미설정</p>
           </div>
         )}
 
