@@ -461,7 +461,7 @@ export default async function HiNaesinDashboard() {
         </div>
 
         {/* 데스크탑: 테이블 */}
-        <div className="hidden md:block rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+        <div className="hidden md:block rounded-2xl border border-neutral-200 bg-white overflow-hidden max-w-3xl">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -516,7 +516,7 @@ export default async function HiNaesinDashboard() {
                           ].join(' ')}
                         >
                           <td className="px-4 py-3">
-                            <p className="text-sm font-medium text-neutral-800 line-clamp-2 min-w-[140px] max-w-[260px]">
+                            <p className="text-sm font-medium text-neutral-800 line-clamp-1 min-w-[140px] max-w-[260px]">
                               {p.title}
                             </p>
                             {p.grade && (
