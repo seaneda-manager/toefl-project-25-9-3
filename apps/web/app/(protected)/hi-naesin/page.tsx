@@ -366,92 +366,46 @@ export default async function HiNaesinDashboard() {
             </div>
 
             {/* 카드 그리드 */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {items.map((p) => {
                 const pct = p.totalDrills > 0
                   ? Math.round((p.totalDone / p.totalDrills) * 100)
                   : 0;
                 const isAllDone = p.totalDrills > 0 && p.totalDone >= p.totalDrills;
 
-                // 날짜 prefix 제거 (예: "2026-6-21 35 제목" → "제목")
                 const displayTitle = p.title.replace(/^\d{4}-\d{1,2}-\d{1,2}\s+\d+\s*/, '');
                 const gradeLabel = p.grade === 'H1' ? '고1' : p.grade === 'H2' ? '고2' : p.grade === 'H3' ? '고3'
                   : p.grade === 'M1' ? '중1' : p.grade === 'M2' ? '중2' : p.grade === 'M3' ? '중3' : '';
 
                 const btnLabel = isAllDone ? '다시 하기'
-                  : p.sessionStatus === 'started' ? '이어하기'
-                  : p.totalDone > 0 ? '계속하기'
-                  : '시작하기';
+                  : p.sessionStatus === 'started' ? '이어하기 →'
+                  : p.totalDone > 0 ? '계속하기 →'
+                  : '시작하기 →';
 
                 return (
                   <div
                     key={p.passageId}
                     className={[
-                      'flex flex-col rounded-2xl border bg-white p-5 gap-4 transition',
-                      isAllDone ? 'opacity-55' : 'hover:border-neutral-300 hover:shadow-sm',
+                      'flex flex-col rounded-2xl border bg-white p-5 gap-3 transition',
+                      isAllDone ? 'opacity-50' : 'hover:border-neutral-300 hover:shadow-sm',
                     ].join(' ')}
                   >
-                    {/* 제목 + 메타 */}
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-semibold leading-snug text-neutral-800">
-                        {displayTitle}
-                      </p>
-                      <div className="flex items-center gap-1.5">
+                    {/* 상단: 메타 + 버튼 */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {gradeLabel && (
-                          <span className="text-[11px] text-neutral-400">{gradeLabel}</span>
+                          <span className="text-[11px] font-semibold text-neutral-400">{gradeLabel}</span>
                         )}
                         {isAllDone && (
-                          <span className="text-[11px] font-semibold text-emerald-600">· 완료</span>
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">완료</span>
                         )}
                       </div>
-                    </div>
-
-                    {/* 드릴 칩 */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {DRILL_COLS.map((col) => {
-                        const cell = p.cols[col.type];
-                        if (cell.status === 'none') return null;
-                        return (
-                          <span
-                            key={col.type}
-                            className={[
-                              'rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                              cell.status === 'done'    ? 'bg-emerald-100 text-emerald-700' :
-                              cell.status === 'partial' ? 'bg-amber-100 text-amber-700' :
-                              'bg-neutral-100 text-neutral-400',
-                            ].join(' ')}
-                          >
-                            {col.short}{cell.status === 'done' ? ' ✓' : cell.status === 'partial' ? ` ${cell.answered}/${cell.total}` : ''}
-                          </span>
-                        );
-                      })}
-                    </div>
-
-                    {/* 진도 바 + 버튼 */}
-                    <div className="space-y-2.5">
-                      {p.totalDrills > 0 && (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[11px]">
-                            <span className="text-neutral-400">{p.totalDone} / {p.totalDrills}</span>
-                            <span className={pct === 100 ? 'text-emerald-600 font-bold' : pct > 0 ? 'text-amber-600 font-semibold' : 'text-neutral-300'}>
-                              {pct > 0 ? `${pct}%` : '—'}
-                            </span>
-                          </div>
-                          <div className="h-1.5 w-full rounded-full bg-neutral-100">
-                            <div
-                              className={`h-1.5 rounded-full transition-all ${pct === 100 ? 'bg-emerald-400' : 'bg-amber-400'}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <form action={startHiNaesinDrillSessionAction}>
+                      <form action={startHiNaesinDrillSessionAction} className="shrink-0">
                         <input type="hidden" name="passage_id" value={p.passageId} />
                         <button
                           type="submit"
                           className={[
-                            'w-full rounded-xl py-2 text-sm font-semibold transition',
+                            'rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition',
                             isAllDone
                               ? 'border border-neutral-200 text-neutral-400 hover:bg-neutral-50'
                               : p.sessionStatus === 'started'
@@ -465,6 +419,50 @@ export default async function HiNaesinDashboard() {
                         </button>
                       </form>
                     </div>
+
+                    {/* 제목 */}
+                    <p className="text-sm font-semibold leading-snug text-neutral-800 flex-1">
+                      {displayTitle}
+                    </p>
+
+                    {/* 드릴 칩 */}
+                    <div className="flex flex-wrap gap-1">
+                      {DRILL_COLS.map((col) => {
+                        const cell = p.cols[col.type];
+                        if (cell.status === 'none') return null;
+                        return (
+                          <span
+                            key={col.type}
+                            className={[
+                              'rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+                              cell.status === 'done'    ? 'bg-emerald-100 text-emerald-700' :
+                              cell.status === 'partial' ? 'bg-amber-100 text-amber-700' :
+                              'bg-neutral-100 text-neutral-400',
+                            ].join(' ')}
+                          >
+                            {col.short}{cell.status === 'done' ? ' ✓' : cell.status === 'partial' ? ` ${cell.answered}/${cell.total}` : ''}
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    {/* 진도 바 */}
+                    {p.totalDrills > 0 && (
+                      <div className="space-y-1">
+                        <div className="h-1 w-full rounded-full bg-neutral-100">
+                          <div
+                            className={`h-1 rounded-full transition-all ${pct === 100 ? 'bg-emerald-400' : 'bg-amber-400'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <p className={[
+                          'text-[10px] text-right',
+                          pct === 100 ? 'text-emerald-500 font-semibold' : pct > 0 ? 'text-amber-500' : 'text-neutral-300',
+                        ].join(' ')}>
+                          {pct > 0 ? `${pct}%` : '미시작'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
