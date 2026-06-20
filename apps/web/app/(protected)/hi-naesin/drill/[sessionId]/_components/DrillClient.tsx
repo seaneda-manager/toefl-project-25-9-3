@@ -240,7 +240,7 @@ export default function DrillClient({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/hi-naesin/passages"
+              href="/hi-naesin"
               className="flex items-center gap-1.5 rounded-lg bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-200 transition-colors"
             >
               ← 목록
