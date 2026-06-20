@@ -215,7 +215,7 @@ export default async function HiNaesinDashboard() {
   );
 
   return (
-    <main className="space-y-6 pb-12 max-w-5xl">
+    <main className="space-y-6 pb-8 max-w-4xl">
 
       <SectionGuide
         storageKey="guide-seen-hi-naesin"
@@ -500,7 +500,7 @@ export default async function HiNaesinDashboard() {
 // ── 배정 없을 때 ───────────────────────────────────────────────
 function EmptyState() {
   return (
-    <main className="space-y-6">
+    <main className="space-y-6 pb-8 max-w-4xl">
       <header>
         <h1 className="text-2xl font-bold text-neutral-900">고등 내신 준비</h1>
       </header>

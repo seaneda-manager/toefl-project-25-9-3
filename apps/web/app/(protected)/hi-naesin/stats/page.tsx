@@ -188,7 +188,7 @@ export default async function HiNaesinStatsPage() {
   };
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-6 pb-8 max-w-4xl">
       {/* 헤더 */}
       <header className="flex items-center justify-between">
         <div>
