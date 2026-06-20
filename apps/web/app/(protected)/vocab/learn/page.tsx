@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import LearningLayout3Col from "@/components/vocab/LearningLayout3Col";
 import { demoVocabWords } from "@/models/vocab-demo";
@@ -22,7 +22,7 @@ export default function VocabLearnPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-6">
+    <main className="mx-auto space-y-6 pb-8 max-w-4xl">
       <LearningLayout3Col
         words={words}
         finishHref="/vocab/review"

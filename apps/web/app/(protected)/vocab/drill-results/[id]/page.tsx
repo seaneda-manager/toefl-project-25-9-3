@@ -21,7 +21,7 @@ export default async function VocaDrillSpeakingResultDetailPage({ params }: Prop
   if (!user) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-6">
-        <p className="text-sm text-gray-500">로그인이 필요합니다.</p>
+        <p className="text-sm text-gray-500">로그?�이 ?�요?�니??</p>
       </main>
     );
   }
@@ -49,11 +49,11 @@ export default async function VocaDrillSpeakingResultDetailPage({ params }: Prop
     return (
       <main className="mx-auto max-w-3xl space-y-3 px-4 py-6">
         <p className="text-sm text-red-600">
-          VOCA Drill Speaking 결과를 불러오는 중 오류가 발생했습니다.
+          VOCA Drill Speaking 결과�?불러?�는 �??�류가 발생?�습?�다.
         </p>
         <details className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">
           <summary className="cursor-pointer font-semibold">
-            Supabase error (디버그용)
+            Supabase error (?�버그용)
           </summary>
           <pre className="mt-2 whitespace-pre-wrap">{JSON.stringify(error, null, 2)}</pre>
         </details>
@@ -69,18 +69,18 @@ export default async function VocaDrillSpeakingResultDetailPage({ params }: Prop
   const mustUse: string[] = Array.isArray(row.must_use_words) ? row.must_use_words : [];
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+    <main className="mx-auto space-y-6 pb-8 max-w-3xl">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold">VOCA Drill – Speaking 결과 상세</h1>
+        <h1 className="text-xl font-semibold">VOCA Drill ??Speaking 결과 ?�세</h1>
         <p className="text-xs text-gray-500">
-          Vocab Drill C단계에서 저장된 한 개 Speaking 답변입니다.
+          Vocab Drill C?�계?�서 ?�?�된 ??�?Speaking ?��??�니??
         </p>
       </header>
 
-      {/* 메타 정보 카드 */}
+      {/* 메�? ?�보 카드 */}
       <section className="space-y-2 rounded-2xl border border-gray-200 bg-white px-4 py-4 text-xs">
         <p className="text-[11px] text-gray-500">
-          저장 시각: <span className="font-semibold text-gray-800">{createdAt}</span>
+          ?�???�각: <span className="font-semibold text-gray-800">{createdAt}</span>
         </p>
         <div className="flex flex-wrap gap-2 text-[11px] text-gray-700">
           <span className="rounded-full bg-gray-100 px-3 py-1">
@@ -88,15 +88,15 @@ export default async function VocaDrillSpeakingResultDetailPage({ params }: Prop
             <span className="font-mono text-[11px]">{row.mode ?? "task1_voca_drill"}</span>
           </span>
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
-            필수 단어:{" "}
+            ?�수 ?�어:{" "}
             <span className="font-semibold">
-              {mustUse.length > 0 ? mustUse.join(", ") : "—"}
+              {mustUse.length > 0 ? mustUse.join(", ") : "??}
             </span>
           </span>
         </div>
       </section>
 
-      {/* 프롬프트 카드 */}
+      {/* ?�롬?�트 카드 */}
       {row.prompt && (
         <section className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-4 text-xs text-blue-900">
           <p className="text-[11px] font-semibold text-blue-800">Speaking Prompt</p>
@@ -104,22 +104,22 @@ export default async function VocaDrillSpeakingResultDetailPage({ params }: Prop
         </section>
       )}
 
-      {/* 학생 스크립트 카드 */}
+      {/* ?�생 ?�크립트 카드 */}
       <section className="space-y-2 rounded-2xl border border-gray-200 bg-white px-4 py-4 text-xs">
-        <p className="text-[11px] font-semibold text-gray-800">학생 답변 스크립트</p>
+        <p className="text-[11px] font-semibold text-gray-800">?�생 ?��? ?�크립트</p>
         {row.script ? (
           <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-gray-800">
             {row.script}
           </p>
         ) : (
-          <p className="text-[11px] text-gray-500">저장된 스크립트가 없습니다.</p>
+          <p className="text-[11px] text-gray-500">?�?�된 ?�크립트가 ?�습?�다.</p>
         )}
       </section>
 
-      {/* meta 디버그용 */}
+      {/* meta ?�버그용 */}
       {row.meta && (
         <section className="space-y-2 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4 text-[11px] text-gray-700">
-          <p className="font-semibold text-gray-700">Meta (디버그용)</p>
+          <p className="font-semibold text-gray-700">Meta (?�버그용)</p>
           <pre className="max-h-48 overflow-auto whitespace-pre-wrap text-[10px]">
             {JSON.stringify(row.meta, null, 2)}
           </pre>
@@ -128,8 +128,7 @@ export default async function VocaDrillSpeakingResultDetailPage({ params }: Prop
 
       <footer className="pt-2">
         <Link href="/vocab/drill-results" className="text-xs text-emerald-700 hover:underline">
-          ← VOCA Drill Speaking 결과 목록으로 돌아가기
-        </Link>
+          ??VOCA Drill Speaking 결과 목록?�로 ?�아가�?        </Link>
       </footer>
     </main>
   );

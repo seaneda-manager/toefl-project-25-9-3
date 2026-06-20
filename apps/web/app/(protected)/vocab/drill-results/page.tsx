@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/vocab/drill-results/page.tsx
+﻿// apps/web/app/(protected)/vocab/drill-results/page.tsx
 import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
 
@@ -46,7 +46,7 @@ export default async function VocabDrillSpeakingResultsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+    <main className="mx-auto space-y-6 pb-8 max-w-3xl">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">
           VOCA Drill – Speaking 제출 결과

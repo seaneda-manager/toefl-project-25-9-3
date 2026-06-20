@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/vocab/exam/page.tsx
+﻿// apps/web/app/(protected)/vocab/exam/page.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -270,7 +270,7 @@ export default function VocabExamPage() {
     const example = reviewWord.examples_easy[0] ?? "";
 
     return (
-      <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
+      <main className="mx-auto space-y-6 pb-8 max-w-3xl">
         <header className="space-y-1 text-center">
           <h1 className="text-xl font-bold">지난 수업 단어 깜빡이 🔁</h1>
           <p className="text-xs text-gray-500">
@@ -318,7 +318,7 @@ export default function VocabExamPage() {
 
   if (phase === "exam" && currentQuestion) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
+      <main className="mx-auto space-y-6 pb-8 max-w-3xl">
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">오늘의 단어 시험</h1>
@@ -340,7 +340,7 @@ export default function VocabExamPage() {
 
   if (phase === "result" && score) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
+      <main className="mx-auto space-y-6 pb-8 max-w-3xl">
         <header className="space-y-1">
           <h1 className="text-xl font-bold">시험 결과</h1>
           <p className="text-xs text-gray-500">

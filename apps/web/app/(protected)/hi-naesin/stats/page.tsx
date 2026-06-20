@@ -5,9 +5,9 @@ import WeaknessAnalysisClient from './WeaknessAnalysisClient';
 
 export const dynamic = 'force-dynamic';
 
-// â”€â”€ ìˆ™ì§€ë„ ë ˆë²¨ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?€?€ ?™ì????ˆë²¨ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
 function masteryLevel(pct: number): { label: string; color: string; bg: string } {
-  if (pct >= 80) return { label: 'ìˆ™ì§€',    color: 'text-emerald-700', bg: 'bg-emerald-500' };
+  if (pct >= 80) return { label: '?™ì?',    color: 'text-emerald-700', bg: 'bg-emerald-500' };
   if (pct >= 60) return { label: 'ë¶€ë¶„ìˆ™ì§€', color: 'text-amber-700',   bg: 'bg-amber-400'   };
   return               { label: 'ë¯¸ìˆ™ì§€',   color: 'text-red-600',     bg: 'bg-red-400'     };
 }
@@ -21,7 +21,7 @@ export default async function HiNaesinStatsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  // â”€â”€ 1. ëª¨ë“  ì„¸ì…˜ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ 1. ëª¨ë“  ?¸ì…˜ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const { data: sessions } = await supabase
     .from('hi_naesin_sessions')
     .select('id, passage_id, status, submitted_at, score_percent')
@@ -32,7 +32,7 @@ export default async function HiNaesinStatsPage() {
   const submittedIds      = submittedSessions.map((s) => s.id);
   const passageIds        = [...new Set(submittedSessions.map((s) => s.passage_id))];
 
-  // â”€â”€ 2. ëª¨ë“  drill ì‘ë‹µ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ 2. ëª¨ë“  drill ?‘ë‹µ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const { data: responses } = submittedIds.length > 0
     ? await supabase
         .from('hi_naesin_drill_responses')
@@ -40,7 +40,7 @@ export default async function HiNaesinStatsPage() {
         .in('session_id', submittedIds)
     : { data: [] };
 
-  // â”€â”€ 3. Drill ë©”íƒ€ (íƒ€ì… + grammarCategory + passageId) â”€â”€â”€â”€
+  // ?€?€ 3. Drill ë©”í? (?€??+ grammarCategory + passageId) ?€?€?€?€
   const drillIds = [...new Set((responses ?? []).map((r) => r.drill_id))];
   const { data: drills } = drillIds.length > 0
     ? await supabase
@@ -51,7 +51,7 @@ export default async function HiNaesinStatsPage() {
 
   const drillMap = new Map((drills ?? []).map((d) => [d.id, d]));
 
-  // â”€â”€ 4. ì§€ë¬¸ ì´ë¦„ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ 4. ì§€ë¬??´ë¦„ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const { data: passages } = passageIds.length > 0
     ? await supabase
         .from('hi_naesin_passages')
@@ -60,7 +60,7 @@ export default async function HiNaesinStatsPage() {
     : { data: [] };
   const passageMap = new Map((passages ?? []).map((p) => [p.id, p]));
 
-  // â”€â”€ 5. ë°°ì • í˜„í™© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ 5. ë°°ì • ?„í™© ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const { data: assignments } = await supabase
     .from('hi_naesin_assignments')
     .select('id, status')
@@ -69,7 +69,7 @@ export default async function HiNaesinStatsPage() {
   const totalAssigned   = (assignments ?? []).length;
   const doneAssigned    = (assignments ?? []).filter((a) => a.status === 'submitted').length;
 
-  // â”€â”€ 6. text_ordering ì •ë‹µë¥  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ 6. text_ordering ?•ë‹µë¥??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const { data: variantAnswers } = submittedIds.length > 0
     ? await supabase
         .from('hi_naesin_variant_answers')
@@ -90,7 +90,7 @@ export default async function HiNaesinStatsPage() {
   );
   const orderCorrect = orderAnswers.filter((a) => a.is_correct).length;
 
-  // â”€â”€ ì§‘ê³„: ë“œë¦´ íƒ€ì…ë³„ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ ì§‘ê³„: ?œë¦´ ?€?…ë³„ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   type TypeStat = { correct: number; total: number; scoreSum: number; scoreCount: number };
   const typeStats: Record<string, TypeStat> = {};
 
@@ -107,7 +107,7 @@ export default async function HiNaesinStatsPage() {
     }
   }
 
-  // â”€â”€ ì§‘ê³„: ì·¨ì•½ ë¬¸ë²• ì¹´í…Œê³ ë¦¬ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ ì§‘ê³„: ì·¨ì•½ ë¬¸ë²• ì¹´í…Œê³ ë¦¬ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const grammarWrong: Record<string, number> = {};
   for (const r of responses ?? []) {
     if (r.is_correct !== false) continue;
@@ -120,8 +120,8 @@ export default async function HiNaesinStatsPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // â”€â”€ ì§‘ê³„: ì§€ë¬¸ë³„ ìˆ™ì§€ë„ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // passage_id â†’ { type â†’ { correct, total, scoreSum, scoreCount } }
+  // ?€?€ ì§‘ê³„: ì§€ë¬¸ë³„ ?™ì????€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+  // passage_id ??{ type ??{ correct, total, scoreSum, scoreCount } }
   type PassageStat = Record<string, TypeStat>;
   const passageStats: Record<string, PassageStat> = {};
 
@@ -140,7 +140,7 @@ export default async function HiNaesinStatsPage() {
     }
   }
 
-  // ìˆ™ì§€ë„ = ë²ˆì—­ 0.3 + ì‘ë¬¸ 0.4 + ë¹ˆì¹¸ 0.3 (ì—†ëŠ” íƒ€ì…ì€ ì œì™¸ í›„ ì¬ê°€ì¤‘)
+  // ?™ì???= ë²ˆì—­ 0.3 + ?‘ë¬¸ 0.4 + ë¹ˆì¹¸ 0.3 (?†ëŠ” ?€?…ì? ?œì™¸ ???¬ê?ì¤?
   function calcMastery(ps: PassageStat): number {
     type W = { key: string; weight: number };
     const weights: W[] = [
@@ -167,9 +167,9 @@ export default async function HiNaesinStatsPage() {
       mastery: calcMastery(passageStats[pid] ?? {}),
     }))
     .filter((x) => x.passage)
-    .sort((a, b) => a.mastery - b.mastery); // ë‚®ì€ ìˆœ (ì·¨ì•½í•œ ê²ƒ ë¨¼ì €)
+    .sort((a, b) => a.mastery - b.mastery); // ??? ??(ì·¨ì•½??ê²?ë¨¼ì?)
 
-  // â”€â”€ ìš”ì•½ ì¹´ë“œ ê³„ì‚° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ?€?€ ?”ì•½ ì¹´ë“œ ê³„ì‚° ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
   const totalResponses  = (responses ?? []).length;
   const correctAll      = (responses ?? []).filter((r) => r.is_correct === true).length;
   const overallAccuracy = pct(correctAll, totalResponses);
@@ -180,48 +180,47 @@ export default async function HiNaesinStatsPage() {
     : null;
 
   const DRILL_TYPE_LABELS: Record<string, string> = {
-    translation:    'ë²ˆì—­ (í•´ì„)',
-    writing:        'ì‘ë¬¸',
+    translation:    'ë²ˆì—­ (?´ì„)',
+    writing:        '?‘ë¬¸',
     fill_blank:     'ë¹ˆì¹¸',
-    vocab:          'ë‹¨ì–´',
-    grammar_choice: 'ë¬¸ë²• ê³ ë¥´ê¸°',
+    vocab:          '?¨ì–´',
+    grammar_choice: 'ë¬¸ë²• ê³ ë¥´ê¸?,
   };
 
   return (
-    <main className="space-y-6 pb-8 max-w-2xl">
-      {/* í—¤ë” */}
+    <main className="mx-auto space-y-6 pb-8 max-w-2xl">
+      {/* ?¤ë” */}
       <header className="flex items-center justify-between">
         <div>
           <div className="text-xs text-neutral-400">
-            <Link href="/hi-naesin" className="hover:underline">ë‚´ì‹  Drill</Link> / í•™ìŠµ í˜„í™©
+            <Link href="/hi-naesin" className="hover:underline">?´ì‹  Drill</Link> / ?™ìŠµ ?„í™©
           </div>
-          <h1 className="text-xl font-bold text-neutral-900 mt-0.5">ë‚´ í•™ìŠµ í˜„í™©</h1>
+          <h1 className="text-xl font-bold text-neutral-900 mt-0.5">???™ìŠµ ?„í™©</h1>
         </div>
         <Link
           href="/hi-naesin/review"
           className="rounded-xl border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
         >
-          ì§ì „ì •ë¦¬ â†’
-        </Link>
+          ì§ì „?•ë¦¬ ??        </Link>
       </header>
 
-      {/* â”€â”€ ìš”ì•½ ì¹´ë“œ â”€â”€ */}
+      {/* ?€?€ ?”ì•½ ì¹´ë“œ ?€?€ */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="ì™„ë£Œ ì§€ë¬¸" value={`${passageIds.length}ê°œ`} />
-        <StatCard label="ì „ì²´ ì •ë‹µë¥ " value={overallAccuracy != null ? `${overallAccuracy}%` : 'â€”'} />
+        <StatCard label="?„ë£Œ ì§€ë¬? value={`${passageIds.length}ê°?} />
+        <StatCard label="?„ì²´ ?•ë‹µë¥? value={overallAccuracy != null ? `${overallAccuracy}%` : '??} />
         <StatCard
-          label="ë°°ì • ì™„ë£Œìœ¨"
-          value={totalAssigned > 0 ? `${doneAssigned}/${totalAssigned}` : 'â€”'}
+          label="ë°°ì • ?„ë£Œ??
+          value={totalAssigned > 0 ? `${doneAssigned}/${totalAssigned}` : '??}
           sub={totalAssigned > 0 ? `${Math.round((doneAssigned / totalAssigned) * 100)}%` : undefined}
         />
-        <StatCard label="ì‘ë¬¸ í‰ê· " value={writingAvg != null ? `${writingAvg}ì ` : 'â€”'} />
+        <StatCard label="?‘ë¬¸ ?‰ê· " value={writingAvg != null ? `${writingAvg}?? : '??} />
       </div>
 
-      {/* â”€â”€ ë“œë¦´ íƒ€ì…ë³„ + ì·¨ì•½ ë¬¸ë²• â”€â”€ */}
+      {/* ?€?€ ?œë¦´ ?€?…ë³„ + ì·¨ì•½ ë¬¸ë²• ?€?€ */}
       <div className="grid gap-5 sm:grid-cols-2">
-        {/* ë“œë¦´ íƒ€ì…ë³„ */}
+        {/* ?œë¦´ ?€?…ë³„ */}
         <section className="rounded-2xl border bg-white p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-neutral-800">ë“œë¦´ íƒ€ì…ë³„ ì •ë‹µë¥ </h2>
+          <h2 className="text-sm font-semibold text-neutral-800">?œë¦´ ?€?…ë³„ ?•ë‹µë¥?/h2>
           {Object.entries(DRILL_TYPE_LABELS).map(([type, label]) => {
             const s = typeStats[type];
             if (!s || s.total === 0) return null;
@@ -237,7 +236,7 @@ export default async function HiNaesinStatsPage() {
                 <div className="flex justify-between text-xs">
                   <span className="text-neutral-600">{label}</span>
                   <span className="font-semibold text-neutral-700">
-                    {display}{isScore && s.scoreCount > 0 ? 'ì ' : '%'}
+                    {display}{isScore && s.scoreCount > 0 ? '?? : '%'}
                     <span className="ml-1 text-neutral-400 font-normal">({s.total}ë¬¸ì œ)</span>
                   </span>
                 </div>
@@ -248,7 +247,7 @@ export default async function HiNaesinStatsPage() {
             );
           })}
           {Object.keys(typeStats).length === 0 && (
-            <p className="text-xs text-neutral-400">ì•„ì§ ì™„ë£Œí•œ ë“œë¦´ì´ ì—†ìŠµë‹ˆë‹¤.</p>
+            <p className="text-xs text-neutral-400">?„ì§ ?„ë£Œ???œë¦´???†ìŠµ?ˆë‹¤.</p>
           )}
         </section>
 
@@ -256,7 +255,7 @@ export default async function HiNaesinStatsPage() {
         <section className="rounded-2xl border bg-white p-5 space-y-3">
           <h2 className="text-sm font-semibold text-neutral-800">ì·¨ì•½ ë¬¸ë²• ì¹´í…Œê³ ë¦¬</h2>
           {weakGrammar.length === 0 ? (
-            <p className="text-xs text-neutral-400">ë¬¸ë²• ì˜¤ë‹µì´ ì—†ìŠµë‹ˆë‹¤ ğŸ‘</p>
+            <p className="text-xs text-neutral-400">ë¬¸ë²• ?¤ë‹µ???†ìŠµ?ˆë‹¤ ?‘</p>
           ) : (
             weakGrammar.map(([cat, count]) => {
               const maxCount = weakGrammar[0][1];
@@ -265,7 +264,7 @@ export default async function HiNaesinStatsPage() {
                 <div key={cat} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-neutral-600">{cat}</span>
-                    <span className="font-semibold text-red-500">{count}íšŒ ì˜¤ë‹µ</span>
+                    <span className="font-semibold text-red-500">{count}???¤ë‹µ</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-neutral-100">
                     <div className="h-2 rounded-full bg-red-400 transition-all" style={{ width: `${bar}%` }} />
@@ -275,13 +274,13 @@ export default async function HiNaesinStatsPage() {
             })
           )}
 
-          {/* ìˆœì„œ íŒŒì•… */}
+          {/* ?œì„œ ?Œì•… */}
           {orderAnswers.length > 0 && (
             <div className="mt-4 pt-4 border-t space-y-2">
-              <h3 className="text-xs font-semibold text-neutral-600">ğŸ”€ ìˆœì„œ íŒŒì•…</h3>
+              <h3 className="text-xs font-semibold text-neutral-600">?? ?œì„œ ?Œì•…</h3>
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-neutral-600">text ordering ì •ë‹µë¥ </span>
+                  <span className="text-neutral-600">text ordering ?•ë‹µë¥?/span>
                   <span className="font-semibold text-neutral-700">
                     {orderCorrect}/{orderAnswers.length}
                     {' '}({pct(orderCorrect, orderAnswers.length)}%)
@@ -293,14 +292,14 @@ export default async function HiNaesinStatsPage() {
                     style={{ width: `${pct(orderCorrect, orderAnswers.length)}%` }}
                   />
                 </div>
-                {/* í‹€ë¦° ìˆœì„œ íŒ¨í„´ */}
+                {/* ?€ë¦??œì„œ ?¨í„´ */}
                 {orderAnswers.filter((a) => !a.is_correct).slice(0, 3).map((a) => {
                   const q = vqMap.get(a.question_id);
                   const correctOrder = (q?.payload as Record<string, unknown>)?.correctOrder as string[] | undefined;
                   if (!correctOrder || !a.selected_order) return null;
                   return (
                     <p key={a.question_id} className="text-[11px] text-neutral-400">
-                      ë‚´ ë‹µ {a.selected_order.join('â†’')} Â· ì •ë‹µ {correctOrder.join('â†’')}
+                      ????{a.selected_order.join('??)} Â· ?•ë‹µ {correctOrder.join('??)}
                     </p>
                   );
                 })}
@@ -310,13 +309,13 @@ export default async function HiNaesinStatsPage() {
         </section>
       </div>
 
-      {/* â”€â”€ AI ì•½ì  ë¶„ì„ â”€â”€ */}
+      {/* ?€?€ AI ?½ì  ë¶„ì„ ?€?€ */}
       <WeaknessAnalysisClient />
 
-      {/* â”€â”€ ì§€ë¬¸ë³„ ìˆ™ì§€ë„ â”€â”€ */}
+      {/* ?€?€ ì§€ë¬¸ë³„ ?™ì????€?€ */}
       {passageMastery.length > 0 && (
         <section className="rounded-2xl border bg-white p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-neutral-800">ğŸ“– ì§€ë¬¸ë³„ ìˆ™ì§€ë„</h2>
+          <h2 className="text-sm font-semibold text-neutral-800">?“– ì§€ë¬¸ë³„ ?™ì???/h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {passageMastery.map(({ passage, mastery }) => {
               const lv = masteryLevel(mastery);
@@ -327,7 +326,7 @@ export default async function HiNaesinStatsPage() {
                       href={`/hi-naesin/review?passage=${passage!.id}`}
                       className="truncate font-medium text-neutral-700 hover:text-neutral-900 hover:underline"
                     >
-                      {passage!.title ?? '(ì§€ë¬¸)'}
+                      {passage!.title ?? '(ì§€ë¬?'}
                     </Link>
                     <span className={`ml-3 shrink-0 font-semibold ${lv.color}`}>
                       {mastery}% {lv.label}
@@ -346,10 +345,10 @@ export default async function HiNaesinStatsPage() {
         </section>
       )}
 
-      {/* â”€â”€ ìµœê·¼ í•™ìŠµ ê¸°ë¡ â”€â”€ */}
+      {/* ?€?€ ìµœê·¼ ?™ìŠµ ê¸°ë¡ ?€?€ */}
       {submittedSessions.length > 0 && (
         <section className="rounded-2xl border bg-white p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-neutral-800">ìµœê·¼ í•™ìŠµ ê¸°ë¡</h2>
+          <h2 className="text-sm font-semibold text-neutral-800">ìµœê·¼ ?™ìŠµ ê¸°ë¡</h2>
           <div className="divide-y">
             {submittedSessions
               .sort((a, b) => (b.submitted_at ?? '').localeCompare(a.submitted_at ?? ''))
@@ -359,7 +358,7 @@ export default async function HiNaesinStatsPage() {
                 return (
                   <div key={s.id} className="flex items-center justify-between py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-sm text-neutral-800">{p?.title ?? '(ì§€ë¬¸)'}</p>
+                      <p className="truncate text-sm text-neutral-800">{p?.title ?? '(ì§€ë¬?'}</p>
                       <p className="text-xs text-neutral-400">
                         {s.submitted_at ? new Date(s.submitted_at).toLocaleDateString('ko-KR') : ''}
                       </p>
@@ -379,8 +378,8 @@ export default async function HiNaesinStatsPage() {
 
       {submittedSessions.length === 0 && (
         <div className="rounded-2xl border border-dashed p-10 text-center text-sm text-neutral-400">
-          ì™„ë£Œí•œ ë“œë¦´ì´ ì—†ìŠµë‹ˆë‹¤.{' '}
-          <Link href="/hi-naesin" className="underline">ë“œë¦´ ì‹œì‘í•˜ê¸°</Link>
+          ?„ë£Œ???œë¦´???†ìŠµ?ˆë‹¤.{' '}
+          <Link href="/hi-naesin" className="underline">?œë¦´ ?œì‘?˜ê¸°</Link>
         </div>
       )}
     </main>

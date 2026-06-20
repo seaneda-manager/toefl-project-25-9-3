@@ -1,4 +1,4 @@
-// apps/web/app/(protected)/vocab/results/page.tsx
+﻿// apps/web/app/(protected)/vocab/results/page.tsx
 import { getServerSupabase } from "@/lib/supabase/server";
 import Link from "next/link";
 
@@ -41,7 +41,7 @@ export default async function VocabExamResultsPage() {
   const hasResults = !!results && results.length > 0;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
+    <main className="mx-auto space-y-6 pb-8 max-w-3xl">
       {/* 헤더 + Drill 바로가기 버튼 */}
       <header className="flex items-center justify-between gap-3">
         <div className="space-y-1">

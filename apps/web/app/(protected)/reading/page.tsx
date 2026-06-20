@@ -24,7 +24,7 @@ export default async function Page() {
   const { data: sets, error } = await supabase
     .from('v_user_reading_sets')
     .select('id, title, source, version')
-    // 필요하면 Listening처럼 user 필터도 쓸 수 있음:
+    // ?�요?�면 Listening처럼 user ?�터???????�음:
     // .eq('user_id', user.id)
     // .eq('downloaded', true)
     .order('created_at', { ascending: true })
@@ -39,19 +39,19 @@ export default async function Page() {
   }
 
   return (
-    <div className="mx-auto max-w-xl p-6 space-y-4">
+    <div className="mx-auto space-y-6 pb-8 max-w-2xl">
       <h1 className="text-xl font-semibold">Reading</h1>
 
       {!sets || sets.length === 0 ? (
         <p className="text-sm text-neutral-600">
-          다운로드한 Reading 세트가 없습니다.
+          ?�운로드??Reading ?�트가 ?�습?�다.
         </p>
       ) : (
         <SetPicker sets={sets} />
       )}
 
       <p className="text-xs text-neutral-500">
-        목록은 다운로드 여부와 관계없이 표시됩니다.
+        목록?� ?�운로드 ?��??� 관계없???�시?�니??
       </p>
     </div>
   );
