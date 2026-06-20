@@ -12,7 +12,7 @@ const PHASE_ORDER: Phase[] = ["PREVIEW", "PROMPT", "SCRIPT", "SUMMARY"];
 export default function SpeakingVocaDrillPage() {
   const [phase, setPhase] = useState<Phase>("PREVIEW");
 
-  // ?�모?? ?�늘 ?�어 3�??�도�?Speaking???�결
+  // 데모용: 오늘 단어 3개 정도만 Speaking에 연결
   const todayWords: VocabWordCore[] = useMemo(
     () => demoVocabWords.slice(0, 3),
     [],
@@ -31,21 +31,22 @@ export default function SpeakingVocaDrillPage() {
   };
 
   return (
-    <main className="mx-auto space-y-6 pb-8 max-w-4xl">
-      {/* ?�더 */}
+    <main className="mx-auto max-w-4xl px-4 py-6 space-y-4">
+      {/* 헤더 */}
       <header className="space-y-1">
         <h1 className="text-xl font-bold">
-          Speaking ??Voca 기반 Task 1 Drill
+          Speaking – Voca 기반 Task 1 Drill
         </h1>
         <p className="text-xs text-gray-500">
-          ?�늘 ?�어�??�제 TOEFL Speaking Task 1 ?��????��???          ?�결?�는 ?�습 ?�름?�니??
+          오늘 단어를 실제 TOEFL Speaking Task 1 스타일 답변에
+          연결하는 연습 흐름입니다.
         </p>
       </header>
 
-      {/* ?�계 ?�디케?�터 */}
+      {/* 단계 인디케이터 */}
       <SpeakingPhaseIndicator current={phase} />
 
-      {/* 본문 ?�션 */}
+      {/* 본문 섹션 */}
       {phase === "PREVIEW" && (
         <SpeakingPreviewSection
           words={todayWords}
@@ -79,9 +80,9 @@ export default function SpeakingVocaDrillPage() {
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// ?�단 ?�계 ?�시 (A / B / C / D)
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// 상단 단계 표시 (A / B / C / D)
+// ─────────────────────────────
 
 type SpeakingPhaseIndicatorProps = {
   current: Phase;
@@ -92,22 +93,22 @@ function SpeakingPhaseIndicator({ current }: SpeakingPhaseIndicatorProps) {
     {
       phase: "PREVIEW",
       label: "A. Voca",
-      desc: "?�늘 ?�어 ?�어보기",
+      desc: "오늘 단어 훑어보기",
     },
     {
       phase: "PROMPT",
       label: "B. Prompt",
-      desc: "Task 1 질문 ?�인",
+      desc: "Task 1 질문 확인",
     },
     {
       phase: "SCRIPT",
       label: "C. Script",
-      desc: "?��? 문장 만들�?,
+      desc: "답변 문장 만들기",
     },
     {
       phase: "SUMMARY",
-      label: "?�료",
-      desc: "?�늘 Speaking ?�리",
+      label: "완료",
+      desc: "오늘 Speaking 정리",
     },
   ];
 
@@ -135,7 +136,7 @@ function SpeakingPhaseIndicator({ current }: SpeakingPhaseIndicatorProps) {
               <span className="text-[10px]">{step.desc}</span>
             </div>
             {idx < steps.length - 1 && (
-              <span className="text-[10px] text-gray-300">??/span>
+              <span className="text-[10px] text-gray-300">→</span>
             )}
           </li>
         );
@@ -144,9 +145,9 @@ function SpeakingPhaseIndicator({ current }: SpeakingPhaseIndicatorProps) {
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// A. Voca Preview ???�늘 ?�어 ?�기
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// A. Voca Preview – 오늘 단어 훑기
+// ─────────────────────────────
 
 type SpeakingPreviewProps = {
   words: VocabWordCore[];
@@ -158,10 +159,11 @@ function SpeakingPreviewSection({ words, onNext }: SpeakingPreviewProps) {
     <section className="space-y-4 rounded-2xl border border-indigo-200 bg-white px-4 py-6 shadow-sm">
       <header className="space-y-1">
         <p className="text-xs font-semibold text-indigo-700">
-          A. Voca Preview ???�늘 Speaking??반드?????�어
+          A. Voca Preview – 오늘 Speaking에 반드시 쓸 단어
         </p>
         <p className="text-[11px] text-gray-500">
-          ?�래 ?�어??�?최소 2�??�상??Task 1 ?��??�서 반드???�용??          ?�정?�니??
+          아래 단어들 중 최소 2개 이상을 Task 1 답변에서 반드시 사용할
+          예정입니다.
         </p>
       </header>
 
@@ -192,16 +194,16 @@ function SpeakingPreviewSection({ words, onNext }: SpeakingPreviewProps) {
           onClick={onNext}
           className="rounded-full bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
         >
-          ?�어 ?�인 ?�료 ??B. Prompt
+          단어 확인 완료 → B. Prompt
         </button>
       </div>
     </section>
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// B. Speaking Prompt ??Task 1 ?��???질문
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// B. Speaking Prompt – Task 1 스타일 질문
+// ─────────────────────────────
 
 type SpeakingPromptProps = {
   words: VocabWordCore[];
@@ -222,10 +224,11 @@ function SpeakingPromptSection({
     <section className="space-y-4 rounded-2xl border border-purple-200 bg-white px-4 py-6 shadow-sm">
       <header className="space-y-1">
         <p className="text-xs font-semibold text-purple-700">
-          B. Speaking Prompt ??TOEFL Task 1 ?��???        </p>
+          B. Speaking Prompt – TOEFL Task 1 스타일
+        </p>
         <p className="text-[11px] text-gray-500">
-          ?�래 질문??45�??�도 말한?�고 ?�각?�고 ?�이?�어�??�올??보게
-          ?????�어??
+          아래 질문에 45초 정도 말한다고 생각하고 아이디어를 떠올려 보게
+          할 수 있어요.
         </p>
       </header>
 
@@ -236,8 +239,8 @@ function SpeakingPromptSection({
       <div className="rounded-xl border border-purple-100 bg-purple-50 px-3 py-2 text-xs text-purple-900">
         <p className="text-[11px] font-semibold">Must-use words</p>
         <p className="mt-1 text-[11px]">
-          ?�래 ?�어 �?최소 <b>2�??�상</b>??반드???�용?�서 ?�하?�록
-          ?�내:
+          아래 단어 중 최소 <b>2개 이상</b>을 반드시 사용해서 답하도록
+          안내:
         </p>
         <p className="mt-1 text-[11px] font-semibold">
           {mustUseWords.join(", ")}
@@ -245,20 +248,21 @@ function SpeakingPromptSection({
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-gray-500">
-        <span>???�중?�는 ?�기??바로 ?�?�머/?�음 버튼??붙을 ?�정.</span>
+        <span>※ 나중에는 여기서 바로 타이머/녹음 버튼이 붙을 예정.</span>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onPrev}
             className="rounded-full bg-gray-100 px-4 py-1.5 text-[11px] text-gray-700 hover:bg-gray-200"
           >
-            ??A. Voca�?          </button>
+            ← A. Voca로
+          </button>
           <button
             type="button"
             onClick={onNext}
             className="rounded-full bg-purple-600 px-5 py-1.5 text-[11px] font-semibold text-white hover:bg-purple-700"
           >
-            ?�이?�어 ?�올�??�료 ??C. Script
+            아이디어 떠올림 완료 → C. Script
           </button>
         </div>
       </div>
@@ -266,9 +270,9 @@ function SpeakingPromptSection({
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// C. Script ???��? 문장 ?�보�?(Recording 준�?
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// C. Script – 답변 문장 써보기 (Recording 준비)
+// ─────────────────────────────
 
 type SpeakingScriptProps = {
   words: VocabWordCore[];
@@ -293,10 +297,11 @@ function SpeakingScriptSection({
     <section className="space-y-4 rounded-2xl border border-emerald-200 bg-white px-4 py-6 shadow-sm">
       <header className="space-y-1">
         <p className="text-xs font-semibold text-emerald-700">
-          C. Script ??말하�??�에 문장?�로 ?�리?�기
+          C. Script – 말하기 전에 문장으로 정리하기
         </p>
         <p className="text-[11px] text-gray-500">
-          ?�생?�게 4~6문장 ?�도???��???먼�? 글�???보게 ?�고, ?�중??          ?�제 ?�음 ?�이지?�서 ???�크립트�?참고?�게 만들 ???�어??
+          학생에게 4~6문장 정도의 답변을 먼저 글로 써 보게 하고, 나중에
+          실제 녹음 페이지에서 이 스크립트를 참고하게 만들 수 있어요.
         </p>
       </header>
 
@@ -304,9 +309,9 @@ function SpeakingScriptSection({
         <p className="font-semibold">조건</p>
         <ul className="ml-4 mt-1 list-disc space-y-1">
           <li>
-            ?�래 ?�어 �?최소 <b>2�??�상</b>??반드???�함?�서 ?�기
+            아래 단어 중 최소 <b>2개 이상</b>을 반드시 포함해서 쓰기
           </li>
-          <li>최소 4문장 ?�상 ?�기 (TOEFL Task 1 ?�낌)</li>
+          <li>최소 4문장 이상 쓰기 (TOEFL Task 1 느낌)</li>
         </ul>
         <p className="mt-1 text-[11px] font-semibold">
           Must-use words: {mustUseWords.join(", ")}
@@ -319,10 +324,10 @@ function SpeakingScriptSection({
           onChange={(e) => setScript(e.target.value)}
           rows={8}
           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          placeholder="?�시: I prefer studying in a quiet library because..."
+          placeholder="예시: I prefer studying in a quiet library because..."
         />
         <p className="text-[10px] text-gray-500">
-          추정 문장 ??{" "}
+          추정 문장 수:{" "}
           <span className="font-semibold">{approxSentences}</span> 문장
         </p>
       </div>
@@ -333,23 +338,24 @@ function SpeakingScriptSection({
           onClick={onPrev}
           className="rounded-full bg-gray-100 px-4 py-1.5 text-[11px] text-gray-700 hover:bg-gray-200"
         >
-          ??B. Prompt�?        </button>
+          ← B. Prompt로
+        </button>
 
         <button
           type="button"
           onClick={onNext}
           className="rounded-full bg-emerald-600 px-5 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700"
         >
-          Script ?�성 ?�료 ???�약 보기
+          Script 작성 완료 → 요약 보기
         </button>
       </div>
     </section>
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// D. Summary ???�늘 Speaking Drill ?�리
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// D. Summary – 오늘 Speaking Drill 정리
+// ─────────────────────────────
 
 type SpeakingSummaryProps = {
   words: VocabWordCore[];
@@ -362,19 +368,20 @@ function SpeakingSummarySection({ words, onPrev }: SpeakingSummaryProps) {
   return (
     <section className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-5 text-xs text-gray-700">
       <p className="text-sm font-semibold text-gray-800">
-        ?�늘 Speaking Voca Drill ?�약
+        오늘 Speaking Voca Drill 요약
       </p>
 
       <ul className="ml-4 list-disc space-y-1">
-        <li>?�늘 Speaking???�결???�어: {mustUseWords.join(", ")}</li>
-        <li>A: ?�어 ?��?/?�문???�시 보면??&quot;?�에 ?�릴 준�?quot;</li>
-        <li>B: Task 1 질문�??�수 ?�어 조건 ?�인</li>
-        <li>C: 4~6문장 ?�도???��? Script ?�성</li>
+        <li>오늘 Speaking에 연결한 단어: {mustUseWords.join(", ")}</li>
+        <li>A: 단어 의미/예문을 다시 보면서 &quot;입에 올릴 준비&quot;</li>
+        <li>B: Task 1 질문과 필수 단어 조건 확인</li>
+        <li>C: 4~6문장 정도의 답변 Script 작성</li>
       </ul>
 
       <p className="mt-2 text-[11px] text-gray-500">
-        ?�음 ?�계?�서?????�이지?�서 ?�성??Script?� ?�중???�음??        ?�성??Supabase???�?�해?? &quot;?�어 ?�용 ?��? + 발음 + ?�창??quot;
-        리포?��? ?�동?�로 만드??구조�??�장?????�어??
+        다음 단계에서는 이 페이지에서 작성한 Script와 나중에 녹음한
+        음성을 Supabase에 저장해서, &quot;단어 사용 여부 + 발음 + 유창성&quot;
+        리포트를 자동으로 만드는 구조로 확장할 수 있어요.
       </p>
 
       <div className="flex justify-end">
@@ -383,7 +390,8 @@ function SpeakingSummarySection({ words, onPrev }: SpeakingSummaryProps) {
           onClick={onPrev}
           className="rounded-full bg-gray-200 px-4 py-1.5 text-[11px] text-gray-700 hover:bg-gray-300"
         >
-          ??C. Script�??�아가�?        </button>
+          ← C. Script로 돌아가기
+        </button>
       </div>
     </section>
   );

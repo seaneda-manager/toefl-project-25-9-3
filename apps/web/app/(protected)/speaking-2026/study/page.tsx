@@ -4,11 +4,11 @@
 import { useEffect, useRef, useState } from "react";
 import SpeakingRunner2026 from "@/components/speaking/SpeakingRunner2026";
 
-// ?�� 간단 ?�모??Speaking ?�스??(?�?��? any�??�슨?�게)
+// 🔹 간단 데모용 Speaking 테스트 (타입은 any로 느슨하게)
 const demoSpeakingTest2026: any = {
   meta: {
     id: "speaking-2026-demo",
-    label: "TOEFL iBT 2026 ??Speaking Demo",
+    label: "TOEFL iBT 2026 – Speaking Demo",
   },
   tasks: [
     {
@@ -23,7 +23,7 @@ const demoSpeakingTest2026: any = {
       id: "task2",
       type: "integrated_read_listen_speak",
       prompt:
-        "The reading and listening describe a change at the university and students??opinions about it. Summarize the change and explain the man?�s opinion about it and the reasons he gives.",
+        "The reading and listening describe a change at the university and students’ opinions about it. Summarize the change and explain the man’s opinion about it and the reasons he gives.",
       preparationSeconds: 30,
       speakingSeconds: 60,
     },
@@ -33,7 +33,7 @@ const demoSpeakingTest2026: any = {
 export default function Speaking2026StudyPage() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  // SpeakingRunner2026 onFinish ?�그?�처:
+  // SpeakingRunner2026 onFinish 시그니처:
   // (result: any) => { ok: true } | Promise<{ ok: true }>
   const handleFinish = async (result: any) => {
     setSaveMessage(null);
@@ -53,7 +53,8 @@ export default function Speaking2026StudyPage() {
         const prompt: string | undefined =
           typeof task.prompt === "string" ? task.prompt : undefined;
 
-        // ?�?�적??문장/?�어 ??        const sentences = script
+        // 대략적인 문장/단어 수
+        const sentences = script
           .split(/[.!?]+/)
           .filter((s) => s.trim()).length;
         const words = script.split(/\s+/).filter((w) => w.trim()).length;
@@ -76,20 +77,21 @@ export default function Speaking2026StudyPage() {
         });
       }
 
-      setSaveMessage("?�피???�습 결과가 ?�?�되?�습?�다. ?��");
+      setSaveMessage("스피킹 연습 결과가 저장되었습니다. 👍");
     } catch (e) {
       console.error("Failed to save speaking_results_2026", e);
-      setSaveMessage("?�??�??�류가 발생?�습?�다.");
+      setSaveMessage("저장 중 오류가 발생했습니다.");
     }
 
-    // ??Runner가 기�??�는 리턴�?    return { ok: true as const };
+    // ✅ Runner가 기대하는 리턴값
+    return { ok: true as const };
   };
 
   return (
-    <main className="mx-auto space-y-6 pb-8 max-w-4xl">
-      <h1 className="text-xl font-bold">TOEFL iBT 2026 ??Speaking Practice</h1>
+    <main className="mx-auto max-w-4xl space-y-4 px-4 py-6">
+      <h1 className="text-xl font-bold">TOEFL iBT 2026 – Speaking Practice</h1>
       <p className="text-xs text-gray-600">
-        ?�습???�나�? �?Task???�크립트가 Supabase???�?�됩?�다.
+        연습이 끝나면, 각 Task의 스크립트가 Supabase에 저장됩니다.
       </p>
 
       <SpeakingRunner2026
@@ -101,15 +103,15 @@ export default function Speaking2026StudyPage() {
         <p className="text-xs text-emerald-700">{saveMessage}</p>
       )}
 
-      {/* ?�� 추�?: ?�제 마이???�음 ?�습 블록 + ?�로??*/}
+      {/* 🔊 추가: 실제 마이크 녹음 연습 블록 + 업로드 */}
       <SpeakingAudioPractice />
     </main>
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// Speaking ?�음 ?�습 ?�션
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// Speaking 녹음 연습 섹션
+// ─────────────────────────────
 
 function SpeakingAudioPractice() {
   const promptFromTask1: string =
@@ -119,11 +121,11 @@ function SpeakingAudioPractice() {
   return (
     <section className="mt-4 space-y-3 rounded-2xl border border-gray-200 bg-white px-4 py-4 text-xs">
       <h2 className="text-sm font-semibold text-gray-800">
-        ?�� 추�? Speaking ?�음 ?�습 (Demo)
+        🎙 추가 Speaking 녹음 연습 (Demo)
       </h2>
       <p className="text-[11px] text-gray-600">
-        ?�제 TOEFL Task 1 ?��???문제�?보고, 브라?��??�서 바로 ?�음/?�생?�고,
-        ?�하�?Supabase Storage???�로?�까지 ?�는 ?�습 구역?�니??
+        실제 TOEFL Task 1 스타일 문제를 보고, 브라우저에서 바로 녹음/재생하고,
+        원하면 Supabase Storage에 업로드까지 하는 연습 구역입니다.
       </p>
 
       <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-3">
@@ -136,7 +138,7 @@ function SpeakingAudioPractice() {
       </div>
 
       <SimpleAudioRecorder
-        label="Task 1 ??말하�??�음 ?�습"
+        label="Task 1 – 말하기 녹음 연습"
         testId="speaking-2026-demo"
         taskId="task1-extra"
       />
@@ -144,8 +146,9 @@ function SpeakingAudioPractice() {
   );
 }
 
-// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
-// Audio Recorder + ?�로??// ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
+// ─────────────────────────────
+// Audio Recorder + 업로드
+// ─────────────────────────────
 
 type SimpleAudioRecorderProps = {
   label?: string;
@@ -189,7 +192,7 @@ function SimpleAudioRecorder({
       setAudioUrl(null);
 
       if (!navigator?.mediaDevices?.getUserMedia) {
-        setErrorMsg("??브라?��??�서??마이???�음??지?�하지 ?�습?�다.");
+        setErrorMsg("이 브라우저에서는 마이크 녹음을 지원하지 않습니다.");
         return;
       }
 
@@ -217,7 +220,7 @@ function SimpleAudioRecorder({
       setStatus("recording");
     } catch (err) {
       console.error("Audio recording error:", err);
-      setErrorMsg("마이???�근???�용?�는지 ?�인??주세??");
+      setErrorMsg("마이크 접근을 허용했는지 확인해 주세요.");
       setStatus("idle");
     }
   };
@@ -230,7 +233,7 @@ function SimpleAudioRecorder({
 
   const uploadAudio = async () => {
     if (!audioBlob) {
-      setUploadMsg("먼�? ?�음???�료??주세??");
+      setUploadMsg("먼저 녹음을 완료해 주세요.");
       return;
     }
 
@@ -252,17 +255,17 @@ function SimpleAudioRecorder({
 
       if (!res.ok) {
         console.error("Upload error:", json);
-        setUploadMsg(`?�로???�패: ${json.error ?? "?????�는 ?�류"}`);
+        setUploadMsg(`업로드 실패: ${json.error ?? "알 수 없는 오류"}`);
         return;
       }
 
       setUploadMsg(
-        "?�로???�공! (?�제 Teacher Dashboard?�서 ??경로�?리포?�에 ?�결?????�어??)",
+        "업로드 성공! (이제 Teacher Dashboard에서 이 경로를 리포트에 연결할 수 있어요.)",
       );
       console.log("Upload success:", json);
     } catch (err) {
       console.error("Upload exception:", err);
-      setUploadMsg("?�트?�크 ?�류�??�로?�에 ?�패?�습?�다.");
+      setUploadMsg("네트워크 오류로 업로드에 실패했습니다.");
     } finally {
       setIsUploading(false);
     }
@@ -271,7 +274,7 @@ function SimpleAudioRecorder({
   return (
     <div className="space-y-2 rounded-xl border border-gray-200 bg-white px-3 py-3">
       <p className="text-[11px] font-semibold text-gray-800">
-        {label ?? "Speaking ?�음"}
+        {label ?? "Speaking 녹음"}
       </p>
 
       <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -285,7 +288,7 @@ function SimpleAudioRecorder({
               : "bg-red-600 text-white hover:bg-red-700"
           }`}
         >
-          {status === "recording" ? "?�음 �?.." : "?�음 ?�작"}
+          {status === "recording" ? "녹음 중..." : "녹음 시작"}
         </button>
 
         <button
@@ -298,22 +301,22 @@ function SimpleAudioRecorder({
               : "bg-gray-700 text-white hover:bg-gray-800"
           }`}
         >
-          ?�음 종료
+          녹음 종료
         </button>
 
         <span className="text-[10px] text-gray-500">
-          ?�태:{" "}
+          상태:{" "}
           {status === "idle"
-            ? "?��?
+            ? "대기"
             : status === "recording"
-            ? "?�음 �?
-            : "?�음 ?�료"}
+            ? "녹음 중"
+            : "녹음 완료"}
         </span>
       </div>
 
       {audioUrl && (
         <div className="mt-2 space-y-1">
-          <p className="text-[10px] text-gray-600">???�음???�성 ?�기</p>
+          <p className="text-[10px] text-gray-600">▶ 녹음된 음성 듣기</p>
           <audio className="w-full" controls src={audioUrl} />
         </div>
       )}
@@ -329,7 +332,7 @@ function SimpleAudioRecorder({
               : "bg-indigo-600 text-white hover:bg-indigo-700"
           }`}
         >
-          {isUploading ? "?�로??�?.." : "Supabase???�로??}
+          {isUploading ? "업로드 중..." : "Supabase에 업로드"}
         </button>
 
         {uploadMsg && (
@@ -344,10 +347,10 @@ function SimpleAudioRecorder({
       )}
 
       <p className="text-[10px] text-gray-400">
-        * ?�로?�된 ?�일?� Supabase Storage??<code>speaking-audio</code>{" "}
-        버킷???�?�됩?�다. ?�음 ?�계?�서????경로�?" "}
-        <code>speaking_results_2026</code> ?�는 별도 ?�이블에 ?�결?�서
-        리포?�에 ?�시?�면 ?�요.
+        * 업로드된 파일은 Supabase Storage의 <code>speaking-audio</code>{" "}
+        버킷에 저장됩니다. 다음 단계에서는 이 경로를{" "}
+        <code>speaking_results_2026</code> 또는 별도 테이블에 연결해서
+        리포트에 표시하면 돼요.
       </p>
     </div>
   );
