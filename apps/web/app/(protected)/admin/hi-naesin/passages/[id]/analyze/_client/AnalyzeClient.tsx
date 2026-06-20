@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import {
   generateAnalysisAction,
@@ -80,6 +81,13 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
       <div className="flex w-[55%] flex-col overflow-hidden bg-neutral-50">
         {/* Top bar */}
         <div className="flex items-center justify-between border-b bg-white px-6 py-3">
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/admin/hi-naesin/passages/${passageId}/edit`}
+              className="rounded-lg border px-3 py-1.5 text-sm text-neutral-500 hover:bg-neutral-50"
+            >
+              ← 편집으로
+            </Link>
           <div className="flex gap-2">
             {(Object.keys(TAB_LABELS) as Tab[]).map((t) => {
               const lk = `${t}_locked` as keyof AnalysisRow;
@@ -99,6 +107,7 @@ export default function AnalyzeClient({ passageId, passageText, passageTitle, in
                 </button>
               );
             })}
+          </div>
           </div>
           <button
             onClick={handleGenerate}
