@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getServerSupabase } from "@/lib/supabase/server";
 import LecturePlayerWrapper from "./_components/LecturePlayerWrapper";
+import { submitLectureQuestionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function StudentLecturePage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [{ data: lec }, { data: questions }, { data: completion }] = await Promise.all([
+  const [{ data: lec }, { data: questions }, { data: completion }, { data: myQuestions }] = await Promise.all([
     supabase
       .from("lectures")
       .select("id, title, description, youtube_url, duration_seconds")
@@ -38,6 +39,12 @@ export default async function StudentLecturePage({
       .eq("lecture_id", lectureId)
       .eq("student_id", user.id)
       .maybeSingle(),
+    supabase
+      .from("lecture_questions")
+      .select("id, body, created_at")
+      .eq("lecture_id", lectureId)
+      .eq("student_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   if (!lec) notFound();
@@ -92,6 +99,40 @@ export default async function StudentLecturePage({
           </p>
         </div>
       )}
+
+      {/* 질문 섹션 */}
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold text-neutral-700">질문하기</h2>
+        <form action={submitLectureQuestionAction.bind(null, lectureId)} className="space-y-2">
+          <textarea
+            name="body"
+            required
+            placeholder="강의에 대해 궁금한 점을 적어주세요."
+            rows={3}
+            className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-neutral-300 resize-none"
+          />
+          <button
+            type="submit"
+            className="rounded-xl bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition"
+          >
+            질문 제출
+          </button>
+        </form>
+
+        {(myQuestions ?? []).length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs text-neutral-400">내가 보낸 질문</p>
+            {(myQuestions ?? []).map((q: any) => (
+              <div key={q.id} className="rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+                <p className="whitespace-pre-wrap">{q.body}</p>
+                <p className="mt-1 text-[11px] text-neutral-400">
+                  {new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(q.created_at))}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

@@ -26,3 +26,20 @@ export async function saveLectureCompletionAction(
   revalidatePath(`/student/lectures/${lectureId}`);
   revalidatePath("/student/lectures");
 }
+
+export async function submitLectureQuestionAction(lectureId: string, formData: FormData) {
+  const supabase = await getServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const body = (formData.get("body") as string ?? "").trim();
+  if (!body) return;
+
+  await supabase.from("lecture_questions").insert({
+    lecture_id: lectureId,
+    student_id: user.id,
+    body,
+  });
+
+  revalidatePath(`/student/lectures/${lectureId}`);
+}
