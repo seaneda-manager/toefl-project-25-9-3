@@ -4,7 +4,7 @@ import { assignLectureAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
-type Student = { id: string; full_name: string | null; display_name: string | null; login_id: string | null };
+type Student = { id: string; user_id: string | null; full_name: string | null; display_name: string | null; login_id: string | null };
 type Assignment = {
   id: string;
   student_id: string | null;
@@ -26,7 +26,7 @@ export default async function AssignLecturePage({
 
   const [{ data: lec }, { data: students }, { data: assignments }] = await Promise.all([
     supabase.from("lectures").select("id, title").eq("id", lectureId).maybeSingle(),
-    supabase.from("academy_students").select("id, full_name, display_name, login_id").eq("is_active", true).order("full_name"),
+    supabase.from("academy_students").select("id, user_id, full_name, display_name, login_id").eq("is_active", true).order("full_name"),
     supabase
       .from("lecture_assignments")
       .select("id, student_id, due_at, created_at")
@@ -38,7 +38,7 @@ export default async function AssignLecturePage({
 
   const studentList = (students ?? []) as Student[];
   const assignmentList = (assignments ?? []) as Assignment[];
-  const studentMap = new Map(studentList.map((s) => [s.id, s]));
+  const studentMap = new Map(studentList.flatMap((s) => s.user_id ? [[s.user_id, s]] : [[s.id, s]]));
 
   const assignWithId = assignLectureAction.bind(null, lectureId);
 
@@ -61,7 +61,7 @@ export default async function AssignLecturePage({
             >
               <option value="">학생 선택</option>
               {studentList.map((s) => (
-                <option key={s.id} value={s.id}>{studentLabel(s)}</option>
+                <option key={s.id} value={s.user_id ?? s.id}>{studentLabel(s)}</option>
               ))}
             </select>
           </div>
