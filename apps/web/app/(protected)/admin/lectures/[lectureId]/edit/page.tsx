@@ -65,6 +65,10 @@ export default async function EditLecturePage({
           Admin / Lectures / 편집
         </div>
         <h1 className="text-xl font-semibold">{lecture.title}</h1>
+        <div className="flex gap-2 pt-1">
+          <a href={`/admin/lectures/${lectureId}/assign`} className="rounded-lg border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50">배정</a>
+          <a href={`/admin/lectures/${lectureId}/questions`} className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">질문 보기</a>
+        </div>
       </div>
 
       {/* 강의 기본 정보 편집 */}
