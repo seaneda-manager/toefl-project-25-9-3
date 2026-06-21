@@ -76,7 +76,7 @@ export default function LecturePlayer({ lectureId, youtubeId, questions, onCompl
       playerVars: {
         rel: 0,
         modestbranding: 1,
-        fs: 0,
+        fs: 1,
         disablekb: 1,
       },
       events: {
