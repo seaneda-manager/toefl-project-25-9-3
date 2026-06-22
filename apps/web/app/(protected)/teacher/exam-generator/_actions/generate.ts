@@ -20,11 +20,11 @@ export async function generateExamQuestions(
 ): Promise<{ questions: ExamQuestion[]; error?: string }> {
   const supabase = await getServerSupabase();
 
-  // Fetch passages assigned as drills for this exact school/grade/exam period
+  // Fetch passages for this school (+ 공통 passages) / grade / exam period
   const { data: passages, error } = await supabase
     .from('hi_naesin_passages')
     .select('id, title, passage_text, translation_ko, hi_naesin_assignments!inner(id)')
-    .eq('school_name', school)
+    .in('school_name', [school, '공통'])
     .eq('grade', grade)
     .eq('exam_year', examYear)
     .eq('exam_month', examMonth)

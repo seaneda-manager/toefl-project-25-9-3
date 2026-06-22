@@ -63,7 +63,7 @@ export default function BulkMetaPanel({ passages }: { passages: Passage[] }) {
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-neutral-500">학교명</label>
             <input value={school} onChange={(e) => setSchool(e.target.value)}
-              placeholder="예: 한국고등학교"
+              placeholder="예: 한국고등학교 또는 공통"
               className="rounded-lg border px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400 w-44" />
           </div>
           <div className="flex flex-col gap-1">
