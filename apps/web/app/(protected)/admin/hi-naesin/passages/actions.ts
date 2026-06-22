@@ -80,6 +80,23 @@ export async function createHiNaesinPassageAction(
   redirect(`/admin/hi-naesin/passages/${data.id}/edit`);
 }
 
+export async function bulkUpdatePassageMetaAction(
+  ids: string[],
+  meta: { school_name: string | null; grade: string | null; exam_year: number | null; exam_month: number | null },
+): Promise<{ ok: boolean; error?: string }> {
+  if (ids.length === 0) return { ok: false, error: '선택된 지문이 없습니다.' };
+  const supabase = await getServerSupabase();
+
+  const { error } = await supabase
+    .from('hi_naesin_passages')
+    .update(meta)
+    .in('id', ids);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath('/admin/hi-naesin/passages');
+  return { ok: true };
+}
+
 export async function toggleHiNaesinPassagePublishedAction(
   fd: FormData,
 ): Promise<void> {

@@ -4,6 +4,7 @@ import { getServerSupabase } from '@/lib/supabase/server';
 import { toggleHiNaesinPassagePublishedAction } from './actions';
 import { sourceTypeLabel, gradeLabel } from '@/models/hi-naesin';
 import type { HiNaesinPassageRow } from '@/models/hi-naesin';
+import BulkMetaPanel from './_components/BulkMetaPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ type SearchParams = Promise<{
   grade?: string;
   q?: string;
   bulk?: string;
+  tab?: string;
 }>;
 
 export default async function HiNaesinPassageListPage({
@@ -20,6 +22,7 @@ export default async function HiNaesinPassageListPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
+  const tab = sp.tab ?? 'list';
   const supabase = await getServerSupabase();
 
   let query = supabase
@@ -61,6 +64,12 @@ export default async function HiNaesinPassageListPage({
           </p>
         </div>
         <div className="flex gap-2 self-start">
+          <Link
+            href="/admin/hi-naesin/passages?tab=bulk"
+            className={`rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50 ${tab === 'bulk' ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : ''}`}
+          >
+            📋 일괄 메타 편집
+          </Link>
           <Link
             href="/admin/hi-naesin/passages/bulk-new"
             className="rounded-xl border px-4 py-2 text-sm hover:bg-neutral-50"
@@ -123,12 +132,24 @@ export default async function HiNaesinPassageListPage({
         </form>
       </section>
 
+      {/* 일괄 메타 편집 탭 */}
+      {tab === 'bulk' && (
+        <BulkMetaPanel passages={rows.map((r) => ({
+          id: r.id,
+          title: r.title,
+          grade: r.grade,
+          school_name: r.school_name ?? null,
+          exam_year: r.exam_year ?? null,
+          exam_month: r.exam_month ?? null,
+        }))} />
+      )}
+
       {/* 목록 — 출처별 그룹 */}
-      {rows.length === 0 ? (
+      {tab !== 'bulk' && rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-12 text-center text-sm text-neutral-400">
           등록된 지문이 없습니다.
         </div>
-      ) : (
+      ) : tab !== 'bulk' ? (
         <div className="space-y-6">
           {(['mock_exam', 'textbook', 'external_book'] as const)
             .map((src) => ({
@@ -261,7 +282,7 @@ export default async function HiNaesinPassageListPage({
               );
             })}
         </div>
-      )}
+      ) : null}
     </main>
   );
 }
