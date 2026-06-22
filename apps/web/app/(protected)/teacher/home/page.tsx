@@ -321,6 +321,26 @@ export default async function TeacherHomePage() {
         </p>
       </header>
 
+      {/* 주요 도구 바로가기 */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { href: '/teacher/session-report',   emoji: '📋', label: '오늘 수업 리포트',   desc: '학생별 완료 현황' },
+          { href: '/teacher/reports/students', emoji: '📊', label: '학생 활동 리포트',   desc: '누적 학습 분석' },
+          { href: '/teacher/exam-generator',   emoji: '📝', label: '예상문제 생성',      desc: '학교·학년별 30문항' },
+          { href: '/teacher/tasks',            emoji: '✅', label: '할 일 관리',          desc: '수업 준비 체크' },
+        ].map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="flex flex-col gap-1 rounded-2xl border border-neutral-200 bg-white px-4 py-4 hover:shadow-md hover:border-sky-200 transition"
+          >
+            <span className="text-2xl">{item.emoji}</span>
+            <span className="text-sm font-semibold text-neutral-800">{item.label}</span>
+            <span className="text-xs text-neutral-400">{item.desc}</span>
+          </a>
+        ))}
+      </section>
+
       {/* ── 새 숙제 제출 알림 ─────────────────────────────────── */}
       {recentSubmissions.length > 0 && (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">

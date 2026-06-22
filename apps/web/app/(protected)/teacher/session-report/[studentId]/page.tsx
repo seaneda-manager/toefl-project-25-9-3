@@ -94,17 +94,64 @@ export default async function TeacherStudentPtPage({
         .gte('completed_at', today)
     : { data: [] };
 
-  // ── 오답 분석 (내신 드릴) ───────────────────────────────────
+  // ── 드릴 응답 전체 (타입별 분석용) ───────────────────────────
   const sessionIds = (readingSessions ?? []).map((s: any) => s.id as string);
-  const { data: wrongResponses } = sessionIds.length > 0
+  const { data: allResponses } = sessionIds.length > 0
     ? await supabase
         .from('hi_naesin_drill_responses')
-        .select('drill_id, is_correct')
+        .select('drill_id, is_correct, score_pct, response_text, feedback_text')
         .in('session_id', sessionIds)
-        .eq('is_correct', false)
     : { data: [] };
 
-  const wrongCount = (wrongResponses ?? []).length;
+  const drillIds = [...new Set((allResponses ?? []).map((r: any) => r.drill_id as string))];
+  const { data: drillMeta } = drillIds.length > 0
+    ? await supabase
+        .from('hi_naesin_drills')
+        .select('id, drill_type, sentence_en, sentence_ko, payload')
+        .in('id', drillIds)
+    : { data: [] };
+
+  const drillMetaMap = new Map((drillMeta ?? []).map((d: any) => [d.id, d]));
+
+  // 드릴 타입별 집계
+  type DrillTypeStat = {
+    label: string;
+    total: number;
+    correct: number;
+    wrongs: { sentenceEn: string; studentAnswer: string; feedback: string | null }[];
+  };
+  const DRILL_TYPE_LABELS: Record<string, string> = {
+    vocab:          '단어',
+    translation:    '해석',
+    fill_blank:     '빈칸',
+    grammar_choice: '문법',
+    writing:        '영작',
+  };
+  const typeStats = new Map<string, DrillTypeStat>();
+  for (const resp of allResponses ?? []) {
+    const meta = drillMetaMap.get((resp as any).drill_id);
+    if (!meta) continue;
+    const type: string = meta.drill_type;
+    const stat = typeStats.get(type) ?? { label: DRILL_TYPE_LABELS[type] ?? type, total: 0, correct: 0, wrongs: [] };
+    stat.total += 1;
+    if ((resp as any).is_correct === true) stat.correct += 1;
+    if ((resp as any).is_correct === false) {
+      const payload = meta.payload as Record<string, unknown> ?? {};
+      const studentAns = (resp as any).response_text ?? (resp as any).response_choice ?? '—';
+      const correctAns = (payload.answer_ko ?? payload.answer ?? payload.correct_option ?? '') as string;
+      stat.wrongs.push({
+        sentenceEn:    meta.sentence_en ?? (payload.sentence_en as string) ?? '',
+        studentAnswer: `${studentAns}${correctAns ? ` → 정답: ${correctAns}` : ''}`,
+        feedback:      (resp as any).feedback_text ?? null,
+      });
+    }
+    typeStats.set(type, stat);
+  }
+
+  const wrongCount = (allResponses ?? []).filter((r: any) => r.is_correct === false).length;
+  const totalAnswered = (allResponses ?? []).length;
+  const totalCorrect = (allResponses ?? []).filter((r: any) => r.is_correct === true).length;
+  const overallPct = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : null;
 
   const todayStr = new Date().toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
@@ -172,21 +219,72 @@ export default async function TeacherStudentPtPage({
 
         {/* 리딩 드릴 */}
         {readingPassageIds.length > 0 ? (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 space-y-2">
-            <p className="text-sm font-semibold text-sky-800">📖 리딩 드릴</p>
-            {(readingSessions ?? []).map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-700 truncate">
-                  {passageMap.get(s.passage_id) ?? '(지문)'}
+          <div className="rounded-2xl border border-sky-200 bg-white overflow-hidden">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between px-5 py-3 bg-sky-50">
+              <p className="text-sm font-semibold text-sky-800">📖 리딩 드릴</p>
+              {overallPct !== null && (
+                <span className={`text-lg font-black ${overallPct >= 80 ? 'text-emerald-600' : overallPct >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
+                  {overallPct}%
                 </span>
-                <span className={`shrink-0 ml-2 font-semibold ${s.status === 'submitted' ? 'text-emerald-600' : 'text-amber-500'}`}>
-                  {s.status === 'submitted' ? '완료' : '진행 중'}
-                  {s.score_percent != null && ` · ${s.score_percent}%`}
-                </span>
+              )}
+            </div>
+
+            {/* 지문 목록 */}
+            <div className="px-5 py-3 space-y-1 border-b border-sky-100">
+              {(readingSessions ?? []).map((s: any) => (
+                <div key={s.id} className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-700 truncate">{passageMap.get(s.passage_id) ?? '(지문)'}</span>
+                  <span className={`shrink-0 ml-2 text-xs font-semibold ${s.status === 'submitted' ? 'text-emerald-600' : 'text-amber-500'}`}>
+                    {s.status === 'submitted' ? '완료' : '진행 중'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* 드릴 타입별 정답률 */}
+            {typeStats.size > 0 && (
+              <div className="px-5 py-3 space-y-2 border-b border-sky-100">
+                {[...typeStats.entries()].map(([type, stat]) => {
+                  const pct = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+                  return (
+                    <div key={type}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-medium text-neutral-600">{stat.label}</span>
+                        <span className={`font-semibold ${pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
+                          {stat.correct}/{stat.total} ({pct}%)
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-neutral-100">
+                        <div
+                          className={`h-1.5 rounded-full ${pct >= 80 ? 'bg-emerald-400' : pct >= 60 ? 'bg-amber-400' : 'bg-red-400'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            )}
+
+            {/* 오답 상세 */}
             {wrongCount > 0 && (
-              <p className="text-xs text-red-500">오답 {wrongCount}개</p>
+              <div className="px-5 py-3 space-y-2">
+                <p className="text-xs font-semibold text-red-500">오답 {wrongCount}개</p>
+                {[...typeStats.entries()].flatMap(([, stat]) =>
+                  stat.wrongs.map((w, i) => (
+                    <div key={i} className="rounded-xl bg-red-50 border border-red-100 px-3 py-2 space-y-0.5">
+                      {w.sentenceEn && (
+                        <p className="text-xs text-neutral-500 italic">{w.sentenceEn}</p>
+                      )}
+                      <p className="text-xs text-red-700">{w.studentAnswer}</p>
+                      {w.feedback && (
+                        <p className="text-xs text-red-500 opacity-80">{w.feedback}</p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             )}
           </div>
         ) : (
@@ -214,24 +312,43 @@ export default async function TeacherStudentPtPage({
         <h2 className="text-sm font-bold text-violet-800">💬 하브루타 포인트</h2>
         <ul className="space-y-2 text-sm text-violet-700">
           {hwResults.some(h => h.wrongItems.length > 0) && (
-            <li>→ 오답 Q{hwResults.find(h=>h.wrongItems.length>0)?.wrongItems[0]?.number}번 — 왜 틀렸는지 설명시키기</li>
+            <li>→ 숙제 오답 Q{hwResults.find(h=>h.wrongItems.length>0)?.wrongItems[0]?.number}번 — 왜 틀렸는지 설명시키기</li>
           )}
-          {readingPassageIds.length > 0 && (
-            <li>→ &quot;{passageMap.get(readingPassageIds[0])}&quot; 해석 구술</li>
+          {readingPassageIds.length > 0 && overallPct !== null && overallPct < 80 && (
+            <li>→ 리딩 드릴 {overallPct}% — 틀린 문장 다시 해석시키기 ({wrongCount}개)</li>
           )}
+          {readingPassageIds.length > 0 && (overallPct === null || overallPct >= 80) && (
+            <li>→ &quot;{passageMap.get(readingPassageIds[0])}&quot; 핵심 문장 구술</li>
+          )}
+          {(() => {
+            const weakType = [...typeStats.entries()]
+              .filter(([, s]) => s.total > 0)
+              .sort(([, a], [, b]) => (a.correct / a.total) - (b.correct / b.total))[0];
+            return weakType && (weakType[1].correct / weakType[1].total) < 0.7 ? (
+              <li>→ {weakType[1].label} 유형 집중 — {Math.round((weakType[1].correct / weakType[1].total) * 100)}% 정답률</li>
+            ) : null;
+          })()}
           {(grammarRows ?? []).length > 0 && (
-            <li>→ 오늘 배운 문법 규칙 예문 만들기</li>
+            <li>→ 오늘 문법 유닛 예문 만들기</li>
           )}
           <li>→ 다음 수업 예고 + 복습 포인트 확인</li>
         </ul>
       </section>
 
-      <Link
-        href="/teacher/session-report"
-        className="block w-full rounded-xl border border-neutral-200 py-2.5 text-center text-sm text-neutral-600 hover:bg-neutral-50"
-      >
-        ← 전체 리포트로
-      </Link>
+      <div className="flex gap-3">
+        <Link
+          href="/teacher/session-report"
+          className="flex-1 rounded-xl border border-neutral-200 py-2.5 text-center text-sm text-neutral-600 hover:bg-neutral-50"
+        >
+          ← 전체 리포트로
+        </Link>
+        <Link
+          href={`/teacher/parent-report/${studentId}`}
+          className="flex-1 rounded-xl border border-sky-200 bg-sky-50 py-2.5 text-center text-sm font-semibold text-sky-700 hover:bg-sky-100"
+        >
+          📤 부모님 리포트
+        </Link>
+      </div>
     </main>
   );
 }

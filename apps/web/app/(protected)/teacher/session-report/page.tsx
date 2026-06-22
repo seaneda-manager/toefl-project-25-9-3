@@ -16,19 +16,20 @@ const DOW_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
 // ── 스텝 완료율 계산 ──────────────────────────────────────────
 type StudentReport = {
-  studentId:    string;
-  name:         string;
-  grade:        string | null;
+  studentId:       string;
+  name:            string;
+  grade:           string | null;
   // 각 스텝 완료 여부
-  hwDone:       boolean;
-  hwScorePct:   number | null;
-  vocaDone:     boolean;
-  readingDone:  boolean;
-  grammarDone:  boolean;
-  speakingDone: boolean;
+  hwDone:          boolean;
+  hwScorePct:      number | null;
+  vocaDone:        boolean;
+  readingDone:     boolean;
+  readingScorePct: number | null;
+  grammarDone:     boolean;
+  speakingDone:    boolean;
   // 완료 스텝 수 / 전체
-  doneCount:    number;
-  totalSteps:   number;
+  doneCount:       number;
+  totalSteps:      number;
 };
 
 const STEP_KEYS: (keyof Pick<StudentReport,'hwDone'|'vocaDone'|'readingDone'|'grammarDone'|'speakingDone'>)[] = [
@@ -135,13 +136,37 @@ export default async function TeacherSessionReportPage() {
   const { data: readingSubs } = studentAuthIds.length > 0
     ? await supabase
         .from('hi_naesin_sessions')
-        .select('student_id, status')
+        .select('id, student_id, status')
         .in('student_id', studentAuthIds)
         .eq('status', 'submitted')
         .gte('started_at', today)
     : { data: [] };
 
   const readingSet = new Set((readingSubs ?? []).map((r: any) => r.student_id as string));
+
+  // 리딩 드릴 정답률 — responses에서 집계
+  const readingSessionIds = (readingSubs ?? []).map((r: any) => r.id as string);
+  const { data: readingResponses } = readingSessionIds.length > 0
+    ? await supabase
+        .from('hi_naesin_drill_responses')
+        .select('session_id, is_correct')
+        .in('session_id', readingSessionIds)
+    : { data: [] };
+
+  // session_id → student_id 맵
+  const sessionStudentMap = new Map<string, string>(
+    (readingSubs ?? []).map((r: any) => [r.id as string, r.student_id as string]),
+  );
+  // student_id → { correct, total }
+  const readingScoreMap = new Map<string, { correct: number; total: number }>();
+  for (const resp of readingResponses ?? []) {
+    const sid = sessionStudentMap.get((resp as any).session_id);
+    if (!sid) continue;
+    const cur = readingScoreMap.get(sid) ?? { correct: 0, total: 0 };
+    cur.total += 1;
+    if ((resp as any).is_correct === true) cur.correct += 1;
+    readingScoreMap.set(sid, cur);
+  }
 
   // ── 5. 그래머 ────────────────────────────────────────────
   const { data: grammarSubs } = studentAuthIds.length > 0
@@ -177,20 +202,26 @@ export default async function TeacherSessionReportPage() {
     const grammarDone  = authId ? grammarSet.has(authId) : false;
     const speakingDone = authId ? speakingSet.has(authId) : false;
 
+    const readingScore = authId ? readingScoreMap.get(authId) : undefined;
+    const readingScorePct = readingScore && readingScore.total > 0
+      ? Math.round((readingScore.correct / readingScore.total) * 100)
+      : null;
+
     const doneCount = [hwDone, vocaDone, readingDone, grammarDone, speakingDone].filter(Boolean).length;
 
     return {
-      studentId:   s.id,
-      name:        s.display_name ?? '(이름 없음)',
-      grade:       s.grade,
+      studentId:       s.id,
+      name:            s.display_name ?? '(이름 없음)',
+      grade:           s.grade,
       hwDone,
-      hwScorePct:  hw.scorePct,
+      hwScorePct:      hw.scorePct,
       vocaDone,
       readingDone,
+      readingScorePct,
       grammarDone,
       speakingDone,
       doneCount,
-      totalSteps:  5,
+      totalSteps:      5,
     };
   });
 
@@ -284,8 +315,31 @@ export default async function TeacherSessionReportPage() {
                       )}
                     </td>
 
-                    {/* 단어/리딩/그래머/스피킹 */}
-                    {(['vocaDone', 'readingDone', 'grammarDone', 'speakingDone'] as const).map(k => (
+                    {/* 단어 */}
+                    <td className="px-3 py-3 text-center">
+                      {r.vocaDone
+                        ? <span className="text-emerald-500 font-bold">✓</span>
+                        : <span className="text-neutral-200">—</span>}
+                    </td>
+
+                    {/* 리딩 (점수 표시) */}
+                    <td className="px-3 py-3 text-center">
+                      {r.readingDone ? (
+                        <span className="inline-flex flex-col items-center">
+                          <span className="text-emerald-500 font-bold">✓</span>
+                          {r.readingScorePct !== null && (
+                            <span className={`text-[10px] font-semibold ${r.readingScorePct >= 80 ? 'text-emerald-600' : r.readingScorePct >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
+                              {r.readingScorePct}%
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-200">—</span>
+                      )}
+                    </td>
+
+                    {/* 그래머/스피킹 */}
+                    {(['grammarDone', 'speakingDone'] as const).map(k => (
                       <td key={k} className="px-3 py-3 text-center">
                         {r[k]
                           ? <span className="text-emerald-500 font-bold">✓</span>
@@ -312,14 +366,22 @@ export default async function TeacherSessionReportPage() {
                       </div>
                     </td>
 
-                    {/* PT 요약 링크 — 학생 auth id가 있을 때만 */}
+                    {/* 링크 */}
                     <td className="px-3 py-3">
-                      <Link
-                        href={`/teacher/session-report/${r.studentId}`}
-                        className="rounded-lg border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 hover:bg-neutral-50 whitespace-nowrap"
-                      >
-                        PT 보기
-                      </Link>
+                      <div className="flex gap-1.5">
+                        <Link
+                          href={`/teacher/session-report/${r.studentId}`}
+                          className="rounded-lg border border-neutral-200 px-2.5 py-1 text-xs text-neutral-500 hover:bg-neutral-50 whitespace-nowrap"
+                        >
+                          PT 보기
+                        </Link>
+                        <Link
+                          href={`/teacher/parent-report/${r.studentId}`}
+                          className="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-600 hover:bg-sky-100 whitespace-nowrap"
+                        >
+                          📤 리포트
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );
