@@ -193,6 +193,65 @@ export default async function HiNaesinPassageEditPage({
         >
           <Field label="제목" name="title" defaultValue={passage.title ?? ''} />
 
+          {/* ── 시험 범위 메타데이터 ── */}
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+            <p className="col-span-2 text-xs font-semibold text-indigo-700">시험 범위 정보 (예상문제 생성기에서 필터로 사용)</p>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-neutral-600">학교명</label>
+              <input
+                name="school_name"
+                defaultValue={passage.school_name ?? ''}
+                placeholder="예: 한국고등학교"
+                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-neutral-600">학년</label>
+              <select
+                name="grade"
+                defaultValue={passage.grade ?? ''}
+                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              >
+                <option value="">선택 안 함</option>
+                <option value="H1">고1</option>
+                <option value="H2">고2</option>
+                <option value="H3">고3</option>
+                <option value="M1">중1</option>
+                <option value="M2">중2</option>
+                <option value="M3">중3</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-neutral-600">연도</label>
+              <input
+                name="exam_year"
+                type="number"
+                defaultValue={passage.exam_year ?? new Date().getFullYear()}
+                min={2020}
+                max={2035}
+                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-neutral-600">시험 시기</label>
+              <select
+                name="exam_month"
+                defaultValue={String(passage.exam_month ?? '')}
+                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300"
+              >
+                <option value="">선택 안 함</option>
+                <option value="4">1학기 중간 (4월)</option>
+                <option value="7">1학기 기말 (7월)</option>
+                <option value="10">2학기 중간 (10월)</option>
+                <option value="12">2학기 기말 (12월)</option>
+              </select>
+            </div>
+          </div>
+
           <div className="space-y-1">
             <label className="block text-xs font-medium text-neutral-600">지문 원문 *</label>
             <textarea

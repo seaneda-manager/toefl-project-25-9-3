@@ -26,6 +26,9 @@ export async function updateHiNaesinPassageAction(
   const topicTags = str(fd, 'topic_tags')
     .split(',').map((t) => t.trim()).filter(Boolean);
 
+  const examYear  = parseInt(str(fd, 'exam_year'), 10)  || null;
+  const examMonth = parseInt(str(fd, 'exam_month'), 10) || null;
+
   const { error } = await supabase
     .from('hi_naesin_passages')
     .update({
@@ -33,6 +36,10 @@ export async function updateHiNaesinPassageAction(
       passage_text:   str(fd, 'passage_text'),
       translation_ko: str(fd, 'translation_ko') || null,
       topic_tags:     topicTags,
+      school_name:    str(fd, 'school_name') || null,
+      grade:          str(fd, 'grade') || null,
+      exam_year:      examYear,
+      exam_month:     examMonth,
     })
     .eq('id', id);
 

@@ -15,15 +15,19 @@ export type ExamQuestion = {
 export async function generateExamQuestions(
   school: string,
   grade: string,
+  examYear: number,
+  examMonth: number,
 ): Promise<{ questions: ExamQuestion[]; error?: string }> {
   const supabase = await getServerSupabase();
 
-  // Fetch passages that have been assigned as drills for this school + grade
+  // Fetch passages assigned as drills for this exact school/grade/exam period
   const { data: passages, error } = await supabase
     .from('hi_naesin_passages')
     .select('id, title, passage_text, translation_ko, hi_naesin_assignments!inner(id)')
     .eq('school_name', school)
     .eq('grade', grade)
+    .eq('exam_year', examYear)
+    .eq('exam_month', examMonth)
     .eq('is_published', true)
     .limit(10);
 
