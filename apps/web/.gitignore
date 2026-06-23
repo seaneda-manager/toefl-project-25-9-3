@@ -46,3 +46,5 @@ pnpm-debug.log*
 .cache
 coverage
 '@ | Set-Content -Encoding UTF8 .gitignore
+
+.vercel

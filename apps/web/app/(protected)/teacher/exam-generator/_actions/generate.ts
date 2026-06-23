@@ -1,6 +1,7 @@
 'use server';
 
 import Anthropic from '@anthropic-ai/sdk';
+import { jsonrepair } from 'jsonrepair';
 import { getServerSupabase } from '@/lib/supabase/server';
 
 export type ExamQuestion = {
@@ -13,18 +14,19 @@ export type ExamQuestion = {
 };
 
 export async function generateExamQuestions(
-  school: string,
+  schools: string[],
   grade: string,
   examYear: number,
   examMonth: number,
 ): Promise<{ questions: ExamQuestion[]; error?: string }> {
   const supabase = await getServerSupabase();
 
-  // Fetch passages for this school (+ 공통 passages) / grade / exam period
+  const schoolFilter = [...new Set([...schools, '공통'])];
+
   const { data: passages, error } = await supabase
     .from('hi_naesin_passages')
     .select('id, title, passage_text, translation_ko, hi_naesin_assignments!inner(id)')
-    .in('school_name', [school, '공통'])
+    .in('school_name', schoolFilter)
     .eq('grade', grade)
     .eq('exam_year', examYear)
     .eq('exam_month', examMonth)
@@ -143,7 +145,7 @@ ${passageBlock}
       return { questions: [], error: 'JSON 파싱 실패: ' + text.slice(0, 200) };
     }
 
-    const questions: ExamQuestion[] = JSON.parse(jsonMatch[0]);
+    const questions: ExamQuestion[] = JSON.parse(jsonrepair(jsonMatch[0]));
     return { questions };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

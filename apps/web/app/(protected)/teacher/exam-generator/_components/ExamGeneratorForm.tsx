@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useMemo } from 'react';
 import { generateExamQuestions, type ExamQuestion } from '../_actions/generate';
+import { saveGeneratedExam } from '../_actions/save';
 import type { PassageFilter } from '../page';
 
 const MONTH_LABEL: Record<number, string> = {
@@ -19,64 +20,75 @@ const GRADE_LABEL: Record<string, string> = {
 type Props = { filters: PassageFilter[] };
 
 export default function ExamGeneratorForm({ filters }: Props) {
-  const schools = useMemo(() => [...new Set(filters.map((f) => f.school))].sort(), [filters]);
-  const [school, setSchool] = useState(schools[0] ?? '');
+  const allSchools = useMemo(() => [...new Set(filters.map((f) => f.school))].sort(), [filters]);
+  // exclude '공통' from manual selection (always auto-included)
+  const selectableSchools = useMemo(() => allSchools.filter((s) => s !== '공통'), [allSchools]);
+  const [selectedSchools, setSelectedSchools] = useState<string[]>(selectableSchools.slice(0, 1));
 
-  const grades = useMemo(
-    () => [...new Set(filters.filter((f) => f.school === school).map((f) => f.grade))].sort(),
-    [filters, school],
-  );
+  const grades = useMemo(() => {
+    const matching = filters.filter((f) => selectedSchools.includes(f.school) || f.school === '공통');
+    return [...new Set(matching.map((f) => f.grade))].sort();
+  }, [filters, selectedSchools]);
   const [grade, setGrade] = useState(grades[0] ?? '');
 
-  const years = useMemo(
-    () => [...new Set(filters.filter((f) => f.school === school && f.grade === grade).map((f) => f.examYear))].sort((a, b) => b - a),
-    [filters, school, grade],
-  );
+  const years = useMemo(() => {
+    const matching = filters.filter((f) => (selectedSchools.includes(f.school) || f.school === '공통') && f.grade === grade);
+    return [...new Set(matching.map((f) => f.examYear))].sort((a, b) => b - a);
+  }, [filters, selectedSchools, grade]);
   const [examYear, setExamYear] = useState(years[0] ?? 0);
 
-  const months = useMemo(
-    () => [...new Set(filters.filter((f) => f.school === school && f.grade === grade && f.examYear === examYear).map((f) => f.examMonth))].sort(),
-    [filters, school, grade, examYear],
-  );
+  const months = useMemo(() => {
+    const matching = filters.filter((f) => (selectedSchools.includes(f.school) || f.school === '공통') && f.grade === grade && f.examYear === examYear);
+    return [...new Set(matching.map((f) => f.examMonth))].sort();
+  }, [filters, selectedSchools, grade, examYear]);
   const [examMonth, setExamMonth] = useState(months[0] ?? 0);
 
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [error, setError]         = useState('');
   const [showAnswers, setShowAnswers] = useState(false);
+  const [savedId, setSavedId]     = useState<string | null>(null);
+  const [isSaving, setIsSaving]   = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  function handleSchoolChange(s: string) {
-    setSchool(s);
-    const newGrades = [...new Set(filters.filter((f) => f.school === s).map((f) => f.grade))].sort();
-    const g = newGrades[0] ?? '';
-    setGrade(g);
-    const newYears = [...new Set(filters.filter((f) => f.school === s && f.grade === g).map((f) => f.examYear))].sort((a, b) => b - a);
-    const y = newYears[0] ?? 0;
-    setExamYear(y);
-    const newMonths = [...new Set(filters.filter((f) => f.school === s && f.grade === g && f.examYear === y).map((f) => f.examMonth))].sort();
-    setExamMonth(newMonths[0] ?? 0);
+  function toggleSchool(s: string) {
+    setSelectedSchools((prev) => {
+      const next = prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s];
+      return next.length === 0 ? prev : next; // 최소 1개 유지
+    });
+    setQuestions([]);
+    setSavedId(null);
   }
 
   function handleGradeChange(g: string) {
     setGrade(g);
-    const newYears = [...new Set(filters.filter((f) => f.school === school && f.grade === g).map((f) => f.examYear))].sort((a, b) => b - a);
+    const matching = filters.filter((f) => (selectedSchools.includes(f.school) || f.school === '공통') && f.grade === g);
+    const newYears = [...new Set(matching.map((f) => f.examYear))].sort((a, b) => b - a);
     const y = newYears[0] ?? 0;
     setExamYear(y);
-    const newMonths = [...new Set(filters.filter((f) => f.school === school && f.grade === g && f.examYear === y).map((f) => f.examMonth))].sort();
+    const newMonths = [...new Set(filters.filter((f) => (selectedSchools.includes(f.school) || f.school === '공통') && f.grade === g && f.examYear === y).map((f) => f.examMonth))].sort();
     setExamMonth(newMonths[0] ?? 0);
   }
 
   function handleYearChange(y: number) {
     setExamYear(y);
-    const newMonths = [...new Set(filters.filter((f) => f.school === school && f.grade === grade && f.examYear === y).map((f) => f.examMonth))].sort();
+    const newMonths = [...new Set(filters.filter((f) => (selectedSchools.includes(f.school) || f.school === '공통') && f.grade === grade && f.examYear === y).map((f) => f.examMonth))].sort();
     setExamMonth(newMonths[0] ?? 0);
+  }
+
+  async function handleSave() {
+    setIsSaving(true);
+    const result = await saveGeneratedExam(selectedSchools, grade, examYear, examMonth, questions);
+    setIsSaving(false);
+    if (result.error) setError(result.error);
+    else setSavedId(result.id ?? null);
   }
 
   function handleGenerate() {
     setError('');
     setQuestions([]);
+    setSavedId(null);
     startTransition(async () => {
-      const result = await generateExamQuestions(school, grade, examYear, examMonth);
+      const result = await generateExamQuestions(selectedSchools, grade, examYear, examMonth);
       if (result.error) setError(result.error);
       else setQuestions(result.questions);
     });
@@ -103,18 +115,22 @@ export default function ExamGeneratorForm({ filters }: Props) {
     '서술형':      'bg-orange-100 text-orange-700',
   };
 
-  const examLabel = `${school} ${GRADE_LABEL[grade] ?? grade} ${examYear}년 ${MONTH_LABEL[examMonth] ?? `${examMonth}월`}`;
+  const examLabel = `공통+${selectedSchools.join('+')} ${GRADE_LABEL[grade] ?? grade} ${examYear}년 ${MONTH_LABEL[examMonth] ?? `${examMonth}월`}`;
 
   return (
     <>
       {/* Controls */}
       <div className="print:hidden flex flex-wrap items-end gap-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-neutral-500">학교</label>
-          <select value={school} onChange={(e) => handleSchoolChange(e.target.value)}
-            className="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-            {schools.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <label className="text-xs font-medium text-neutral-500">학교 <span className="text-neutral-400">(공통 자동 포함)</span></label>
+          <div className="flex flex-wrap gap-2">
+            {selectableSchools.map((s) => (
+              <label key={s} className={`flex items-center gap-1.5 cursor-pointer rounded-lg border px-3 py-2 text-sm transition ${selectedSchools.includes(s) ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}`}>
+                <input type="checkbox" className="hidden" checked={selectedSchools.includes(s)} onChange={() => toggleSchool(s)} />
+                {s}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -141,7 +157,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
           </select>
         </div>
 
-        <button onClick={handleGenerate} disabled={isPending || !school || !grade || !examYear || !examMonth}
+        <button onClick={handleGenerate} disabled={isPending || selectedSchools.length === 0 || !grade || !examYear || !examMonth}
           className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition">
           {isPending ? (
             <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />생성 중...</>
@@ -158,6 +174,16 @@ export default function ExamGeneratorForm({ filters }: Props) {
               className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition">
               🖨️ 인쇄
             </button>
+            {savedId ? (
+              <span className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm font-medium text-green-700">
+                ✅ 저장됨
+              </span>
+            ) : (
+              <button onClick={handleSave} disabled={isSaving}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition">
+                {isSaving ? '저장 중...' : '💾 저장'}
+              </button>
+            )}
           </>
         )}
       </div>
