@@ -125,9 +125,8 @@ ${passageBlock}
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const stream = await client.messages.stream({
-      model: 'claude-opus-4-8',
-      max_tokens: 32000,
-      thinking: { type: 'adaptive' },
+      model: 'claude-sonnet-4-6',
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }],
     });
 
