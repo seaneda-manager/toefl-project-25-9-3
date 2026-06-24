@@ -1,4 +1,6 @@
 // apps/web/app/layout.tsx
+export const dynamic = 'force-dynamic';
+
 import "./globals.css";
 import "@/styles/theme.css";
 import React from "react";
