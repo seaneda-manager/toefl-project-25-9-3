@@ -255,7 +255,11 @@ export default function ExamGeneratorForm({ filters }: Props) {
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor[q.type] ?? 'bg-neutral-100 text-neutral-600'}`}>
                     {q.type}
                   </span>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{q.question}</p>
+                  {/* 지문 — 변형본 우선, 없으면 DB 원문 */}
+                  <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-4 text-sm leading-relaxed whitespace-pre-wrap text-neutral-800">
+                    {q.passageOverride ?? q.passageText}
+                  </div>
+                  <p className="text-sm font-medium text-neutral-700">{q.question}</p>
                   {q.options && q.options.length > 0 && (
                     <ul className="space-y-1.5 pl-1">
                       {q.options.map((opt, i) => <li key={i} className="text-sm text-neutral-700">{opt}</li>)}
