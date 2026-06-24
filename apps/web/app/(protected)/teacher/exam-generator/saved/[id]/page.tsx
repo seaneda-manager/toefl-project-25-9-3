@@ -2,6 +2,7 @@ import { getServerSupabase } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import SavedExamViewer from './_components/SavedExamViewer';
+import AssignPanel from './_components/AssignPanel';
 
 const MONTH_LABEL: Record<number, string> = {
   4: '1학기 중간 (4월)',
@@ -19,17 +20,31 @@ export default async function SavedExamDetailPage({ params }: { params: Promise<
   const { id } = await params;
   const supabase = await getServerSupabase();
 
-  const { data: exam } = await supabase
-    .from('generated_exams')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const [{ data: exam }, { data: studentRows }, { data: assignmentRows }] = await Promise.all([
+    supabase.from('generated_exams').select('*').eq('id', id).single(),
+    supabase.from('academy_students')
+      .select('id, display_name, school, grade, user_id, auth_user_id')
+      .eq('is_active', true)
+      .order('display_name'),
+    supabase.from('generated_exam_assignments')
+      .select('student_id')
+      .eq('exam_id', id),
+  ]);
 
   if (!exam) notFound();
 
   const gradeLabel = GRADE_LABEL[exam.grade] ?? exam.grade;
   const monthLabel = MONTH_LABEL[exam.exam_month] ?? `${exam.exam_month}월`;
   const examLabel = `${exam.school} ${gradeLabel} ${exam.exam_year}년 ${monthLabel}`;
+
+  const students = (studentRows ?? []).map((s: any) => ({
+    id: (s.user_id ?? s.auth_user_id ?? s.id) as string,
+    name: s.display_name ?? '이름없음',
+    school: s.school ?? '',
+    grade: s.grade ?? '',
+  }));
+
+  const assignedStudentIds = new Set((assignmentRows ?? []).map((r) => r.student_id));
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -42,6 +57,12 @@ export default async function SavedExamDetailPage({ params }: { params: Promise<
       </div>
 
       <SavedExamViewer exam={exam} examLabel={examLabel} />
+
+      <AssignPanel
+        examId={id}
+        students={students}
+        assignedStudentIds={[...assignedStudentIds]}
+      />
     </div>
   );
 }
