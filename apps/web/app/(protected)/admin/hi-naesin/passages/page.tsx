@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { getServerSupabase } from '@/lib/supabase/server';
-import { toggleHiNaesinPassagePublishedAction } from './actions';
+import { toggleHiNaesinPassagePublishedAction, bulkUpdateSchoolByTitleKeywordAction } from './actions';
 import { sourceTypeLabel, gradeLabel } from '@/models/hi-naesin';
 import type { HiNaesinPassageRow } from '@/models/hi-naesin';
 import BulkMetaPanel from './_components/BulkMetaPanel';
@@ -84,6 +84,32 @@ export default async function HiNaesinPassageListPage({
           </Link>
         </div>
       </header>
+
+      {/* 빠른 일괄 학교 설정 */}
+      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <p className="text-xs font-semibold text-amber-700 mb-2">빠른 학교 일괄 설정 — 제목 키워드 기준</p>
+        <form
+          action={async (fd: FormData) => {
+            'use server';
+            const keyword = (fd.get('keyword') as string)?.trim();
+            const school = (fd.get('school') as string)?.trim();
+            if (keyword && school) await bulkUpdateSchoolByTitleKeywordAction(keyword, school);
+          }}
+          className="flex flex-wrap gap-2 items-end"
+        >
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-amber-700">제목 키워드</label>
+            <input name="keyword" defaultValue="수능스타트" className="rounded-lg border border-amber-300 px-3 py-1.5 text-sm outline-none w-36" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-amber-700">학교명</label>
+            <input name="school" defaultValue="신송고등학교" className="rounded-lg border border-amber-300 px-3 py-1.5 text-sm outline-none w-36" />
+          </div>
+          <button type="submit" className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-amber-700">
+            일괄 적용
+          </button>
+        </form>
+      </section>
 
       {bulkCount !== null && bulkCount > 0 && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm text-emerald-800">

@@ -97,6 +97,31 @@ export async function bulkUpdatePassageMetaAction(
   return { ok: true };
 }
 
+export async function bulkUpdateSchoolByTitleKeywordAction(
+  keyword: string,
+  schoolName: string,
+): Promise<{ ok: boolean; count?: number; error?: string }> {
+  const supabase = await getServerSupabase();
+
+  const { data, error: fetchError } = await supabase
+    .from('hi_naesin_passages')
+    .select('id')
+    .ilike('title', `%${keyword}%`);
+
+  if (fetchError) return { ok: false, error: fetchError.message };
+  if (!data || data.length === 0) return { ok: false, error: '해당 키워드 지문 없음' };
+
+  const ids = data.map((r) => r.id);
+  const { error } = await supabase
+    .from('hi_naesin_passages')
+    .update({ school_name: schoolName })
+    .in('id', ids);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath('/admin/hi-naesin/passages');
+  return { ok: true, count: ids.length };
+}
+
 export async function toggleHiNaesinPassagePublishedAction(
   fd: FormData,
 ): Promise<void> {
