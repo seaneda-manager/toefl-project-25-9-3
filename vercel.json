@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install -g pnpm@latest && pnpm install",
+  "installCommand": "corepack enable && pnpm install",
   "buildCommand": "pnpm --filter web build",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs"
