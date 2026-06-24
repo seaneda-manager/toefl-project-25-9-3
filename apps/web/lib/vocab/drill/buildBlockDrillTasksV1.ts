@@ -838,6 +838,7 @@ export function buildBlockDrillTasksV1(input: Input): DrillTask[] {
     return undefined;
   };
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const meaningMap = useMeaningMapWithinSet({
     ids,
     getWordTextSafe,

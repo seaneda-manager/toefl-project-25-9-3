@@ -197,14 +197,6 @@ function BuildASentence({
     if (qIndex > 0) setQIndex((i) => i - 1);
   };
 
-  const handleNext = () => {
-    if (qIndex < item.questions.length - 1) {
-      setQIndex((i) => i + 1);
-    } else {
-      finishAll();
-    }
-  };
-
   const finishAll = () => {
     const finalScores = item.questions.map((qq, i) => {
       const userSeq = allSelected[i] ?? [];
@@ -215,6 +207,14 @@ function BuildASentence({
       };
     });
     onComplete(finalScores);
+  };
+
+  const handleNext = () => {
+    if (qIndex < item.questions.length - 1) {
+      setQIndex((i) => i + 1);
+    } else {
+      finishAll();
+    }
   };
 
   if (!q) return null;
