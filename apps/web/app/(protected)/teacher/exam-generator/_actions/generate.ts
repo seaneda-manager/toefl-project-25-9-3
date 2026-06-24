@@ -106,7 +106,7 @@ ${passageBlock}
   {
     "number": 1,
     "type": "글의 목적",
-    "question": "발문 + 지문 전체 텍스트 (밑줄/빈칸/번호 포함)",
+    "question": "발문만 작성. 지문 참조는 [지문 N]으로 표기. 변형이 필요한 경우(밑줄/빈칸/번호)만 해당 문장을 인용",
     "options": ["① ...", "② ...", "③ ...", "④ ...", "⑤ ..."],
     "answer": "③",
     "explanation": "정답 근거 설명..."
@@ -145,7 +145,28 @@ ${passageBlock}
       return { questions: [], error: 'JSON 파싱 실패: ' + text.slice(0, 200) };
     }
 
-    const questions: ExamQuestion[] = JSON.parse(jsonrepair(jsonMatch[0]));
+    let questions: ExamQuestion[];
+    try {
+      questions = JSON.parse(jsonrepair(jsonMatch[0]));
+    } catch {
+      // jsonrepair couldn't fix it — try extracting individual objects
+      const raw = jsonMatch[0];
+      const recovered: ExamQuestion[] = [];
+      // Match each {...} block that starts with "number"
+      const objRe = /\{\s*"number"\s*:[\s\S]*?\}(?=\s*[,\]])/g;
+      let m: RegExpExecArray | null;
+      while ((m = objRe.exec(raw)) !== null) {
+        try {
+          recovered.push(JSON.parse(jsonrepair(m[0])));
+        } catch {
+          // skip unparseable individual block
+        }
+      }
+      if (recovered.length === 0) {
+        return { questions: [], error: 'JSON 파싱 실패 (복구 불가): ' + raw.slice(0, 300) };
+      }
+      questions = recovered;
+    }
     return { questions };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
