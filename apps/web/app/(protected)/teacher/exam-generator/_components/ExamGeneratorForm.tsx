@@ -208,7 +208,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
             <p className="text-sm text-gray-500 mt-1">총 {questions.length}문항 · 생성일: {new Date().toLocaleDateString('ko-KR')}</p>
           </div>
 
-          {questions.map((q) => (
+              {questions.map((q) => (
             <div key={q.number}
               className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm print:border print:shadow-none print:rounded-none print:border-b print:border-x-0 print:border-t-0">
               <div className="flex items-start gap-3">
