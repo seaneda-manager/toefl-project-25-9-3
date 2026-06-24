@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useActionState } from 'react';
 import Link from 'next/link';
 import { createHiNaesinPassageAction } from '../actions';
 
@@ -8,6 +8,7 @@ type SourceType = 'mock_exam' | 'textbook' | 'external_book' | '';
 
 export default function HiNaesinPassageNewPage() {
   const [sourceType, setSourceType] = useState<SourceType>('');
+  const [state, formAction, isPending] = useActionState(createHiNaesinPassageAction, null);
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-6 py-8">
@@ -26,7 +27,13 @@ export default function HiNaesinPassageNewPage() {
         </Link>
       </header>
 
-      <form action={createHiNaesinPassageAction} className="space-y-5">
+      {state?.error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          ⚠️ {state.error}
+        </div>
+      )}
+
+      <form action={formAction} className="space-y-5">
 
         {/* ── 출처 + 학년 ── */}
         <section className="rounded-2xl border bg-white p-5 space-y-4">
@@ -135,7 +142,7 @@ export default function HiNaesinPassageNewPage() {
             disabled={!sourceType}
             className="rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            저장 후 드릴 편집
+            {isPending ? '저장 중...' : '저장 후 드릴 편집'}
           </button>
         </div>
       </form>

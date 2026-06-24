@@ -22,27 +22,28 @@ function numOrNull(fd: FormData, key: string): number | null {
 }
 
 export async function createHiNaesinPassageAction(
+  _prev: { error?: string } | null,
   fd: FormData,
-): Promise<void> {
+): Promise<{ error?: string }> {
   const supabase = await getServerSupabase();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error('로그인 필요');
+  if (!user) return { error: '로그인이 필요합니다.' };
 
   const sourceType = str(fd, 'source_type');
   const grade = str(fd, 'grade');
   const passageText = str(fd, 'passage_text');
 
   if (!HI_NAESIN_SOURCE_TYPES.includes(sourceType as never)) {
-    throw new Error('출처 종류를 선택해주세요.');
+    return { error: '출처 종류를 선택해주세요.' };
   }
   if (!HI_NAESIN_GRADES.includes(grade as never)) {
-    throw new Error('학년을 선택해주세요.');
+    return { error: '학년을 선택해주세요.' };
   }
   if (!passageText) {
-    throw new Error('지문을 입력해주세요.');
+    return { error: '지문을 입력해주세요.' };
   }
 
   const topicTagsRaw = str(fd, 'topic_tags');
@@ -74,7 +75,7 @@ export async function createHiNaesinPassageAction(
     .select('id')
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) return { error: `저장 실패: ${error.message}` };
 
   revalidatePath('/admin/hi-naesin/passages');
   redirect(`/admin/hi-naesin/passages/${data.id}/edit`);
