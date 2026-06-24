@@ -164,6 +164,18 @@ function BuildASentence({
   const q = item.questions[qIndex];
   const timeLimit = item.timeLimitSeconds ?? 360;
 
+  const finishAll = () => {
+    const finalScores = item.questions.map((qq, i) => {
+      const userSeq = allSelected[i] ?? [];
+      return {
+        questionId: qq.id,
+        correct: JSON.stringify(userSeq) === JSON.stringify(qq.correctSequence),
+        userSequence: userSeq,
+      };
+    });
+    onComplete(finalScores);
+  };
+
   const { display: timerDisplay } = useCountdown(timeLimit, () => {
     finishAll();
   });
@@ -195,18 +207,6 @@ function BuildASentence({
 
   const handleBack = () => {
     if (qIndex > 0) setQIndex((i) => i - 1);
-  };
-
-  const finishAll = () => {
-    const finalScores = item.questions.map((qq, i) => {
-      const userSeq = allSelected[i] ?? [];
-      return {
-        questionId: qq.id,
-        correct: JSON.stringify(userSeq) === JSON.stringify(qq.correctSequence),
-        userSequence: userSeq,
-      };
-    });
-    onComplete(finalScores);
   };
 
   const handleNext = () => {

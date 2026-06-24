@@ -94,15 +94,15 @@ export default function ReadingRunner2026({ test, level = 'standard', onFinish }
   // ── FlatQuestion 목록 ────────────────────────────────────────
   const allQuestions: FlatQuestion[] = useMemo(() => {
     const result: FlatQuestion[] = [];
-    for (const module of test.modules as RReadingModule[]) {
-      for (const item of module.items as RReadingItem[]) {
+    for (const mod of test.modules as RReadingModule[]) {
+      for (const item of mod.items as RReadingItem[]) {
         if (item.taskKind === 'complete_words') {
-          result.push({ kind: 'complete_words', module, item, question: null });
+          result.push({ kind: 'complete_words', module: mod, item, question: null });
         } else if (item.taskKind === 'daily_life') {
-          result.push({ kind: 'daily_life', module, item, question: item.questions?.[0] ?? null });
+          result.push({ kind: 'daily_life', module: mod, item, question: item.questions?.[0] ?? null });
         } else if (item.taskKind === 'academic_passage') {
           for (const q of item.questions) {
-            result.push({ kind: 'academic_passage', module, item, question: q });
+            result.push({ kind: 'academic_passage', module: mod, item, question: q });
           }
         }
       }

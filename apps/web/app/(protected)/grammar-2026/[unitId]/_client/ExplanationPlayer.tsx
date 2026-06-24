@@ -11,6 +11,9 @@ type Props = {
 };
 
 export default function ExplanationPlayer({ segments, onDone }: Props) {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+
   // video 타입 세그먼트가 있으면 VideoExplanationPlayer로 위임
   const videoSeg = segments.find((s) => s.type === "video");
   if (videoSeg) {
@@ -21,9 +24,6 @@ export default function ExplanationPlayer({ segments, onDone }: Props) {
       />
     );
   }
-
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
 
   const seg = segments[current];
 

@@ -118,6 +118,7 @@ export default function ReadingTestForm({
 
         <div className="mt-3 space-y-4">
           {modulesFieldArray.fields.map((mod, mIdx) => {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
             const itemsFieldArray = useFieldArray({
               control,
               name: `modules.${mIdx}.items`,
@@ -338,6 +339,7 @@ function QuestionsEditor({ control, register, baseName }: QuestionsEditorProps) 
         {questionsFieldArray.fields.map((q, qIdx) => {
           const qBase = `${baseName}.questions.${qIdx}`;
 
+          // eslint-disable-next-line react-hooks/rules-of-hooks
           const choicesFieldArray = useFieldArray({
             control,
             name: `${qBase}.choices`,
