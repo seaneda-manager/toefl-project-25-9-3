@@ -25,7 +25,7 @@ export async function generateExamQuestions(
 
   const { data: passages, error } = await supabase
     .from('hi_naesin_passages')
-    .select('id, title, passage_text, translation_ko, hi_naesin_assignments!inner(id)')
+    .select('id, title, passage_text, translation_ko')
     .in('school_name', schoolFilter)
     .eq('grade', grade)
     .eq('exam_year', examYear)
@@ -106,7 +106,7 @@ ${passageBlock}
   {
     "number": 1,
     "type": "글의 목적",
-    "question": "발문만 작성. 지문 참조는 [지문 N]으로 표기. 변형이 필요한 경우(밑줄/빈칸/번호)만 해당 문장을 인용",
+    "question": "발문 + 해당 지문 전체 (또는 변형된 지문) 포함. 어법/어휘/빈칸/순서/삽입 문제는 밑줄·번호·빈칸이 삽입된 지문을 question 필드에 직접 포함",
     "options": ["① ...", "② ...", "③ ...", "④ ...", "⑤ ..."],
     "answer": "③",
     "explanation": "정답 근거 설명..."
