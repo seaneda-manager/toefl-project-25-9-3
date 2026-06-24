@@ -62,6 +62,11 @@ export default function LecturePlayer({ lectureId, youtubeId, questions, onCompl
   // 정렬된 퀴즈 목록
   const sortedQ = [...questions].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
 
+  function handleVideoEnded() {
+    setFinished(true);
+    onComplete(score, sortedQ.length);
+  }
+
   const loadYTApi = useCallback(() => {
     if (window.YT?.Player) return;
     const tag = document.createElement("script");
@@ -128,11 +133,6 @@ export default function LecturePlayer({ lectureId, youtubeId, questions, onCompl
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [activeQuiz, sortedQ, passedIds]);
-
-  function handleVideoEnded() {
-    setFinished(true);
-    onComplete(score, sortedQ.length);
-  }
 
   function checkAnswer() {
     if (!activeQuiz) return;
