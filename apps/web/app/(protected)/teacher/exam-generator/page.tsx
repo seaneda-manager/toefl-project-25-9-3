@@ -14,7 +14,7 @@ export default async function ExamGeneratorPage() {
   // Fetch distinct combinations of school/grade/year/month that have assignments
   const { data: rows } = await supabase
     .from('hi_naesin_passages')
-    .select('school_name, grade, exam_year, exam_month, hi_naesin_assignments!inner(id)')
+    .select('school_name, grade, exam_year, exam_month')
     .eq('is_published', true)
     .not('school_name', 'is', null)
     .not('grade', 'is', null)
