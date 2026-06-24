@@ -1,4 +1,5 @@
 import { getServerSupabase } from '@/lib/supabase/server';
+import Link from 'next/link';
 import ExamGeneratorForm from './_components/ExamGeneratorForm';
 
 export type PassageFilter = {
@@ -47,11 +48,17 @@ export default async function ExamGeneratorPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div className="print:hidden">
-        <h1 className="text-2xl font-bold text-neutral-900">📝 예상문제 생성기</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          학교·학년·시험 범위별 배정 지문을 분석해 수능/내신 스타일 30문항을 생성합니다.
-        </p>
+      <div className="print:hidden flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">📝 예상문제 생성기</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            학교·학년·시험 범위별 배정 지문을 분석해 수능/내신 스타일 30문항을 생성합니다.
+          </p>
+        </div>
+        <Link href="/teacher/exam-generator/saved"
+          className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition whitespace-nowrap">
+          📋 저장된 시험
+        </Link>
       </div>
 
       {filters.length === 0 ? (
