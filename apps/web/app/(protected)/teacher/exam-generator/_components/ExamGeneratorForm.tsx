@@ -44,6 +44,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
   const [examMonth, setExamMonth] = useState(months[0] ?? 0);
 
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
   const [error, setError]         = useState('');
   const [showAnswers, setShowAnswers] = useState(false);
   const [savedId, setSavedId]     = useState<string | null>(null);
@@ -86,6 +87,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
   function handleGenerate() {
     setError('');
     setQuestions([]);
+    setCurrentIdx(0);
     setSavedId(null);
     startTransition(async () => {
       const result = await generateExamQuestions(selectedSchools, grade, examYear, examMonth);
@@ -201,16 +203,50 @@ export default function ExamGeneratorForm({ filters }: Props) {
         </div>
       )}
 
-      {questions.length > 0 && (
-        <div className="space-y-6">
-          <div className="hidden print:block text-center mb-6">
-            <h2 className="text-xl font-bold">{examLabel} 영어 예상문제</h2>
-            <p className="text-sm text-gray-500 mt-1">총 {questions.length}문항 · 생성일: {new Date().toLocaleDateString('ko-KR')}</p>
-          </div>
+      {questions.length > 0 && (() => {
+        const q = questions[currentIdx];
+        return (
+          <div className="space-y-4">
+            {/* 인쇄용 헤더 */}
+            <div className="hidden print:block text-center mb-6">
+              <h2 className="text-xl font-bold">{examLabel} 영어 예상문제</h2>
+              <p className="text-sm text-gray-500 mt-1">총 {questions.length}문항 · 생성일: {new Date().toLocaleDateString('ko-KR')}</p>
+            </div>
 
-              {questions.map((q) => (
-            <div key={q.number}
-              className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm print:border print:shadow-none print:rounded-none print:border-b print:border-x-0 print:border-t-0">
+            {/* 네비게이션 */}
+            <div className="print:hidden flex items-center gap-2">
+              <button
+                onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
+                disabled={currentIdx === 0}
+                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-neutral-50 disabled:opacity-30 transition"
+              >
+                ← 이전
+              </button>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={1}
+                  max={questions.length}
+                  value={currentIdx + 1}
+                  onChange={(e) => {
+                    const n = Number(e.target.value) - 1;
+                    if (n >= 0 && n < questions.length) setCurrentIdx(n);
+                  }}
+                  className="w-14 rounded-lg border border-neutral-200 px-2 py-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                <span className="text-sm text-neutral-500">/ {questions.length}</span>
+              </div>
+              <button
+                onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
+                disabled={currentIdx === questions.length - 1}
+                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-neutral-50 disabled:opacity-30 transition"
+              >
+                다음 →
+              </button>
+            </div>
+
+            {/* 문제 카드 */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <span className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
                   {q.number}
@@ -219,31 +255,27 @@ export default function ExamGeneratorForm({ filters }: Props) {
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor[q.type] ?? 'bg-neutral-100 text-neutral-600'}`}>
                     {q.type}
                   </span>
-
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{q.question}</p>
-
                   {q.options && q.options.length > 0 && (
                     <ul className="space-y-1.5 pl-1">
                       {q.options.map((opt, i) => <li key={i} className="text-sm text-neutral-700">{opt}</li>)}
                     </ul>
                   )}
-
                   {q.type === '서술형' && (
                     <div className="hidden print:block border border-dashed border-neutral-300 rounded p-2 h-20 mt-2">
                       <span className="text-xs text-neutral-400">답안 작성란</span>
                     </div>
                   )}
-
-                  <div className={`rounded-lg bg-indigo-50 border border-indigo-100 p-3 space-y-1 ${showAnswers ? '' : 'print:block hidden'}`}>
+                  <div className={`rounded-lg bg-indigo-50 border border-indigo-100 p-3 space-y-1 ${showAnswers ? '' : 'hidden'}`}>
                     <p className="text-xs font-semibold text-indigo-700">정답: {q.answer}</p>
                     <p className="text-xs text-indigo-600 leading-relaxed whitespace-pre-wrap">{q.explanation}</p>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        );
+      })()}
     </>
   );
 }
