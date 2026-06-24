@@ -31,7 +31,7 @@ export async function generateExamQuestions(
     .eq('exam_year', examYear)
     .eq('exam_month', examMonth)
     .eq('is_published', true)
-    .limit(10);
+    .limit(5);
 
   if (error || !passages || passages.length === 0) {
     return { questions: [], error: '해당 학교/학년의 지문이 없습니다.' };
@@ -126,7 +126,7 @@ ${passageBlock}
 
     const stream = await client.messages.stream({
       model: 'claude-opus-4-8',
-      max_tokens: 16000,
+      max_tokens: 32000,
       thinking: { type: 'adaptive' },
       messages: [{ role: 'user', content: prompt }],
     });
