@@ -35,7 +35,7 @@ export default async function StudentExamsPage() {
   const assignmentIds = assignments.map((a) => a.id);
   const examIds = [...new Set(assignments.map((a) => a.exam_id))];
 
-  const [examsResult, { data: responses }] = await Promise.all([
+  const [{ data: exams }, { data: responses }] = await Promise.all([
     supabase.from('generated_exams')
       .select('id, school, grade, exam_year, exam_month, questions')
       .in('id', examIds),
@@ -43,36 +43,6 @@ export default async function StudentExamsPage() {
       .select('assignment_id, submitted_at')
       .in('assignment_id', assignmentIds),
   ]);
-  const exams = examsResult.data;
-  const examsError = examsResult.error;
-
-  if (examsError) {
-    return (
-      <div className="mx-auto max-w-2xl space-y-6 p-6">
-        <h1 className="text-2xl font-bold text-neutral-900">📋 배정된 시험</h1>
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          <p className="font-bold">DB 오류:</p>
-          <pre className="mt-1 text-xs whitespace-pre-wrap">{JSON.stringify(examsError, null, 2)}</pre>
-          <p className="mt-2">examIds: {JSON.stringify(examIds)}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // DEBUG
-  if (!exams || exams.length === 0) {
-    return (
-      <div className="mx-auto max-w-2xl space-y-6 p-6">
-        <h1 className="text-2xl font-bold text-neutral-900">📋 배정된 시험</h1>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <p className="font-bold">exams 비어있음 (RLS 문제)</p>
-          <p className="mt-1">student uid: {user!.id}</p>
-          <p>examIds: {JSON.stringify(examIds)}</p>
-          <p>assignments count: {assignments.length}</p>
-        </div>
-      </div>
-    );
-  }
 
   const examMap = Object.fromEntries((exams ?? []).map((e) => [e.id, e]));
   const responseMap = Object.fromEntries((responses ?? []).map((r) => [r.assignment_id, r]));
