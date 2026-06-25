@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import SavedExamViewer from './_components/SavedExamViewer';
 import AssignPanel from './_components/AssignPanel';
+import ResponsesPanel from './_components/ResponsesPanel';
 
 const MONTH_LABEL: Record<number, string> = {
   4: '1학기 중간 (4월)',
@@ -20,7 +21,7 @@ export default async function SavedExamDetailPage({ params }: { params: Promise<
   const { id } = await params;
   const supabase = await getServerSupabase();
 
-  const [{ data: exam }, { data: studentRows }, { data: assignmentRows }] = await Promise.all([
+  const [{ data: exam }, { data: studentRows }, { data: assignmentRows }, { data: responseRows }] = await Promise.all([
     supabase.from('generated_exams').select('*').eq('id', id).single(),
     supabase.from('academy_students')
       .select('id, display_name, school, grade, user_id, auth_user_id')
@@ -28,6 +29,9 @@ export default async function SavedExamDetailPage({ params }: { params: Promise<
       .order('display_name'),
     supabase.from('generated_exam_assignments')
       .select('student_id')
+      .eq('exam_id', id),
+    supabase.from('generated_exam_assignments')
+      .select('student_id, generated_exam_responses(answers, submitted_at)')
       .eq('exam_id', id),
   ]);
 
@@ -46,6 +50,14 @@ export default async function SavedExamDetailPage({ params }: { params: Promise<
 
   const assignedStudentIds = new Set((assignmentRows ?? []).map((r) => r.student_id));
 
+  const responses = (responseRows ?? []).map((r: any) => ({
+    studentId: r.student_id,
+    answers: r.generated_exam_responses?.[0]?.answers ?? {},
+    submittedAt: r.generated_exam_responses?.[0]?.submitted_at ?? null,
+  }));
+
+  const assignedStudents = students.filter((s) => assignedStudentIds.has(s.id));
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <div className="print:hidden flex items-center gap-3">
@@ -62,6 +74,12 @@ export default async function SavedExamDetailPage({ params }: { params: Promise<
         examId={id}
         students={students}
         assignedStudentIds={[...assignedStudentIds]}
+      />
+
+      <ResponsesPanel
+        students={assignedStudents}
+        responses={responses}
+        questions={exam.questions ?? []}
       />
     </div>
   );
