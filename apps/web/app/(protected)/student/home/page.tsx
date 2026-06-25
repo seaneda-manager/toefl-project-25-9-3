@@ -149,6 +149,7 @@ export default async function StudentPage() {
   const [
     { data: activities, error: activitiesError },
     { data: prescriptions, error: prescriptionsError },
+    { data: pendingExams },
   ] = await Promise.all([
     supabase
       .from("student_activities")
@@ -170,6 +171,11 @@ export default async function StudentPage() {
       .order("due_at", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(10),
+
+    supabase
+      .from("generated_exam_assignments")
+      .select("id, generated_exam_responses(submitted_at)")
+      .eq("student_id", user.id),
   ]);
 
   if (activitiesError) {
@@ -183,6 +189,8 @@ export default async function StudentPage() {
   const activityRows = (activities ?? []) as StudentActivity[];
   const prescriptionRows = (prescriptions ?? []) as StudentPrescription[];
 
+  const unsubmittedExams = (pendingExams ?? []).filter((a: any) => !a.generated_exam_responses?.[0]?.submitted_at);
+
   const current = activityRows.find((a) => a.status === "in_progress") ?? null;
   const todos = activityRows.filter((a) => a.status === "todo");
   const recent = activityRows.slice(0, 5);
@@ -191,6 +199,17 @@ export default async function StudentPage() {
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <PaxHomeWidget tribe={tribe} level={level} streak={streak} name={displayName} />
 
+
+      {unsubmittedExams.length > 0 && (
+        <Link href="/student/exams"
+          className="flex items-center justify-between rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 shadow-sm hover:bg-amber-100 transition">
+          <div>
+            <p className="text-sm font-bold text-amber-800">📋 미제출 시험 {unsubmittedExams.length}개</p>
+            <p className="text-xs text-amber-600 mt-0.5">선생님이 배정한 예상문제가 있습니다.</p>
+          </div>
+          <span className="rounded-full bg-amber-600 px-4 py-1.5 text-xs font-bold text-white">보기 →</span>
+        </Link>
+      )}
 
       <section className="grid gap-4 md:grid-cols-2">
         <Link
