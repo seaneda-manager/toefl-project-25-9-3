@@ -309,6 +309,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: '어휘', href: '/vocab', label: '단어 학습' },
 
+        { section: '숙제', href: '/student/exams',    label: '📋 예상문제' },
         { section: '숙제', href: '/student/homework', label: '숙제 채점' },
         { section: '숙제', href: '/student/lectures', label: '🎬 강의' },
 
@@ -331,6 +332,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '학습', href: '/vocab',                 label: '단어 학습' },
 
         { section: '내 현황', href: '/student',            label: '대시보드' },
+        { section: '내 현황', href: '/student/exams',       label: '📋 예상문제' },
         { section: '내 현황', href: '/student/homework',   label: '숙제 채점' },
         { section: '내 현황', href: '/student/lectures',  label: '🎬 강의' },
         { section: '내 현황', href: '/student/tests',      label: '시험 목록' },
@@ -349,6 +351,7 @@ export default function SidebarClient({ role, program = null }: Props) {
       { section: '내 학습', href: '/hi-naesin/stats',   label: '학습 현황' },
       { section: '내 학습', href: '/hi-naesin/review',  label: '직전정리' },
       { section: '내 학습', href: '/vocab',              label: '단어 학습' },
+      { section: '내 학습', href: '/student/exams',     label: '📋 예상문제' },
       { section: '내 학습', href: '/student/tests',     label: '시험 목록' },
       { section: '내 학습', href: '/student/review',    label: '복습' },
       { section: '내 학습', href: '/student/progress',  label: '진도 현황' },
