@@ -17,27 +17,33 @@ export default async function StudentExamPage({ params }: { params: Promise<{ as
 
   const { data: assignment } = await supabase
     .from('generated_exam_assignments')
-    .select(`
-      id, due_date,
-      generated_exams(id, school, grade, exam_year, exam_month, questions),
-      generated_exam_responses(answers, submitted_at)
-    `)
+    .select('id, exam_id, due_date')
     .eq('id', assignmentId)
     .eq('student_id', user!.id)
     .single();
 
   if (!assignment) notFound();
 
-  const examRaw = (assignment as any).generated_exams;
-  const exam = Array.isArray(examRaw) ? examRaw[0] : examRaw;
-  const responsesRaw = (assignment as any).generated_exam_responses;
-  const response = Array.isArray(responsesRaw) ? responsesRaw[0] : responsesRaw;
+  const [{ data: exam }, { data: response }] = await Promise.all([
+    supabase.from('generated_exams')
+      .select('id, school, grade, exam_year, exam_month, questions')
+      .eq('id', assignment.exam_id)
+      .single(),
+    supabase.from('generated_exam_responses')
+      .select('answers, submitted_at')
+      .eq('assignment_id', assignmentId)
+      .eq('student_id', user!.id)
+      .maybeSingle(),
+  ]);
+
+  if (!exam) notFound();
+
   const submitted = !!response?.submitted_at;
   const savedAnswers: Record<string, string> = response?.answers ?? {};
 
-  const gradeLabel = GRADE_LABEL[exam?.grade] ?? exam?.grade;
-  const monthLabel = MONTH_LABEL[exam?.exam_month] ?? `${exam?.exam_month}월`;
-  const examLabel = `${exam?.school} ${gradeLabel} ${exam?.exam_year}년 ${monthLabel}`;
+  const gradeLabel = GRADE_LABEL[exam.grade] ?? exam.grade;
+  const monthLabel = MONTH_LABEL[exam.exam_month] ?? `${exam.exam_month}월`;
+  const examLabel = `${exam.school} ${gradeLabel} ${exam.exam_year}년 ${monthLabel}`;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -54,7 +60,7 @@ export default async function StudentExamPage({ params }: { params: Promise<{ as
 
       <ExamTaker
         assignmentId={assignmentId}
-        questions={exam?.questions ?? []}
+        questions={exam.questions ?? []}
         savedAnswers={savedAnswers}
         submitted={submitted}
       />
