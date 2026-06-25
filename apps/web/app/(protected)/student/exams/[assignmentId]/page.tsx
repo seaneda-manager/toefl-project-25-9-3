@@ -28,8 +28,10 @@ export default async function StudentExamPage({ params }: { params: Promise<{ as
 
   if (!assignment) notFound();
 
-  const exam = (assignment as any).generated_exams;
-  const response = (assignment as any).generated_exam_responses?.[0];
+  const examRaw = (assignment as any).generated_exams;
+  const exam = Array.isArray(examRaw) ? examRaw[0] : examRaw;
+  const responsesRaw = (assignment as any).generated_exam_responses;
+  const response = Array.isArray(responsesRaw) ? responsesRaw[0] : responsesRaw;
   const submitted = !!response?.submitted_at;
   const savedAnswers: Record<string, string> = response?.answers ?? {};
 

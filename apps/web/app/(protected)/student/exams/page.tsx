@@ -36,8 +36,8 @@ export default async function StudentExamsPage() {
       ) : (
         <div className="space-y-3">
           {assignments.map((a: any) => {
-            const exam = a.generated_exams;
-            const response = a.generated_exam_responses?.[0];
+            const exam = Array.isArray(a.generated_exams) ? a.generated_exams[0] : a.generated_exams;
+            const response = Array.isArray(a.generated_exam_responses) ? a.generated_exam_responses[0] : a.generated_exam_responses;
             const submitted = !!response?.submitted_at;
             const qCount = Array.isArray(exam?.questions) ? exam.questions.length : 0;
             const gradeLabel = GRADE_LABEL[exam?.grade] ?? exam?.grade;
