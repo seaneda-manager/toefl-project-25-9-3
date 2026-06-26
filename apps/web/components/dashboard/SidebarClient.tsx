@@ -483,7 +483,8 @@ export default function SidebarClient({ role, program = null }: Props) {
                     const skillActive  = active && it.skill ? SKILL_ACTIVE[it.skill]  : '';
                     const skillHover   = !active && it.skill ? SKILL_HOVER[it.skill]   : '';
                     const linkClasses = [
-                      'group flex items-center rounded-lg mx-3 px-3 py-1.5 text-sm transition-colors',
+                      'group flex items-center rounded-lg mx-3 py-1.5 text-sm transition-colors',
+                      'px-3',
                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/70',
                       collapsed ? 'justify-center' : 'justify-between',
                       active
@@ -503,11 +504,13 @@ export default function SidebarClient({ role, program = null }: Props) {
                           aria-current={active ? 'page' : undefined}
                           className={linkClasses}
                         >
-                          {it.icon && (
+                          {it.icon ? (
                             <it.icon className={[
                               'shrink-0 transition-colors',
                               collapsed ? 'h-4 w-4' : 'h-3.5 w-3.5 mr-2',
                             ].join(' ')} />
+                          ) : !collapsed && (
+                            <span className="w-5 shrink-0" />
                           )}
                           {!collapsed && (
                             <>
