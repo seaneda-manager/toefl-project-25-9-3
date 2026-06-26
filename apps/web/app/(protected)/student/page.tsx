@@ -162,6 +162,7 @@ export default async function StudentPage() {
   let pendingLectures = 0;
   let pendingTests = 0;
   let examList: { id: string; title: string; assignedAt: string | null; submittedAt: string | null }[] = [];
+  let firstChapterBySkill: Record<string, string> = {}; // skill → chapterId
 
   if (isToefl) {
     const [{ data: lectureAssignments }, { data: lectureCompletions }, { data: examAssignments }] =
@@ -185,6 +186,21 @@ export default async function StudentPage() {
       submittedAt: a.generated_exam_responses?.[0]?.submitted_at ?? null,
     }));
     pendingTests = examList.filter((e) => !e.submittedAt).length;
+
+    // 스킬별 첫 챕터 ID (대시보드 링크용)
+    const { data: firstChapters } = await supabase
+      .from("toefl_chapters")
+      .select("id, skill")
+      .order("order_num")
+      .limit(4);
+
+    const seen = new Set<string>();
+    for (const ch of (firstChapters ?? []) as any[]) {
+      if (!seen.has(ch.skill)) {
+        firstChapterBySkill[ch.skill] = ch.id;
+        seen.add(ch.skill);
+      }
+    }
   }
 
   // ── 3b. 내신 통계 (non-TOEFL) ────────────────────────────────
@@ -305,6 +321,7 @@ export default async function StudentPage() {
         pendingLectures={pendingLectures}
         pendingTests={pendingTests}
         examList={examList}
+        firstChapterBySkill={firstChapterBySkill}
         readingDone={readingDone}
         listeningDone={listeningDone}
         speakingDone={speakingDone}
@@ -601,6 +618,7 @@ function ToeflDashboard({
   pendingLectures,
   pendingTests,
   examList,
+  firstChapterBySkill,
   readingDone,
   listeningDone,
   speakingDone,
@@ -615,6 +633,7 @@ function ToeflDashboard({
   pendingLectures: number;
   pendingTests: number;
   examList: { id: string; title: string; assignedAt: string | null; submittedAt: string | null }[];
+  firstChapterBySkill: Record<string, string>;
   readingDone: number;
   listeningDone: number;
   speakingDone: number;
@@ -627,28 +646,28 @@ function ToeflDashboard({
     {
       key: 'reading', label: 'Reading',
       color: 'border-sky-200 text-sky-700', activeBg: 'bg-sky-500',
-      href: '/updated-reading/study',
+      href: firstChapterBySkill['reading'] ? `/student/toefl/chapter/${firstChapterBySkill['reading']}` : '/updated-reading/study',
       done: readingDone,
       steps: deriveSteps(lecturesDone, readingDone, testsDone),
     },
     {
       key: 'listening', label: 'Listening',
       color: 'border-violet-200 text-violet-700', activeBg: 'bg-violet-500',
-      href: '/updated-listening/study',
+      href: firstChapterBySkill['listening'] ? `/student/toefl/chapter/${firstChapterBySkill['listening']}` : '/updated-listening/study',
       done: listeningDone,
       steps: deriveSteps(lecturesDone, listeningDone, testsDone),
     },
     {
       key: 'speaking', label: 'Speaking',
       color: 'border-amber-200 text-amber-700', activeBg: 'bg-amber-500',
-      href: '/speaking-2026/study',
+      href: firstChapterBySkill['speaking'] ? `/student/toefl/chapter/${firstChapterBySkill['speaking']}` : '/speaking-2026/study',
       done: speakingDone,
       steps: deriveSteps(lecturesDone, speakingDone, testsDone),
     },
     {
       key: 'writing', label: 'Writing',
       color: 'border-emerald-200 text-emerald-700', activeBg: 'bg-emerald-500',
-      href: '/updated-writing/test',
+      href: firstChapterBySkill['writing'] ? `/student/toefl/chapter/${firstChapterBySkill['writing']}` : '/updated-writing/test',
       done: writingDone,
       steps: deriveSteps(lecturesDone, writingDone, testsDone),
     },
