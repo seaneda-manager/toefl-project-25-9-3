@@ -12,6 +12,8 @@ import { LangProvider } from '@/contexts/LangContext';
 type Role = 'student' | 'teacher' | 'admin';
 type Program = 'gap' | 'toefl' | 'lexiox' | null;
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const supabase = await getSupabaseServer();
 

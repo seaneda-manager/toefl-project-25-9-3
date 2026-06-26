@@ -156,30 +156,51 @@ export default async function StudentPage() {
 
   const lvBadge = levelBadge(acdStudent?.level ?? null);
 
-  // ── 3. 내신 통계 ─────────────────────────────────────────────
-  // 배정된 지문 수
-  const { data: naesinAssignments } = await supabase
-    .from("hi_naesin_assignments")
-    .select("passage_id")
-    .eq("student_id", user.id);
+  const isToefl = program === 'toefl' || program === 'gap';
 
-  const assignedPassageIds = [
-    ...new Set((naesinAssignments ?? []).map((a: any) => a.passage_id as string)),
-  ];
+  // ── 3. TOEFL 전용 데이터 ─────────────────────────────────────
+  let pendingLectures = 0;
+  let pendingTests = 0;
 
-  // 제출(완료)된 세션 수 (passage 기준 unique)
+  if (isToefl) {
+    const [{ data: lectureAssignments }, { data: lectureCompletions }, { data: examAssignments }] =
+      await Promise.all([
+        supabase.from("lecture_assignments").select("lecture_id").eq("student_id", user.id),
+        supabase.from("lecture_completions").select("lecture_id").eq("student_id", user.id),
+        supabase.from("generated_exam_assignments").select("id, generated_exam_responses(submitted_at)").eq("student_id", user.id),
+      ]);
+
+    const completedLectureIds = new Set((lectureCompletions ?? []).map((c: any) => c.lecture_id as string));
+    pendingLectures = (lectureAssignments ?? []).filter((a: any) => !completedLectureIds.has(a.lecture_id)).length;
+    pendingTests = (examAssignments ?? []).filter((a: any) => !a.generated_exam_responses?.[0]?.submitted_at).length;
+  }
+
+  // ── 3b. 내신 통계 (non-TOEFL) ────────────────────────────────
+  let assignedPassageIds: string[] = [];
   let naesinDonePassages = 0;
-  if (assignedPassageIds.length > 0) {
-    const { data: doneSessions } = await supabase
-      .from("hi_naesin_sessions")
-      .select("passage_id")
-      .eq("student_id", user.id)
-      .eq("status", "submitted")
-      .in("passage_id", assignedPassageIds);
 
-    naesinDonePassages = new Set(
-      (doneSessions ?? []).map((s: any) => s.passage_id as string),
-    ).size;
+  if (!isToefl) {
+    const { data: naesinAssignments } = await supabase
+      .from("hi_naesin_assignments")
+      .select("passage_id")
+      .eq("student_id", user.id);
+
+    assignedPassageIds = [
+      ...new Set((naesinAssignments ?? []).map((a: any) => a.passage_id as string)),
+    ];
+
+    if (assignedPassageIds.length > 0) {
+      const { data: doneSessions } = await supabase
+        .from("hi_naesin_sessions")
+        .select("passage_id")
+        .eq("student_id", user.id)
+        .eq("status", "submitted")
+        .in("passage_id", assignedPassageIds);
+
+      naesinDonePassages = new Set(
+        (doneSessions ?? []).map((s: any) => s.passage_id as string),
+      ).size;
+    }
   }
 
   // ── 4. 어휘 통계 ──────────────────────────────────────────────
@@ -214,13 +235,23 @@ export default async function StudentPage() {
     }
   }
 
-  // ── 5. 정규 읽기 통계 (간략) ──────────────────────────────────
-  const { data: readingResults } = await supabase
-    .from("reading_results_2026")
-    .select("id")
-    .eq("user_id", user.id);
+  // ── 5. 스킬 통계 ──────────────────────────────────────────────
+  const [
+    { data: readingResults },
+    { data: listeningResults },
+    { data: speakingResults },
+    { data: writingResults },
+  ] = await Promise.all([
+    supabase.from("reading_results_2026").select("id").eq("user_id", user.id),
+    supabase.from("listening_2026_results" as any).select("id").eq("user_id", user.id),
+    supabase.from("speaking_results_2026").select("id").eq("user_id", user.id),
+    supabase.from("writing_2026_sessions").select("id").eq("user_id", user.id),
+  ]);
 
-  const readingDone = (readingResults ?? []).length;
+  const readingDone   = (readingResults   ?? []).length;
+  const listeningDone = (listeningResults ?? []).length;
+  const speakingDone  = (speakingResults  ?? []).length;
+  const writingDone   = (writingResults   ?? []).length;
 
   // ── 6. 게임화 상태 ────────────────────────────────────────────
   const { data: gamification } = await supabase
@@ -249,6 +280,25 @@ export default async function StudentPage() {
     };
     return MAP[d.toLowerCase()] === todayDow;
   }) ?? false;
+
+  if (isToefl) {
+    return (
+      <ToeflDashboard
+        studentName={studentName}
+        curriculum={curriculum}
+        lvBadge={lvBadge}
+        gamification={gamification ?? null}
+        vocaTodayCount={vocaTodayCount}
+        vocaPlanCount={vocaPlanCount}
+        pendingLectures={pendingLectures}
+        pendingTests={pendingTests}
+        readingDone={readingDone}
+        listeningDone={listeningDone}
+        speakingDone={speakingDone}
+        writingDone={writingDone}
+      />
+    );
+  }
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 pb-12">
@@ -487,6 +537,244 @@ export default async function StudentPage() {
           />
         </div>
       </section>
+    </main>
+  );
+}
+
+// ── TOEFL Dashboard ─────────────────────────────────────────────
+
+// ── Section step types ───────────────────────────────────────────
+type StepStatus = 'done' | 'active' | 'locked';
+
+type SectionStep = {
+  key: 'lecture' | 'practices' | 'tests' | 'review' | 'drills';
+  label: string;
+  status: StepStatus;
+  detail?: string;
+};
+
+type SectionConfig = {
+  key: string;
+  label: string;
+  color: string;        // Tailwind border/text accent
+  activeBg: string;
+  href: string;
+  steps: SectionStep[];
+  done: number;
+};
+
+function deriveSteps(lecturesDone: boolean, practiceDone: number, testsDone: boolean): SectionStep[] {
+  const l: StepStatus = lecturesDone ? 'done' : 'active';
+  const p: StepStatus = !lecturesDone ? 'locked' : practiceDone > 0 ? 'done' : 'active';
+  const t: StepStatus = practiceDone === 0 ? 'locked' : testsDone ? 'done' : 'active';
+  const r: StepStatus = !testsDone ? 'locked' : 'active';
+  const d: StepStatus = 'locked';
+  return [
+    { key: 'lecture',   label: '강좌',      status: l, detail: lecturesDone ? '완료' : undefined },
+    { key: 'practices', label: 'Practices', status: p, detail: practiceDone > 0 ? `${practiceDone}회` : undefined },
+    { key: 'tests',     label: 'Tests',     status: t, detail: testsDone ? '완료' : undefined },
+    { key: 'review',    label: 'Review',    status: r },
+    { key: 'drills',    label: 'Drills',    status: d },
+  ];
+}
+
+function ToeflDashboard({
+  studentName,
+  curriculum,
+  lvBadge,
+  gamification,
+  vocaTodayCount,
+  vocaPlanCount,
+  pendingLectures,
+  pendingTests,
+  readingDone,
+  listeningDone,
+  speakingDone,
+  writingDone,
+}: {
+  studentName: string;
+  curriculum: CurriculumMeta;
+  lvBadge: { label: string; cls: string } | null;
+  gamification: { total_points: number; level: number; current_streak: number } | null;
+  vocaTodayCount: number;
+  vocaPlanCount: number;
+  pendingLectures: number;
+  pendingTests: number;
+  readingDone: number;
+  listeningDone: number;
+  speakingDone: number;
+  writingDone: number;
+}) {
+  const lecturesDone = pendingLectures === 0;
+  const testsDone    = pendingTests === 0;
+
+  const sections: SectionConfig[] = [
+    {
+      key: 'reading', label: 'Reading',
+      color: 'border-sky-200 text-sky-700', activeBg: 'bg-sky-500',
+      href: '/updated-reading/study',
+      done: readingDone,
+      steps: deriveSteps(lecturesDone, readingDone, testsDone),
+    },
+    {
+      key: 'listening', label: 'Listening',
+      color: 'border-violet-200 text-violet-700', activeBg: 'bg-violet-500',
+      href: '/updated-listening/study',
+      done: listeningDone,
+      steps: deriveSteps(lecturesDone, listeningDone, testsDone),
+    },
+    {
+      key: 'speaking', label: 'Speaking',
+      color: 'border-amber-200 text-amber-700', activeBg: 'bg-amber-500',
+      href: '/speaking-2026/study',
+      done: speakingDone,
+      steps: deriveSteps(lecturesDone, speakingDone, testsDone),
+    },
+    {
+      key: 'writing', label: 'Writing',
+      color: 'border-emerald-200 text-emerald-700', activeBg: 'bg-emerald-500',
+      href: '/updated-writing/test',
+      done: writingDone,
+      steps: deriveSteps(lecturesDone, writingDone, testsDone),
+    },
+  ];
+
+  const vocaDone = vocaTodayCount === 0 && vocaPlanCount > 0;
+
+  return (
+    <main className="mx-auto max-w-3xl space-y-6 pb-12">
+
+      {/* ── 헤더 ──────────────────────────────────────────────── */}
+      <header className={`rounded-3xl border border-neutral-200 bg-gradient-to-br p-6 shadow-sm ${curriculum.accentBg}`}>
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${curriculum.badge}`}>
+            {curriculum.label}
+          </span>
+          {lvBadge && (
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${lvBadge.cls}`}>
+              {lvBadge.label}
+            </span>
+          )}
+        </div>
+        <h1 className="text-2xl font-bold text-neutral-900 leading-tight">{studentName}</h1>
+        <p className={`text-sm mt-0.5 ${curriculum.accentText}`}>{curriculum.sub}</p>
+      </header>
+
+      {/* ── 게임화 ────────────────────────────────────────────── */}
+      {gamification && (
+        <div className="grid grid-cols-3 gap-3">
+          <StatPill label="포인트" value={`${gamification.total_points.toLocaleString()} P`} color="amber" />
+          <StatPill label="레벨"   value={`Lv ${gamification.level}`}                        color="indigo" />
+          <StatPill label="연속 학습" value={`${gamification.current_streak}일`}             color="emerald" />
+        </div>
+      )}
+
+      {/* ── 별도 트랙: Vocab · Grammar ───────────────────────── */}
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">별도 트랙</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/vocab/session"
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 transition hover:bg-neutral-50"
+          >
+            <span className="text-xl">📚</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Vocab</p>
+              <p className={`text-xs mt-0.5 ${vocaTodayCount > 0 ? 'text-amber-600 font-medium' : 'text-neutral-400'}`}>
+                {vocaTodayCount > 0 ? `오늘 ${vocaTodayCount}개 남음` : vocaDone ? '오늘 완료' : '단어장 없음'}
+              </p>
+            </div>
+            {vocaTodayCount > 0 && (
+              <span className="shrink-0 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white">학습</span>
+            )}
+          </Link>
+          <Link
+            href="/grammar-2026"
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 transition hover:bg-neutral-50"
+          >
+            <span className="text-xl">📝</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Grammar</p>
+              <p className="text-xs text-neutral-400 mt-0.5">LEXiOX-Gram</p>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* ── 섹션별 학습 플로우 ────────────────────────────────── */}
+      <section className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">학습 섹션</p>
+        {sections.map((sec) => {
+          const activeStep = sec.steps.find((s) => s.status === 'active');
+          const doneCount  = sec.steps.filter((s) => s.status === 'done').length;
+          const pct = Math.round((doneCount / sec.steps.length) * 100);
+
+          return (
+            <div key={sec.key} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+              {/* 섹션 헤더 */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+                <div className="flex items-center gap-3">
+                  <div className={`h-2.5 w-2.5 rounded-full ${sec.activeBg}`} />
+                  <span className="font-semibold text-sm">{sec.label}</span>
+                  {activeStep && (
+                    <span className="text-xs text-neutral-400">{activeStep.label} 진행 중</span>
+                  )}
+                  {doneCount === sec.steps.length && (
+                    <span className="text-xs text-emerald-600 font-medium">완료</span>
+                  )}
+                </div>
+                <Link
+                  href={activeStep ? sec.href : sec.href}
+                  className={`rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition ${sec.activeBg} opacity-90 hover:opacity-100`}
+                >
+                  {doneCount === 0 ? '시작하기' : '이어하기'}
+                </Link>
+              </div>
+
+              {/* 5단계 스텝 */}
+              <div className="flex items-center px-5 py-4 gap-1">
+                {sec.steps.map((step, i) => (
+                  <div key={step.key} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-1">
+                      <div className={[
+                        'flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold',
+                        step.status === 'done'   ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300' :
+                        step.status === 'active' ? `${sec.activeBg} text-white` :
+                                                   'bg-neutral-100 text-neutral-300',
+                      ].join(' ')}>
+                        {step.status === 'done' ? '✓' : i + 1}
+                      </div>
+                      <p className={[
+                        'mt-1.5 text-center text-[10px] leading-tight',
+                        step.status === 'done'   ? 'text-emerald-600 font-medium' :
+                        step.status === 'active' ? 'text-neutral-800 font-semibold' :
+                                                   'text-neutral-300',
+                      ].join(' ')}>
+                        {step.label}
+                      </p>
+                      {step.detail && (
+                        <p className="text-[10px] text-neutral-400 text-center">{step.detail}</p>
+                      )}
+                    </div>
+                    {i < sec.steps.length - 1 && (
+                      <div className={[
+                        'h-px flex-1 mx-1 mb-5',
+                        step.status === 'done' ? 'bg-emerald-200' : 'bg-neutral-100',
+                      ].join(' ')} />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* 진행 바 */}
+              <div className="h-1 w-full bg-neutral-100">
+                <div className={`h-1 ${sec.activeBg} opacity-60 transition-all`} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
     </main>
   );
 }
