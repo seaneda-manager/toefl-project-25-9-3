@@ -161,18 +161,30 @@ export default async function StudentPage() {
   // ── 3. TOEFL 전용 데이터 ─────────────────────────────────────
   let pendingLectures = 0;
   let pendingTests = 0;
+  let examList: { id: string; title: string; assignedAt: string | null; submittedAt: string | null }[] = [];
 
   if (isToefl) {
     const [{ data: lectureAssignments }, { data: lectureCompletions }, { data: examAssignments }] =
       await Promise.all([
         supabase.from("lecture_assignments").select("lecture_id").eq("student_id", user.id),
         supabase.from("lecture_completions").select("lecture_id").eq("student_id", user.id),
-        supabase.from("generated_exam_assignments").select("id, generated_exam_responses(submitted_at)").eq("student_id", user.id),
+        supabase
+          .from("generated_exam_assignments")
+          .select("id, assigned_at, generated_exams(title), generated_exam_responses(submitted_at)")
+          .eq("student_id", user.id)
+          .order("assigned_at", { ascending: false }),
       ]);
 
     const completedLectureIds = new Set((lectureCompletions ?? []).map((c: any) => c.lecture_id as string));
     pendingLectures = (lectureAssignments ?? []).filter((a: any) => !completedLectureIds.has(a.lecture_id)).length;
-    pendingTests = (examAssignments ?? []).filter((a: any) => !a.generated_exam_responses?.[0]?.submitted_at).length;
+
+    examList = (examAssignments ?? []).map((a: any) => ({
+      id: a.id as string,
+      title: (a.generated_exams as any)?.title ?? '모의고사',
+      assignedAt: a.assigned_at ?? null,
+      submittedAt: a.generated_exam_responses?.[0]?.submitted_at ?? null,
+    }));
+    pendingTests = examList.filter((e) => !e.submittedAt).length;
   }
 
   // ── 3b. 내신 통계 (non-TOEFL) ────────────────────────────────
@@ -292,6 +304,7 @@ export default async function StudentPage() {
         vocaPlanCount={vocaPlanCount}
         pendingLectures={pendingLectures}
         pendingTests={pendingTests}
+        examList={examList}
         readingDone={readingDone}
         listeningDone={listeningDone}
         speakingDone={speakingDone}
@@ -587,6 +600,7 @@ function ToeflDashboard({
   vocaPlanCount,
   pendingLectures,
   pendingTests,
+  examList,
   readingDone,
   listeningDone,
   speakingDone,
@@ -600,6 +614,7 @@ function ToeflDashboard({
   vocaPlanCount: number;
   pendingLectures: number;
   pendingTests: number;
+  examList: { id: string; title: string; assignedAt: string | null; submittedAt: string | null }[];
   readingDone: number;
   listeningDone: number;
   speakingDone: number;
@@ -703,7 +718,7 @@ function ToeflDashboard({
 
       {/* ── 섹션별 학습 플로우 ────────────────────────────────── */}
       <section className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">학습 섹션</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">학습 모드</p>
         {sections.map((sec) => {
           const activeStep = sec.steps.find((s) => s.status === 'active');
           const doneCount  = sec.steps.filter((s) => s.status === 'done').length;
@@ -773,6 +788,65 @@ function ToeflDashboard({
             </div>
           );
         })}
+      </section>
+
+      {/* ── 모의고사 (테스트 모드) ───────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            테스트 모드 · 모의고사
+          </p>
+          {pendingTests > 0 && (
+            <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-600">
+              미완료 {pendingTests}개
+            </span>
+          )}
+        </div>
+
+        {examList.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-5 py-6 text-center text-sm text-neutral-400">
+            배정된 모의고사가 없습니다
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-100">
+            {examList.map((exam) => {
+              const done = !!exam.submittedAt;
+              const dateLabel = exam.assignedAt
+                ? new Date(exam.assignedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+                : '';
+              return (
+                <Link
+                  key={exam.id}
+                  href={`/student/exams/${exam.id}`}
+                  className={[
+                    'flex items-center gap-4 px-5 py-4 transition',
+                    done ? 'opacity-60 hover:opacity-80' : 'hover:bg-neutral-50',
+                  ].join(' ')}
+                >
+                  <div className={[
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm',
+                    done ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600',
+                  ].join(' ')}>
+                    {done ? '✓' : '📋'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-neutral-800 truncate">{exam.title}</p>
+                    {dateLabel && (
+                      <p className="text-xs text-neutral-400 mt-0.5">배정일 {dateLabel}</p>
+                    )}
+                  </div>
+                  {done ? (
+                    <span className="shrink-0 text-xs text-emerald-600 font-medium">완료</span>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white">
+                      응시하기
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
     </main>
