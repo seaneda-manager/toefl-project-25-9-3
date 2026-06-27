@@ -27,7 +27,7 @@ export async function generateExamQuestions(
 
   const { data: passages, error } = await supabase
     .from('hi_naesin_passages')
-    .select('id, title, passage_text')
+    .select('id, title, passage_text, school_name')
     .in('school_name', schoolFilter)
     .eq('grade', grade)
     .eq('exam_year', examYear)
@@ -39,19 +39,43 @@ export async function generateExamQuestions(
     return { questions: [], error: '해당 학교/학년의 지문이 없습니다.' };
   }
 
-  const passageList = passages
-    .map((p, i) => `[${i + 1}] ${p.title || '제목없음'}\n${p.passage_text}`)
+  // 공통 지문 전체 + 선택한 학교 지문 전체
+  const commonPassages = passages.filter((p) => p.school_name === '공통');
+  const schoolPassages = passages.filter((p) => p.school_name !== '공통');
+
+  console.log('[exam-gen] 공통:', commonPassages.length, '학교별:', schoolPassages.length);
+
+  const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+
+  // 공통 전체 + 학교별 전체 합쳐서 셔플 후 30개 추리기
+  const allPassages = [...shuffle(commonPassages), ...shuffle(schoolPassages)];
+  const shuffledPassages = allPassages.slice(0, 30);
+
+  // 유형 풀 셔플 후 지문마다 1개씩 배정
+  const allTypes = [
+    '글의 목적', '필자 주장', '요지', '주제', '제목',
+    '내용 일치', '내용 불일치', '어법', '어휘', '빈칸 추론',
+    '문단 순서', '문장 삽입', '서술형',
+  ];
+  const shuffledTypes = [...allTypes].sort(() => Math.random() - 0.5);
+  const assignedTypes = shuffledPassages.map((_, i) => shuffledTypes[i % shuffledTypes.length]);
+
+  const passageList = shuffledPassages
+    .map((p, i) => `[${i + 1}] (지정 유형: ${assignedTypes[i]}) ${p.title || '제목없음'}\n${p.passage_text}`)
     .join('\n\n---\n\n');
 
-  const prompt = `다음은 고등학교 내신 대비 영어 지문 ${passages.length}개입니다.
-각 지문에 대해 수능 스타일 문제를 1문항씩 생성하세요.
+  console.log('[exam-gen] 지문:', shuffledPassages.length, '유형:', assignedTypes);
+
+  const prompt = `다음은 고등학교 내신 대비 영어 지문 ${shuffledPassages.length}개입니다.
+각 지문에 대해 수능 스타일 문제를 1문항씩 생성하세요. 총 ${shuffledPassages.length}문제.
 
 지문:
 ${passageList}
 
 ━━━ 규칙 ━━━
-- 지문 1개 → 문제 1개. number는 1~${passages.length} 순서대로.
-- 문제 유형은 지문에 맞게 선택:
+- 지문 1개 → 문제 1개. number는 1~${shuffledPassages.length} 순서대로.
+- 각 지문 앞 "(지정 유형: XXX)"를 반드시 따르세요.
+- 문제 유형 설명:
   글의 목적 / 필자 주장 / 요지 / 주제 / 제목 / 내용 일치 / 내용 불일치 / 어법 / 어휘 / 빈칸 추론 / 문단 순서 / 문장 삽입 / 서술형
 - "question" 필드: 발문(문제 지시문)만 작성. 예: "다음 글의 주제로 가장 적절한 것은?"
 - "passageOverride" 필드:
@@ -96,6 +120,7 @@ JSON 배열만 응답 (다른 텍스트 없이):
     const stream = await client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 16000,
+      temperature: 1,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -129,10 +154,9 @@ JSON 배열만 응답 (다른 텍스트 없이):
       rawQuestions = recovered;
     }
 
-    // DB 지문 텍스트를 각 문제에 붙임
     const questions: ExamQuestion[] = rawQuestions.map((q) => ({
       ...q,
-      passageText: passages[(q.number - 1)]?.passage_text ?? '',
+      passageText: shuffledPassages[q.number - 1]?.passage_text ?? '',
     }));
 
     return { questions };

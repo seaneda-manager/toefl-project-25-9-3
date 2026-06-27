@@ -50,6 +50,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
   const [savedId, setSavedId]     = useState<string | null>(null);
   const [isSaving, setIsSaving]   = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [examTitle, setExamTitle] = useState('1회');
 
   function toggleSchool(s: string) {
     setSelectedSchools((prev) => {
@@ -78,7 +79,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
 
   async function handleSave() {
     setIsSaving(true);
-    const result = await saveGeneratedExam(selectedSchools, grade, examYear, examMonth, questions);
+    const result = await saveGeneratedExam(selectedSchools, grade, examYear, examMonth, questions, examTitle);
     setIsSaving(false);
     if (result.error) setError(result.error);
     else setSavedId(result.id ?? null);
@@ -117,7 +118,7 @@ export default function ExamGeneratorForm({ filters }: Props) {
     '서술형':      'bg-orange-100 text-orange-700',
   };
 
-  const examLabel = `공통+${selectedSchools.join('+')} ${GRADE_LABEL[grade] ?? grade} ${examYear}년 ${MONTH_LABEL[examMonth] ?? `${examMonth}월`}`;
+  const examLabel = `공통+${selectedSchools.join('+')} ${GRADE_LABEL[grade] ?? grade} ${examYear}년 ${MONTH_LABEL[examMonth] ?? `${examMonth}월`} ${examTitle}`;
 
   return (
     <>
@@ -157,6 +158,17 @@ export default function ExamGeneratorForm({ filters }: Props) {
             className="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
             {months.map((m) => <option key={m} value={m}>{MONTH_LABEL[m] ?? `${m}월`}</option>)}
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-neutral-500">시험 이름</label>
+          <input
+            type="text"
+            value={examTitle}
+            onChange={(e) => setExamTitle(e.target.value)}
+            placeholder="예: 1회, 2회, A형..."
+            className="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 w-32"
+          />
         </div>
 
         <button onClick={handleGenerate} disabled={isPending || selectedSchools.length === 0 || !grade || !examYear || !examMonth}

@@ -9,6 +9,7 @@ export async function saveGeneratedExam(
   examYear: number,
   examMonth: number,
   questions: ExamQuestion[],
+  title: string,
 ): Promise<{ id?: string; error?: string }> {
   const supabase = await getServerSupabase();
 
@@ -17,7 +18,7 @@ export async function saveGeneratedExam(
 
   const { data, error } = await supabase
     .from('generated_exams')
-    .insert({ created_by: user.id, school: schools.join(', '), grade, exam_year: examYear, exam_month: examMonth, questions })
+    .insert({ created_by: user.id, school: schools.join(', '), grade, exam_year: examYear, exam_month: examMonth, questions, title })
     .select('id')
     .single();
 
