@@ -470,6 +470,20 @@ function DailyLifeSplitView({
           <EmailCard {...parsedEmail} />
         ) : parsedTextChain ? (
           <TextMessageChainCard messages={parsedTextChain.messages} />
+        ) : item.contextType === "form" ? (
+          <FormCard text={plainText} />
+        ) : item.contextType === "advertisement" ? (
+          <AdvertisementCard text={plainText} />
+        ) : item.contextType === "invoice" ? (
+          <InvoiceCard text={plainText} />
+        ) : item.contextType === "news_articles" ? (
+          <NewsArticleCard text={plainText} />
+        ) : item.contextType === "social_media_posts" ? (
+          <SocialMediaPostCard text={plainText} />
+        ) : item.contextType === "posters" ? (
+          <PosterCard text={plainText} />
+        ) : item.contextType === "notice" ? (
+          <NoticeCard text={plainText} />
         ) : (
           <div className="whitespace-pre-wrap rounded-md border border-emerald-100 bg-emerald-50/60 p-3 text-sm leading-relaxed text-gray-800">
             {plainText}
@@ -784,6 +798,103 @@ function TextMessageChainCard({ messages }: { messages: Array<{ sender: string; 
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Simple card renderers for other contextTypes
+function FormCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="space-y-3 p-4 bg-white border rounded">
+      {lines.slice(0, 1).map((line, i) => (
+        <div key={i} className="text-base font-bold text-gray-900">{line}</div>
+      ))}
+      <div className="space-y-2">
+        {lines.slice(1).map((line, i) => (
+          <div key={i} className="text-sm text-gray-700">{line}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AdvertisementCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded">
+      <div className="space-y-2">
+        {lines.map((line, i) => (
+          <div key={i} className={i === 0 ? "text-lg font-bold text-gray-900" : "text-sm text-gray-700"}>
+            {line}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InvoiceCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="p-4 bg-white border rounded font-mono text-sm">
+      {lines.map((line, i) => (
+        <div key={i} className="text-gray-700">{line}</div>
+      ))}
+    </div>
+  );
+}
+
+function NewsArticleCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  const title = lines[0];
+  const meta = lines[1] || "";
+  const body = lines.slice(2).join("\n");
+
+  return (
+    <div className="space-y-3 p-4">
+      <div className="text-xl font-bold text-gray-900">{title}</div>
+      {meta && <div className="text-xs text-gray-500">{meta}</div>}
+      <div className="text-sm leading-relaxed text-gray-800 whitespace-pre-wrap">{body}</div>
+    </div>
+  );
+}
+
+function SocialMediaPostCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="p-4 bg-white border rounded space-y-2">
+      <div className="font-bold text-gray-900">@{lines[0] || "user"}</div>
+      <div className="text-xs text-gray-500">{lines[1] || "now"}</div>
+      <div className="text-sm text-gray-800 whitespace-pre-wrap">
+        {lines.slice(2).join("\n")}
+      </div>
+      <div className="text-xs text-gray-500 pt-2">❤️ 💬 🔄</div>
+    </div>
+  );
+}
+
+function PosterCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="p-6 bg-gradient-to-b from-yellow-100 to-orange-100 border-4 border-orange-300 rounded text-center space-y-2">
+      {lines.map((line, i) => (
+        <div key={i} className={i === 0 ? "text-2xl font-bold text-gray-900" : "text-sm text-gray-700"}>
+          {line}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NoticeCard({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="p-4 bg-red-50 border-l-4 border-red-500 space-y-2">
+      <div className="text-base font-bold text-gray-900">📢 {lines[0] || "Notice"}</div>
+      {lines.slice(1).map((line, i) => (
+        <div key={i} className="text-sm text-gray-700">{line}</div>
+      ))}
     </div>
   );
 }
