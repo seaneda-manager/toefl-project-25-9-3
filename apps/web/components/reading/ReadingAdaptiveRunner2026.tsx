@@ -454,6 +454,13 @@ function DailyLifeSplitView({
 
   const looksLikeHtml = /<[a-z][\s\S]*>/i.test(item.contentHtml);
   const plainText = item.contentHtml.replace(/<[^>]+>/g, "");
+
+  // DEBUG: contentHtml 형식 확인
+  if (item.contextType === "email") {
+    console.log("EMAIL CONTENT:", plainText.substring(0, 500));
+    console.log("EMAIL LINES:", plainText.split("\n").slice(0, 10));
+  }
+
   const parsedEmail = !looksLikeHtml && item.contextType === "email" ? parseEmailContent(plainText) : null;
   const parsedTextChain = !looksLikeHtml && item.contextType === "text_message_chain" ? parseTextMessageChain(plainText) : null;
 
