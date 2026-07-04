@@ -465,7 +465,7 @@ function DailyLifeSplitView({
         className="w-1/2 h-full overflow-y-auto border-r bg-white p-6 flex items-center justify-center"
       >
         {looksLikeHtml ? (
-          <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3" dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
+          <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3 font-normal" dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
         ) : parsedEmail ? (
           <EmailCard {...parsedEmail} />
         ) : parsedTextChain ? (
