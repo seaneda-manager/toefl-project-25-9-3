@@ -253,15 +253,18 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
             onAnswer={handleAnswer}
           />
         )}
-        {activeItem && activeItem.taskKind !== "academic_passage" && (
+        {activeItem?.taskKind === "daily_life" && (
+          <DailyLifeSplitView
+            key={activeItem.id}
+            item={activeItem as RDailyLifeItem}
+            answers={answers}
+            onAnswer={handleAnswer}
+          />
+        )}
+        {activeItem?.taskKind === "complete_words" && (
           <div className="h-full overflow-y-auto p-4">
             <div className="rounded-xl border bg-white p-4 shadow-sm">
-              {activeItem.taskKind === "complete_words" && (
-                <CompleteWordsItemView item={activeItem as RCompleteWordsItem} answers={answers} onAnswer={handleAnswer} />
-              )}
-              {activeItem.taskKind === "daily_life" && (
-                <DailyLifeItemView item={activeItem as RDailyLifeItem} answers={answers} onAnswer={handleAnswer} />
-              )}
+              <CompleteWordsItemView item={activeItem as RCompleteWordsItem} answers={answers} onAnswer={handleAnswer} />
             </div>
           </div>
         )}
@@ -342,6 +345,133 @@ function AcademicPassageSplitView({
           className="prose prose-sm max-w-none text-gray-800 leading-relaxed"
           dangerouslySetInnerHTML={{ __html: item.passageHtml }}
         />
+      </div>
+
+      {/* ── 우: 문제 ── */}
+      <div className="w-1/2 h-full flex flex-col bg-gray-50">
+        {/* 문제 번호 탭 */}
+        <div className="shrink-0 flex flex-wrap gap-1 border-b bg-white px-4 py-2">
+          {questions.map((q, i) => {
+            const done = !!answers[q.id];
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => setQIndex(i)}
+                className={`h-7 w-7 rounded text-xs font-medium transition ${
+                  i === qIndex
+                    ? "bg-emerald-600 text-white"
+                    : done
+                    ? "bg-emerald-100 text-emerald-800"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {q.number}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 현재 문제 */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {currentQ && (
+            <div className="space-y-4">
+              <p className="text-sm font-medium text-gray-900 leading-snug">
+                {qIndex + 1}. {currentQ.stem}
+              </p>
+              <div className="space-y-2">
+                {currentQ.choices.map((c) => {
+                  const selected = answered === c.id;
+                  return (
+                    <label
+                      key={c.id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 text-sm transition ${
+                        selected
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-900"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={currentQ.id}
+                        checked={selected}
+                        onChange={() => onAnswer(item, currentQ.id, c.id)}
+                        className="mt-0.5 shrink-0 accent-emerald-600"
+                      />
+                      <span>{c.text}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 이전 / 다음 */}
+        <div className="shrink-0 flex items-center justify-between border-t bg-white px-4 py-2">
+          <button
+            type="button"
+            disabled={qIndex === 0}
+            onClick={() => setQIndex((i) => i - 1)}
+            className="rounded-lg border px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-30"
+          >
+            ← 이전
+          </button>
+          <span className="text-xs text-gray-400">{qIndex + 1} / {questions.length}</span>
+          <button
+            type="button"
+            disabled={qIndex === questions.length - 1}
+            onClick={() => setQIndex((i) => i + 1)}
+            className="rounded-lg border border-emerald-400 px-4 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-30"
+          >
+            다음 →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+ *  Daily Life Split View
+ *  좌: 지문 스크롤 | 우: 문제 1개씩 네비게이션
+ * ───────────────────────────────────────────────────────────── */
+function DailyLifeSplitView({
+  item,
+  answers,
+  onAnswer,
+}: {
+  item: RDailyLifeItem;
+  answers: Record<string, string>;
+  onAnswer: (item: RReadingItem, questionId: string, choiceId: string) => void;
+}) {
+  const questions = item.questions;
+  const [qIndex, setQIndex] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const currentQ = questions[qIndex];
+  const answered = answers[currentQ?.id];
+
+  const looksLikeHtml = /<[a-z][\s\S]*>/i.test(item.contentHtml);
+  const plainText = item.contentHtml.replace(/<[^>]+>/g, "");
+  const parsedEmail = !looksLikeHtml && item.contextType === "email" ? parseEmailContent(plainText) : null;
+
+  return (
+    <div className="flex h-full">
+      {/* ── 좌: 지문 ── */}
+      <div
+        ref={contentRef}
+        className="w-1/2 h-full overflow-y-auto border-r bg-white p-6"
+      >
+        {looksLikeHtml ? (
+          <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3" dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
+        ) : parsedEmail ? (
+          <EmailCard headers={parsedEmail.headers} body={parsedEmail.body} />
+        ) : (
+          <div className="whitespace-pre-wrap rounded-md border border-emerald-100 bg-emerald-50/60 p-3 text-sm leading-relaxed text-gray-800">
+            {plainText}
+          </div>
+        )}
       </div>
 
       {/* ── 우: 문제 ── */}
