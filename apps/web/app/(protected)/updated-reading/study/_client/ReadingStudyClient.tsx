@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import ReadingRunner2026 from "@/components/reading/ReadingRunner2026";
+import ReadingAdaptiveRunner2026 from "@/components/reading/ReadingAdaptiveRunner2026";
 import type { RReadingTest2026 } from "@/models/reading";
 
 type Props = {
@@ -60,7 +60,7 @@ export default function ReadingStudyClient({ test }: Props) {
       )}
 
       {/* ✅ onFinish 에 handleFinish 그대로 전달 */}
-      <ReadingRunner2026 test={test} onFinish={handleFinish} />
+      <ReadingAdaptiveRunner2026 test={test} onFinish={handleFinish} />
     </div>
   );
 }
