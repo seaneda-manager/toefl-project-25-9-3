@@ -455,18 +455,21 @@ function DailyLifeSplitView({
   const looksLikeHtml = /<[a-z][\s\S]*>/i.test(item.contentHtml);
   const plainText = item.contentHtml.replace(/<[^>]+>/g, "");
   const parsedEmail = !looksLikeHtml && item.contextType === "email" ? parseEmailContent(plainText) : null;
+  const parsedTextChain = !looksLikeHtml && item.contextType === "text_message_chain" ? parseTextMessageChain(plainText) : null;
 
   return (
     <div className="flex h-full">
       {/* ── 좌: 지문 ── */}
       <div
         ref={contentRef}
-        className="w-1/2 h-full overflow-y-auto border-r bg-white p-6"
+        className="w-1/2 h-full overflow-y-auto border-r bg-white p-6 flex items-center justify-center"
       >
         {looksLikeHtml ? (
           <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3" dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
         ) : parsedEmail ? (
-          <EmailCard headers={parsedEmail.headers} body={parsedEmail.body} />
+          <EmailCard {...parsedEmail} />
+        ) : parsedTextChain ? (
+          <TextMessageChainCard messages={parsedTextChain.messages} />
         ) : (
           <div className="whitespace-pre-wrap rounded-md border border-emerald-100 bg-emerald-50/60 p-3 text-sm leading-relaxed text-gray-800">
             {plainText}
@@ -605,40 +608,182 @@ function CompleteWordsItemView({ item, answers, onAnswer }: ItemViewProps<RCompl
   );
 }
 
-// "Subject: ...\nDate: ...\nTo: ...\nFrom: ...\n\n본문" 같은 plain-text 이메일을
-// 헤더/본문으로 분리. 매칭되는 헤더 줄이 하나도 없으면 null(=이메일 형태 아님)
-function parseEmailContent(raw: string): { headers: { label: string; value: string }[]; body: string } | null {
+// Email 파싱: Subject, Headers, Salutation, Body, Closing, Signature
+function parseEmailContent(raw: string): {
+  subject: string;
+  headers: { label: string; value: string }[];
+  salutation: string;
+  body: string;
+  closing: string;
+  signature: string[];
+} | null {
   const lines = raw.split(/\r?\n/);
   const headerRe = /^(Subject|Date|To|From|Cc|Bcc)\s*:\s*(.*)$/i;
   const headers: { label: string; value: string }[] = [];
   let i = 0;
+
+  // 1. Subject와 다른 헤더 파싱
+  let subject = "";
   while (i < lines.length) {
     if (lines[i].trim() === "") { i++; continue; }
     const m = lines[i].match(headerRe);
     if (!m) break;
-    headers.push({ label: m[1][0].toUpperCase() + m[1].slice(1).toLowerCase(), value: m[2].trim() });
+    const label = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+    const value = m[2].trim();
+    if (label === "Subject") {
+      subject = value;
+    } else {
+      headers.push({ label, value });
+    }
     i++;
   }
-  if (headers.length === 0) return null;
-  return { headers, body: lines.slice(i).join("\n").trim() };
+
+  if (headers.length === 0 && !subject) return null;
+
+  // 2. Salutation 파싱 (Dear ...,)
+  let salutation = "";
+  while (i < lines.length && lines[i].trim() === "") i++;
+  if (i < lines.length && lines[i].match(/^Dear\s+/i)) {
+    salutation = lines[i].trim();
+    i++;
+  }
+
+  // 3. Body 파싱 (Closing 전까지)
+  const bodyLines: string[] = [];
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line.match(/^(Sincerely|Best regards|Regards|Thank you|Yours|Warm regards|Respectfully)/i)) break;
+    if (line) bodyLines.push(lines[i]);
+    i++;
+  }
+  const body = bodyLines.join("\n").trim();
+
+  // 4. Closing과 Signature 파싱
+  let closing = "";
+  const signature: string[] = [];
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!closing && line.match(/^(Sincerely|Best regards|Regards|Thank you|Yours|Warm regards|Respectfully)/i)) {
+      closing = line;
+    } else if (closing && line) {
+      signature.push(lines[i].trim());
+    }
+    i++;
+  }
+
+  return { subject, headers, salutation, body, closing, signature };
 }
 
-function EmailCard({ headers, body }: { headers: { label: string; value: string }[]; body: string }) {
-  const subject = headers.find((h) => h.label === "Subject");
-  const rest = headers.filter((h) => h.label !== "Subject");
+function EmailCard({
+  subject,
+  headers,
+  salutation,
+  body,
+  closing,
+  signature
+}: ReturnType<typeof parseEmailContent>) {
+  if (!subject && headers.length === 0) return null;
+
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <div className="border-b bg-gray-50 px-4 py-3">
-        {subject && <div className="text-base font-semibold text-gray-900">{subject.value}</div>}
-        <div className="mt-2 space-y-0.5 text-xs text-gray-500">
-          {rest.map((h) => (
-            <div key={h.label}>
-              <span className="font-medium text-gray-600">{h.label}:</span> {h.value}
-            </div>
-          ))}
+      {/* 제목 */}
+      {subject && (
+        <div className="border-b bg-white px-4 py-3">
+          <div className="text-lg font-bold text-gray-900">{subject}</div>
         </div>
+      )}
+
+      {/* 헤더 (From, To, Cc, Date) */}
+      {headers.length > 0 && (
+        <div className="border-b bg-gray-50 px-4 py-3">
+          <div className="space-y-1 text-xs text-gray-600">
+            {headers.map((h) => (
+              <div key={h.label}>
+                <span className="font-medium text-gray-700">{h.label}:</span> <span className="text-gray-800">{h.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 본문 */}
+      <div className="px-6 py-5 text-sm leading-relaxed text-gray-800 space-y-3">
+        {salutation && (
+          <div className="font-medium">{salutation}</div>
+        )}
+
+        <div className="whitespace-pre-wrap">{body}</div>
+
+        {closing && (
+          <div>
+            <div className="font-medium">{closing}</div>
+            {signature.length > 0 && (
+              <div className="mt-1 space-y-0.5 text-xs text-gray-700 border-t pt-2 mt-3">
+                {signature.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      <div className="whitespace-pre-wrap px-4 py-4 text-sm leading-relaxed text-gray-800">{body}</div>
+    </div>
+  );
+}
+
+function parseTextMessageChain(raw: string): { messages: Array<{ sender: string; time: string; text: string }> } | null {
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+  const messages: Array<{ sender: string; time: string; text: string }> = [];
+  const msgRe = /^(.+?)\s*\[([^\]]+)\]\s*$/;
+
+  let i = 0;
+  while (i < lines.length) {
+    const match = lines[i].match(msgRe);
+    if (match) {
+      const sender = match[1].trim();
+      const time = match[2].trim();
+      i++;
+
+      // 다음 메시지 헤더 또는 끝까지가 본문
+      let text = "";
+      while (i < lines.length) {
+        if (lines[i].match(msgRe)) break;
+        text += (text ? "\n" : "") + lines[i];
+        i++;
+      }
+
+      if (text) {
+        messages.push({ sender, time, text: text.trim() });
+      }
+    } else {
+      i++;
+    }
+  }
+
+  return messages.length > 0 ? { messages } : null;
+}
+
+function TextMessageChainCard({ messages }: { messages: Array<{ sender: string; time: string; text: string }> }) {
+  return (
+    <div className="mx-auto max-w-sm rounded-2xl border-8 border-gray-800 bg-white shadow-lg overflow-hidden">
+      {/* 휴대폰 상태바 흉내 */}
+      <div className="bg-gray-900 px-4 py-2 text-center text-xs text-white font-medium">
+        📱 Message Thread
+      </div>
+
+      {/* 메시지 목록 */}
+      <div className="space-y-3 p-4 h-96 overflow-y-auto bg-gray-50">
+        {messages.map((msg, i) => (
+          <div key={i} className="space-y-1">
+            <div className="text-xs font-semibold text-gray-700">
+              {msg.sender} <span className="text-gray-500 font-normal">[{msg.time}]</span>
+            </div>
+            <div className="ml-2 rounded-lg bg-blue-100 px-3 py-2 text-sm leading-relaxed text-gray-900 whitespace-pre-wrap break-words">
+              {msg.text}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
