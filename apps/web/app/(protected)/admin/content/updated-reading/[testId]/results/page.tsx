@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 type Props = {
   params: Promise<{ testId: string }>;
@@ -67,7 +68,15 @@ export default async function Reading2026ResultsPage({ params }: Props) {
 
             return (
               <tr key={r.id} className="border-b">
-                <td className="px-2 py-2 font-mono text-xs">{r.id}</td>
+                <td className="px-2 py-2 font-mono text-xs">
+                  <Link
+                    href={`/student/review/reading/${r.id}`}
+                    className="text-emerald-700 underline hover:text-emerald-900"
+                    target="_blank"
+                  >
+                    {r.id}
+                  </Link>
+                </td>
                 <td className="px-2 py-2 text-xs">
                   {r.user_id ?? <span className="text-gray-400">anonymous</span>}
                 </td>

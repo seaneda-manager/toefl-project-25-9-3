@@ -3,8 +3,10 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { RReadingTest2026, RAcademicPassageItem } from "@/models/reading";
+import PassagePasteFlow from "./PassagePasteFlow";
 
 type Phase = "input" | "generating" | "edit" | "saving" | "locked";
+type Mode = "auto" | "paste";
 
 function getAcademicItem(test: RReadingTest2026, stage: 1 | 2): RAcademicPassageItem | null {
   const mod = test.modules[stage - 1];
@@ -14,6 +16,7 @@ function getAcademicItem(test: RReadingTest2026, stage: 1 | 2): RAcademicPassage
 
 export default function ReadingTestGeneratorClient() {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("auto");
   const [phase, setPhase] = useState<Phase>("input");
   const [cwTopic, setCwTopic] = useState("");
   const [dailyLifeTopic, setDailyLifeTopic] = useState("");
@@ -161,7 +164,39 @@ export default function ReadingTestGeneratorClient() {
 
   return (
     <div className="space-y-6">
+      {/* Mode toggle */}
+      {phase === "input" && (
+        <div className="flex gap-2 rounded-xl border bg-white p-1 shadow-sm w-fit text-xs">
+          <button
+            onClick={() => setMode("auto")}
+            className={`rounded-lg px-3 py-1.5 font-medium ${
+              mode === "auto" ? "bg-emerald-600 text-white" : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            AI 자동 생성
+          </button>
+          <button
+            onClick={() => setMode("paste")}
+            className={`rounded-lg px-3 py-1.5 font-medium ${
+              mode === "paste" ? "bg-emerald-600 text-white" : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            지문 붙여넣기
+          </button>
+        </div>
+      )}
+
+      {phase === "input" && mode === "paste" && (
+        <PassagePasteFlow
+          onComplete={(t) => {
+            setTest(t);
+            setPhase("edit");
+          }}
+        />
+      )}
+
       {/* Topic input — 3 separate inputs */}
+      {mode === "auto" && (
       <section className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
         <h2 className="text-sm font-semibold text-gray-900">토픽 입력 (3개)</h2>
 
@@ -212,6 +247,7 @@ export default function ReadingTestGeneratorClient() {
         )}
         {error && <p className="text-xs text-rose-600">{error}</p>}
       </section>
+      )}
 
       {/* Editor */}
       {test && phase !== "generating" && (

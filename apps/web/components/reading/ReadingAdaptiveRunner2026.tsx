@@ -32,11 +32,36 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
   const [stage1Score, setStage1Score] = useState<{ correct: number; total: number } | null>(null);
   const [stage2Score, setStage2Score] = useState<{ correct: number; total: number } | null>(null);
   const [reported, setReported] = useState(false);
+  // Stage1 성적으로 결정된 Stage2 분기(hard/easy). Stage1을 마치는 순간 확정되고,
+  // 이후엔 이 값을 그대로 씀 — Stage2 도중 점수가 계속 바뀌어도 분기가 흔들리지 않게.
+  const [stage2Module, setStage2Module] = useState<RReadingModule | null>(null);
+
+  // stage2Pool이 있으면 cutScore 기준으로 hard/easy를 고르고, 없으면 레거시 modules[1]로 폴백
+  const resolveStage2Module = useCallback(
+    (s1: { correct: number; total: number }): RReadingModule => {
+      const pool = test.stage2Pool;
+      if (!pool) return test.modules[1];
+      const pct = s1.total > 0 ? s1.correct / s1.total : 0;
+      return pct >= pool.cutScore ? pool.hard : pool.easy;
+    },
+    [test.stage2Pool, test.modules]
+  );
+
+  const effectiveStage2Module: RReadingModule = useMemo(
+    () => stage2Module ?? resolveStage2Module(stage1Score ?? { correct: 0, total: 0 }),
+    [stage2Module, stage1Score, resolveStage2Module]
+  );
 
   const currentModule: RReadingModule = useMemo(
-    () => test.modules[currentStage - 1],
-    [test.modules, currentStage]
+    () => (currentStage === 1 ? test.modules[0] : effectiveStage2Module),
+    [currentStage, test.modules, effectiveStage2Module]
   );
+
+  // 항목(complete_words / daily_life / academic_passage) 하나씩 순차 이동
+  const [itemIndex, setItemIndex] = useState(0);
+  useEffect(() => {
+    setItemIndex(0);
+  }, [currentModule]);
 
   const handleAnswer = useCallback(
     (_item: RReadingItem, questionId: string, choiceId: string) => {
@@ -72,11 +97,16 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
   );
 
   const handleStageFinish = useCallback(() => {
-    const score = computeModuleScore(test.modules[currentStage - 1]);
-    if (currentStage === 1) setStage1Score(score);
-    else setStage2Score(score);
+    const score = computeModuleScore(currentModule);
+    if (currentStage === 1) {
+      setStage1Score(score);
+      // Stage1이 끝나는 순간 Stage2 분기를 확정
+      setStage2Module(resolveStage2Module(score));
+    } else {
+      setStage2Score(score);
+    }
     setPhase("stageSummary");
-  }, [computeModuleScore, currentStage, test.modules]);
+  }, [computeModuleScore, currentModule, currentStage, resolveStage2Module]);
 
   const handleStageSummaryNext = useCallback(() => {
     if (currentStage === 1) {
@@ -88,8 +118,8 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
   }, [currentStage]);
 
   const handleTimeUp = useCallback(() => {
-    const s1 = computeModuleScore(test.modules[0]);
-    const s2 = computeModuleScore(test.modules[1]);
+    const s1 = stage1Score ?? computeModuleScore(test.modules[0]);
+    const s2 = computeModuleScore(effectiveStage2Module);
     setStage1Score(s1);
     setStage2Score(s2);
     setPhase("final");
@@ -97,25 +127,29 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
       onFinish({ testId: test.meta.id, stage1Correct: s1.correct, stage1Total: s1.total, stage2Correct: s2.correct, stage2Total: s2.total });
       setReported(true);
     }
-  }, [computeModuleScore, onFinish, reported, test]);
+  }, [computeModuleScore, effectiveStage2Module, onFinish, reported, stage1Score, test]);
 
   useEffect(() => {
     if (phase !== "final" || !onFinish || reported) return;
     const s1 = stage1Score ?? computeModuleScore(test.modules[0]);
-    const s2 = stage2Score ?? computeModuleScore(test.modules[1]);
+    const s2 = stage2Score ?? computeModuleScore(effectiveStage2Module);
     onFinish({ testId: test.meta.id, stage1Correct: s1.correct, stage1Total: s1.total, stage2Correct: s2.correct, stage2Total: s2.total });
     setReported(true);
-  }, [phase, onFinish, reported, stage1Score, stage2Score, computeModuleScore, test]);
+  }, [phase, onFinish, reported, stage1Score, stage2Score, computeModuleScore, effectiveStage2Module, test]);
 
-  // 전체 문항 수 / 답한 문항 수 계산 (진행률 표시용)
+  // 전체 문항 수 / 답한 문항 수 계산 (진행률 표시용, complete_words blanks 포함)
   const { totalQ, answeredQ } = useMemo(() => {
     let total = 0, answered = 0;
     for (const item of currentModule.items) {
+      if (item.taskKind === "complete_words") {
+        const cw = item as RCompleteWordsItem;
+        total += cw.blanks.length;
+        for (const b of cw.blanks) { if (answers[b.id]) answered++; }
+        continue;
+      }
       const qs = item.taskKind === "academic_passage"
         ? (item as RAcademicPassageItem).questions
-        : item.taskKind === "daily_life"
-        ? (item as RDailyLifeItem).questions
-        : [];
+        : (item as RDailyLifeItem).questions;
       total += qs.length;
       for (const q of qs) { if (answers[q.id]) answered++; }
     }
@@ -134,7 +168,7 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
   if (phase === "stageSummary") {
     const score = currentStage === 1
       ? (stage1Score ?? computeModuleScore(test.modules[0]))
-      : (stage2Score ?? computeModuleScore(test.modules[1]));
+      : (stage2Score ?? computeModuleScore(effectiveStage2Module));
     return (
       <div className="flex min-h-[60vh] items-center justify-center p-6">
         <StageSummaryCard stage={currentStage} score={score} onNext={handleStageSummaryNext} />
@@ -144,7 +178,7 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
 
   if (phase === "final") {
     const s1 = stage1Score ?? computeModuleScore(test.modules[0]);
-    const s2 = stage2Score ?? computeModuleScore(test.modules[1]);
+    const s2 = stage2Score ?? computeModuleScore(effectiveStage2Module);
     return (
       <div className="flex min-h-[60vh] items-center justify-center p-6">
         <FinalSummaryCard stage1={s1} stage2={s2} />
@@ -153,9 +187,9 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
   }
 
   // ── Items phase ──────────────────────────────────────────────
-  // academic_passage 아이템만 분리 처리, 나머지는 심플 뷰
-  const academicItems = currentModule.items.filter((i) => i.taskKind === "academic_passage") as RAcademicPassageItem[];
-  const otherItems = currentModule.items.filter((i) => i.taskKind !== "academic_passage");
+  // 항목을 한 번에 다 쌓지 않고 하나씩 순차로 보여줌 (지문마다 집중해서 풀도록)
+  const items = currentModule.items;
+  const activeItem = items[itemIndex];
 
   return (
     <div className="flex h-full flex-col">
@@ -189,50 +223,92 @@ export default function ReadingAdaptiveRunner2026({ test, onFinish }: Props) {
         </div>
       </header>
 
-      {/* ── 본문 ── */}
+      {/* ── 항목 탭 (지문 단위 이동) ── */}
+      {items.length > 1 && (
+        <div className="shrink-0 flex flex-wrap items-center gap-1 border-b bg-white px-4 py-2">
+          {items.map((item, i) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setItemIndex(i)}
+              className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+                i === itemIndex
+                  ? "bg-emerald-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {i + 1}. {itemTypeLabel(item)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── 본문: 현재 항목 하나만 ── */}
       <div className="flex-1 overflow-hidden">
-        {/* Academic passage 아이템: 좌우 분할 */}
-        {academicItems.map((item) => (
+        {activeItem?.taskKind === "academic_passage" && (
           <AcademicPassageSplitView
-            key={item.id}
-            item={item}
+            key={activeItem.id}
+            item={activeItem as RAcademicPassageItem}
             answers={answers}
             onAnswer={handleAnswer}
           />
-        ))}
-
-        {/* 그 외 아이템 (complete_words, daily_life) */}
-        {otherItems.length > 0 && (
-          <div className="h-full overflow-y-auto p-4 space-y-4">
-            {otherItems.map((item) => (
-              <div key={item.id} className="rounded-xl border bg-white p-4 shadow-sm">
-                {item.taskKind === "complete_words" && (
-                  <CompleteWordsItemView item={item as RCompleteWordsItem} answers={answers} onAnswer={handleAnswer} />
-                )}
-                {item.taskKind === "daily_life" && (
-                  <DailyLifeItemView item={item as RDailyLifeItem} answers={answers} onAnswer={handleAnswer} />
-                )}
-              </div>
-            ))}
+        )}
+        {activeItem && activeItem.taskKind !== "academic_passage" && (
+          <div className="h-full overflow-y-auto p-4">
+            <div className="rounded-xl border bg-white p-4 shadow-sm">
+              {activeItem.taskKind === "complete_words" && (
+                <CompleteWordsItemView item={activeItem as RCompleteWordsItem} answers={answers} onAnswer={handleAnswer} />
+              )}
+              {activeItem.taskKind === "daily_life" && (
+                <DailyLifeItemView item={activeItem as RDailyLifeItem} answers={answers} onAnswer={handleAnswer} />
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── 하단 Finish 버튼 ── */}
+      {/* ── 하단: 항목 이동 + Finish ── */}
       <footer className="shrink-0 flex items-center justify-between border-t bg-white px-4 py-2">
-        <span className="text-xs text-gray-400">
-          {answeredQ < totalQ ? `${totalQ - answeredQ}문항 미답변` : "모든 문항 답변 완료"}
-        </span>
-        <button
-          type="button"
-          onClick={handleStageFinish}
-          className="rounded-lg border border-emerald-500 bg-emerald-600 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
-        >
-          {currentStage === 1 ? "Finish Stage 1" : "Finish Reading"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={itemIndex === 0}
+            onClick={() => setItemIndex((i) => i - 1)}
+            className="rounded-lg border px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-30"
+          >
+            ← 이전 항목
+          </button>
+          <span className="text-xs text-gray-400">{itemIndex + 1} / {items.length}</span>
+          <button
+            type="button"
+            disabled={itemIndex === items.length - 1}
+            onClick={() => setItemIndex((i) => i + 1)}
+            className="rounded-lg border border-emerald-400 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-30"
+          >
+            다음 항목 →
+          </button>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            {answeredQ < totalQ ? `${totalQ - answeredQ}문항 미답변` : "모든 문항 답변 완료"}
+          </span>
+          <button
+            type="button"
+            onClick={handleStageFinish}
+            className="rounded-lg border border-emerald-500 bg-emerald-600 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+          >
+            {currentStage === 1 ? "Finish Stage 1" : "Finish Reading"}
+          </button>
+        </div>
       </footer>
     </div>
   );
+}
+
+function itemTypeLabel(item: RReadingItem): string {
+  if (item.taskKind === "complete_words") return "Complete the Words";
+  if (item.taskKind === "daily_life") return `Daily Life`;
+  return "Academic Passage";
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -363,32 +439,98 @@ type ItemViewProps<T extends RReadingItem> = {
 };
 
 function CompleteWordsItemView({ item, answers, onAnswer }: ItemViewProps<RCompleteWordsItem>) {
-  const blanks = Array.isArray(item.blanks) ? item.blanks : [];
+  // 지문 안에서 각 blank 자리에 번호 배지 + 입력칸을 바로 붙여서 보여줌 (Blank가 어디인지 한눈에 보이도록)
+  const blanks = [...(Array.isArray(item.blanks) ? item.blanks : [])].sort((a, b) => a.order - b.order);
+  const plainText = item.paragraphHtml.replace(/<[^>]+>/g, "");
+  const parts = plainText.split("__");
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="prose max-w-none text-sm" dangerouslySetInnerHTML={{ __html: item.paragraphHtml }} />
-      <div className="flex flex-col gap-2">
-        {blanks.map((blank, idx) => (
-          <div key={blank.id ?? idx} className="flex items-center gap-2 text-sm">
-            <span className="w-20 text-xs font-medium text-gray-500">Blank {idx + 1}</span>
-            <input
-              type="text"
-              className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
-              value={answers[blank.id] ?? ""}
-              onChange={(e) => onAnswer(item, blank.id, e.target.value.trim())}
-              placeholder="Type the missing letters"
-            />
-          </div>
-        ))}
+      <p className="text-sm leading-loose text-gray-900 whitespace-pre-wrap">
+        {parts.map((part, i) => {
+          const blank = blanks[i];
+          if (!blank) return <span key={`part-${i}`}>{part}</span>;
+          return (
+            <span key={blank.id}>
+              {part}
+              <span className="mx-0.5 inline-flex items-center gap-1 align-middle">
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+                  {i + 1}
+                </span>
+                <input
+                  type="text"
+                  value={answers[blank.id] ?? ""}
+                  onChange={(e) => onAnswer(item, blank.id, e.target.value.trim())}
+                  maxLength={blank.correctToken.length}
+                  className="rounded border border-emerald-400 bg-emerald-50 px-1.5 py-0.5 text-sm font-medium text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  style={{ width: `${blank.correctToken.length * 2 + 1}ch`, letterSpacing: "0.15em" }}
+                  placeholder={Array(blank.correctToken.length).fill("_").join(" ")}
+                />
+              </span>
+            </span>
+          );
+        })}
+      </p>
+    </div>
+  );
+}
+
+// "Subject: ...\nDate: ...\nTo: ...\nFrom: ...\n\n본문" 같은 plain-text 이메일을
+// 헤더/본문으로 분리. 매칭되는 헤더 줄이 하나도 없으면 null(=이메일 형태 아님)
+function parseEmailContent(raw: string): { headers: { label: string; value: string }[]; body: string } | null {
+  const lines = raw.split(/\r?\n/);
+  const headerRe = /^(Subject|Date|To|From|Cc|Bcc)\s*:\s*(.*)$/i;
+  const headers: { label: string; value: string }[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i].trim() === "") { i++; continue; }
+    const m = lines[i].match(headerRe);
+    if (!m) break;
+    headers.push({ label: m[1][0].toUpperCase() + m[1].slice(1).toLowerCase(), value: m[2].trim() });
+    i++;
+  }
+  if (headers.length === 0) return null;
+  return { headers, body: lines.slice(i).join("\n").trim() };
+}
+
+function EmailCard({ headers, body }: { headers: { label: string; value: string }[]; body: string }) {
+  const subject = headers.find((h) => h.label === "Subject");
+  const rest = headers.filter((h) => h.label !== "Subject");
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="border-b bg-gray-50 px-4 py-3">
+        {subject && <div className="text-base font-semibold text-gray-900">{subject.value}</div>}
+        <div className="mt-2 space-y-0.5 text-xs text-gray-500">
+          {rest.map((h) => (
+            <div key={h.label}>
+              <span className="font-medium text-gray-600">{h.label}:</span> {h.value}
+            </div>
+          ))}
+        </div>
       </div>
+      <div className="whitespace-pre-wrap px-4 py-4 text-sm leading-relaxed text-gray-800">{body}</div>
     </div>
   );
 }
 
 function DailyLifeItemView({ item, answers, onAnswer }: ItemViewProps<RDailyLifeItem>) {
+  // 자동생성 콘텐츠는 이미 스타일이 입혀진 HTML이라 그대로 렌더링, 지문 붙여넣기로 들어온
+  // plain text는 줄바꿈이 사라지지 않게 pre-wrap 처리하고, email이면 헤더/본문을 분리해서 보여줌
+  const looksLikeHtml = /<[a-z][\s\S]*>/i.test(item.contentHtml);
+  const plainText = item.contentHtml.replace(/<[^>]+>/g, "");
+  const parsedEmail = !looksLikeHtml && item.contextType === "email" ? parseEmailContent(plainText) : null;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3 text-sm" dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
+      {looksLikeHtml ? (
+        <div className="rounded-md border border-emerald-100 bg-emerald-50/60 p-3 text-sm" dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
+      ) : parsedEmail ? (
+        <EmailCard headers={parsedEmail.headers} body={parsedEmail.body} />
+      ) : (
+        <div className="whitespace-pre-wrap rounded-md border border-emerald-100 bg-emerald-50/60 p-3 text-sm leading-relaxed text-gray-800">
+          {plainText}
+        </div>
+      )}
       <div className="flex flex-col gap-3">
         {item.questions.map((q) => (
           <div key={q.id} className="flex flex-col gap-1 text-sm">
@@ -418,8 +560,10 @@ function StageIntroCard({ stage, module, onStart }: { stage: 1 | 2; module: RRea
   const qCount = module.items.reduce((n, item) => {
     if (item.taskKind === "academic_passage") return n + (item as RAcademicPassageItem).questions.length;
     if (item.taskKind === "daily_life") return n + (item as RDailyLifeItem).questions.length;
+    if (item.taskKind === "complete_words") return n + (item as RCompleteWordsItem).blanks.length;
     return n;
   }, 0);
+  const passageCount = module.items.length;
 
   return (
     <section className="w-full max-w-md rounded-2xl border border-emerald-200 bg-white p-8 shadow-md text-center space-y-4">
@@ -431,7 +575,7 @@ function StageIntroCard({ stage, module, onStart }: { stage: 1 | 2; module: RRea
           : "This is the final module. Stay focused and answer every question."}
       </p>
       <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-700">
-        {qCount} questions · 30 min
+        {passageCount} passages · {qCount} questions · 30 min
       </div>
       <div>
         <button

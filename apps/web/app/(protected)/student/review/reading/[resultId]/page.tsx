@@ -6,6 +6,7 @@ import type {
   RReadingModule,
   RReadingItem,
   RAcademicPassageItem,
+  RDailyLifeItem,
   RCompleteWordsItem,
   RQuestion,
   RChoice,
@@ -25,57 +26,82 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function buildCwItems(test: RReadingTest2026): CwReviewItem[] {
+/** 이 결과에서 학생이 실제로 응시한 Stage2 분기(hard/easy)를 answers로 역추적 */
+function pickStage2Branch(test: RReadingTest2026, answers: AnswerPayload[]): RReadingModule | null {
+  const pool = test.stage2Pool;
+  if (!pool) return null;
+  const answeredIds = new Set(answers.map((a) => a.questionId));
+
+  const questionIdsOf = (mod: RReadingModule) =>
+    mod.items.flatMap((item) =>
+      item.taskKind === "complete_words" ? [] : (item.questions ?? []).map((q) => q.id)
+    );
+
+  const hardHit = questionIdsOf(pool.hard).some((id) => answeredIds.has(id));
+  const easyHit = questionIdsOf(pool.easy).some((id) => answeredIds.has(id));
+
+  if (hardHit && !easyHit) return pool.hard;
+  if (easyHit && !hardHit) return pool.easy;
+  // 둘 다 매치되거나(비정상 데이터) 둘 다 매치가 없으면(결과 없음) hard를 기본값으로 사용
+  return pool.hard;
+}
+
+/** Stage1(항상 응시) + 실제 응시한 Stage2 분기의 항목을 하나로 합침 */
+function collectAdministeredItems(test: RReadingTest2026, answers: AnswerPayload[]): RReadingItem[] {
+  const stage1Items = test.modules?.[0]?.items ?? [];
+  const stage2Branch = pickStage2Branch(test, answers);
+  return [...stage1Items, ...(stage2Branch?.items ?? [])];
+}
+
+function buildCwItems(items: RReadingItem[]): CwReviewItem[] {
   const result: CwReviewItem[] = [];
-  for (const mod of test.modules ?? []) {
-    for (const item of mod.items) {
-      if (item.taskKind !== "complete_words") continue;
-      const cw = item as RCompleteWordsItem;
-      result.push({
-        id: cw.id,
-        paragraphHtml: cw.paragraphHtml,
-        blanks: cw.blanks.map((b) => ({
-          id: b.id,
-          order: b.order,
-          correctToken: b.correctToken,
-        })),
-      });
-    }
+  for (const item of items) {
+    if (item.taskKind !== "complete_words") continue;
+    const cw = item as RCompleteWordsItem;
+    result.push({
+      id: cw.id,
+      paragraphHtml: cw.paragraphHtml,
+      blanks: cw.blanks.map((b) => ({
+        id: b.id,
+        order: b.order,
+        correctToken: b.correctToken,
+      })),
+    });
   }
   return result;
 }
 
-function buildFlatQuestions(test: RReadingTest2026): FlatQuestion[] {
-  const modules: RReadingModule[] = test.modules ?? [];
+function buildFlatQuestions(items: RReadingItem[]): FlatQuestion[] {
   const result: FlatQuestion[] = [];
 
-  modules.forEach((mod: RReadingModule) => {
-    mod.items.forEach((item: RReadingItem) => {
-      if (item.taskKind !== "academic_passage") return;
-      const passageItem = item as RAcademicPassageItem;
-      const passageHtml = passageItem.passageHtml ?? "";
-      const passageText = stripHtml(passageHtml);
-      const questions: RQuestion[] = passageItem.questions ?? [];
+  items.forEach((item: RReadingItem) => {
+    if (item.taskKind !== "academic_passage" && item.taskKind !== "daily_life") return;
 
-      questions.forEach((q: RQuestion) => {
-        const choices = (q.choices ?? []).map((c: RChoice) => ({
-          id: c.id,
-          text: c.text,
-          isCorrect: c.is_correct === true || (c as any).isCorrect === true,
-          explain: c.explain ?? null,
-        }));
+    const passageHtml =
+      item.taskKind === "academic_passage"
+        ? (item as RAcademicPassageItem).passageHtml ?? ""
+        : (item as RDailyLifeItem).contentHtml ?? "";
+    const passageText = stripHtml(passageHtml);
+    const questions: RQuestion[] = item.questions ?? [];
 
-        result.push({
-          id: q.id,
-          number: q.number,
-          type: q.type ?? "detail",
-          stem: q.stem,
-          passageHtml,
-          passageText,
-          choices,
-          rationale: q.explanation?.rationale ?? null,
-          clueQuote: q.explanation?.clue_quote ?? null,
-        });
+    questions.forEach((q: RQuestion) => {
+      const choices = (q.choices ?? []).map((c: RChoice) => ({
+        id: c.id,
+        text: c.text,
+        isCorrect: (c as any).is_correct === true || (c as any).isCorrect === true,
+        explain: (c as any).explain ?? null,
+      }));
+
+      result.push({
+        id: q.id,
+        number: q.number,
+        type: q.type ?? "detail",
+        stem: q.stem,
+        passageHtml,
+        passageText,
+        choices,
+        rationale: (q as any).explanation?.rationale ?? null,
+        clueQuote: (q as any).explanation?.clue_quote ?? null,
       });
     });
   });
@@ -111,12 +137,14 @@ export default async function StudentReadingReviewDetailPage({ params }: PagePro
   if (!testRow?.payload) notFound();
 
   const test = testRow.payload as RReadingTest2026;
-  const flatQuestions = buildFlatQuestions(test);
-  const cwItems = buildCwItems(test);
 
   const answers: AnswerPayload[] = Array.isArray(resultRow.answers)
     ? (resultRow.answers as AnswerPayload[])
     : [];
+
+  const administeredItems = collectAdministeredItems(test, answers);
+  const flatQuestions = buildFlatQuestions(administeredItems);
+  const cwItems = buildCwItems(administeredItems);
 
   const answerMap: Record<string, string | null> = {};
   answers.forEach((a) => {

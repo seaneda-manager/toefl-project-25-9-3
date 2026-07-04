@@ -212,7 +212,14 @@ export default async function Reading2026AdminListPage() {
                   </div>
 
                   {/* Action */}
-                  <div className="mt-2 flex justify-end md:mt-0">
+                  <div className="mt-2 flex justify-end gap-2 md:mt-0">
+                    <Link
+                      href={`/admin/content/updated-reading/${t.id}/preview`}
+                      target="_blank"
+                      className="inline-flex items-center rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-amber-700 hover:border-amber-400 hover:bg-amber-50"
+                    >
+                      미리보기
+                    </Link>
                     <Link
                       href={`/admin/content/updated-reading/${t.id}`}
                       className="inline-flex items-center rounded-lg border border-emerald-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50"
