@@ -66,6 +66,8 @@ ${selectedQuestion.passage ? `【 지문 】\n${selectedQuestion.passage}` : ""}
 【 요청 형식 】
 다음 JSON 형식으로만 응답하세요:
 {
+  "question_id": "${selectedQuestion.id}",
+  "test_id": "${testId}",
   "question_interpretation": "이 문제가 무엇을 묻는가?",
   "evidence_interpretation": "지문에서 정답과 관련된 부분이 무엇을 의미하는가?",
   "correct_choice_explanation": "정답이 맞는 이유",
@@ -84,7 +86,7 @@ ${selectedQuestion.passage ? `【 지문 】\n${selectedQuestion.passage}` : ""}
 
       setPrompt(promptText);
     }
-  }, [selectedQuestion]);
+  }, [selectedQuestion, testId]);
 
   if (loading) {
     return (
