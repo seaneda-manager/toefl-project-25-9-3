@@ -23,10 +23,7 @@ export async function GET(
     }
 
     const testPayload = data.payload as any;
-    const allItems = [
-      ...testPayload.modules[0].items,
-      ...testPayload.modules[1].items,
-    ];
+    const allItems = testPayload.modules?.flatMap((m: any) => m.items || []) || [];
 
     // 모든 questions 추출
     const questions: Array<{
