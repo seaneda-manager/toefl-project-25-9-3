@@ -22,12 +22,12 @@ export default function TeacherSpeakingDrillsPage() {
             <p className="text-gray-600 mb-4">
               클래스의 모든 학생이 완료한 드릴과 게임 현황을 확인합니다.
             </p>
-            <Link
-              href="/teacher/speaking-drills/progress"
-              className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded transition-all"
+            <button
+              disabled
+              className="inline-block bg-gray-300 text-gray-600 font-bold py-2 px-4 rounded cursor-not-allowed"
             >
-              학생 현황 보기 →
-            </Link>
+              학생 현황 보기 (Coming Soon)
+            </button>
           </div>
 
           {/* 드릴 할당 */}
@@ -36,12 +36,12 @@ export default function TeacherSpeakingDrillsPage() {
             <p className="text-gray-600 mb-4">
               특정 학생이나 클래스에 드릴과 게임을 할당합니다.
             </p>
-            <Link
-              href="/teacher/speaking-drills/assign"
-              className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded transition-all"
+            <button
+              disabled
+              className="inline-block bg-gray-300 text-gray-600 font-bold py-2 px-4 rounded cursor-not-allowed"
             >
-              드릴 할당 →
-            </Link>
+              드릴 할당 (Coming Soon)
+            </button>
           </div>
 
           {/* 성과 분석 */}

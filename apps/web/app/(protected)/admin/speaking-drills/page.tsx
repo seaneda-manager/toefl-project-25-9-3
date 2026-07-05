@@ -40,21 +40,21 @@ export default function AdminSpeakingDrillsPage() {
             <h2 className="text-2xl font-bold text-blue-600 mb-4">📝 콘텐츠 관리</h2>
             <ul className="space-y-3">
               <li>
-                <Link
-                  href="/admin/speaking-drills/questions"
-                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                <button
+                  disabled
+                  className="text-gray-400 font-semibold cursor-not-allowed"
                 >
-                  → 드릴 질문 관리
-                </Link>
+                  → 드릴 질문 관리 (Coming Soon)
+                </button>
                 <p className="text-xs text-gray-500 mt-1">드릴의 질문 추가/수정/삭제</p>
               </li>
               <li>
-                <Link
-                  href="/admin/speaking-drills/game-words"
-                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                <button
+                  disabled
+                  className="text-gray-400 font-semibold cursor-not-allowed"
                 >
-                  → Game 1 단어 관리
-                </Link>
+                  → Game 1 단어 관리 (Coming Soon)
+                </button>
                 <p className="text-xs text-gray-500 mt-1">Stress Hunt 단어 목록</p>
               </li>
               <li>
@@ -73,21 +73,21 @@ export default function AdminSpeakingDrillsPage() {
             <h2 className="text-2xl font-bold text-green-600 mb-4">📊 학생 데이터</h2>
             <ul className="space-y-3">
               <li>
-                <Link
-                  href="/admin/speaking-drills/student-results"
-                  className="text-green-600 hover:text-green-800 font-semibold"
+                <button
+                  disabled
+                  className="text-gray-400 font-semibold cursor-not-allowed"
                 >
-                  → 학생 성과 분석
-                </Link>
+                  → 학생 성과 분석 (Coming Soon)
+                </button>
                 <p className="text-xs text-gray-500 mt-1">개별 학생의 드릴 결과</p>
               </li>
               <li>
-                <Link
-                  href="/admin/speaking-drills/metrics"
-                  className="text-green-600 hover:text-green-800 font-semibold"
+                <button
+                  disabled
+                  className="text-gray-400 font-semibold cursor-not-allowed"
                 >
-                  → 음성 메트릭 분석
-                </Link>
+                  → 음성 메트릭 분석 (Coming Soon)
+                </button>
                 <p className="text-xs text-gray-500 mt-1">WPM, Pause, Fluency 통계</p>
               </li>
               <li>
@@ -106,21 +106,21 @@ export default function AdminSpeakingDrillsPage() {
             <h2 className="text-2xl font-bold text-purple-600 mb-4">⚙️ 시스템 설정</h2>
             <ul className="space-y-3">
               <li>
-                <Link
-                  href="/admin/speaking-drills/settings"
-                  className="text-purple-600 hover:text-purple-800 font-semibold"
+                <button
+                  disabled
+                  className="text-gray-400 font-semibold cursor-not-allowed"
                 >
-                  → 기본 설정
-                </Link>
+                  → 기본 설정 (Coming Soon)
+                </button>
                 <p className="text-xs text-gray-500 mt-1">점수 기준, 타이머 설정</p>
               </li>
               <li>
-                <Link
-                  href="/admin/speaking-drills/feedback"
-                  className="text-purple-600 hover:text-purple-800 font-semibold"
+                <button
+                  disabled
+                  className="text-gray-400 font-semibold cursor-not-allowed"
                 >
-                  → 피드백 템플릿
-                </Link>
+                  → 피드백 템플릿 (Coming Soon)
+                </button>
                 <p className="text-xs text-gray-500 mt-1">AI 자동 피드백 설정</p>
               </li>
             </ul>
