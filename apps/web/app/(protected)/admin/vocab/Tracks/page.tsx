@@ -1,35 +1,30 @@
 // apps/web/app/(protected)/admin/vocab/Tracks/page.tsx
-import TrackAssignClient from "./_client/TrackAssignClient";
-import GroupAssignClient from "./_client/GroupAssignClient";
 import { listAcademyStudentsAction, listVocabTracksAction } from "./actions";
 
 export default async function AdminVocabTracksAssignPage({
   searchParams,
 }: {
-  searchParams?: { tab?: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  console.log("[Tracks] Page rendering...");
+
   const tab = searchParams?.tab === "group" ? "group" : "single";
 
-  let studentsRes: any = { ok: false, error: "Loading..." };
-  let tracksRes: any = { ok: false, error: "Loading..." };
+  console.log("[Tracks] Loading students and tracks...");
 
-  try {
-    [studentsRes, tracksRes] = await Promise.all([
-      listAcademyStudentsAction(),
-      listVocabTracksAction(),
-    ]);
-  } catch (e: any) {
-    console.error("[AdminVocabTracksAssignPage] Load error:", e);
-    return (
-      <div className="mx-auto w-full max-w-5xl p-6">
-        <div className="rounded-xl border border-red-300 bg-red-50 p-4">
-          <h2 className="text-lg font-bold text-red-900 mb-2">❌ 데이터 로드 실패</h2>
-          <p className="text-sm text-red-800 mb-2">{e?.message ?? "Unknown error"}</p>
-          <p className="text-xs text-red-700">페이지를 새로고침하거나 나중에 다시 시도하세요.</p>
-        </div>
-      </div>
-    );
-  }
+  const studentsRes = await listAcademyStudentsAction().catch((e) => ({
+    ok: false as const,
+    error: `Students error: ${e?.message ?? "Unknown"}`,
+    rows: [],
+  }));
+
+  const tracksRes = await listVocabTracksAction().catch((e) => ({
+    ok: false as const,
+    error: `Tracks error: ${e?.message ?? "Unknown"}`,
+    rows: [],
+  }));
+
+  console.log("[Tracks] Students:", studentsRes.ok, "Tracks:", tracksRes.ok);
 
   const students = studentsRes.ok ? studentsRes.rows : [];
   const tracks = tracksRes.ok ? tracksRes.rows : [];
@@ -74,10 +69,17 @@ export default async function AdminVocabTracksAssignPage({
         </div>
       </div>
 
-      {tab === "single" ? (
-        <TrackAssignClient initialStudents={students} initialTracks={tracks} />
+      {/* 조건부 렌더링 - 에러 시 로딩 상태 표시 */}
+      {!studentsRes.ok || !tracksRes.ok ? (
+        <div className="rounded-xl border border-blue-300 bg-blue-50 p-4">
+          <div className="font-semibold text-blue-900">⚠️ 데이터 로딩 중...</div>
+          <p className="text-sm text-blue-700 mt-1">일부 데이터를 로드할 수 없습니다. 페이지를 새로고침하세요.</p>
+        </div>
       ) : (
-        <GroupAssignClient initialStudents={students} initialTracks={tracks} />
+        <>
+          {tab === "single" && <div>개인 배포 섹션 (아직 구현 예정)</div>}
+          {tab === "group" && <div>그룹 배포 섹션 (아직 구현 예정)</div>}
+        </>
       )}
     </div>
   );
