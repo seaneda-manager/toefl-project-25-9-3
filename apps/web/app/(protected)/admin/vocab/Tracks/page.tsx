@@ -1,4 +1,6 @@
 // apps/web/app/(protected)/admin/vocab/Tracks/page.tsx
+import TrackAssignClient from "./_client/TrackAssignClient";
+import GroupAssignClient from "./_client/GroupAssignClient";
 import { listAcademyStudentsAction, listVocabTracksAction } from "./actions";
 
 export default async function AdminVocabTracksAssignPage({
@@ -69,17 +71,10 @@ export default async function AdminVocabTracksAssignPage({
         </div>
       </div>
 
-      {/* 조건부 렌더링 - 에러 시 로딩 상태 표시 */}
-      {!studentsRes.ok || !tracksRes.ok ? (
-        <div className="rounded-xl border border-blue-300 bg-blue-50 p-4">
-          <div className="font-semibold text-blue-900">⚠️ 데이터 로딩 중...</div>
-          <p className="text-sm text-blue-700 mt-1">일부 데이터를 로드할 수 없습니다. 페이지를 새로고침하세요.</p>
-        </div>
+      {tab === "single" ? (
+        <TrackAssignClient initialStudents={students} initialTracks={tracks} />
       ) : (
-        <>
-          {tab === "single" && <div>개인 배포 섹션 (아직 구현 예정)</div>}
-          {tab === "group" && <div>그룹 배포 섹션 (아직 구현 예정)</div>}
-        </>
+        <GroupAssignClient initialStudents={students} initialTracks={tracks} />
       )}
     </div>
   );
