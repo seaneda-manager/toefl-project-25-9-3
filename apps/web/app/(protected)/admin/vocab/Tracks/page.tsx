@@ -10,10 +10,26 @@ export default async function AdminVocabTracksAssignPage({
 }) {
   const tab = searchParams?.tab === "group" ? "group" : "single";
 
-  const [studentsRes, tracksRes] = await Promise.all([
-    listAcademyStudentsAction(),
-    listVocabTracksAction(),
-  ]);
+  let studentsRes: any = { ok: false, error: "Loading..." };
+  let tracksRes: any = { ok: false, error: "Loading..." };
+
+  try {
+    [studentsRes, tracksRes] = await Promise.all([
+      listAcademyStudentsAction(),
+      listVocabTracksAction(),
+    ]);
+  } catch (e: any) {
+    console.error("[AdminVocabTracksAssignPage] Load error:", e);
+    return (
+      <div className="mx-auto w-full max-w-5xl p-6">
+        <div className="rounded-xl border border-red-300 bg-red-50 p-4">
+          <h2 className="text-lg font-bold text-red-900 mb-2">❌ 데이터 로드 실패</h2>
+          <p className="text-sm text-red-800 mb-2">{e?.message ?? "Unknown error"}</p>
+          <p className="text-xs text-red-700">페이지를 새로고침하거나 나중에 다시 시도하세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   const students = studentsRes.ok ? studentsRes.rows : [];
   const tracks = tracksRes.ok ? tracksRes.rows : [];
