@@ -25,12 +25,21 @@ export async function GET(
     const testPayload = data.payload as any;
     let allItems = testPayload.modules?.flatMap((m: any) => m.items || []) || [];
 
-    // stage2Pool이 있으면 hard/easy items도 포함
+    // stage2Pool이 있으면 hard/easy items도 포함 (stage prefix 추가)
     if (testPayload.stage2Pool) {
+      const addItemsWithStagePrefix = (items: any[], stage: string) => {
+        return (items || []).map((item: any) => ({
+          ...item,
+          questions: (item.questions || []).map((q: any) => ({
+            ...q,
+            id: `${stage}_${q.id}`,
+          })),
+        }));
+      };
       allItems = [
         ...allItems,
-        ...(testPayload.stage2Pool.hard?.items || []),
-        ...(testPayload.stage2Pool.easy?.items || []),
+        ...addItemsWithStagePrefix(testPayload.stage2Pool.hard?.items, "hard"),
+        ...addItemsWithStagePrefix(testPayload.stage2Pool.easy?.items, "easy"),
       ];
     }
 
