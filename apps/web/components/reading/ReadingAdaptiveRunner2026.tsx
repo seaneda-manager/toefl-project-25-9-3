@@ -380,8 +380,12 @@ function AcademicPassageSplitView({
                 {qIndex + 1}. {currentQ.stem}
               </p>
               <div className="space-y-2">
-                {currentQ.choices.map((c) => {
+                {currentQ.choices.map((c, idx) => {
                   const selected = answered === c.id;
+                  const isInsertion = !!(currentQ as any).meta?.insertion;
+                  const choiceLabel = isInsertion
+                    ? ["1st", "2nd", "3rd", "4th"][idx] || c.text
+                    : c.text;
                   return (
                     <label
                       key={c.id}
@@ -398,7 +402,22 @@ function AcademicPassageSplitView({
                         onChange={() => onAnswer(item, currentQ.id, c.id)}
                         className="mt-0.5 shrink-0 accent-emerald-600"
                       />
-                      <span>{c.text}</span>
+                      <span>
+                        {isInsertion && (
+                          <>
+                            <span className="font-semibold">{choiceLabel}</span>
+                            {(currentQ as any).meta?.insertion?.anchors?.[idx] && (
+                              <>
+                                <span className="mx-2">■</span>
+                                <span className="text-xs text-gray-600">
+                                  {(currentQ as any).meta.insertion.anchors[idx]}
+                                </span>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {!isInsertion && choiceLabel}
+                      </span>
                     </label>
                   );
                 })}
@@ -535,8 +554,12 @@ function DailyLifeSplitView({
                 {qIndex + 1}. {currentQ.stem}
               </p>
               <div className="space-y-2">
-                {currentQ.choices.map((c) => {
+                {currentQ.choices.map((c, idx) => {
                   const selected = answered === c.id;
+                  const isInsertion = !!(currentQ as any).meta?.insertion;
+                  const choiceLabel = isInsertion
+                    ? ["1st", "2nd", "3rd", "4th"][idx] || c.text
+                    : c.text;
                   return (
                     <label
                       key={c.id}
@@ -553,7 +576,22 @@ function DailyLifeSplitView({
                         onChange={() => onAnswer(item, currentQ.id, c.id)}
                         className="mt-0.5 shrink-0 accent-emerald-600"
                       />
-                      <span>{c.text}</span>
+                      <span>
+                        {isInsertion && (
+                          <>
+                            <span className="font-semibold">{choiceLabel}</span>
+                            {(currentQ as any).meta?.insertion?.anchors?.[idx] && (
+                              <>
+                                <span className="mx-2">■</span>
+                                <span className="text-xs text-gray-600">
+                                  {(currentQ as any).meta.insertion.anchors[idx]}
+                                </span>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {!isInsertion && choiceLabel}
+                      </span>
                     </label>
                   );
                 })}
