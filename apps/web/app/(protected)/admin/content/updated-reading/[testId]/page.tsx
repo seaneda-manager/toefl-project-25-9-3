@@ -59,6 +59,13 @@ export default async function Reading2026EditPage({ params }: PageProps) {
               목록으로
             </Link>
             <span>·</span>
+            <Link
+              href={`/admin/content/updated-reading/explanations?testId=${testId}`}
+              className="rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-700 hover:border-blue-400 hover:bg-blue-100"
+            >
+              📝 설명 관리
+            </Link>
+            <span>·</span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700">
               <BookOpenCheck className="h-3.5 w-3.5" />
               Admin · Reading 2026 · Edit
