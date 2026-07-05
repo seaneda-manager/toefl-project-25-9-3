@@ -5,15 +5,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // body는 배열이어야 함: [{question_id, test_id, ...}, ...]
-    if (!Array.isArray(body)) {
-      return NextResponse.json(
-        { ok: false, error: "Body must be an array of explanations" },
-        { status: 400 }
-      );
-    }
+    // 단일 객체면 배열로 감싸기
+    const items = Array.isArray(body) ? body : [body];
 
-    if (body.length === 0) {
+    if (items.length === 0) {
       return NextResponse.json(
         { ok: false, error: "Empty array" },
         { status: 400 }
@@ -23,7 +18,7 @@ export async function POST(req: Request) {
     const supabase = await getServerSupabase();
 
     // 검증: 모든 항목이 question_id와 test_id를 가져야 함
-    const invalid = body.filter((item: any) => !item.question_id || !item.test_id);
+    const invalid = items.filter((item: any) => !item.question_id || !item.test_id);
     if (invalid.length > 0) {
       return NextResponse.json(
         {
@@ -38,7 +33,7 @@ export async function POST(req: Request) {
     const { error } = await supabase
       .from("reading_question_explanations")
       .upsert(
-        body.map((item: any) => ({
+        items.map((item: any) => ({
           question_id: item.question_id,
           test_id: item.test_id,
           question_interpretation: item.question_interpretation || null,
@@ -60,8 +55,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      message: `${body.length}개 설명 업로드 완료`,
-      count: body.length,
+      message: `${items.length}개 설명 업로드 완료`,
+      count: items.length,
     });
   } catch (err: any) {
     console.error("[bulk-upload] error:", err);
