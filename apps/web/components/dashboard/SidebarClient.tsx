@@ -199,7 +199,7 @@ export default function SidebarClient({ role, program = null }: Props) {
       return { '콘텐츠': true, '학생 관리': true, '설정': true };
     }
     return {
-      '내신': true, 'Hi-내신': true, '어휘': true,
+      '내신': true, 'Hi-내신': true, 'Jr.': true, '어휘': true,
       '학습': true, '내 현황': true,
       '내 학습': true, '학습 콘텐츠': true,
       '설정': true,
@@ -246,6 +246,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-reading',   label: 'Reading',   icon: BookOpen },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-listening', label: 'Listening', icon: Headphones },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-speaking',  label: 'Speaking',  icon: Mic },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/speaking-drills',           label: '🎮 Speaking 훈련',  icon: Mic },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-writing',   label: 'Writing',   icon: PenLine },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',      label: 'Grammar',   icon: BookText },
 
@@ -253,8 +254,9 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '내신관리' as NavSection, href: '/admin/hi-naesin/passages',  label: '고등 지문',      icon: FileText },
         { section: '내신관리' as NavSection, href: '/admin/middle-naesin/units', label: '중학 단원·드릴', icon: GraduationCap },
 
-        { section: 'Jr.' as NavSection, href: '/admin/content/listening/jr', label: 'Listening', icon: Headphones },
-        { section: 'Jr.' as NavSection, href: '/admin/naesin/passages',      label: '지문 관리',  icon: FileText },
+        { section: 'Jr.' as NavSection, href: '/admin/content/listening/jr', label: 'Listening',     icon: Headphones },
+        { section: 'Jr.' as NavSection, href: '/admin/naesin/passages',      label: '지문 관리',      icon: FileText },
+        { section: 'Jr.' as NavSection, href: '/admin/naesin/drill-demo',    label: '드릴 미리보기',  icon: PlayCircle },
         { section: 'Jr.' as NavSection, label: '커리큘럼', disabled: true },
 
         { section: '어휘관리' as NavSection, href: '/admin/vocab/sets',        label: '단어 책 관리',    icon: Library },
@@ -286,6 +288,7 @@ export default function SidebarClient({ role, program = null }: Props) {
       return [
         { section: '콘텐츠',  href: '/home',  label: '홈' },
         { section: '콘텐츠',  href: '/vocab', label: '단어 학습' },
+        { section: '콘텐츠',  href: '/teacher/speaking-drills', label: '🎮 Speaking 훈련' },
 
         { section: '학생 관리', href: '/teacher/home',     label: '선생님 홈' },
         { section: '학생 관리', href: '/teacher/tasks',    label: '할 일 관리' },
@@ -305,6 +308,8 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리' },
 
         { section: '내신' as NavSection, href: '/naesin/middle', label: '중학 내신 드릴' },
+
+        { section: 'Jr.' as NavSection, href: '/jr/drill', label: 'Jr. 드릴' },
 
         { section: '학습', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'Grammar' },
@@ -329,6 +334,8 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '학습', href: '/updated-reading',        label: 'Reading',   skill: 'reading'   as SkillColor },
         { section: '학습', href: '/updated-listening',      label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/speaking-2026/study',    label: 'Speaking',  skill: 'speaking'  as SkillColor },
+        { section: '학습', href: '/speaking-2026/drills',   label: '🎮 Speaking 훈련', skill: 'speaking' as SkillColor },
+        { section: '학습', href: '/speaking-2026/shadowing', label: '쉐도잉 게임' },
         { section: '학습', href: '/updated-writing/test',   label: 'Writing',   skill: 'writing'   as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram' },
         { section: '학습', href: '/vocab',                 label: '단어 학습' },
@@ -364,6 +371,7 @@ export default function SidebarClient({ role, program = null }: Props) {
       { section: '학습 콘텐츠', href: '/updated-reading/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
       { section: '학습 콘텐츠', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
       { section: '학습 콘텐츠', href: '/speaking-2026/study',     label: 'Speaking',  skill: 'speaking'  as SkillColor },
+      { section: '학습 콘텐츠', href: '/speaking-2026/shadowing', label: '쉐도잉 게임' },
       { section: '학습 콘텐츠', href: '/updated-writing/test',    label: 'Writing',   skill: 'writing'   as SkillColor },
 
       { section: '설정', href: '/settings', label: '설정' },
