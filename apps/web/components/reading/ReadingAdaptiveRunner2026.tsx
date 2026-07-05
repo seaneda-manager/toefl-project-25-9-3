@@ -457,8 +457,12 @@ function DailyLifeSplitView({
 
   // DEBUG: contentHtml 형식 확인
   if (item.contextType === "email") {
-    console.log("EMAIL CONTENT:", plainText.substring(0, 500));
-    console.log("EMAIL LINES:", plainText.split("\n").slice(0, 10));
+    console.log("looksLikeHtml:", looksLikeHtml);
+    console.log("RAW contentHtml:", item.contentHtml.substring(0, 300));
+    console.log("plainText (stripped):", plainText.substring(0, 300));
+    console.log("plainText length:", plainText.length);
+    console.log("Has \\n:", plainText.includes("\n"));
+    console.log("Has <br>:", plainText.includes("<br"));
   }
 
   const parsedEmail = !looksLikeHtml && item.contextType === "email" ? parseEmailContent(plainText) : null;
@@ -638,60 +642,97 @@ function parseEmailContent(raw: string): {
   closing: string;
   signature: string[];
 } | null {
-  const lines = raw.split(/\r?\n/);
-  const headerRe = /^(Subject|Date|To|From|Cc|Bcc)\s*:\s*(.*)$/i;
-  const headers: { label: string; value: string }[] = [];
-  let i = 0;
-
-  // 1. Subject와 다른 헤더 파싱
+  // 한 줄 형식 처리: indexOf로 직접 위치 찾기
   let subject = "";
-  while (i < lines.length) {
-    if (lines[i].trim() === "") { i++; continue; }
-    const m = lines[i].match(headerRe);
-    if (!m) break;
-    const label = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
-    const value = m[2].trim();
-    if (label === "Subject") {
-      subject = value;
-    } else {
-      headers.push({ label, value });
+  let dateVal = "";
+  let toVal = "";
+  let fromVal = "";
+
+  // Subject 추출
+  const subjectIdx = raw.indexOf("Subject:");
+  console.log("DEBUG_SUBJECT_IDX:", subjectIdx);
+  if (subjectIdx !== -1) {
+    const dateIdx = raw.indexOf("Date:", subjectIdx);
+    console.log("DEBUG_DATE_IDX:", dateIdx);
+    if (dateIdx !== -1) {
+      subject = raw.substring(subjectIdx + 8, dateIdx).trim();
+      console.log("DEBUG_SUBJECT_EXTRACTED:", subject.substring(0, 50));
     }
-    i++;
   }
 
-  if (headers.length === 0 && !subject) return null;
-
-  // 2. Salutation 파싱 (Dear ...,)
-  let salutation = "";
-  while (i < lines.length && lines[i].trim() === "") i++;
-  if (i < lines.length && lines[i].match(/^Dear\s+/i)) {
-    salutation = lines[i].trim();
-    i++;
+  // Date 추출
+  const dateIdx = raw.indexOf("Date:");
+  if (dateIdx !== -1) {
+    const toIdx = raw.indexOf("To:", dateIdx);
+    if (toIdx !== -1) {
+      dateVal = raw.substring(dateIdx + 5, toIdx).trim();
+    }
   }
 
-  // 3. Body 파싱 (Closing 전까지)
-  const bodyLines: string[] = [];
-  while (i < lines.length) {
-    const line = lines[i].trim();
-    if (line.match(/^(Sincerely|Best regards|Regards|Thank you|Yours|Warm regards|Respectfully)/i)) break;
-    if (line) bodyLines.push(lines[i]);
-    i++;
+  // To 추출
+  const toIdx = raw.indexOf("To:");
+  if (toIdx !== -1) {
+    const fromIdx = raw.indexOf("From:", toIdx);
+    if (fromIdx !== -1) {
+      toVal = raw.substring(toIdx + 3, fromIdx).trim();
+    }
   }
-  const body = bodyLines.join("\n").trim();
 
-  // 4. Closing과 Signature 파싱
+  // From 추출
+  const fromIdx = raw.indexOf("From:");
+  if (fromIdx !== -1) {
+    const dearIdx = raw.indexOf("Dear", fromIdx);
+    if (dearIdx !== -1) {
+      fromVal = raw.substring(fromIdx + 5, dearIdx).trim();
+    }
+  }
+
+  const headers: { label: string; value: string }[] = [];
+  if (dateVal) headers.push({ label: "Date", value: dateVal });
+  if (toVal) headers.push({ label: "To", value: toVal });
+  if (fromVal) headers.push({ label: "From", value: fromVal });
+
+  if (!subject && headers.length === 0) return null;
+
+  // Dear부터 본문 추출
+  const dearIdx = raw.indexOf("Dear");
+  if (dearIdx === -1) return null;
+
+  const dearMatch = raw.substring(dearIdx).match(/^Dear\s+[^,]*,/i);
+  const salutation = dearMatch ? dearMatch[0] : "";
+
+  // Sincerely 찾기 (명확한 closing 패턴만 - "Thank you"는 제외)
+  const sincIdx = raw.search(/\b(Sincerely|Best regards|Regards|Yours|Warm regards|Respectfully)[,.]?\b/i);
+  console.log("DEBUG_SINCERELY_IDX:", sincIdx);
+  console.log("DEBUG_SINCERELY_CONTEXT:", raw.substring(sincIdx - 5, sincIdx + 20));
+  console.log("DEBUG_DEAR_IDX:", dearIdx, "DEAR_MATCH:", dearMatch);
+  console.log("DEBUG_RAW_LENGTH:", raw.length);
+  console.log("DEBUG_RAW_FULL:", raw);
+
+  let body = "";
   let closing = "";
-  const signature: string[] = [];
-  while (i < lines.length) {
-    const line = lines[i].trim();
-    if (!closing && line.match(/^(Sincerely|Best regards|Regards|Thank you|Yours|Warm regards|Respectfully)/i)) {
-      closing = line;
-    } else if (closing && line) {
-      signature.push(lines[i].trim());
+  let signature: string[] = [];
+
+  if (sincIdx !== -1) {
+    const bodyStart = dearIdx + (dearMatch ? dearMatch[0].length : 0);
+    console.log("DEBUG_BODY_START:", bodyStart, "BODY_END:", sincIdx);
+    body = raw.substring(bodyStart, sincIdx).trim();
+    console.log("DEBUG_BODY_EXTRACTED:", body.substring(0, 50));
+
+    const closingMatch = raw.substring(sincIdx).match(/^(Sincerely|Best regards|Regards|Thank you|Yours|Warm regards|Respectfully)\b/i);
+    closing = closingMatch ? closingMatch[0] : "";
+
+    const afterClosing = raw.substring(sincIdx + (closingMatch ? closingMatch[0].length : 0)).trim();
+    if (afterClosing) {
+      signature = afterClosing.split(/\s{2,}/).filter(s => s.length > 0).slice(0, 3);
     }
-    i++;
+  } else {
+    body = raw.substring(dearIdx + (dearMatch ? dearMatch[0].length : 0)).trim();
   }
 
+  console.log("PARSE_EMAIL_SUBJECT:", subject);
+  console.log("PARSE_EMAIL_SALUTATION:", salutation);
+  console.log("PARSE_EMAIL_BODY:", body.substring(0, 100));
   return { subject, headers, salutation, body, closing, signature };
 }
 
@@ -706,7 +747,7 @@ function EmailCard({
   if (!subject && headers.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm font-normal">
       {/* 제목 */}
       {subject && (
         <div className="border-b bg-white px-4 py-3">
@@ -720,7 +761,7 @@ function EmailCard({
           <div className="space-y-1 text-xs text-gray-600">
             {headers.map((h) => (
               <div key={h.label}>
-                <span className="font-medium text-gray-700">{h.label}:</span> <span className="text-gray-800">{h.value}</span>
+                <span className="font-normal text-gray-700">{h.label}:</span> <span className="font-normal text-gray-800">{h.value}</span>
               </div>
             ))}
           </div>
@@ -728,7 +769,7 @@ function EmailCard({
       )}
 
       {/* 본문 */}
-      <div className="px-6 py-5 text-sm leading-relaxed text-gray-800 space-y-3">
+      <div className="px-6 py-5 text-sm leading-relaxed text-gray-800 space-y-3 font-normal">
         {salutation && (
           <div className="font-medium">{salutation}</div>
         )}
@@ -753,31 +794,29 @@ function EmailCard({
 }
 
 function parseTextMessageChain(raw: string): { messages: Array<{ sender: string; time: string; text: string }> } | null {
-  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
   const messages: Array<{ sender: string; time: string; text: string }> = [];
-  const msgRe = /^(.+?)\s*\[([^\]]+)\]\s*$/;
 
-  let i = 0;
-  while (i < lines.length) {
-    const match = lines[i].match(msgRe);
+  // 먼저 발신자명[시간] 패턴 앞에 줄바꿈 삽입 (정규화)
+  // "Name [Time]" → "\nName [Time]"
+  const normalized = raw.replace(/([A-Z][a-z]+ (?:[A-Z][a-z]+)*) \[([^\]]+)\]/g, '\n$1 [$2]');
+  const lines = normalized.split('\n').filter(l => l.trim());
+
+  // 줄바꿈 기반 파싱
+  const msgRe = /^(.+?)\s+\[([^\]]+)\]\s*(.*)$/;
+  for (const line of lines) {
+    const match = line.match(msgRe);
     if (match) {
       const sender = match[1].trim();
       const time = match[2].trim();
-      i++;
+      let text = match[3].trim();
 
-      // 다음 메시지 헤더 또는 끝까지가 본문
-      let text = "";
-      while (i < lines.length) {
-        if (lines[i].match(msgRe)) break;
-        text += (text ? "\n" : "") + lines[i];
-        i++;
-      }
+      // 텍스트 끝에 붙어있는 다음 발신자명 제거
+      // 예: "...our main points.Emily Wong" → "...our main points."
+      const cleanedText = text.replace(/([.!?])\s*([A-Z][a-z]+ (?:[A-Z][a-z]+)*)$/, '$1');
 
-      if (text) {
-        messages.push({ sender, time, text: text.trim() });
+      if (sender && time && cleanedText) {
+        messages.push({ sender, time, text: cleanedText });
       }
-    } else {
-      i++;
     }
   }
 
@@ -793,7 +832,7 @@ function TextMessageChainCard({ messages }: { messages: Array<{ sender: string; 
       </div>
 
       {/* 메시지 목록 */}
-      <div className="space-y-3 p-4 h-96 overflow-y-auto bg-gray-50">
+      <div className="space-y-6 p-4 h-96 overflow-y-auto bg-gray-50">
         {messages.map((msg, i) => (
           <div key={i} className="space-y-1">
             <div className="text-xs font-semibold text-gray-700">
