@@ -23,7 +23,16 @@ export async function GET(
     }
 
     const testPayload = data.payload as any;
-    const allItems = testPayload.modules?.flatMap((m: any) => m.items || []) || [];
+    let allItems = testPayload.modules?.flatMap((m: any) => m.items || []) || [];
+
+    // stage2Pool이 있으면 hard/easy items도 포함
+    if (testPayload.stage2Pool) {
+      allItems = [
+        ...allItems,
+        ...(testPayload.stage2Pool.hard?.items || []),
+        ...(testPayload.stage2Pool.easy?.items || []),
+      ];
+    }
 
     // 모든 questions 추출 (중복 제거)
     const questions: Array<{
