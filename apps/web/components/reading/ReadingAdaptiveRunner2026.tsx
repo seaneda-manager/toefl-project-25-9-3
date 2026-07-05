@@ -796,9 +796,8 @@ function EmailCard({
 function parseTextMessageChain(raw: string): { messages: Array<{ sender: string; time: string; text: string }> } | null {
   const messages: Array<{ sender: string; time: string; text: string }> = [];
 
-  // 먼저 발신자명[시간] 패턴 앞에 줄바꿈 삽입 (정규화)
-  // "Name [Time]" → "\nName [Time]"
-  const normalized = raw.replace(/([A-Z][a-z]+ (?:[A-Z][a-z]+)*) \[([^\]]+)\]/g, '\n$1 [$2]');
+  // 발신자명[시간] 패턴 앞에 줄바꿈 삽입 (정규화)
+  const normalized = raw.replace(/([A-Z][a-zA-Z]+ (?:[A-Z][a-zA-Z]+)*)\s*\[([^\]]+)\]/g, '\n$1 [$2]');
   const lines = normalized.split('\n').filter(l => l.trim());
 
   // 줄바꿈 기반 파싱
@@ -811,8 +810,7 @@ function parseTextMessageChain(raw: string): { messages: Array<{ sender: string;
       let text = match[3].trim();
 
       // 텍스트 끝에 붙어있는 다음 발신자명 제거
-      // 예: "...our main points.Emily Wong" → "...our main points."
-      const cleanedText = text.replace(/([.!?])\s*([A-Z][a-z]+ (?:[A-Z][a-z]+)*)$/, '$1');
+      const cleanedText = text.replace(/([.!?])\s*([A-Z][a-zA-Z]+ (?:[A-Z][a-zA-Z]+)*)$/, '$1');
 
       if (sender && time && cleanedText) {
         messages.push({ sender, time, text: cleanedText });
