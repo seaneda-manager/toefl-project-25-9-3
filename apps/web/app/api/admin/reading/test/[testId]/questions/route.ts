@@ -25,7 +25,7 @@ export async function GET(
     const testPayload = data.payload as any;
     const allItems = testPayload.modules?.flatMap((m: any) => m.items || []) || [];
 
-    // 모든 questions 추출
+    // 모든 questions 추출 (중복 제거)
     const questions: Array<{
       id: string;
       stem: string;
@@ -34,6 +34,7 @@ export async function GET(
       contentHtml?: string;
       contextType?: string;
     }> = [];
+    const seenQuestionIds = new Set<string>();
 
     for (const item of allItems) {
       if (item.taskKind === "complete_words") {
@@ -41,6 +42,11 @@ export async function GET(
       } else {
         const qs = item.questions || [];
         for (const q of qs) {
+          // 이미 본 question_id는 스킵
+          if (seenQuestionIds.has(q.id)) {
+            continue;
+          }
+          seenQuestionIds.add(q.id);
           questions.push({
             id: q.id,
             stem: q.stem,
