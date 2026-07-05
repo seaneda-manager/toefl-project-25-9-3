@@ -246,7 +246,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-reading',   label: 'Reading',   icon: BookOpen },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-listening', label: 'Listening', icon: Headphones },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-speaking',  label: 'Speaking',  icon: Mic },
-        { section: 'Updated TOEFL' as NavSection, href: '/admin/speaking-drills',           label: '🎮 Speaking 훈련',  icon: Mic },
+        { section: 'Updated TOEFL' as NavSection, href: '/admin/speaking-drills',           label: '🎮 Speaking 훈련',  icon: PlayCircle },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/updated-writing',   label: 'Writing',   icon: PenLine },
         { section: 'Updated TOEFL' as NavSection, href: '/admin/content/grammar-2026',      label: 'Grammar',   icon: BookText },
 
