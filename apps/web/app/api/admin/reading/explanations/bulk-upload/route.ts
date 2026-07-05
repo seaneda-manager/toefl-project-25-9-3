@@ -30,11 +30,12 @@ export async function POST(req: Request) {
     }
 
     // upsert로 저장 (기존 항목은 업데이트, 새 항목은 생성)
+    // hard_/easy_ prefix 제거
     const { error } = await supabase
       .from("reading_question_explanations")
       .upsert(
         items.map((item: any) => ({
-          question_id: item.question_id,
+          question_id: item.question_id.replace(/^(hard|easy)_/, ""),
           test_id: item.test_id,
           question_interpretation: item.question_interpretation || null,
           evidence_interpretation: item.evidence_interpretation || null,
