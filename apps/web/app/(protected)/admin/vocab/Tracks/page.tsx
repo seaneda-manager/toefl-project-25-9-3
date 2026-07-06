@@ -39,13 +39,17 @@ export default async function AdminVocabTracksAssignPage({
 
   // 선택된 세트의 트랙 조회
   if (!selectedTrackId && selectedSetIds.length > 0) {
-    const setsTracksRes = await getTracksForSetsAction(selectedSetIds).catch(() => ({
-      ok: false,
-      trackIds: [],
-    }));
+    console.log("[Tracks] Getting tracks for sets:", selectedSetIds);
+    const setsTracksRes = await getTracksForSetsAction(selectedSetIds).catch((err) => {
+      console.log("[Tracks] Error getting tracks:", err);
+      return { ok: false, trackIds: [] };
+    });
+    console.log("[Tracks] setsTracksRes:", setsTracksRes);
     if (setsTracksRes.ok && setsTracksRes.trackIds.length > 0) {
       selectedTrackId = setsTracksRes.trackIds[0];
       console.log("[Tracks] Auto-selected track from sets:", selectedTrackId);
+    } else {
+      console.log("[Tracks] No track found for sets");
     }
   }
 
