@@ -26,32 +26,29 @@ export async function assignSetsToStudentsAction(params: {
     const results = [];
 
     for (const studentId of params.studentIds) {
-      // 학생의 현재 할당된 세트 조회
-      const { data: existingData } = await supabase
-        .from("academy_students")
-        .select("vocab_set_ids")
-        .eq("id", studentId)
-        .single();
+      for (const setId of params.setIds) {
+        console.log(`[assignSets] Creating assignment: student=${studentId}, set=${setId}`);
 
-      const currentSetIds = Array.isArray(existingData?.vocab_set_ids)
-        ? existingData.vocab_set_ids
-        : [];
+        // student_vocab_assignments 테이블에 레코드 추가
+        const { error } = await supabase
+          .from("student_vocab_assignments")
+          .insert({
+            student_id: studentId,
+            vocab_set_id: setId,
+          });
 
-      // 새로운 세트들 추가 (중복 제거)
-      const updatedSetIds = Array.from(
-        new Set([...currentSetIds, ...params.setIds])
-      );
-
-      // 학생 업데이트
-      const { error } = await supabase
-        .from("academy_students")
-        .update({ vocab_set_ids: updatedSetIds })
-        .eq("id", studentId);
-
-      if (error) {
-        results.push({ studentId, ok: false, error: error.message });
-      } else {
-        results.push({ studentId, ok: true });
+        if (error) {
+          console.error(`[assignSets] Failed for student ${studentId}, set ${setId}:`, {
+            code: error.code,
+            message: error.message,
+            details: (error as any).details,
+            hint: (error as any).hint,
+          });
+          results.push({ studentId, setId, ok: false, error: error.message });
+        } else {
+          console.log(`[assignSets] Successfully assigned set ${setId} to student ${studentId}`);
+          results.push({ studentId, setId, ok: true });
+        }
       }
     }
 
