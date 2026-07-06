@@ -71,10 +71,25 @@ export default async function AdminVocabTracksAssignPage({
         </div>
       </div>
 
-      {tab === "single" ? (
-        <TrackAssignClient initialStudents={students} initialTracks={tracks} />
-      ) : (
-        <GroupAssignClient initialStudents={students} initialTracks={tracks} />
+      {/* 데이터 로드 실패 시 경고 */}
+      {(!studentsRes.ok || !tracksRes.ok) && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 mb-4">
+          <div className="font-semibold text-amber-900">⚠️ 일부 데이터 로드 실패</div>
+          {!studentsRes.ok && <p className="text-sm text-amber-700">학생 데이터: {studentsError}</p>}
+          {!tracksRes.ok && <p className="text-sm text-amber-700">트랙 데이터: {tracksError}</p>}
+          <p className="text-xs text-amber-600 mt-2">페이지를 새로고침하거나 나중에 다시 시도하세요.</p>
+        </div>
+      )}
+
+      {/* 데이터가 있을 때만 렌더링 */}
+      {studentsRes.ok && tracksRes.ok && (
+        <>
+          {tab === "single" ? (
+            <TrackAssignClient initialStudents={students} initialTracks={tracks} />
+          ) : (
+            <GroupAssignClient initialStudents={students} initialTracks={tracks} />
+          )}
+        </>
       )}
     </div>
   );
