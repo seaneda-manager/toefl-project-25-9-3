@@ -8,12 +8,19 @@ export const dynamic = "force-dynamic";
 export default async function AdminVocabSetsPage() {
   const supabase = await getServerSupabase();
 
-  const { data, error } = await supabase
-    .from("vocab_sets_with_counts")
-    .select("id, title, description, grade_band, level, source_label, word_count, item_count, created_at, track_id")
-    .order("created_at", { ascending: false });
+  const [setsRes, studentsRes] = await Promise.all([
+    supabase
+      .from("vocab_sets_with_counts")
+      .select("id, title, description, grade_band, level, source_label, word_count, item_count, created_at, track_id")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("academy_students")
+      .select("id, auth_user_id, login_id, full_name, grade, school")
+      .order("full_name", { ascending: true }),
+  ]);
 
-  const rows = data ?? [];
+  const rows = setsRes.data ?? [];
+  const students = studentsRes.data ?? [];
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
@@ -60,7 +67,7 @@ export default async function AdminVocabSetsPage() {
       </div>
 
       {/* 테이블 (클라이언트 컴포넌트로 이동) */}
-      <SetsTableClient rows={rows} />
+      <SetsTableClient rows={rows} students={students} />
 
       <div className="flex gap-3 text-sm">
         <Link href="/admin/vocab/import" className="text-violet-600 hover:underline">→ CSV 업로드</Link>
