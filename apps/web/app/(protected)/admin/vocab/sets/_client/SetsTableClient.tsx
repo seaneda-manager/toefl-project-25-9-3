@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect, useRef } from "react";
+import { assignSetsToStudentsAction } from "../actions";
 
 type VocabSet = {
   id: string;
@@ -105,11 +106,19 @@ export default function SetsTableClient({ rows, students }: Props) {
     setAssignBusy(true);
 
     try {
-      // TODO: 배정 API 호출
-      // 임시로 성공 메시지만 표시
-      setAssignMsg(`✅ ${selectedSetCount}개 세트를 ${selectedStudentCount}명에게 배정했습니다`);
-      // setSelectedSetIds(new Set());
-      // setSelectedStudentIds(new Set());
+      const res = await assignSetsToStudentsAction({
+        setIds: Array.from(selectedSetIds),
+        studentIds: Array.from(selectedStudentIds),
+      });
+
+      if (res.ok) {
+        setAssignMsg(res.message);
+        setSelectedSetIds(new Set());
+        setSelectedStudentIds(new Set());
+        setStudentSearch("");
+      } else {
+        setAssignMsg(`❌ ${res.message}`);
+      }
     } finally {
       setAssignBusy(false);
     }
