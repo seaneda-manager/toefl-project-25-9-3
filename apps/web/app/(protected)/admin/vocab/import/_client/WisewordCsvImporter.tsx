@@ -8,15 +8,10 @@ import {
   importWisewordWordsFromCsvText,
   importWisewordWordsAndCreateSetFromCsvText,
   type ImportWisewordCsvActionResult,
+  type TrackLite,
 } from "../wiseword-actions";
 
 type Mode = "CSV" | "JSON";
-
-type TrackLite = {
-  id: string;
-  title?: string;
-  description?: string;
-};
 
 type Props = {
   initialSlug?: string;

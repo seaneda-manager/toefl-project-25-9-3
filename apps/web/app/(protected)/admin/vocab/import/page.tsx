@@ -1,6 +1,6 @@
 // apps/web/app/(protected)/admin/vocab/import/page.tsx
 import WisewordCsvImporter from "./_client/WisewordCsvImporter";
-import { listVocabTracksAction } from "../Tracks/actions";
+import { listVocabTracksAction, type TrackLite } from "../Tracks/actions";
 
 export default async function Page() {
   const tracksRes = await listVocabTracksAction().catch((e) => ({
