@@ -398,6 +398,36 @@ export async function listVocabTracksAction(): Promise<ListVocabTracksResult> {
 }
 
 /* =========================================================
+ * 선택된 세트의 트랙 조회
+ * ======================================================= */
+export async function getTracksForSetsAction(
+  setIds: string[]
+): Promise<{ ok: boolean; trackIds: string[]; error?: string }> {
+  try {
+    if (!setIds.length) return { ok: true, trackIds: [] };
+
+    const supabase = await getServerSupabase();
+    await getUserOrThrow(supabase);
+
+    const { data, error } = await supabase
+      .from("vocab_sets")
+      .select("track_id")
+      .in("id", setIds);
+
+    if (error) return { ok: false, trackIds: [], error: error.message };
+
+    // 중복 제거 및 null 필터링
+    const trackIds = Array.from(
+      new Set((data ?? []).map((d: any) => d.track_id).filter((id: string | null) => id !== null && id !== undefined))
+    );
+
+    return { ok: true, trackIds };
+  } catch (e: any) {
+    return { ok: false, trackIds: [], error: e?.message ?? "Failed to get tracks for sets" };
+  }
+}
+
+/* =========================================================
  * Track + Day01~N Sets 생성 + vocab_track_sets 연결
  * - best effort: is_active=true 세팅 (컬럼 없으면 자동 fallback)
  * - (옵션) recockStudents=true면 해당 트랙 학생 큐를 재정렬

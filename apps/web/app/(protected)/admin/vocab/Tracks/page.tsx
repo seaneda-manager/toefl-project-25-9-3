@@ -1,7 +1,7 @@
 // apps/web/app/(protected)/admin/vocab/Tracks/page.tsx
 import TrackAssignClient from "./_client/TrackAssignClient";
 import GroupAssignClient from "./_client/GroupAssignClient";
-import { listAcademyStudentsAction, listVocabTracksAction } from "./actions";
+import { listAcademyStudentsAction, listVocabTracksAction, getTracksForSetsAction } from "./actions";
 
 export default async function AdminVocabTracksAssignPage({
   searchParams,
@@ -21,7 +21,7 @@ export default async function AdminVocabTracksAssignPage({
   });
 
   const tab = params?.tab === "group" ? "group" : "single";
-  const selectedTrackId = params?.track_id ? String(params.track_id) : null;
+  let selectedTrackId = params?.track_id ? String(params.track_id) : null;
 
   console.log("[Tracks] Loading students and tracks...");
 
@@ -36,6 +36,18 @@ export default async function AdminVocabTracksAssignPage({
     error: `Tracks error: ${e?.message ?? "Unknown"}`,
     rows: [],
   }));
+
+  // 선택된 세트의 트랙 조회
+  if (!selectedTrackId && selectedSetIds.length > 0) {
+    const setsTracksRes = await getTracksForSetsAction(selectedSetIds).catch(() => ({
+      ok: false,
+      trackIds: [],
+    }));
+    if (setsTracksRes.ok && setsTracksRes.trackIds.length > 0) {
+      selectedTrackId = setsTracksRes.trackIds[0];
+      console.log("[Tracks] Auto-selected track from sets:", selectedTrackId);
+    }
+  }
 
   console.log("[Tracks] Students:", studentsRes.ok, "Tracks:", tracksRes.ok);
 
