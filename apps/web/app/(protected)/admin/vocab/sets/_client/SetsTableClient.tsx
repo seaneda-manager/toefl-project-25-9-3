@@ -3,7 +3,8 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { assignSetsToStudentsAction } from "../actions";
+import { useRouter } from "next/navigation";
+import { generateTracksUrl } from "../actions";
 
 type VocabSet = {
   id: string;
@@ -33,6 +34,7 @@ type Props = {
 };
 
 export default function SetsTableClient({ rows, students }: Props) {
+  const router = useRouter();
   const [selectedSetIds, setSelectedSetIds] = useState<Set<string>>(new Set());
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const [studentSearch, setStudentSearch] = useState("");
@@ -102,24 +104,17 @@ export default function SetsTableClient({ rows, students }: Props) {
       return;
     }
 
-    setAssignMsg("");
     setAssignBusy(true);
 
     try {
-      const res = await assignSetsToStudentsAction({
+      const { url } = await generateTracksUrl({
         setIds: Array.from(selectedSetIds),
         studentIds: Array.from(selectedStudentIds),
       });
 
-      if (res.ok) {
-        setAssignMsg(res.message);
-        setSelectedSetIds(new Set());
-        setSelectedStudentIds(new Set());
-        setStudentSearch("");
-      } else {
-        setAssignMsg(`❌ ${res.message}`);
-      }
-    } finally {
+      router.push(url);
+    } catch (e: any) {
+      setAssignMsg(`❌ ${e?.message ?? "오류 발생"}`);
       setAssignBusy(false);
     }
   }
