@@ -1,12 +1,17 @@
 // apps/web/app/(protected)/admin/vocab/sets/actions.ts
 "use server";
 
-import { getServerSupabase } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
-async function getUserOrThrow(supabase: any) {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) throw new Error("Unauthorized");
-  return data.user;
+async function getServiceRoleSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing Supabase credentials");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
 }
 
 export async function assignSetsToStudentsAction(params: {
@@ -14,8 +19,7 @@ export async function assignSetsToStudentsAction(params: {
   studentIds: string[];
 }): Promise<{ ok: boolean; message: string }> {
   try {
-    const supabase = await getServerSupabase();
-    await getUserOrThrow(supabase);
+    const supabase = await getServiceRoleSupabase();
 
     if (!params.setIds.length || !params.studentIds.length) {
       return { ok: false, message: "setIds와 studentIds가 필요합니다" };
@@ -34,7 +38,7 @@ export async function assignSetsToStudentsAction(params: {
           .from("student_vocab_assignments")
           .insert({
             student_id: studentId,
-            vocab_set_id: setId,
+            set_id: setId,
           });
 
         if (error) {
