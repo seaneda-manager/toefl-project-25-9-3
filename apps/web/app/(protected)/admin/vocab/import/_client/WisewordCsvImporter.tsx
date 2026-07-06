@@ -8,8 +8,8 @@ import {
   importWisewordWordsFromCsvText,
   importWisewordWordsAndCreateSetFromCsvText,
   type ImportWisewordCsvActionResult,
-  type TrackLite,
 } from "../wiseword-actions";
+import type { TrackLite } from "../Tracks/actions";
 
 type Mode = "CSV" | "JSON";
 
