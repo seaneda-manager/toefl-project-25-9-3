@@ -21,6 +21,8 @@ export default async function AdminVocabSetsPage() {
 
   const rows = setsRes.data ?? [];
   const students = studentsRes.data ?? [];
+  const setsError = setsRes.error;
+  const studentsError = studentsRes.error;
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
@@ -38,9 +40,9 @@ export default async function AdminVocabSetsPage() {
         </Link>
       </header>
 
-      {error && (
+      {(setsError || studentsError) && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          조회 실패: {error.message}
+          조회 실패: {setsError?.message || studentsError?.message}
         </div>
       )}
 
