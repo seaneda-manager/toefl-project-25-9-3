@@ -384,28 +384,14 @@ export async function listVocabTracksAction(): Promise<ListVocabTracksResult> {
     const supabase = await getServerSupabase();
     await getUserOrThrow(supabase);
 
-    // attempt #1 (has is_active)
-    const r1 = await supabase
+    // Query all tracks (not filtered by is_active)
+    const r = await supabase
       .from("vocab_tracks")
-      .select("id, slug, title, description, total_days, created_at, is_active")
-      .eq("is_active", true)
+      .select("id, slug, title, description, total_days, created_at")
       .order("created_at", { ascending: false });
 
-    if (!r1.error) return { ok: true, rows: (r1.data ?? []) as any };
-
-    // if column missing (42703), retry without is_active
-    const code = String((r1.error as any)?.code ?? "");
-    if (code === "42703") {
-      const r2 = await supabase
-        .from("vocab_tracks")
-        .select("id, slug, title, description, total_days, created_at")
-        .order("created_at", { ascending: false });
-
-      if (r2.error) return { ok: false, error: r2.error.message ?? "tracks query failed" };
-      return { ok: true, rows: (r2.data ?? []) as any };
-    }
-
-    return { ok: false, error: r1.error.message ?? "tracks query failed" };
+    if (r.error) return { ok: false, error: r.error.message ?? "tracks query failed" };
+    return { ok: true, rows: (r.data ?? []) as any };
   } catch (e: any) {
     return { ok: false, error: e?.message ?? "tracks query failed" };
   }
