@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 type VocabSet = {
   id: string;
@@ -24,10 +24,17 @@ type Props = {
 export default function SetsTableClient({ rows }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkBar, setShowBulkBar] = useState(false);
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = selectedIds.size;
   const allSelected = selectedCount === rows.length && rows.length > 0;
   const someSelected = selectedCount > 0 && !allSelected;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
 
   function toggleRow(id: string) {
     setSelectedIds((prev) => {
@@ -97,9 +104,9 @@ export default function SetsTableClient({ rows }: Props) {
                 <tr className="[&>th]:px-4 [&>th]:py-3 [&>th]:font-medium [&>th]:whitespace-nowrap">
                   <th className="w-10">
                     <input
+                      ref={headerCheckboxRef}
                       type="checkbox"
                       checked={allSelected}
-                      indeterminate={someSelected}
                       onChange={toggleAll}
                       className="h-4 w-4 rounded cursor-pointer"
                     />
