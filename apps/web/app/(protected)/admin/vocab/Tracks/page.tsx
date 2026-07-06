@@ -132,6 +132,7 @@ export default async function AdminVocabTracksAssignPage({
               initialStudents={students}
               initialTracks={tracks}
               selectedTrackId={selectedTrackId}
+              selectedSetIds={selectedSetIds}
             />
           ) : (
             <GroupAssignClient

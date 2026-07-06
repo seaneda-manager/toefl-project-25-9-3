@@ -9,6 +9,7 @@ import {
   ensureCockedQueueAdminAction,
   assignNextSetNowAction,
   cancelStudentVocabAssignmentAction,
+  linkSetsToTrackAction,
 } from "../actions";
 
 const WEEKDAY_LABELS = ["", "월", "화", "수", "목", "금", "토", "일"];
@@ -76,12 +77,16 @@ export default function TrackAssignClient({
   initialStudents,
   initialTracks,
   selectedTrackId,
+  selectedSetIds = [],
 }: {
   initialStudents: StudentLite[];
   initialTracks: TrackLite[];
   selectedTrackId?: string;
+  selectedSetIds?: string[];
 }) {
   const [q, setQ] = useState("");
+  const [linkingBusy, setLinkingBusy] = useState(false);
+  const [linkMsg, setLinkMsg] = useState("");
   const students = useMemo(() => {
     const k = q.trim().toLowerCase();
     if (!k) return initialStudents;
@@ -222,6 +227,26 @@ export default function TrackAssignClient({
   const selectedStudent = initialStudents.find((s) => s.id === studentId);
   const selectedTrack = initialTracks.find((t) => t.id === trackId);
 
+  async function handleLinkSetsToTrack() {
+    if (!trackId || selectedSetIds.length === 0) {
+      setLinkMsg("❌ 트랙과 세트를 선택하세요");
+      return;
+    }
+
+    setLinkMsg("");
+    setLinkingBusy(true);
+    try {
+      const res = await linkSetsToTrackAction(selectedSetIds, trackId);
+      if (res.ok) {
+        setLinkMsg("✅ 선택된 세트들이 트랙과 연결되었습니다");
+      } else {
+        setLinkMsg(`❌ ${res.error}`);
+      }
+    } finally {
+      setLinkingBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* ── 학생 + 트랙 선택 ── */}
@@ -278,6 +303,25 @@ export default function TrackAssignClient({
             )}
           </div>
         </div>
+
+        {/* 선택된 세트 연결 섹션 */}
+        {selectedSetIds.length > 0 && (
+          <div className="mt-5 border-t pt-4">
+            <div className="text-sm font-bold text-slate-600 mb-3">선택된 세트 ({selectedSetIds.length}개)</div>
+            <button
+              onClick={handleLinkSetsToTrack}
+              disabled={linkingBusy || !trackId}
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+            >
+              {linkingBusy ? "연결 중..." : "이 트랙과 연결"}
+            </button>
+            {linkMsg && (
+              <div className={`mt-2 text-sm font-semibold ${linkMsg.startsWith("✅") ? "text-emerald-700" : "text-rose-700"}`}>
+                {linkMsg}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── 플랜 설정 ── */}
