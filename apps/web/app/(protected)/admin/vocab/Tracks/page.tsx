@@ -9,7 +9,16 @@ export default async function AdminVocabTracksAssignPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  console.log("[Tracks] Page rendering...", { tab: params?.tab, set: params?.set, track_id: params?.track_id });
+  const singleSet = params?.set ? String(params.set) : null;
+  const multipleSets = params?.sets ? String(params.sets).split(",").filter(Boolean) : [];
+  const selectedSetIds = singleSet ? [singleSet] : multipleSets;
+
+  console.log("[Tracks] Page rendering...", {
+    tab: params?.tab,
+    set: singleSet,
+    sets: multipleSets,
+    track_id: params?.track_id
+  });
 
   const tab = params?.tab === "group" ? "group" : "single";
   const selectedTrackId = params?.track_id ? String(params.track_id) : null;
@@ -42,6 +51,22 @@ export default async function AdminVocabTracksAssignPage({
         <div className="mt-1 text-sm text-slate-600">
           학생별 Track 플랜 생성 · 큐 관리 · 그룹 배포
         </div>
+
+        {selectedSetIds.length > 0 && (
+          <div className="mt-3 rounded-xl bg-violet-50 border border-violet-200 p-3">
+            <div className="text-xs font-bold text-violet-900 mb-2">선택된 세트</div>
+            <div className="flex flex-wrap gap-2">
+              {selectedSetIds.map((id) => (
+                <span
+                  key={id}
+                  className="rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700"
+                >
+                  {id}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {studentsError || tracksError ? (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
