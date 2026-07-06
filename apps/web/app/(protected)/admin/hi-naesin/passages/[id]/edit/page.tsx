@@ -24,21 +24,24 @@ import {
   updateSentencePairAction,
   generateDrillsFromSentencesAction,
   generateGrammarDrillsAction,
+  generateThoughtUnitDrillsAction,
 } from './sentence-actions';
 import {
   assignPassageAction,
   removeAssignmentAction,
   updateEnabledDrillTypesAction,
 } from './assign-actions';
+import { startHiNaesinDrillSessionAction } from '@/app/(protected)/hi-naesin/passages/actions';
 
 export const dynamic = 'force-dynamic';
 
 type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{
   tab?: string;
-  ok?: string;    // '2step' | '3step'
+  ok?: string;    // '2step' | '3step' | '4step'
   err?: string;   // error message
   t?: string; w?: string; fb?: string; v?: string; g?: string; d?: string;
+  ta?: string; wa?: string; tc?: string;
 }>;
 
 export default async function HiNaesinPassageEditPage({
@@ -49,7 +52,7 @@ export default async function HiNaesinPassageEditPage({
   searchParams: SearchParams;
 }) {
   const { id } = await params;
-  const { tab = 'passage', ok, err, t, w, fb, v, g, d } = await searchParams;
+  const { tab = 'passage', ok, err, t, w, fb, v, g, d, ta, wa, tc } = await searchParams;
   const supabase = await getServerSupabase();
 
   const questionIds = (
@@ -131,6 +134,15 @@ export default async function HiNaesinPassageEditPage({
           </div>
         </div>
         <div className="flex gap-2">
+          <form action={startHiNaesinDrillSessionAction}>
+            <input type="hidden" name="passage_id" value={id} />
+            <button
+              type="submit"
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-100"
+            >
+              👁 드릴 미리보기
+            </button>
+          </form>
           <Link
             href={`/admin/hi-naesin/passages/${id}/analyze`}
             className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 hover:bg-indigo-100"
@@ -168,7 +180,7 @@ export default async function HiNaesinPassageEditPage({
       {ok === '2step' && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           ✓ 기본 Drill 생성 완료 —
-          해석 <strong>{t ?? 0}</strong>개 · 작문 <strong>{w ?? 0}</strong>개 · 빈칸 <strong>{fb ?? 0}</strong>개 · 단어 <strong>{v ?? 0}</strong>개
+          빈칸 <strong>{fb ?? 0}</strong>개 · 단어 <strong>{v ?? 0}</strong>개
           {Number(v) === 0 && <span className="ml-2 text-xs text-emerald-600">(단어: 지문에 <code>* word: 뜻</code> 형식 주석 필요)</span>}
         </div>
       )}
@@ -177,6 +189,14 @@ export default async function HiNaesinPassageEditPage({
           ✓ AI 문법/연결어 Drill 생성 완료 — <strong>{g ?? 0}</strong>개
           {d && <span className="ml-2 text-xs text-violet-500 font-mono">[{decodeURIComponent(d)}]</span>}
           {Number(g) === 0 && <span className="ml-2 text-xs text-violet-600">(AI 응답 없음 — 잠시 후 재시도)</span>}
+        </div>
+      )}
+      {ok === '4step' && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+          ✓ AI 생각단위 배열 Drill 생성 완료 —
+          해석 배열 <strong>{ta ?? 0}</strong>개 · 작문 배열 <strong>{wa ?? 0}</strong>개 ·
+          해석 3지선다 <strong>{tc ?? 0}</strong>개 · 자유해석 <strong>{t ?? 0}</strong>개 · 자유작문 <strong>{w ?? 0}</strong>개
+          {Number(ta) === 0 && <span className="ml-2 text-xs text-sky-600">(AI 응답 없음 — 잠시 후 재시도)</span>}
         </div>
       )}
       {err && (
@@ -322,6 +342,17 @@ export default async function HiNaesinPassageEditPage({
                   className="rounded-xl border border-violet-300 bg-violet-50 px-5 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
                 >
                   3단계: AI 문법/연결어 생성
+                </button>
+              </form>
+            )}
+
+            {sentences.length > 0 && (
+              <form action={generateThoughtUnitDrillsAction.bind(null, id)}>
+                <button
+                  type="submit"
+                  className="rounded-xl border border-sky-300 bg-sky-50 px-5 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100"
+                >
+                  4단계: AI 생각단위 배열 생성
                 </button>
               </form>
             )}
@@ -779,7 +810,10 @@ function Field({
 
 // ── 드릴 타입별 그룹 목록 ────────────────────────────────────────────────
 
-const DRILL_TYPE_ORDER = ['vocab', 'translation', 'fill_blank', 'writing', 'grammar_choice', 'summary'] as const;
+const DRILL_TYPE_ORDER = [
+  'vocab', 'translation_arrange', 'translation', 'translation_choice',
+  'fill_blank', 'writing_arrange', 'writing', 'grammar_choice', 'summary',
+] as const;
 
 function DrillGroupList({
   drills,
@@ -837,6 +871,9 @@ function DrillPayloadGuide() {
       <summary className="cursor-pointer font-medium">Payload 형식 가이드</summary>
       <div className="mt-2 space-y-2 font-mono">
         <div><strong className="font-sans">해석:</strong> {`{"sentenceEn":"...","answerKo":"..."}`}</div>
+        <div><strong className="font-sans">해석 배열:</strong> {`{"sentenceEn":"...","chunks":[{"id":"k0","ko":"..."},{"id":"k1","ko":"..."}]}`}</div>
+        <div><strong className="font-sans">작문 배열:</strong> {`{"koPrompt":"...","chunks":[{"id":"k0","en":"..."},{"id":"k1","en":"..."}]}`}</div>
+        <div><strong className="font-sans">해석 3지선다:</strong> {`{"sentenceEn":"...","options":[{"key":"a","text":"..."},{"key":"b","text":"..."},{"key":"c","text":"..."}],"correct":"a","explanation":"..."}`}</div>
         <div><strong className="font-sans">빈칸 넣기:</strong> {`{"sentenceTemplate":"The ____ fox","answer":"quick","sentenceKo":"..."}`}</div>
         <div><strong className="font-sans">작문:</strong> {`{"koPrompt":"...","answerEn":"...","hintWords":["word"],"grammarHints":["관계절"],"wordCount":10}`}</div>
         <div><strong className="font-sans">문법 고르기:</strong> {`{"sentenceTemplate":"She ____ daily.","optionA":"go","optionB":"goes","optionC":"went","optionD":"going","correct":"b","explanation":"설명","grammarCategory":"수 일치"}`}</div>
@@ -903,6 +940,48 @@ function DrillPreview({ drill }: { drill: { drill_type: string; order_index: num
         {Array.isArray(p.grammarHints) && p.grammarHints.length > 0 && (
           <p className="text-xs text-violet-500">문법: {(p.grammarHints as string[]).join(' / ')}</p>
         )}
+      </div>
+    );
+  }
+
+  if (drill.drill_type === 'translation_arrange' || drill.drill_type === 'writing_arrange') {
+    const chunks = Array.isArray(p.chunks) ? (p.chunks as Array<{ text?: string; ko?: string; en?: string }>) : [];
+    const source = drill.drill_type === 'translation_arrange' ? String(p.sentenceEn ?? '') : String(p.koPrompt ?? '');
+    return (
+      <div className="flex-1 space-y-1.5 min-w-0">
+        <div className="flex items-center gap-2">{idx}</div>
+        <p className="text-sm text-neutral-800">{source}</p>
+        <div className="flex flex-wrap gap-1">
+          {chunks.map((c, i) => (
+            <span key={i} className="rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-xs text-sky-700">
+              {String(c.ko ?? c.en ?? '')}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (drill.drill_type === 'translation_choice') {
+    const opts = Array.isArray(p.options) ? (p.options as Array<{ key: string; text: string }>) : [];
+    const correctKey = String(p.correct ?? '');
+    return (
+      <div className="flex-1 space-y-1.5 min-w-0">
+        <div className="flex items-center gap-2">{idx}</div>
+        <p className="text-sm font-medium text-neutral-800">{String(p.sentenceEn ?? '')}</p>
+        <div className="space-y-1">
+          {opts.map((o) => (
+            <p key={o.key} className={[
+              'rounded-lg border px-2 py-1 text-xs',
+              o.key === correctKey
+                ? 'border-emerald-300 bg-emerald-50 font-semibold text-emerald-700'
+                : 'border-neutral-200 text-neutral-600',
+            ].join(' ')}>
+              {o.key.toUpperCase()}. {o.text}
+            </p>
+          ))}
+        </div>
+        {p.explanation && <p className="text-xs text-neutral-400">{String(p.explanation)}</p>}
       </div>
     );
   }

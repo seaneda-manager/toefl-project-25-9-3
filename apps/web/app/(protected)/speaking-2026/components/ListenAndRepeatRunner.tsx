@@ -17,9 +17,32 @@ type Props = {
   items: ListenRepeatItem[];
   globalImageUrl?: string;
   mode?: "study" | "test";
-  totalQuestionOffset?: number; // 전체 시험에서 이 섹션이 시작하는 문항 번호 (기본 1)
+  totalQuestionOffset?: number;
   totalQuestions?: number;
   onComplete?: (result: { itemId: string; blob: Blob | null }[]) => void;
+};
+
+const MODE_CONFIG = {
+  test: {
+    showText: false,
+    prepareSeconds: 0,        // 준비 시간 없음 (실제 시험)
+    recordingSeconds: 10,     // 8~12초 (실제 시험)
+    allowReplay: false,
+    allowSkip: false,
+    headerBg: "#1A2B4C",
+    headerText: "TOEFL 2026 - Speaking - Task 1: Listen and Repeat",
+    description: "Listen to the sentence and repeat it within 10 seconds. No preparation time.",
+  },
+  study: {
+    showText: true,
+    prepareSeconds: 30,       // 준비 시간 있음 (학습)
+    recordingSeconds: 20,     // 여유있게 (학습)
+    allowReplay: true,
+    allowSkip: true,
+    headerBg: "#2563EB",
+    headerText: "Speaking Practice - Task 1: Listen and Repeat",
+    description: "Listen to the sentence and repeat it. You have time to prepare.",
+  },
 };
 
 // 오디오 beep 생성 (Web Audio API)
@@ -67,12 +90,14 @@ export default function ListenAndRepeatRunner({
   totalQuestions = 11,
   onComplete,
 }: Props) {
+  const config = MODE_CONFIG[mode];
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("idle");
   const [timeLeft, setTimeLeft] = useState(0);
   const [volume, setVolume] = useState(0);
   const [recordings, setRecordings] = useState<{ itemId: string; blob: Blob | null }[]>([]);
   const [nextDisabled, setNextDisabled] = useState(false);
+  const [showPlayButton, setShowPlayButton] = useState(true);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -84,7 +109,7 @@ export default function ListenAndRepeatRunner({
   const streamRef = useRef<MediaStream | null>(null);
 
   const current = items[index];
-  const speakingSeconds = current?.speakingSeconds ?? 10;
+  const speakingSeconds = config.recordingSeconds;
   const questionNumber = totalQuestionOffset + index;
   const imageUrl = current?.imageUrl ?? globalImageUrl;
 
@@ -171,37 +196,71 @@ export default function ListenAndRepeatRunner({
   const playAudio = useCallback(() => {
     setPhase("listening");
     setNextDisabled(true);
+    setShowPlayButton(false);
 
     if (current?.audioUrl) {
       if (!audioRef.current) audioRef.current = new Audio();
       audioRef.current.src = current.audioUrl;
       audioRef.current.onended = () => {
-        setPhase("prepare");
-        setNextDisabled(false);
-        setTimeout(() => void startRecording(), 300);
+        // Test 모드: 준비 시간 없음 (음성 종료 → 즉시 녹음)
+        if (mode === "test") {
+          void startRecording();
+        } else {
+          // Study 모드: 준비 시간 있음
+          setPhase("prepare");
+          setTimeLeft(config.prepareSeconds);
+          setNextDisabled(config.allowSkip ? false : true);
+
+          clearTimer();
+          timerRef.current = window.setInterval(() => {
+            setTimeLeft((prev) => {
+              if (prev <= 1) {
+                clearTimer();
+                setPhase("recording");
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+
+          setTimeout(() => void startRecording(), 300);
+        }
       };
       audioRef.current.play().catch(() => {
-        setPhase("prepare");
-        setNextDisabled(false);
-        void startRecording();
+        if (mode === "test") {
+          void startRecording();
+        } else {
+          setPhase("prepare");
+          setTimeLeft(config.prepareSeconds);
+          setNextDisabled(config.allowSkip ? false : true);
+          void startRecording();
+        }
       });
     } else {
       // 오디오 없으면 2초 후 녹음 시작 (개발용)
       setTimeout(() => {
-        setPhase("prepare");
-        setNextDisabled(false);
-        setTimeout(() => void startRecording(), 500);
+        if (mode === "test") {
+          void startRecording();
+        } else {
+          setPhase("prepare");
+          setTimeLeft(config.prepareSeconds);
+          setNextDisabled(config.allowSkip ? false : true);
+          setTimeout(() => void startRecording(), 500);
+        }
       }, 1500);
     }
-  }, [current, startRecording]);
+  }, [current, startRecording, config, clearTimer, mode]);
 
-  // 문항 전환 시 자동 재생
+  // 문항 전환 시: test 모드는 자동 재생, study 모드는 버튼 대기
   useEffect(() => {
     setPhase("idle");
     setTimeLeft(0);
-    setTimeout(() => playAudio(), 600);
+    setShowPlayButton(true);
+    if (mode === "test") {
+      setTimeout(() => void playAudio(), 600);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, mode]);
 
   const handleNext = () => {
     if (nextDisabled) return;
@@ -238,22 +297,28 @@ export default function ListenAndRepeatRunner({
     <div className="flex flex-col" style={{ minHeight: "100vh", backgroundColor: "#F4F6F9", fontFamily: "Arial, Helvetica, sans-serif" }}>
 
       {/* ── Header ── */}
-      <header className="flex items-center justify-between px-6 shrink-0" style={{ height: 60, backgroundColor: "#1A2B4C" }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF" }}>Updated TOEFL iBT - Speaking</span>
+      <header className="flex items-center justify-between px-6 shrink-0" style={{ height: 70, backgroundColor: config.headerBg }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF" }}>
+            {config.headerText}
+          </span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>
+            {config.description}
+          </span>
+        </div>
         <div className="flex items-center" style={{ gap: 12 }}>
-          <button className="flex items-center gap-1 rounded border border-slate-400 bg-transparent px-3 text-white" style={{ width: 90, height: 36, fontSize: 13 }}>
-            🔊 Volume
-          </button>
-          <button className="rounded border border-slate-400 bg-transparent text-white" style={{ width: 70, height: 36, fontSize: 13 }}>
-            Help
-          </button>
+          {config.allowReplay && (
+            <button className="flex items-center gap-1 rounded border border-slate-400 bg-transparent px-3 text-white" style={{ width: 90, height: 36, fontSize: 13 }}>
+              🔊 Replay
+            </button>
+          )}
           <button
             onClick={handleNext}
             disabled={nextDisabled || phase === "recording" || phase === "listening"}
             className="rounded font-semibold text-white disabled:opacity-40"
             style={{ width: 100, height: 36, fontSize: 13, backgroundColor: "#0073E6", border: "none", borderRadius: 4, cursor: "pointer" }}
           >
-            Next &gt;
+            {index < items.length - 1 ? "Next >" : "Submit"}
           </button>
         </div>
       </header>
@@ -262,10 +327,16 @@ export default function ListenAndRepeatRunner({
       <main className="flex flex-1 items-center justify-center" style={{ padding: "0 60px" }}>
         <div className="flex items-center justify-center gap-8 w-full">
 
-          {/* 좌측: Visual Card */}
+          {/* 좌측: Visual/Text Card */}
           <div className="relative shrink-0 overflow-hidden rounded-lg"
             style={{ width: 800, height: 600, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", backgroundColor: "#E2E8F0" }}>
-            {imageUrl ? (
+            {config.showText && !imageUrl ? (
+              <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-8 text-center">
+                <p style={{ fontSize: 28, fontWeight: 700, color: "#1A2B4C", lineHeight: 1.6, maxWidth: 600 }}>
+                  {current?.sentence}
+                </p>
+              </div>
+            ) : imageUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imageUrl} alt="Site map" className="h-full w-full" style={{ objectFit: "contain" }} />
@@ -286,7 +357,7 @@ export default function ListenAndRepeatRunner({
               </>
             ) : (
               <div className="flex h-full w-full items-center justify-center text-slate-400 text-sm">
-                이미지를 에셋 편집 페이지에서 업로드하세요
+                {config.showText ? "음성을 들어보세요" : "음성을 주의 깊게 들으세요"}
               </div>
             )}
           </div>
@@ -299,6 +370,18 @@ export default function ListenAndRepeatRunner({
             <p style={{ fontSize: 24, fontWeight: 700, color: phaseColor, letterSpacing: "0.01em" }}>
               {phaseText}
             </p>
+
+            {/* 음원 재생 버튼 (study 모드 또는 대기 중) */}
+            {showPlayButton && phase !== "recording" && (
+              <button
+                onClick={() => void playAudio()}
+                disabled={nextDisabled}
+                className="flex items-center gap-2 rounded-lg px-8 py-4 font-semibold text-white disabled:opacity-50"
+                style={{ backgroundColor: "#0073E6", fontSize: 16 }}
+              >
+                🔊 Play Audio
+              </button>
+            )}
 
             {/* Waveform */}
             <WaveformBar isActive={phase === "recording"} volume={volume} />

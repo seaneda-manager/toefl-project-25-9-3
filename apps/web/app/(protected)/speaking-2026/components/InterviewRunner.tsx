@@ -6,23 +6,35 @@ export type InterviewQuestion = {
   id: string;
   question: string;
   audioUrl?: string;
-  answerSeconds?: number;
   topic?: string;
 };
 
-type Phase = "idle" | "listening" | "recording" | "done";
+type Phase = "idle" | "listening" | "prepare" | "recording" | "done";
 
 type RecordingResult = { questionId: string; blob: Blob | null };
 
 type Props = {
   questions: InterviewQuestion[];
-  interviewerGifUrl?: string;
+  interviewerImageUrl?: string;
   mode?: "study" | "test";
-  defaultAnswerSeconds?: number;
-  totalQuestionOffset?: number; // 전체 시험에서 인터뷰가 시작하는 번호 (기본 8)
-  totalQuestions?: number;
-  autoStartAfterAudio?: boolean;
   onComplete?: (results: RecordingResult[]) => void;
+};
+
+const MODE_CONFIG = {
+  test: {
+    prepareSeconds: 0,
+    responseSeconds: 45,
+    headerBg: "#1A2B4C",
+    headerText: "TOEFL 2026 - Speaking - Task 2: Take an Interview",
+    description: "Answer the 4 interview questions. No preparation time. 45 seconds per question.",
+  },
+  study: {
+    prepareSeconds: 15,
+    responseSeconds: 60,
+    headerBg: "#2563EB",
+    headerText: "Speaking Practice - Task 2: Take an Interview",
+    description: "Answer the 4 interview questions. 15 seconds to prepare. 60 seconds per question.",
+  },
 };
 
 function playBeep(ctx: AudioContext, freq = 880, duration = 0.15) {

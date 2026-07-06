@@ -2,8 +2,11 @@
 
 export const HI_NAESIN_DRILL_TYPES = [
   'translation',
+  'translation_arrange',
+  'translation_choice',
   'fill_blank',
   'writing',
+  'writing_arrange',
   'summary',
   'grammar_choice',
   'vocab',
@@ -15,6 +18,23 @@ export type HiNaesinDrillType = (typeof HI_NAESIN_DRILL_TYPES)[number];
 export type TranslationPayload = {
   sentenceEn: string;
   answerKo: string;
+};
+
+export type TranslationArrangePayload = {
+  sentenceEn: string;
+  chunks: Array<{ id: string; ko: string }>; // 정답 순서
+};
+
+export type WritingArrangePayload = {
+  koPrompt: string;
+  chunks: Array<{ id: string; en: string }>; // 정답 순서
+};
+
+export type TranslationChoicePayload = {
+  sentenceEn: string;
+  options: Array<{ key: 'a' | 'b' | 'c'; text: string }>;
+  correct: 'a' | 'b' | 'c';
+  explanation?: string;
 };
 
 export type FillBlankPayload = {
@@ -65,12 +85,15 @@ export type GrammarChoicePayload = {
 // ── 통합 타입 ────────────────────────────
 
 export type DrillPayloadMap = {
-  translation:    TranslationPayload;
-  fill_blank:     FillBlankPayload;
-  writing:        WritingPayload;
-  summary:        SummaryPayload;
-  grammar_choice: GrammarChoicePayload;
-  vocab:          VocabPayload;
+  translation:          TranslationPayload;
+  translation_arrange:  TranslationArrangePayload;
+  translation_choice:   TranslationChoicePayload;
+  fill_blank:           FillBlankPayload;
+  writing:              WritingPayload;
+  writing_arrange:      WritingArrangePayload;
+  summary:              SummaryPayload;
+  grammar_choice:       GrammarChoicePayload;
+  vocab:                VocabPayload;
 };
 
 export type HiNaesinDrill<T extends HiNaesinDrillType = HiNaesinDrillType> = {
@@ -97,11 +120,14 @@ export type HiNaesinDrillRow = {
 
 export function drillTypeLabel(t: HiNaesinDrillType): string {
   switch (t) {
-    case 'translation':    return '해석';
-    case 'fill_blank':     return '빈칸 넣기';
-    case 'writing':        return '작문';
-    case 'summary':        return '요약';
-    case 'grammar_choice': return '문법 고르기';
-    case 'vocab':          return '단어';
+    case 'translation':          return '해석';
+    case 'translation_arrange':  return '해석 배열';
+    case 'translation_choice':   return '해석 3지선다';
+    case 'fill_blank':           return '빈칸 넣기';
+    case 'writing':              return '작문';
+    case 'writing_arrange':      return '작문 배열';
+    case 'summary':               return '요약';
+    case 'grammar_choice':        return '문법 고르기';
+    case 'vocab':                 return '단어';
   }
 }

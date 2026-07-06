@@ -332,14 +332,20 @@ export default function WorkoutReviewPanel({ passageId, doc, onDocChange }: Prop
                   {activeTab === "composition" && (
                     <div className="space-y-2 text-xs">
                       <div>
-                        <div className="font-bold text-slate-500 mb-1">한글 청크 (한→영 작문용)</div>
-                        <div className="flex flex-wrap gap-1">
-                          {(composition?.koreanChunks ?? []).map((chunk, ci) => (
-                            <span key={ci} className="rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 font-medium">
-                              {chunk}
-                            </span>
+                        <div className="font-bold text-slate-500 mb-1">청크 (한→영 작문용, 영어 어순)</div>
+                        <div className="space-y-1">
+                          {(composition?.chunks ?? []).map((chunk, ci) => (
+                            <div key={chunk.id ?? ci} className="flex items-center gap-2">
+                              <span className="rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 font-medium">
+                                {chunk.ko}
+                              </span>
+                              <span className="text-slate-400">→</span>
+                              <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 font-medium font-mono">
+                                {chunk.en}
+                              </span>
+                            </div>
                           ))}
-                          {!composition?.koreanChunks?.length && (
+                          {!composition?.chunks?.length && (
                             <span className="text-slate-400">AI 생성 후 표시됩니다</span>
                           )}
                         </div>

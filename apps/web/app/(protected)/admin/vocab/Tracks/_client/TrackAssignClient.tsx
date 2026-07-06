@@ -75,9 +75,11 @@ function PlanCard({ plan }: { plan: StudentPlanLite }) {
 export default function TrackAssignClient({
   initialStudents,
   initialTracks,
+  selectedTrackHint,
 }: {
   initialStudents: StudentLite[];
   initialTracks: TrackLite[];
+  selectedTrackHint?: string;
 }) {
   const [q, setQ] = useState("");
   const students = useMemo(() => {
@@ -94,7 +96,13 @@ export default function TrackAssignClient({
   }, [q, initialStudents]);
 
   const [studentId, setStudentId] = useState<string>(initialStudents?.[0]?.id ?? "");
-  const [trackId, setTrackId] = useState<string>(initialTracks?.[0]?.id ?? "");
+  const [trackId, setTrackId] = useState<string>(() => {
+    if (selectedTrackHint && initialTracks?.length) {
+      const match = initialTracks.find(t => t.title?.includes(selectedTrackHint));
+      return match?.id ?? initialTracks[0]?.id ?? "";
+    }
+    return initialTracks?.[0]?.id ?? "";
+  });
 
   useEffect(() => {
     if (!studentId && initialStudents?.[0]?.id) setStudentId(initialStudents[0].id);

@@ -34,9 +34,13 @@ export async function submitDrillAnswerAction(
     const answer = (fd.get('answer') as string)?.trim().toLowerCase();
     isCorrect = responseText.toLowerCase() === answer;
 
-  } else if (drillType === 'grammar_choice') {
+  } else if (drillType === 'grammar_choice' || drillType === 'translation_choice') {
     const correct = (fd.get('correct_option') as string)?.trim();
     isCorrect = responseChoice === correct;
+
+  } else if (drillType === 'translation_arrange' || drillType === 'writing_arrange') {
+    const correctOrder = (fd.get('correct_order') as string)?.trim();
+    isCorrect = responseChoice === correctOrder;
 
   } else if (drillType === 'vocab') {
     const answerKo = (fd.get('answer_ko') as string)?.trim().toLowerCase() ?? '';
@@ -198,9 +202,13 @@ export async function submitAnswerClientAction(
     const answer = (fd.get('answer') as string)?.trim().toLowerCase();
     isCorrect = responseText.toLowerCase() === answer;
 
-  } else if (drillType === 'grammar_choice') {
+  } else if (drillType === 'grammar_choice' || drillType === 'translation_choice') {
     const correct = (fd.get('correct_option') as string)?.trim();
     isCorrect = responseChoice === correct;
+
+  } else if (drillType === 'translation_arrange' || drillType === 'writing_arrange') {
+    const correctOrder = (fd.get('correct_order') as string)?.trim();
+    isCorrect = responseChoice === correctOrder;
 
   } else if (drillType === 'vocab') {
     const answerKo = (fd.get('answer_ko') as string)?.trim().toLowerCase() ?? '';

@@ -38,25 +38,14 @@ const demoItems: ListenRepeatItem[] = [
 
 export default function ListenAndRepeatPage() {
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold">
-          Speaking 2026 – Task 1: Listen and Repeat (연습)
-        </h1>
-        <p className="text-sm text-gray-600">
-          실제 시험에서는 문장 텍스트는 보이지 않고, 오디오만 들립니다. 지금은
-          개발/학습 편의를 위해 문장을 함께 보여주는 버전입니다.
-        </p>
-      </header>
-
-      <ListenAndRepeatRunner
-        items={demoItems}
-        mode="study"
-        repeatSeconds={10}
-        onComplete={(result) => {
-          console.log("Listen & Repeat 완료 결과:", result);
-        }}
-      />
-    </main>
+    <ListenAndRepeatRunner
+      items={demoItems}
+      mode="test"
+      totalQuestions={demoItems.length}
+      totalQuestionOffset={1}
+      onComplete={(result) => {
+        console.log("Listen & Repeat 시험 완료:", result);
+      }}
+    />
   );
 }

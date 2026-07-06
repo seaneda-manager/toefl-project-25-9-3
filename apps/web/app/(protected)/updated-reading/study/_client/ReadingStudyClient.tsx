@@ -42,7 +42,13 @@ export default function ReadingStudyClient({ test }: Props) {
       }
 
       console.log("READING-2026 SAVE RESULT OK", json);
-      alert("수고했어요! 이번 세션 결과가 저장되었습니다 ✅");
+
+      // ✅ 결과 페이지로 이동
+      if (json.resultId) {
+        window.location.href = `/updated-reading/result/${json.resultId}`;
+      } else {
+        alert("수고했어요! 이번 세션 결과가 저장되었습니다 ✅");
+      }
     } catch (e) {
       console.error("READING-2026 SAVE RESULT ERROR", e);
       alert("네트워크 오류로 결과를 저장하지 못했습니다.");

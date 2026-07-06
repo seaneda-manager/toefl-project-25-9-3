@@ -35,10 +35,30 @@ import {
   type UnknownWordMark,
 } from "@/components/naesin/drill/types";
 
+type ProgressSnapshot = {
+  currentStage: DrillStage;
+  currentSentenceIndex: number;
+  structureLogs: SentenceStructureLog[];
+  translationLogs: Stage3TranslationLog[];
+  compositionLogs: SentenceCompositionLog[];
+  sentenceFunctionLogs: SentenceFunctionLog[];
+};
+
 type Props = {
   initialPassage?: NaesinPassage;
   onComplete?: (result: { passageId: string; stages: string[] }) => void;
   onStageComplete?: (stage: string, passageId: string) => void;
+  // 저장된 진행 상황 복원용 (없으면 처음부터 시작)
+  initialStage?: DrillStage;
+  initialSentenceIndex?: number;
+  initialStructureLogs?: SentenceStructureLog[];
+  initialTranslationLogs?: Stage3TranslationLog[];
+  initialCompositionLogs?: SentenceCompositionLog[];
+  initialSentenceFunctionLogs?: SentenceFunctionLog[];
+  // 진행 상황 변경 시 autosave 콜백 (디바운스 적용됨)
+  onAutosave?: (snapshot: ProgressSnapshot) => void;
+  // 진행할 스테이지 범위 제한 (예: DB 연동 초기엔 Stage1~5만). 기본값은 8단계 전체.
+  stageOrder?: DrillStage[];
 };
 
 type StructurePart =
@@ -83,7 +103,7 @@ type TranslationChunkLog = {
   revealedAnswer: boolean;
 };
 
-type Stage3TranslationLog = SentenceTranslationLog & {
+export type Stage3TranslationLog = SentenceTranslationLog & {
   checklist?: TranslationChecklistState;
   chunkLogs?: TranslationChunkLog[];
   completed?: boolean;
@@ -152,20 +172,28 @@ export default function NaesinDrillShell({
   initialPassage = MOCK_NAESIN_PASSAGE,
   onComplete,
   onStageComplete,
+  initialStage = "word_analysis",
+  initialSentenceIndex = 0,
+  initialStructureLogs = [],
+  initialTranslationLogs = [],
+  initialCompositionLogs = [],
+  initialSentenceFunctionLogs = [],
+  onAutosave,
+  stageOrder = DRILL_STAGE_ORDER,
 }: Props) {
   const [currentStage, setCurrentStage] =
-    useState<DrillStage>("word_analysis");
-  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+    useState<DrillStage>(initialStage);
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(initialSentenceIndex);
   const [unknownWords, setUnknownWords] = useState<UnknownWordMark[]>([]);
-  const [structureLogs, setStructureLogs] = useState<SentenceStructureLog[]>([]);
+  const [structureLogs, setStructureLogs] = useState<SentenceStructureLog[]>(initialStructureLogs);
   const [translationLogs, setTranslationLogs] = useState<Stage3TranslationLog[]>(
-    [],
+    initialTranslationLogs,
   );
   const [compositionLogs, setCompositionLogs] = useState<SentenceCompositionLog[]>(
-    [],
+    initialCompositionLogs,
   );
   const [sentenceFunctionLogs, setSentenceFunctionLogs] = useState<SentenceFunctionLog[]>(
-    [],
+    initialSentenceFunctionLogs,
   );
   const [currentSentenceOrderItemIndex, setCurrentSentenceOrderItemIndex] =
     useState(0);
@@ -195,6 +223,14 @@ export default function NaesinDrillShell({
 
       doneTimer = setTimeout(() => {
         setAutosaveStatus("saved");
+        onAutosave?.({
+          currentStage,
+          currentSentenceIndex,
+          structureLogs,
+          translationLogs,
+          compositionLogs,
+          sentenceFunctionLogs,
+        });
       }, 350);
     }, 150);
 
@@ -213,11 +249,12 @@ export default function NaesinDrillShell({
     currentSentenceOrderItemIndex,
     sentenceOrderLogs,
     structureMistakes,
+    onAutosave,
   ]);
 
   const moveStage = useCallback((direction: "prev" | "next") => {
     setCurrentStage((prev) => {
-      const currentIndex = DRILL_STAGE_ORDER.indexOf(prev);
+      const currentIndex = stageOrder.indexOf(prev);
       const nextIndex =
         direction === "prev" ? currentIndex - 1 : currentIndex + 1;
 
@@ -229,17 +266,17 @@ export default function NaesinDrillShell({
       }
 
       // 마지막 스테이지 이후 → 전체 완료 콜백
-      if (nextIndex >= DRILL_STAGE_ORDER.length) {
+      if (nextIndex >= stageOrder.length) {
         onComplete?.({
           passageId: initialPassage.id,
-          stages: DRILL_STAGE_ORDER.slice(0, currentIndex + 1),
+          stages: stageOrder.slice(0, currentIndex + 1),
         });
         return prev;
       }
 
-      return DRILL_STAGE_ORDER[nextIndex];
+      return stageOrder[nextIndex];
     });
-  }, [onComplete, onStageComplete, initialPassage.id]);
+  }, [onComplete, onStageComplete, initialPassage.id, stageOrder]);
 
   const goPrevSentence = useCallback(() => {
     setCurrentSentenceIndex((prev) => Math.max(0, prev - 1));
@@ -945,12 +982,24 @@ export default function NaesinDrillShell({
         onToggleGuide={() => setGuideOpen((v) => !v)}
       />
 
-      <div className={[
-        "grid gap-4",
-        guideOpen
-          ? "xl:grid-cols-[1fr_1.4fr_0.65fr]"
-          : "xl:grid-cols-[1fr_2fr]",
-      ].join(" ")}>
+      <RightGuidePanel
+        currentStage={currentStage}
+        totalSentences={sentences.length}
+        currentSentenceIndex={currentSentenceIndex}
+        unknownWords={unknownWords}
+        structureLogs={structureLogs}
+        translationLogs={translationLogs}
+        compositionLogs={compositionLogs}
+        currentSentenceMistakes={currentStructureMistakes}
+        structureWeaknessSummary={structureWeaknessSummary}
+        translationStatusSummary={translationStatusSummary}
+        translationCurrentSnapshot={translationCurrentSnapshot}
+        compositionStatusSummary={compositionStatusSummary}
+        compositionCurrentSnapshot={compositionCurrentSnapshot}
+        expanded={guideOpen}
+      />
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_2fr]">
         <PassagePanel
           passage={initialPassage}
           currentStage={currentStage}
@@ -1058,24 +1107,6 @@ export default function NaesinDrillShell({
             </div>
           ) : null}
         </div>
-
-        {guideOpen && (
-          <RightGuidePanel
-            currentStage={currentStage}
-            totalSentences={sentences.length}
-            currentSentenceIndex={currentSentenceIndex}
-            unknownWords={unknownWords}
-            structureLogs={structureLogs}
-            translationLogs={translationLogs}
-            compositionLogs={compositionLogs}
-            currentSentenceMistakes={currentStructureMistakes}
-            structureWeaknessSummary={structureWeaknessSummary}
-            translationStatusSummary={translationStatusSummary}
-            translationCurrentSnapshot={translationCurrentSnapshot}
-            compositionStatusSummary={compositionStatusSummary}
-            compositionCurrentSnapshot={compositionCurrentSnapshot}
-          />
-        )}
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { generateWordDefinition } from "@/lib/naesin/wordDefinitionGenerator";
 
 export const dynamic = "force-dynamic";
 
@@ -155,6 +157,48 @@ async function findWord(candidates: string[]) {
   return null;
 }
 
+function getServiceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!url || !service) return null;
+  return createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+async function generateAndCacheWord(candidate: string) {
+  const generated = await generateWordDefinition(candidate);
+  if (!generated.ok) return null;
+
+  const { lemma, pos, meaningsKo } = generated.definition;
+  const text = candidate;
+
+  const service = getServiceSupabase();
+  if (service) {
+    // text_norm / text_key are DB-generated columns; must not be set explicitly.
+    const { error } = await service.from("words").insert({
+      text,
+      lemma,
+      pos,
+      meanings_ko: meaningsKo,
+      is_function_word: false,
+    });
+
+    if (error) {
+      console.error("[naesin.word-lookup] failed to cache generated word", error);
+    }
+  }
+
+  return {
+    row: {
+      text,
+      lemma,
+      pos,
+      meanings_ko: meaningsKo,
+    } as LooseRow,
+    matchedBy: "ai",
+    matchedValue: candidate,
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const rawWord = req.nextUrl.searchParams.get("word") ?? "";
@@ -180,7 +224,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const found = await findWord(candidates);
+    const found = (await findWord(candidates)) ?? (await generateAndCacheWord(candidates[0]));
 
     if (!found) {
       return NextResponse.json({

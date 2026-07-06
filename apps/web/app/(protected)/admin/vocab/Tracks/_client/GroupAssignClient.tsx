@@ -30,9 +30,11 @@ function WeekBtn({ n, active, onClick }: { n: number; active: boolean; onClick: 
 export default function GroupAssignClient({
   initialStudents,
   initialTracks,
+  selectedTrackHint,
 }: {
   initialStudents: StudentLite[];
   initialTracks: TrackLite[];
+  selectedTrackHint?: string;
 }) {
   const grades = useMemo(() => {
     const set = new Set<string>();
@@ -46,7 +48,13 @@ export default function GroupAssignClient({
   const [gradeFilter, setGradeFilter] = useState<string>("");
   const [nameFilter, setNameFilter] = useState<string>("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [trackId, setTrackId] = useState<string>(initialTracks?.[0]?.id ?? "");
+  const [trackId, setTrackId] = useState<string>(() => {
+    if (selectedTrackHint && initialTracks?.length) {
+      const match = initialTracks.find(t => t.title?.includes(selectedTrackHint));
+      return match?.id ?? initialTracks[0]?.id ?? "";
+    }
+    return initialTracks?.[0]?.id ?? "";
+  });
   const [startDateISO, setStartDateISO] = useState<string>(todayISO());
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [maxActiveSets, setMaxActiveSets] = useState(1);

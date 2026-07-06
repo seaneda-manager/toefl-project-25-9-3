@@ -6,11 +6,13 @@ import { listAcademyStudentsAction, listVocabTracksAction } from "./actions";
 export default async function AdminVocabTracksAssignPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  console.log("[Tracks] Page rendering...");
+  const params = await searchParams;
+  console.log("[Tracks] Page rendering...", { tab: params?.tab, set: params?.set, trackHint: params?.trackHint });
 
-  const tab = searchParams?.tab === "group" ? "group" : "single";
+  const tab = params?.tab === "group" ? "group" : "single";
+  const trackHint = params?.trackHint ? String(params.trackHint) : null;
 
   console.log("[Tracks] Loading students and tracks...");
 
@@ -85,9 +87,17 @@ export default async function AdminVocabTracksAssignPage({
       {studentsRes.ok && tracksRes.ok && (
         <>
           {tab === "single" ? (
-            <TrackAssignClient initialStudents={students} initialTracks={tracks} />
+            <TrackAssignClient
+              initialStudents={students}
+              initialTracks={tracks}
+              selectedTrackHint={trackHint}
+            />
           ) : (
-            <GroupAssignClient initialStudents={students} initialTracks={tracks} />
+            <GroupAssignClient
+              initialStudents={students}
+              initialTracks={tracks}
+              selectedTrackHint={trackHint}
+            />
           )}
         </>
       )}

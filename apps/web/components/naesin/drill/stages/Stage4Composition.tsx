@@ -706,6 +706,7 @@ function buildKoChunks(
 ): KoChunkItem[] {
   if (!answer) return [];
 
+  // 레거시 폴백: 청크 자체에 textKo가 없는 옛 데이터는 translationAnswer 매칭으로 추정
   const koById = new Map(
     (translationAnswer?.chunks ?? []).map((chunk) => [
       chunk.id,
@@ -714,7 +715,7 @@ function buildKoChunks(
   );
 
   return answer.chunks.map((chunk, index, arr) => {
-    const koText = koById.get(chunk.id) || chunk.text;
+    const koText = chunk.textKo?.trim() || koById.get(chunk.id) || chunk.text;
     return {
       id: chunk.id,
       koText,

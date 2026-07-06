@@ -2,8 +2,16 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { PAGE_KEYS } from "@/components/landing/defaults";
 
 const LANDING_KEY = "landing_home_v1";
+
+function resolveKey(req: Request): string {
+  const url = new URL(req.url);
+  const page = url.searchParams.get("page");
+  if (page && PAGE_KEYS[page]) return PAGE_KEYS[page];
+  return LANDING_KEY;
+}
 
 function getServiceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,17 +40,18 @@ async function guardAdmin() {
   return { status: 200 as const, error: null };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const guard = await guardAdmin();
   if (guard.status !== 200) {
     return NextResponse.json({ error: guard.error }, { status: guard.status });
   }
   try {
+    const key = resolveKey(req);
     const adminSupabase = getServiceSupabase();
     const { data, error } = await adminSupabase
       .from("site_settings")
       .select("value")
-      .eq("key", LANDING_KEY)
+      .eq("key", key)
       .maybeSingle();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data?.value ?? {});
@@ -57,17 +66,23 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: guard.error }, { status: guard.status });
   }
   try {
+    const key = resolveKey(req);
     const body = await req.json();
     const adminSupabase = getServiceSupabase();
     const { data, error } = await adminSupabase
       .from("site_settings")
-      .upsert({ key: LANDING_KEY, value: body }, { onConflict: "key" })
+      .upsert({ key, value: body }, { onConflict: "key" })
       .select("value")
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // 저장 즉시 랜딩 페이지 ISR 캐시 무효화 → 다음 방문 시 즉시 반영
+    // ISR 캐시 무효화
     revalidatePath("/");
+    revalidatePath("/toefl");
+    revalidatePath("/naesin");
+    revalidatePath("/jr");
+    revalidatePath("/voca");
+    revalidatePath("/arcade");
 
     return NextResponse.json(data?.value ?? body);
   } catch (err: any) {

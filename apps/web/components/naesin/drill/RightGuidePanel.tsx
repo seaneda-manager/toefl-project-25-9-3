@@ -81,7 +81,18 @@ type Props = {
   translationCurrentSnapshot?: TranslationCurrentSnapshot;
   compositionStatusSummary?: CompositionStatusSummary;
   compositionCurrentSnapshot?: CompositionCurrentSnapshot;
+  // 상세 카드 섹션 노출 여부 (false면 상단 요약 바만 표시)
+  expanded?: boolean;
 };
+
+function StatChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border bg-neutral-50 px-3 py-1 text-xs text-neutral-600 whitespace-nowrap">
+      <span className="text-neutral-400">{label}</span>
+      <span className="font-semibold text-neutral-900">{value}</span>
+    </span>
+  );
+}
 
 const PART_LABEL: Record<StructurePart, string> = {
   subject: "주어",
@@ -171,6 +182,7 @@ export default function RightGuidePanel({
   translationCurrentSnapshot,
   compositionStatusSummary,
   compositionCurrentSnapshot,
+  expanded = true,
 }: Props) {
   const completedStructureCount = structureLogs.filter(
     (log) =>
@@ -191,58 +203,30 @@ export default function RightGuidePanel({
     : compositionLogs.filter((log) => log.completed || log.revealedReference)
         .length;
 
+  const tips = stageGuide(currentStage);
+
   return (
-    <div className="space-y-4 rounded-2xl border bg-white p-4">
-      <div>
-        <div className="text-xs uppercase tracking-[0.18em] text-neutral-400">
-          Guide
-        </div>
-        <div className="mt-1 text-base font-semibold text-neutral-900">
+    <div className="space-y-3">
+      {/* 상단 요약 바 — 항상 표시, 길고 얇게 */}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-2.5">
+        <span className="shrink-0 rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
           {DRILL_STAGE_LABEL[currentStage]}
+        </span>
+
+        <span className="min-w-0 flex-1 truncate text-xs text-neutral-500">
+          {tips.join(" · ")}
+        </span>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <StatChip label="체크 단어" value={String(unknownWords.length)} />
+          <StatChip label="구조" value={`${completedStructureCount}/${totalSentences}`} />
+          <StatChip label="해석" value={`${completedTranslationCount}/${totalSentences}`} />
+          <StatChip label="작문" value={`${completedCompositionCount}/${totalSentences}`} />
         </div>
       </div>
 
-      <div className="rounded-xl border bg-neutral-50 p-3">
-        <div className="text-xs font-semibold text-neutral-700">현재 해야 할 일</div>
-        <ul className="mt-2 space-y-2 text-sm text-neutral-600">
-          {stageGuide(currentStage).map((item) => (
-            <li key={item}>• {item}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="rounded-xl border bg-neutral-50 p-3">
-        <div className="text-xs font-semibold text-neutral-700">진행 요약</div>
-
-        <div className="mt-3 space-y-2 text-sm text-neutral-600">
-          <div className="flex items-center justify-between">
-            <span>체크 단어</span>
-            <span className="font-medium text-neutral-900">{unknownWords.length}</span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>구조 분석 입력</span>
-            <span className="font-medium text-neutral-900">
-              {completedStructureCount}/{totalSentences}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>해석 진행</span>
-            <span className="font-medium text-neutral-900">
-              {completedTranslationCount}/{totalSentences}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>작문 진행</span>
-            <span className="font-medium text-neutral-900">
-              {completedCompositionCount}/{totalSentences}
-            </span>
-          </div>
-        </div>
-      </div>
-
+      {!expanded ? null : (
+      <div className="grid gap-3 sm:grid-cols-2">
       {currentStage === "structure_analysis" ? (
         <>
           <div className="rounded-xl border bg-neutral-50 p-3">
@@ -549,6 +533,8 @@ export default function RightGuidePanel({
           </div>
         </>
       ) : null}
+      </div>
+      )}
     </div>
   );
 }

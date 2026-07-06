@@ -67,11 +67,11 @@ function toTranslationAnswer(
 function toCompositionAnswer(
   c: CompositionAuthoring | undefined,
 ): CompositionAnswer | undefined {
-  if (!c?.referenceSentence) return undefined;
+  if (!c?.referenceSentence || !c.chunks?.length) return undefined;
   return {
-    promptKo: c.koreanChunks.join(" / "),
+    promptKo: c.chunks.map((chunk) => chunk.ko).join(" / "),
     referenceEn: c.referenceSentence,
-    chunks: c.koreanChunks.map((text, i) => ({ id: `chunk-${i}`, text })),
+    chunks: c.chunks.map((chunk) => ({ id: chunk.id, text: chunk.en, textKo: chunk.ko })),
     notes: [],
   };
 }

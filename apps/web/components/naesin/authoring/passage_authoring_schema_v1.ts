@@ -129,11 +129,16 @@ export type TranslationAuthoring = {
   chunks: TranslationChunkAuthoring[];
 };
 
+export type CompositionChunkAuthoring = {
+  id: string;
+  ko: string;
+  en: string;
+};
+
 export type CompositionAuthoring = {
   sentenceId: string;
-  koreanChunks: string[];
+  chunks: CompositionChunkAuthoring[];
   targetSkeleton?: string;
-  keySlots?: string[];
   referenceSentence: string;
 };
 

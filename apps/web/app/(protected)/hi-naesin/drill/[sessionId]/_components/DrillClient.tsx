@@ -32,24 +32,33 @@ type ResponseRow = {
 
 type TypeInfo = { total: number; done: number; firstUnanswered: number };
 
-const TYPE_ORDER = ['vocab', 'translation', 'fill_blank', 'writing', 'grammar_choice'] as const;
+const TYPE_ORDER = [
+  'vocab', 'translation_arrange', 'translation', 'translation_choice',
+  'fill_blank', 'writing_arrange', 'writing', 'grammar_choice',
+] as const;
 
 const DRILL_LABEL: Record<string, string> = {
-  vocab:          '단어',
-  translation:    '해석',
-  fill_blank:     '빈칸 넣기',
-  writing:        '작문',
-  summary:        '요약',
-  grammar_choice: '문법',
+  vocab:               '단어',
+  translation_arrange: '해석 배열',
+  translation:         '해석',
+  translation_choice:  '해석 확인',
+  fill_blank:          '빈칸 넣기',
+  writing_arrange:     '작문 배열',
+  writing:             '작문',
+  summary:              '요약',
+  grammar_choice:       '문법',
 };
 
 const DRILL_INSTRUCTION: Record<string, string> = {
-  vocab:          '영어 단어의 우리말 뜻을 입력하세요.',
-  translation:    '영어 문장을 보고 우리말로 해석하세요.',
-  fill_blank:     '빈칸(____) 에 알맞은 영어 단어를 입력하세요.',
-  writing:        '주어진 우리말 문장을 영어로 작문하세요.',
-  summary:        '지문 내용을 바탕으로 요약문의 빈칸을 채우세요.',
-  grammar_choice: '빈칸에 알맞은 답을 고르거나 연결어를 선택하세요.',
+  vocab:               '영어 단어의 우리말 뜻을 입력하세요.',
+  translation_arrange: '한글 생각단위 조각을 순서대로 클릭해 번역을 조립하세요.',
+  translation:         '영어 문장을 보고 우리말로 해석하세요.',
+  translation_choice:  '가장 정확한 해석을 고르세요.',
+  fill_blank:          '빈칸(____) 에 알맞은 영어 단어를 입력하세요.',
+  writing_arrange:     '영어 생각단위 조각을 순서대로 클릭해 문장을 조립하세요.',
+  writing:             '주어진 우리말 문장을 영어로 작문하세요.',
+  summary:              '지문 내용을 바탕으로 요약문의 빈칸을 채우세요.',
+  grammar_choice:       '빈칸에 알맞은 답을 고르거나 연결어를 선택하세요.',
 };
 
 // ─────────────────────────────────────────────────────────
@@ -204,7 +213,7 @@ export default function DrillClient({
   const p = drill.payload;
   let highlightText: string | null = null;
   let highlightType: 'sentence' | 'word' | null = null;
-  if (currentType === 'translation') {
+  if (currentType === 'translation' || currentType === 'translation_arrange' || currentType === 'translation_choice') {
     highlightText = (p as { sentenceEn?: string }).sentenceEn ?? null;
     highlightType = 'sentence';
   } else if (currentType === 'fill_blank') {
@@ -212,6 +221,9 @@ export default function DrillClient({
     highlightType = 'sentence';
   } else if (currentType === 'writing') {
     highlightText = (p as { answerEn?: string }).answerEn ?? null;
+    highlightType = 'sentence';
+  } else if (currentType === 'writing_arrange') {
+    highlightText = (p as { koPrompt?: string }).koPrompt ?? null;
     highlightType = 'sentence';
   } else if (currentType === 'vocab') {
     highlightText = (p as { word?: string }).word ?? null;
@@ -296,6 +308,33 @@ export default function DrillClient({
 
           {/* 드릴 카드 */}
           <div className="rounded-2xl border bg-white p-6 space-y-5">
+            {(currentType === 'translation_arrange' || currentType === 'writing_arrange') && (
+              <ArrangeDrill
+                key={drill.id}
+                drill={drill}
+                direction={currentType === 'translation_arrange' ? 'translation' : 'writing'}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+                onNext={goNext}
+                step={currentStep}
+                typeTotal={typeTotal}
+                nextType={nextType}
+              />
+            )}
+            {currentType === 'translation_choice' && (
+              <TranslationChoiceDrill
+                key={drill.id}
+                drill={drill}
+                response={response}
+                isAnswered={isAnswered}
+                onSubmit={handleSubmit}
+                onNext={goNext}
+                step={currentStep}
+                typeTotal={typeTotal}
+                nextType={nextType}
+              />
+            )}
             {currentType === 'translation' && (
               <TranslationDrill
                 key={drill.id}
@@ -764,6 +803,212 @@ function GrammarChoiceDrill({
           </div>
           {p.explanation && (
             <div className="rounded-xl border border-violet-100 bg-violet-50 px-4 py-2.5 text-xs text-violet-800 leading-relaxed">
+              <span className="font-semibold">해설 · </span>{p.explanation}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onNext}
+            className="w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
+          >
+            {step + 1 >= typeTotal
+              ? nextType ? `다음 블록: ${DRILL_LABEL[nextType]} →` : '결과 보기 →'
+              : '다음 →'}
+          </button>
+        </>
+      )}
+    </>
+  );
+}
+
+function ArrangeDrill({
+  drill, direction, response, isAnswered, onSubmit, onNext, step, typeTotal, nextType,
+}: {
+  drill: DrillRow;
+  direction: 'translation' | 'writing';
+  response: ResponseRow | null;
+  isAnswered: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  onNext: () => void;
+  step: number;
+  typeTotal: number;
+  nextType: string | null;
+}) {
+  const p = drill.payload as {
+    sentenceEn?: string;
+    koPrompt?: string;
+    chunks: Array<{ id: string; ko?: string; en?: string }>;
+  };
+  const correctChunks = p.chunks;
+  const getText = (c: { ko?: string; en?: string }) => (direction === 'translation' ? c.ko ?? '' : c.en ?? '');
+  const source = direction === 'translation' ? p.sentenceEn ?? '' : p.koPrompt ?? '';
+
+  const shuffled = useMemo(() => {
+    const arr = [...correctChunks];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [drill.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [assembled, setAssembled] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const pool = shuffled.filter((c) => !assembled.includes(c.id));
+  const isComplete = assembled.length === correctChunks.length;
+  const correctOrderJson = JSON.stringify(correctChunks.map((c) => c.id));
+  const isCorrect = response?.is_correct;
+
+  return (
+    <>
+      <div className="rounded-xl bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-800">
+        {source}
+      </div>
+      {!isAnswered ? (
+        <form onSubmit={async (e) => { setSubmitting(true); await onSubmit(e); setSubmitting(false); }}>
+          <input type="hidden" name="drill_type" value={direction === 'translation' ? 'translation_arrange' : 'writing_arrange'} />
+          <input type="hidden" name="correct_order" value={correctOrderJson} />
+          <input type="hidden" name="response_choice" value={JSON.stringify(assembled)} />
+
+          <div className="min-h-[3rem] rounded-xl border-2 border-dashed border-neutral-200 p-3 flex flex-wrap gap-2">
+            {assembled.length === 0 && (
+              <span className="text-xs text-neutral-300">조각을 순서대로 클릭하세요</span>
+            )}
+            {assembled.map((id, i) => {
+              const chunk = correctChunks.find((c) => c.id === id)!;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setAssembled((prev) => prev.filter((x) => x !== id))}
+                  className="rounded-lg border border-neutral-900 bg-neutral-900 px-3 py-1.5 text-sm text-white"
+                >
+                  {i + 1}. {getText(chunk)}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {pool.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setAssembled((prev) => [...prev, c.id])}
+                className="rounded-lg border bg-white px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+              >
+                {getText(c)}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            {assembled.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setAssembled([])}
+                className="rounded-xl border px-4 py-2.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50"
+              >
+                다시 담기
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={!isComplete || submitting}
+              className="flex-1 rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-40"
+            >
+              {submitting ? '채점 중...' : '제출'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <div className={[
+            'rounded-xl border p-3 text-sm',
+            isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900',
+          ].join(' ')}>
+            <span className="text-xs font-medium block mb-1">{isCorrect ? '✓ 정답' : '✗ 오답'}</span>
+            {correctChunks.map((c, i) => (
+              <span key={c.id}>{i > 0 && ' '}{getText(c)}</span>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={onNext}
+            className="w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
+          >
+            {step + 1 >= typeTotal
+              ? nextType ? `다음 블록: ${DRILL_LABEL[nextType]} →` : '결과 보기 →'
+              : '다음 →'}
+          </button>
+        </>
+      )}
+    </>
+  );
+}
+
+function TranslationChoiceDrill({
+  drill, response, isAnswered, onSubmit, onNext, step, typeTotal, nextType,
+}: {
+  drill: DrillRow;
+  response: ResponseRow | null;
+  isAnswered: boolean;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  onNext: () => void;
+  step: number;
+  typeTotal: number;
+  nextType: string | null;
+}) {
+  const p = drill.payload as {
+    sentenceEn: string;
+    options: Array<{ key: 'a' | 'b' | 'c'; text: string }>;
+    correct: 'a' | 'b' | 'c';
+    explanation?: string;
+  };
+  const correctOption = p.options.find((o) => o.key === p.correct)?.text ?? '';
+  const isCorrect = response?.is_correct;
+  const [submitting, setSubmitting] = useState(false);
+
+  return (
+    <>
+      <div className="rounded-xl bg-neutral-50 p-4 text-sm leading-relaxed text-neutral-800 font-medium">
+        {p.sentenceEn}
+      </div>
+      {!isAnswered ? (
+        <form onSubmit={async (e) => { setSubmitting(true); await onSubmit(e); setSubmitting(false); }}>
+          <input type="hidden" name="drill_type" value="translation_choice" />
+          <input type="hidden" name="correct_option" value={p.correct} />
+          <div className="grid grid-cols-1 gap-2">
+            {p.options.map((opt) => (
+              <label
+                key={opt.key}
+                className="flex cursor-pointer items-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-sm hover:border-neutral-400 hover:bg-neutral-50 transition-colors"
+              >
+                <input type="radio" name="response_choice" value={opt.key} className="accent-neutral-900 shrink-0" required />
+                <span className="font-bold text-neutral-400 shrink-0">{opt.key.toUpperCase()}</span>
+                <span className="text-neutral-800">{opt.text}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
+          >
+            {submitting ? '채점 중...' : '제출'}
+          </button>
+        </form>
+      ) : (
+        <>
+          <div className={[
+            'rounded-xl border p-3 text-sm font-semibold',
+            isCorrect ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-700',
+          ].join(' ')}>
+            {isCorrect ? `✓ 정답 — ${correctOption}` : `✗ 오답 — 정답: ${correctOption}`}
+          </div>
+          {p.explanation && (
+            <div className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-2.5 text-xs text-sky-800 leading-relaxed">
               <span className="font-semibold">해설 · </span>{p.explanation}
             </div>
           )}

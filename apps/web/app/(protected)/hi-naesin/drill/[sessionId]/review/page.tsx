@@ -4,8 +4,11 @@ import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase/server';
 import type {
   TranslationPayload,
+  TranslationArrangePayload,
+  TranslationChoicePayload,
   FillBlankPayload,
   WritingPayload,
+  WritingArrangePayload,
   SummaryPayload,
   GrammarChoicePayload,
   VocabPayload,
@@ -39,8 +42,11 @@ type WrongItem = {
 };
 
 const TYPE_ORDER: HiNaesinDrillType[] = [
+  'translation_arrange',
   'translation',
+  'translation_choice',
   'fill_blank',
+  'writing_arrange',
   'writing',
   'summary',
   'grammar_choice',
@@ -48,12 +54,15 @@ const TYPE_ORDER: HiNaesinDrillType[] = [
 ];
 
 const TYPE_COLOR: Record<HiNaesinDrillType, string> = {
-  translation:    'bg-blue-50 border-blue-200 text-blue-800',
-  fill_blank:     'bg-violet-50 border-violet-200 text-violet-800',
-  writing:        'bg-emerald-50 border-emerald-200 text-emerald-800',
-  summary:        'bg-teal-50 border-teal-200 text-teal-800',
-  grammar_choice: 'bg-amber-50 border-amber-200 text-amber-800',
-  vocab:          'bg-rose-50 border-rose-200 text-rose-800',
+  translation_arrange: 'bg-sky-50 border-sky-200 text-sky-800',
+  translation:          'bg-blue-50 border-blue-200 text-blue-800',
+  translation_choice:   'bg-cyan-50 border-cyan-200 text-cyan-800',
+  fill_blank:            'bg-violet-50 border-violet-200 text-violet-800',
+  writing_arrange:        'bg-lime-50 border-lime-200 text-lime-800',
+  writing:                'bg-emerald-50 border-emerald-200 text-emerald-800',
+  summary:                'bg-teal-50 border-teal-200 text-teal-800',
+  grammar_choice:          'bg-amber-50 border-amber-200 text-amber-800',
+  vocab:                   'bg-rose-50 border-rose-200 text-rose-800',
 };
 
 function Badge({ type }: { type: string }) {
@@ -63,6 +72,15 @@ function Badge({ type }: { type: string }) {
       {drillTypeLabel(type as HiNaesinDrillType)}
     </span>
   );
+}
+
+function safeParseIdArray(json: string): string[] | null {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function WrongCard({ item }: { item: WrongItem }) {
@@ -78,6 +96,25 @@ function WrongCard({ item }: { item: WrongItem }) {
     const payload = p as unknown as TranslationPayload;
     question = payload.sentenceEn;
     correctAnswer = payload.answerKo;
+  } else if (type === 'translation_arrange' || type === 'writing_arrange') {
+    const payload = p as unknown as TranslationArrangePayload | WritingArrangePayload;
+    question = type === 'translation_arrange'
+      ? (payload as TranslationArrangePayload).sentenceEn
+      : (payload as WritingArrangePayload).koPrompt;
+    const chunkText = (c: { ko?: string; en?: string }) => c.ko ?? c.en ?? '';
+    correctAnswer = payload.chunks.map(chunkText).join(' ');
+    const submittedIds = response.response_choice ? safeParseIdArray(response.response_choice) : null;
+    studentAnswer = submittedIds
+      ? submittedIds.map((id) => chunkText(payload.chunks.find((c) => c.id === id) ?? {})).join(' ')
+      : '(미제출)';
+  } else if (type === 'translation_choice') {
+    const payload = p as unknown as TranslationChoicePayload;
+    question = payload.sentenceEn;
+    const opt = (key: string) => payload.options.find((o) => o.key === key)?.text ?? key;
+    correctAnswer = `(${payload.correct.toUpperCase()}) ${opt(payload.correct)}`;
+    studentAnswer = response.response_choice
+      ? `(${response.response_choice.toUpperCase()}) ${opt(response.response_choice)}`
+      : '(미제출)';
   } else if (type === 'fill_blank') {
     const payload = p as unknown as FillBlankPayload;
     question = payload.sentenceTemplate;
@@ -164,6 +201,14 @@ function WrongCard({ item }: { item: WrongItem }) {
           <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5">
             <p className="mb-1 text-[11px] font-semibold text-amber-600">문법 해설</p>
             <p className="text-sm leading-relaxed text-amber-900">{(p as unknown as GrammarChoicePayload).explanation}</p>
+          </div>
+        )}
+
+        {/* translation_choice 설명 */}
+        {type === 'translation_choice' && (p as unknown as TranslationChoicePayload).explanation && (
+          <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2.5">
+            <p className="mb-1 text-[11px] font-semibold text-cyan-600">해설</p>
+            <p className="text-sm leading-relaxed text-cyan-900">{(p as unknown as TranslationChoicePayload).explanation}</p>
           </div>
         )}
       </div>

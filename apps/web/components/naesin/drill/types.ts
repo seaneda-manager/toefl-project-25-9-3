@@ -223,6 +223,8 @@ export type SentenceOrderLog = {
 export type CompositionChunk = {
   id: string;
   text: string;
+  // 이 청크의 한글 생각단위 (있으면 Stage4가 translationAnswer 매칭 없이 직접 사용)
+  textKo?: string;
 };
 
 export type CompositionAnswer = {

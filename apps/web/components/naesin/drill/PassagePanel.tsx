@@ -71,6 +71,8 @@ export default function PassagePanel({
                 runningSentenceIndex += 1;
                 const sentenceIndex = runningSentenceIndex;
                 const isCurrent = sentenceIndex === currentSentenceIndex;
+                const isHiddenForComposition =
+                  isCurrent && currentStage === "composition";
                 const parts = sentence.text.split(/(\s+)/);
 
                 return (
@@ -91,7 +93,11 @@ export default function PassagePanel({
                     </div>
 
                     <div className="text-sm leading-7 text-neutral-800">
-                      {parts.map((chunk, tokenIndex) => {
+                      {isHiddenForComposition ? (
+                        <span className="italic text-neutral-400">
+                          🔒 작문 중에는 원문이 가려집니다. 한글 뜻을 보고 영어로 작문해보세요.
+                        </span>
+                      ) : parts.map((chunk, tokenIndex) => {
                         if (!chunk) return null;
                         if (/^\s+$/.test(chunk)) {
                           return <span key={`${sentence.id}-${tokenIndex}`}>{chunk}</span>;

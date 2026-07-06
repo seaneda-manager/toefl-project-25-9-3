@@ -18,6 +18,7 @@ import {
   generateGrammarQuestions,
   generateConnectiveQuestions,
 } from '@/lib/hi-naesin/grammar-generator';
+import { generateThoughtUnitDrills } from '@/lib/hi-naesin/thought-unit-generator';
 
 type Ok<T extends object = object> = { ok: true } & T;
 type Fail = { ok: false; error: string };
@@ -113,15 +114,14 @@ export async function generateDrillsFromSentencesAction(
   }
 
   // 기존 자동생성 드릴 삭제 (service role: RLS DELETE 정책 무관하게 삭제)
+  // translation/writing은 4단계(generateThoughtUnitDrillsAction)에서 중요도 기반으로 생성하므로 여기서 제외
   await adminDb
     .from('hi_naesin_drills')
     .delete()
     .eq('passage_id', passageId)
-    .in('drill_type', ['translation', 'writing', 'fill_blank', 'grammar_choice', 'vocab']);
+    .in('drill_type', ['fill_blank', 'grammar_choice', 'vocab']);
 
-  const translationDrills: object[] = [];
-  const writingDrills:     object[] = [];
-  const fillBlankDrills:   object[] = [];
+  const fillBlankDrills: object[] = [];
 
   // fill_blank은 문장당 최대 2개 → sentence index 재사용 시 unique(passage_id, drill_type, order_index) 위반
   // 전역 카운터로 고유한 order_index 보장
@@ -130,35 +130,6 @@ export async function generateDrillsFromSentencesAction(
   for (let i = 0; i < sentences.length; i++) {
     const { sentence_en, sentence_ko } = sentences[i];
     if (!sentence_en) continue;
-
-    // 해석 드릴
-    translationDrills.push({
-      passage_id:   passageId,
-      drill_type:   'translation',
-      order_index:  i,
-      payload:      { sentenceEn: sentence_en, answerKo: sentence_ko ?? '' },
-      is_published: false,
-    });
-
-    // 작문 드릴 (한→영, 해석이 있을 때만)
-    if (sentence_ko) {
-      const grammarHints = detectGrammarHints(sentence_en);
-      const hintWords    = extractKeyWords(sentence_en, 3);
-      writingDrills.push({
-        passage_id:   passageId,
-        drill_type:   'writing',
-        order_index:  i,
-        payload: {
-          koPrompt:      sentence_ko,
-          answerEn:      sentence_en,
-          acceptableAnswers: [],
-          wordCount:     countWords(sentence_en),
-          hintWords,
-          grammarHints,
-        },
-        is_published: false,
-      });
-    }
 
     // 빈칸 넣기 (문장당 최대 2개, 핵심 단어 기반)
     // order_index를 전역 카운터(fillBlankIdx)로 부여 → unique constraint 위반 방지
@@ -214,10 +185,8 @@ export async function generateDrillsFromSentencesAction(
 
   // 기본 드릴 저장 (비어있는 배열은 insert 제외)
   const toInsert: Array<{ label: string; rows: object[] }> = [
-    { label: 'translation', rows: translationDrills },
-    { label: 'writing',     rows: writingDrills     },
-    { label: 'fill_blank',  rows: fillBlankDrills   },
-    { label: 'vocab',       rows: vocabDrills        },
+    { label: 'fill_blank', rows: fillBlankDrills },
+    { label: 'vocab',      rows: vocabDrills      },
   ].filter((x) => x.rows.length > 0);
 
   const baseResults = await Promise.all(
@@ -235,13 +204,160 @@ export async function generateDrillsFromSentencesAction(
   await generateTextOrderingVariant(adminDb, passageId, sentences);
 
   // 결과를 URL 파라미터로 전달해 배너 표시
-  const t = translationDrills.length;
-  const w = writingDrills.length;
   const fb = fillBlankDrills.length;
   const v = vocabDrills.length;
 
   redirect(
-    `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&ok=2step&t=${t}&w=${w}&fb=${fb}&v=${v}`,
+    `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&ok=2step&fb=${fb}&v=${v}`,
+  );
+}
+
+// ── 4단계: AI 생각단위 배열 + 중요도 기반 해석/작문 Drill 생성 ──
+
+export async function generateThoughtUnitDrillsAction(
+  passageId: string,
+): Promise<void> {
+  const supabase = await getServerSupabase();
+  const adminDb  = getServiceSupabase(); // RLS 우회 — admin 쓰기 전용
+
+  const { data: sentences, error: sErr } = await supabase
+    .from('hi_naesin_passage_sentences')
+    .select('id, order_index, sentence_en, sentence_ko')
+    .eq('passage_id', passageId)
+    .order('order_index');
+
+  if (sErr || !sentences || sentences.length === 0) {
+    redirect(`/admin/hi-naesin/passages/${passageId}/edit?tab=sentences&err=no_sentences`);
+  }
+
+  // 기존 자동생성 드릴 삭제 (service role: RLS 우회)
+  await adminDb
+    .from('hi_naesin_drills')
+    .delete()
+    .eq('passage_id', passageId)
+    .in('drill_type', ['translation', 'translation_arrange', 'translation_choice', 'writing', 'writing_arrange']);
+
+  const sentenceInputs = sentences
+    .filter((s) => s.sentence_en)
+    .map((s) => ({ sentenceEn: s.sentence_en, sentenceKo: s.sentence_ko ?? '' }));
+
+  const genResult = await generateThoughtUnitDrills(sentenceInputs);
+
+  if ('error' in genResult) {
+    redirect(
+      `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&err=${encodeURIComponent('AI 오류 (생각단위): ' + genResult.error)}`,
+    );
+  }
+
+  const translationArrangeDrills: object[] = [];
+  const writingArrangeDrills:     object[] = [];
+  const translationChoiceDrills:  object[] = [];
+  const translationDrills:        object[] = [];
+  const writingDrills:             object[] = [];
+  const importanceUpdates: Array<{ id: string; importance: string }> = [];
+
+  for (const { sentenceIndex, result } of genResult.results) {
+    const sentence = sentences[sentenceIndex];
+    if (!sentence?.sentence_en) continue;
+    const { sentence_en: sentenceEn, sentence_ko: sentenceKo } = sentence;
+
+    importanceUpdates.push({ id: sentence.id, importance: result.importance });
+
+    translationArrangeDrills.push({
+      passage_id:   passageId,
+      drill_type:   'translation_arrange',
+      order_index:  sentenceIndex,
+      payload:      { sentenceEn, chunks: result.koChunks.map((c) => ({ id: c.id, ko: c.text })) },
+      is_published: false,
+    });
+
+    if (sentenceKo) {
+      writingArrangeDrills.push({
+        passage_id:   passageId,
+        drill_type:   'writing_arrange',
+        order_index:  sentenceIndex,
+        payload:      { koPrompt: sentenceKo, chunks: result.enChunks.map((c) => ({ id: c.id, en: c.text })) },
+        is_published: false,
+      });
+    }
+
+    if (result.importance === 'medium' && result.choiceOptions) {
+      translationChoiceDrills.push({
+        passage_id:   passageId,
+        drill_type:   'translation_choice',
+        order_index:  sentenceIndex,
+        payload: {
+          sentenceEn,
+          options:     result.choiceOptions.map(({ key, text }) => ({ key, text })),
+          correct:     result.choiceOptions.find((o) => o.isCorrect)?.key ?? 'a',
+          explanation: result.explanation ?? '',
+        },
+        is_published: false,
+      });
+    }
+
+    if (result.importance === 'high') {
+      translationDrills.push({
+        passage_id:   passageId,
+        drill_type:   'translation',
+        order_index:  sentenceIndex,
+        payload:      { sentenceEn, answerKo: sentenceKo ?? '' },
+        is_published: false,
+      });
+
+      if (sentenceKo) {
+        const grammarHints = detectGrammarHints(sentenceEn);
+        const hintWords    = extractKeyWords(sentenceEn, 3);
+        writingDrills.push({
+          passage_id:   passageId,
+          drill_type:   'writing',
+          order_index:  sentenceIndex,
+          payload: {
+            koPrompt:      sentenceKo,
+            answerEn:      sentenceEn,
+            acceptableAnswers: [],
+            wordCount:     countWords(sentenceEn),
+            hintWords,
+            grammarHints,
+          },
+          is_published: false,
+        });
+      }
+    }
+  }
+
+  // 문장 중요도 업데이트
+  await Promise.all(
+    importanceUpdates.map((u) =>
+      adminDb.from('hi_naesin_passage_sentences').update({ importance: u.importance }).eq('id', u.id),
+    ),
+  );
+
+  const toInsert: Array<{ label: string; rows: object[] }> = [
+    { label: 'translation_arrange', rows: translationArrangeDrills },
+    { label: 'writing_arrange',     rows: writingArrangeDrills     },
+    { label: 'translation_choice',  rows: translationChoiceDrills  },
+    { label: 'translation',         rows: translationDrills        },
+    { label: 'writing',             rows: writingDrills             },
+  ].filter((x) => x.rows.length > 0);
+
+  const results = await Promise.all(
+    toInsert.map((x) => adminDb.from('hi_naesin_drills').insert(x.rows)),
+  );
+
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].error) {
+      const errMsg = encodeURIComponent(results[i].error?.message ?? 'unknown');
+      redirect(`/admin/hi-naesin/passages/${passageId}/edit?tab=drill&err=${toInsert[i].label}:${errMsg}`);
+    }
+  }
+
+  revalidate(passageId);
+
+  redirect(
+    `/admin/hi-naesin/passages/${passageId}/edit?tab=drill&ok=4step`
+    + `&ta=${translationArrangeDrills.length}&wa=${writingArrangeDrills.length}`
+    + `&tc=${translationChoiceDrills.length}&t=${translationDrills.length}&w=${writingDrills.length}`,
   );
 }
 

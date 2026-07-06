@@ -30,7 +30,8 @@ export type ListeningTaskKind =
   | "academic_talk"
   // ── 2026 Updated TOEFL 신유형 ──
   | "academic_lecture"    // 기초 학술 강의 (4문항/세트, 60~90초)
-  | "campus_audio_log";   // 캠퍼스 안내방송/팟캐스트 (2문항/세트, 30~45초)
+  | "campus_audio_log"    // 캠퍼스 안내방송/팟캐스트 (2문항/세트, 30~45초)
+  | "choose_best_response"; // 짧은 질문/문장 듣고 가장 적절한 반응 고르기 (1문항/세트)
 
 /** 공통 베이스 (stage, 난이도 등) */
 export interface LBaseItem {
@@ -38,6 +39,7 @@ export interface LBaseItem {
   taskKind: ListeningTaskKind;
   stage: 1 | 2;
   audioUrl: string;
+  illustrationUrl?: string; // 러너 좌측에 보여줄 컨텍스트 이미지 (옵션)
   title?: string; // UI에서 보여줄 짧은 제목 (옵션)
   transcript?: string; // study 모드에서만 보여줄 스크립트
   questions: LQuestion[]; // 기존 질문 타입 재사용
@@ -52,10 +54,18 @@ export interface LListeningModule {
   isPretest?: boolean; // 점수에 안 들어가는 pretest 아이템 표시용 (나중 확장)
 }
 
+/** Adaptive Stage 2 pool: Stage 1 정답률에 따라 hard/easy 분기 (Reading의 RStage2Pool과 동일한 패턴) */
+export interface LStage2Pool {
+  cutScore: number;           // 예: 0.7 (70% 이상 → hard)
+  hard: LListeningModule;     // High 모듈
+  easy: LListeningModule;     // Low-Mid 모듈
+}
+
 /** 2026 형식 전체 Listening 세트 (Runner에서 바로 사용 가능) */
 export interface LListeningTest2026 {
   meta: LListeningTestMeta; // examEra === 'ibt_2026' 여야 함
-  modules: [LListeningModule, LListeningModule]; // [Stage1, Stage2]
+  modules: [LListeningModule, LListeningModule]; // [Stage1, Stage2 기본값(빈 배열)]
+  stage2Pool?: LStage2Pool; // 적응형 시험에서 사용
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -53,6 +53,10 @@ function buildPrompt(sentences: { id: string; text: string }[]): string {
 ## 문장 목록
 ${sentenceList}
 
+## 중요: sentenceId 규칙
+각 항목의 "sentenceId" 값은 반드시 위 문장 목록에서 대괄호 [ ] 안에 주어진 id를 정확히 그대로 사용하세요.
+예를 들어 "[s3] (3번) ..." 문장에 대한 데이터라면 sentenceId는 반드시 "s3"입니다 ("s-3"처럼 형식을 바꾸지 마세요).
+
 ## 생성 지침
 
 **structureAnalysis**: 각 문장의 S·V·O·C·M 분석
@@ -68,8 +72,16 @@ ${sentenceList}
 - chunks: [{id, sourceSpan(영어 청크), hintKo(한글 힌트), acceptableAnswers(허용 답안 배열)}]
   * 1문장을 2~4개 청크로 나누기
 
-**composition**: 한→영 작문용 데이터
-- koreanChunks: 한글 청크 배열 (2~5개, 학생이 순서 배열할 단위)
+**composition**: 한→영 작문용 데이터. 학생은 한글 생각단위 청크를 영어 어순으로 배열한 뒤, 청크 하나하나에 대응하는 영어를 채워 넣습니다.
+- chunks: [{id, ko(한글 생각단위), en(그 청크에 정확히 대응하는 영어 표현)}] 배열. 다음 기준을 반드시 지키세요:
+  * en들을 순서대로 이어 붙이면 referenceSentence와 정확히 같은 문장이 되어야 합니다 (ko/en은 1:1로 정확히 대응하는 의미 단위).
+  * 문장을 이루는 문법 요소(주어 / 본동사 / 목적어·보어) 하나당 청크 하나로 분리합니다. 여러 요소를 한 청크에 뭉치지 마세요.
+  * 준동사(to부정사, 동명사, 분사)는 그것이 이끄는 구와 함께 별도 청크로 분리하고, 그 준동사의 목적어·보어가 있다면 그것도 다시 별도 청크로 분리합니다.
+  * 수식어(형용사절·관계절, 부사절, 전치사구)도 각각 별도 청크로 분리합니다.
+  * 청크 개수는 고정하지 않습니다 — 문장의 문법 요소 수에 따라 자연스럽게 정해집니다 (보통 3~7개 정도).
+  * 청크의 배열 순서는 "영어 문장의 어순"을 따릅니다 (한국어 자연 어순이 아님).
+  * 예시 — "We all had so much fun watching Max play." (주어 / 본동사 / 목적어 / 준동사(분사) / 준동사의 목적어절 로 분리)
+    → [{"ko":"우리 모두는","en":"We all"}, {"ko":"보냈습니다","en":"had"}, {"ko":"정말 즐거운 시간을","en":"so much fun"}, {"ko":"보면서","en":"watching"}, {"ko":"맥스가 노는 것을","en":"Max play"}]
 - referenceSentence: 목표 영어 문장 (원문 그대로)
 - targetSkeleton: 빈칸 힌트 (핵심 단어 제거, ___ 처리)
 
@@ -89,7 +101,7 @@ ${sentenceList}
 {
   "structureAnalysis": [
     {
-      "sentenceId": "s-1",
+      "sentenceId": "s1",
       "subjectAccepted": ["..."],
       "verbAccepted": ["..."],
       "objectAccepted": [],
@@ -99,7 +111,7 @@ ${sentenceList}
   ],
   "translation": [
     {
-      "sentenceId": "s-1",
+      "sentenceId": "s1",
       "referenceKo": "...",
       "acceptableKeywords": ["..."],
       "chunks": [{"id": "c1", "sourceSpan": "...", "hintKo": "...", "acceptableAnswers": ["..."]}]
@@ -107,15 +119,15 @@ ${sentenceList}
   ],
   "composition": [
     {
-      "sentenceId": "s-1",
-      "koreanChunks": ["...", "..."],
+      "sentenceId": "s1",
+      "chunks": [{"id": "c1", "ko": "...", "en": "..."}],
       "referenceSentence": "...",
       "targetSkeleton": "..."
     }
   ],
   "sentenceFunctions": [
     {
-      "sentenceId": "s-1",
+      "sentenceId": "s1",
       "correct": "topic_sentence",
       "accepted": [],
       "clue": "...",
@@ -124,7 +136,7 @@ ${sentenceList}
   ],
   "wordAnalysis": [
     {
-      "sentenceId": "s-1",
+      "sentenceId": "s1",
       "recommendedUnknownWords": ["..."]
     }
   ]
