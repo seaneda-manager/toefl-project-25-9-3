@@ -12,10 +12,17 @@ import {
 
 type Mode = "CSV" | "JSON";
 
+type TrackLite = {
+  id: string;
+  title?: string;
+  description?: string;
+};
+
 type Props = {
   initialSlug?: string;
   initialTitle?: string;
   initialDescription?: string;
+  initialTracks?: TrackLite[];
 };
 
 function clean(s: any) {
@@ -26,11 +33,13 @@ export default function WisewordCsvImporter({
   initialSlug = "",
   initialTitle = "",
   initialDescription = "",
+  initialTracks = [],
 }: Props) {
   const [mode, setMode] = useState<Mode>("CSV");
   const [slug, setSlug] = useState(initialSlug);
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const [trackId, setTrackId] = useState<string>(initialTracks?.[0]?.id ?? "");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<"WORDS" | "SET" | null>(null);
   const [result, setResult] = useState<ImportWisewordCsvActionResult | null>(null);
@@ -82,6 +91,7 @@ export default function WisewordCsvImporter({
         slug: clean(slug),
         title: clean(title) || null,
         description: clean(description) || null,
+        track_id: trackId || null,
       };
       const r =
         mode === "CSV"
@@ -132,7 +142,7 @@ acquire,acquire,verb,획득하다,to get or obtain something,She acquired new sk
         </div>
 
         {/* Set info */}
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
           <div>
             <div className="text-xs font-semibold text-slate-600">slug (세트 생성 시 필수)</div>
             <input
@@ -159,6 +169,21 @@ acquire,acquire,verb,획득하다,to get or obtain something,She acquired new sk
               placeholder="optional"
               className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
             />
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-slate-600">track</div>
+            <select
+              value={trackId}
+              onChange={(e) => setTrackId(e.target.value)}
+              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            >
+              <option value="">-- 선택 안 함 --</option>
+              {initialTracks.map((track) => (
+                <option key={track.id} value={track.id}>
+                  {track.title || track.id}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

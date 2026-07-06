@@ -9,10 +9,10 @@ export default async function AdminVocabTracksAssignPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  console.log("[Tracks] Page rendering...", { tab: params?.tab, set: params?.set, trackHint: params?.trackHint });
+  console.log("[Tracks] Page rendering...", { tab: params?.tab, set: params?.set, track_id: params?.track_id });
 
   const tab = params?.tab === "group" ? "group" : "single";
-  const trackHint = params?.trackHint ? String(params.trackHint) : null;
+  const selectedTrackId = params?.track_id ? String(params.track_id) : null;
 
   console.log("[Tracks] Loading students and tracks...");
 
@@ -90,13 +90,13 @@ export default async function AdminVocabTracksAssignPage({
             <TrackAssignClient
               initialStudents={students}
               initialTracks={tracks}
-              selectedTrackHint={trackHint}
+              selectedTrackId={selectedTrackId}
             />
           ) : (
             <GroupAssignClient
               initialStudents={students}
               initialTracks={tracks}
-              selectedTrackHint={trackHint}
+              selectedTrackId={selectedTrackId}
             />
           )}
         </>

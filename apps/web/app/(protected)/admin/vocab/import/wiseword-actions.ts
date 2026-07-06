@@ -7,6 +7,7 @@ export type ImportWisewordWordsAndCreateSetFromJsonTextInput = {
   slug: string;
   title?: string | null;
   description?: string | null;
+  track_id?: string | null;
   jsonText: string;
 };
 
@@ -257,7 +258,7 @@ async function ensureWords(admin: any, rows: any[]) {
   };
 }
 
-async function createOrGetSetId(admin: any, slug: string, title?: string | null, description?: string | null) {
+async function createOrGetSetId(admin: any, slug: string, title?: string | null, description?: string | null, track_id?: string | null) {
   // try select first
   const sel = await admin.from("vocab_sets").select("id,slug").eq("slug", slug).limit(1);
   if (!sel.error && Array.isArray(sel.data) && sel.data[0]?.id) {
@@ -271,6 +272,7 @@ async function createOrGetSetId(admin: any, slug: string, title?: string | null,
       slug,
       title: title ?? slug,
       description: description ?? null,
+      track_id: track_id ?? null,
     })
     .select("id")
     .limit(1);
@@ -293,6 +295,7 @@ export type ImportWisewordWordsAndCreateSetFromCsvTextInput = {
   slug: string;
   title?: string | null;
   description?: string | null;
+  track_id?: string | null;
   csvText: string;
 };
 
@@ -332,7 +335,7 @@ export async function importWisewordWordsAndCreateSetFromCsvText(
     diag.steps.push({ step: "parseCsv", rowCount: rows.length });
     const ensured = await ensureWords(admin, rows);
     diag.steps.push({ step: "ensureWords", ...ensured.diag });
-    const setId = await createOrGetSetId(admin, slug, input.title ?? null, input.description ?? null);
+    const setId = await createOrGetSetId(admin, slug, input.title ?? null, input.description ?? null, input.track_id ?? null);
     diag.steps.push({ step: "setResolved", setId });
     const del = await admin.from("vocab_set_items").delete().eq("set_id", setId);
     diag.steps.push({ step: "deleteSetItems", ok: !del.error });
@@ -399,7 +402,7 @@ export async function importWisewordWordsAndCreateSetFromJsonText(
     const ensured = await ensureWords(admin, rows);
     diag.steps.push({ step: "ensureWords", ...ensured.diag });
 
-    const setId = await createOrGetSetId(admin, slug, input.title ?? null, input.description ?? null);
+    const setId = await createOrGetSetId(admin, slug, input.title ?? null, input.description ?? null, input.track_id ?? null);
     diag.steps.push({ step: "setResolved", setId });
 
     // replace set items safely (avoid ON CONFLICT drama)

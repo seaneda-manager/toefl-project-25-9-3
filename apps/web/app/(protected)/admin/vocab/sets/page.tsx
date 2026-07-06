@@ -123,20 +123,12 @@ export default async function AdminVocabSetsPage() {
                         : "—"}
                     </td>
                     <td>
-                      {(() => {
-                        const title = row.title ?? '';
-                        const match = title.match(/Day\s*(\d+)/i);
-                        const dayNum = match ? match[1] : '';
-                        const trackHint = dayNum ? `${dayNum}일` : '';
-                        return (
-                          <Link
-                            href={`/admin/vocab/Tracks?set=${row.id}&trackHint=${encodeURIComponent(trackHint)}`}
-                            className="rounded-lg border px-3 py-1 text-xs hover:bg-neutral-50"
-                          >
-                            배포
-                          </Link>
-                        );
-                      })()}
+                      <Link
+                        href={`/admin/vocab/Tracks?set=${row.id}${row.track_id ? `&track_id=${row.track_id}` : ''}`}
+                        className="rounded-lg border px-3 py-1 text-xs hover:bg-neutral-50"
+                      >
+                        배포
+                      </Link>
                     </td>
                   </tr>
                 ))}
