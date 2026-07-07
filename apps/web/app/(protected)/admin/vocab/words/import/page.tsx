@@ -49,7 +49,7 @@ export default function AdminVocabWordsImportPage() {
                 name="maxItems"
                 type="number"
                 min={1}
-                max={2000}
+                max={5000}
                 defaultValue={500}
                 className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
               />

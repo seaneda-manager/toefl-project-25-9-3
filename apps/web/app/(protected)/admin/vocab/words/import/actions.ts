@@ -118,7 +118,7 @@ async function runImport(params: {
 
   const sourceLabel = params.sourceLabel ?? null;
   const note = params.note ?? null;
-  const maxItems = Math.min(Math.max(params.maxItems ?? 500, 1), 2000);
+  const maxItems = Math.min(Math.max(params.maxItems ?? 500, 1), 5000);
   const clearExisting = params.clearExisting ?? false;
 
   // ✅ 기존 데이터 삭제 (sourceLabel 기반)
