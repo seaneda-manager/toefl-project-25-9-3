@@ -38,7 +38,7 @@ export default function AdminVocabWordsImportPage() {
               <span className="text-sm font-medium text-gray-700">sourceLabel</span>
               <input
                 name="sourceLabel"
-                placeholder="e.g. 능률보카_어원편_Day01"
+                placeholder="e.g. 능률보카_어원편"
                 className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
               />
             </label>
@@ -62,6 +62,26 @@ export default function AdminVocabWordsImportPage() {
                 placeholder="optional"
                 className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
               />
+            </label>
+          </div>
+
+          {/* clear existing option */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <label className="flex items-center gap-3">
+              <input
+                name="clearExisting"
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-900">
+                  기존 데이터 삭제 후 업로드
+                </span>
+                <p className="text-xs text-gray-600 mt-1">
+                  체크하면 같은 sourceLabel의 기존 단어들을 모두 삭제한 후 새 데이터를 업로드합니다.
+                  (최종 버전 교재 업로드 시 권장)
+                </p>
+              </div>
             </label>
           </div>
 

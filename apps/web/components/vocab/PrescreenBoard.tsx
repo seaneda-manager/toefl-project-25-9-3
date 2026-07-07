@@ -98,12 +98,13 @@ export default function PrescreenBoard({
   }
 
   return (
-    <div className="h-full w-full flex items-center justify-center" style={{ background: "#1a3d30" }}>
+    <div className="fixed inset-0 w-screen flex flex-col z-50" style={{ background: "#1a3d30" }}>
       <div
-        className="flex flex-col w-[min(600px,88%)] gap-6"
+        className="flex-1 flex flex-col justify-center items-center px-6 py-8"
         key={animKey}
         style={{ animation: "lx-card-in 220ms cubic-bezier(0.22,1,0.36,1) both" }}
       >
+        <div className="w-full max-w-sm flex flex-col gap-6">
         {/* 헤더 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -153,6 +154,7 @@ export default function PrescreenBoard({
           >
             아직 몰라요 <span className="ml-2 text-xs font-semibold" style={{ opacity: 0.4 }}>(2)</span>
           </button>
+        </div>
         </div>
       </div>
 

@@ -1,4 +1,10 @@
-﻿export type Json =
+npm warn Unknown project config "shared-workspace-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "prefer-frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+npm warn Unknown project config "node-linker". This will stop working in the next major version of npm.
+npm warn Unknown project config "link-workspace-packages". This will stop working in the next major version of npm.
+npm warn Unknown project config "package-import-method". This will stop working in the next major version of npm.
+export type Json =
   | string
   | number
   | boolean
@@ -10,10 +16,25 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      __jenny_probe: {
+        Row: {
+          created_at: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       academy_class_meetings: {
         Row: {
           class_id: string
@@ -311,39 +332,87 @@ export type Database = {
       }
       assignments: {
         Row: {
+          content_id: string | null
           created_at: string
           created_by: string | null
           due_at: string | null
+          due_date: string | null
           homework_id: string | null
           id: string
+          kind: string | null
+          retry_allowed: boolean
+          review_required: boolean
+          scope_id: string | null
+          section: string | null
           start_at: string | null
           status: string
           target: Json | null
+          target_id: string | null
+          target_type: string | null
           title: string
+          track: string | null
+          updated_at: string
         }
         Insert: {
+          content_id?: string | null
           created_at?: string
           created_by?: string | null
           due_at?: string | null
+          due_date?: string | null
           homework_id?: string | null
           id?: string
+          kind?: string | null
+          retry_allowed?: boolean
+          review_required?: boolean
+          scope_id?: string | null
+          section?: string | null
           start_at?: string | null
           status?: string
           target?: Json | null
+          target_id?: string | null
+          target_type?: string | null
           title: string
+          track?: string | null
+          updated_at?: string
         }
         Update: {
+          content_id?: string | null
           created_at?: string
           created_by?: string | null
           due_at?: string | null
+          due_date?: string | null
           homework_id?: string | null
           id?: string
+          kind?: string | null
+          retry_allowed?: boolean
+          review_required?: boolean
+          scope_id?: string | null
+          section?: string | null
           start_at?: string | null
           status?: string
           target?: Json | null
+          target_id?: string | null
+          target_type?: string | null
           title?: string
+          track?: string | null
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assignments_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "contents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_scope_id_fkey"
+            columns: ["scope_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_exam_scopes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attempts: {
         Row: {
@@ -526,50 +595,107 @@ export type Database = {
         }
         Relationships: []
       }
-      daily_tasks: {
+      contents: {
         Row: {
-          analysis: string | null
-          created_at: string | null
+          chapter: string | null
+          created_at: string
+          difficulty: string | null
+          grade: string | null
           id: string
-          paraphrase: string | null
-          session_id: string | null
-          translation: string | null
-          user_id: string
+          is_school_specific: boolean
+          publisher: string | null
+          school_level: string | null
+          section: string
+          semester: string | null
+          source_book: string | null
+          source_type: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          track: string
+          unit: string | null
+          updated_at: string
         }
         Insert: {
-          analysis?: string | null
-          created_at?: string | null
+          chapter?: string | null
+          created_at?: string
+          difficulty?: string | null
+          grade?: string | null
           id?: string
-          paraphrase?: string | null
-          session_id?: string | null
-          translation?: string | null
-          user_id: string
+          is_school_specific?: boolean
+          publisher?: string | null
+          school_level?: string | null
+          section: string
+          semester?: string | null
+          source_book?: string | null
+          source_type?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          track: string
+          unit?: string | null
+          updated_at?: string
         }
         Update: {
-          analysis?: string | null
-          created_at?: string | null
+          chapter?: string | null
+          created_at?: string
+          difficulty?: string | null
+          grade?: string | null
           id?: string
-          paraphrase?: string | null
-          session_id?: string | null
-          translation?: string | null
-          user_id?: string
+          is_school_specific?: boolean
+          publisher?: string | null
+          school_level?: string | null
+          section?: string
+          semester?: string | null
+          source_book?: string | null
+          source_type?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          track?: string
+          unit?: string | null
+          updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "daily_tasks_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "study_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "daily_tasks_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "v_session_score"
-            referencedColumns: ["session_id"]
-          },
-        ]
+        Relationships: []
+      }
+      daily_tasks: {
+        Row: {
+          ai_feedback: string | null
+          completed_at: string | null
+          context: Json | null
+          id: string
+          points_earned: number
+          prompt: string
+          response: string | null
+          student_id: string
+          task_date: string
+          task_type: string
+        }
+        Insert: {
+          ai_feedback?: string | null
+          completed_at?: string | null
+          context?: Json | null
+          id?: string
+          points_earned?: number
+          prompt: string
+          response?: string | null
+          student_id: string
+          task_date?: string
+          task_type: string
+        }
+        Update: {
+          ai_feedback?: string | null
+          completed_at?: string | null
+          context?: Json | null
+          id?: string
+          points_earned?: number
+          prompt?: string
+          response?: string | null
+          student_id?: string
+          task_date?: string
+          task_type?: string
+        }
+        Relationships: []
       }
       dictations: {
         Row: {
@@ -778,6 +904,344 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_exam_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          due_date: string | null
+          exam_id: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          due_date?: string | null
+          exam_id: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          due_date?: string | null
+          exam_id?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_exam_assignments_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "generated_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_exam_responses: {
+        Row: {
+          answers: Json
+          assignment_id: string
+          created_at: string
+          id: string
+          student_id: string
+          submitted_at: string | null
+        }
+        Insert: {
+          answers?: Json
+          assignment_id: string
+          created_at?: string
+          id?: string
+          student_id: string
+          submitted_at?: string | null
+        }
+        Update: {
+          answers?: Json
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          student_id?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_exam_responses_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "generated_exam_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_exams: {
+        Row: {
+          created_at: string
+          created_by: string
+          exam_month: number
+          exam_year: number
+          grade: string
+          id: string
+          questions: Json
+          school: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          exam_month: number
+          exam_year: number
+          grade: string
+          id?: string
+          questions?: Json
+          school: string
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          exam_month?: number
+          exam_year?: number
+          grade?: string
+          id?: string
+          questions?: Json
+          school?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      grammar_2026_drills: {
+        Row: {
+          answer: string
+          audio_url: string | null
+          created_at: string | null
+          distractors: Json
+          grammar_labels: Json
+          id: string
+          order_index: number
+          sentence: string
+          type: string
+          unit_id: string
+        }
+        Insert: {
+          answer: string
+          audio_url?: string | null
+          created_at?: string | null
+          distractors?: Json
+          grammar_labels?: Json
+          id?: string
+          order_index: number
+          sentence: string
+          type: string
+          unit_id: string
+        }
+        Update: {
+          answer?: string
+          audio_url?: string | null
+          created_at?: string | null
+          distractors?: Json
+          grammar_labels?: Json
+          id?: string
+          order_index?: number
+          sentence?: string
+          type?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grammar_2026_drills_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_2026_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_2026_explanation_segments: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          order_index: number
+          type: string
+          unit_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          order_index: number
+          type: string
+          unit_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          order_index?: number
+          type?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grammar_2026_explanation_segments_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_2026_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_2026_student_responses: {
+        Row: {
+          accordion_opened: boolean
+          answer_correct: boolean
+          created_at: string | null
+          drill_id: string
+          id: string
+          label_correct: boolean | null
+          selected_answer: string | null
+          selected_label_id: string | null
+          student_id: string
+        }
+        Insert: {
+          accordion_opened?: boolean
+          answer_correct: boolean
+          created_at?: string | null
+          drill_id: string
+          id?: string
+          label_correct?: boolean | null
+          selected_answer?: string | null
+          selected_label_id?: string | null
+          student_id: string
+        }
+        Update: {
+          accordion_opened?: boolean
+          answer_correct?: boolean
+          created_at?: string | null
+          drill_id?: string
+          id?: string
+          label_correct?: boolean | null
+          selected_answer?: string | null
+          selected_label_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grammar_2026_student_responses_drill_id_fkey"
+            columns: ["drill_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_2026_drills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_2026_stylistic_items: {
+        Row: {
+          created_at: string | null
+          explanation: string
+          id: string
+          options: Json
+          order_index: number
+          prompt: string
+          skill: string
+          unit_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          explanation?: string
+          id?: string
+          options?: Json
+          order_index?: number
+          prompt: string
+          skill: string
+          unit_id: string
+        }
+        Update: {
+          created_at?: string | null
+          explanation?: string
+          id?: string
+          options?: Json
+          order_index?: number
+          prompt?: string
+          skill?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grammar_2026_stylistic_items_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_2026_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_2026_unit_completions: {
+        Row: {
+          completed_at: string | null
+          id: string
+          student_id: string
+          unit_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          student_id: string
+          unit_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          student_id?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grammar_2026_unit_completions_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_2026_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_2026_units: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          label_en: string
+          label_ko: string
+          level: string
+          order_index: number
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id: string
+          label_en: string
+          label_ko: string
+          level?: string
+          order_index?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          label_en?: string
+          label_ko?: string
+          level?: string
+          order_index?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       grammar_chapters: {
         Row: {
           created_at: string | null
@@ -888,6 +1352,78 @@ export type Database = {
         }
         Relationships: []
       }
+      grammar_unit_taxonomy: {
+        Row: {
+          authoring_mode: string
+          common_traps: string[]
+          created_at: string
+          decision_point: string
+          difficulty: string
+          example_base: string
+          example_pattern_type: string
+          example_transforms: string[]
+          explanation_full: string | null
+          explanation_short: string
+          grammar_category: string
+          grammar_point: string
+          id: string
+          is_active: boolean
+          point_id: string | null
+          related_error_codes: string[]
+          selection_patterns: string[]
+          structure_pattern: string
+          tags: string[]
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          authoring_mode: string
+          common_traps?: string[]
+          created_at?: string
+          decision_point: string
+          difficulty: string
+          example_base?: string
+          example_pattern_type: string
+          example_transforms?: string[]
+          explanation_full?: string | null
+          explanation_short: string
+          grammar_category: string
+          grammar_point: string
+          id: string
+          is_active?: boolean
+          point_id?: string | null
+          related_error_codes?: string[]
+          selection_patterns?: string[]
+          structure_pattern: string
+          tags?: string[]
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authoring_mode?: string
+          common_traps?: string[]
+          created_at?: string
+          decision_point?: string
+          difficulty?: string
+          example_base?: string
+          example_pattern_type?: string
+          example_transforms?: string[]
+          explanation_full?: string | null
+          explanation_short?: string
+          grammar_category?: string
+          grammar_point?: string
+          id?: string
+          is_active?: boolean
+          point_id?: string | null
+          related_error_codes?: string[]
+          selection_patterns?: string[]
+          structure_pattern?: string
+          tags?: string[]
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       grammar_units: {
         Row: {
           created_at: string | null
@@ -905,6 +1441,520 @@ export type Database = {
           payload?: Json
         }
         Relationships: []
+      }
+      hi_naesin_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assignment_type: string
+          created_at: string
+          due_at: string | null
+          enabled_drill_types: string[] | null
+          id: string
+          note: string | null
+          passage_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_type: string
+          created_at?: string
+          due_at?: string | null
+          enabled_drill_types?: string[] | null
+          id?: string
+          note?: string | null
+          passage_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_type?: string
+          created_at?: string
+          due_at?: string | null
+          enabled_drill_types?: string[] | null
+          id?: string
+          note?: string | null
+          passage_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_assignments_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_drill_responses: {
+        Row: {
+          created_at: string
+          drill_id: string
+          elapsed_sec: number | null
+          feedback_text: string | null
+          id: string
+          is_correct: boolean | null
+          response_choice: string | null
+          response_text: string | null
+          score_pct: number | null
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          drill_id: string
+          elapsed_sec?: number | null
+          feedback_text?: string | null
+          id?: string
+          is_correct?: boolean | null
+          response_choice?: string | null
+          response_text?: string | null
+          score_pct?: number | null
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          drill_id?: string
+          elapsed_sec?: number | null
+          feedback_text?: string | null
+          id?: string
+          is_correct?: boolean | null
+          response_choice?: string | null
+          response_text?: string | null
+          score_pct?: number | null
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_drill_responses_drill_id_fkey"
+            columns: ["drill_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_drills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hi_naesin_drill_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_drills: {
+        Row: {
+          created_at: string
+          drill_type: string
+          id: string
+          is_published: boolean
+          order_index: number
+          passage_id: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          drill_type: string
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          passage_id: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          drill_type?: string
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          passage_id?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_drills_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_passage_analysis: {
+        Row: {
+          blank_items: Json | null
+          blank_locked: boolean | null
+          connector_items: Json | null
+          connector_locked: boolean | null
+          created_at: string | null
+          grammar_items: Json | null
+          grammar_locked: boolean | null
+          id: string
+          passage_id: string | null
+          updated_at: string | null
+          vocab_items: Json | null
+          vocab_locked: boolean | null
+        }
+        Insert: {
+          blank_items?: Json | null
+          blank_locked?: boolean | null
+          connector_items?: Json | null
+          connector_locked?: boolean | null
+          created_at?: string | null
+          grammar_items?: Json | null
+          grammar_locked?: boolean | null
+          id?: string
+          passage_id?: string | null
+          updated_at?: string | null
+          vocab_items?: Json | null
+          vocab_locked?: boolean | null
+        }
+        Update: {
+          blank_items?: Json | null
+          blank_locked?: boolean | null
+          connector_items?: Json | null
+          connector_locked?: boolean | null
+          created_at?: string | null
+          grammar_items?: Json | null
+          grammar_locked?: boolean | null
+          id?: string
+          passage_id?: string | null
+          updated_at?: string | null
+          vocab_items?: Json | null
+          vocab_locked?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_passage_analysis_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: true
+            referencedRelation: "hi_naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_passage_sentences: {
+        Row: {
+          created_at: string
+          id: string
+          importance: string
+          order_index: number
+          passage_id: string
+          sentence_en: string
+          sentence_ko: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          importance?: string
+          order_index: number
+          passage_id: string
+          sentence_en: string
+          sentence_ko?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          importance?: string
+          order_index?: number
+          passage_id?: string
+          sentence_en?: string
+          sentence_ko?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_passage_sentences_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_passages: {
+        Row: {
+          book_name: string | null
+          book_unit: string | null
+          created_at: string
+          created_by: string | null
+          exam_month: number | null
+          exam_year: number | null
+          grade: string
+          id: string
+          is_published: boolean
+          passage_text: string
+          question_number: number | null
+          school_name: string | null
+          source_type: string
+          textbook_name: string | null
+          title: string | null
+          topic_tags: string[]
+          translation_ko: string | null
+          unit_label: string | null
+          updated_at: string
+          word_count: number | null
+        }
+        Insert: {
+          book_name?: string | null
+          book_unit?: string | null
+          created_at?: string
+          created_by?: string | null
+          exam_month?: number | null
+          exam_year?: number | null
+          grade: string
+          id?: string
+          is_published?: boolean
+          passage_text: string
+          question_number?: number | null
+          school_name?: string | null
+          source_type: string
+          textbook_name?: string | null
+          title?: string | null
+          topic_tags?: string[]
+          translation_ko?: string | null
+          unit_label?: string | null
+          updated_at?: string
+          word_count?: number | null
+        }
+        Update: {
+          book_name?: string | null
+          book_unit?: string | null
+          created_at?: string
+          created_by?: string | null
+          exam_month?: number | null
+          exam_year?: number | null
+          grade?: string
+          id?: string
+          is_published?: boolean
+          passage_text?: string
+          question_number?: number | null
+          school_name?: string | null
+          source_type?: string
+          textbook_name?: string | null
+          title?: string | null
+          topic_tags?: string[]
+          translation_ko?: string | null
+          unit_label?: string | null
+          updated_at?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
+      hi_naesin_sessions: {
+        Row: {
+          analytics_snapshot: Json
+          assignment_id: string | null
+          created_at: string
+          id: string
+          passage_id: string
+          score_percent: number | null
+          session_type: string
+          started_at: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          analytics_snapshot?: Json
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          passage_id: string
+          score_percent?: number | null
+          session_type: string
+          started_at?: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          analytics_snapshot?: Json
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          passage_id?: string
+          score_percent?: number | null
+          session_type?: string
+          started_at?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_sessions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hi_naesin_sessions_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_variant_answers: {
+        Row: {
+          created_at: string
+          elapsed_sec: number | null
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_choice_id: string | null
+          selected_order: string[] | null
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          elapsed_sec?: number | null
+          id?: string
+          is_correct: boolean
+          question_id: string
+          selected_choice_id?: string | null
+          selected_order?: string[] | null
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          elapsed_sec?: number | null
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_choice_id?: string | null
+          selected_order?: string[] | null
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_variant_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_variant_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hi_naesin_variant_answers_selected_choice_id_fkey"
+            columns: ["selected_choice_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_variant_choices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hi_naesin_variant_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_variant_choices: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean
+          order_index: number
+          question_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          order_index: number
+          question_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          order_index?: number
+          question_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_variant_choices_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_variant_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hi_naesin_variant_questions: {
+        Row: {
+          created_at: string
+          explanation: string | null
+          id: string
+          is_published: boolean
+          order_index: number
+          passage_id: string
+          payload: Json
+          question_type: string
+          stem: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          passage_id: string
+          payload?: Json
+          question_type: string
+          stem?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          passage_id?: string
+          payload?: Json
+          question_type?: string
+          stem?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hi_naesin_variant_questions_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "hi_naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       homework_reminders: {
         Row: {
@@ -995,6 +2045,325 @@ export type Database = {
           word_id?: string
         }
         Relationships: []
+      }
+      lecture_assignments: {
+        Row: {
+          assigned_by: string | null
+          class_id: string | null
+          created_at: string
+          due_at: string | null
+          id: string
+          lecture_id: string
+          student_id: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          class_id?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          lecture_id: string
+          student_id?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          class_id?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          lecture_id?: string
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_assignments_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          lecture_id: string
+          quiz_score: number | null
+          quiz_total: number | null
+          student_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          lecture_id: string
+          quiz_score?: number | null
+          quiz_total?: number | null
+          student_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          lecture_id?: string
+          quiz_score?: number | null
+          quiz_total?: number | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_completions_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_questions: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          lecture_id: string
+          student_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          lecture_id: string
+          student_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          lecture_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_questions_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_quiz_attempts: {
+        Row: {
+          answer: string
+          attempted_at: string
+          id: string
+          is_correct: boolean
+          lecture_id: string
+          question_id: string
+          student_id: string
+        }
+        Insert: {
+          answer: string
+          attempted_at?: string
+          id?: string
+          is_correct: boolean
+          lecture_id: string
+          question_id: string
+          student_id: string
+        }
+        Update: {
+          answer?: string
+          attempted_at?: string
+          id?: string
+          is_correct?: boolean
+          lecture_id?: string
+          question_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_quiz_attempts_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lecture_quiz_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "lecture_quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lecture_quiz_questions: {
+        Row: {
+          blank_answer: string
+          created_at: string
+          hint: string | null
+          id: string
+          lecture_id: string
+          question_text: string
+          sort_order: number
+          timestamp_seconds: number
+        }
+        Insert: {
+          blank_answer: string
+          created_at?: string
+          hint?: string | null
+          id?: string
+          lecture_id: string
+          question_text: string
+          sort_order?: number
+          timestamp_seconds: number
+        }
+        Update: {
+          blank_answer?: string
+          created_at?: string
+          hint?: string | null
+          id?: string
+          lecture_id?: string
+          question_text?: string
+          sort_order?: number
+          timestamp_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecture_quiz_questions_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lectures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lectures: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_active: boolean
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          youtube_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          youtube_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
+      lexiox_jr_drill_results: {
+        Row: {
+          assignment_id: string | null
+          completed_at: string
+          id: string
+          passage_id: string
+          score_pct: number | null
+          stage: string
+          student_id: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          completed_at?: string
+          id?: string
+          passage_id: string
+          score_pct?: number | null
+          stage: string
+          student_id: string
+        }
+        Update: {
+          assignment_id?: string | null
+          completed_at?: string
+          id?: string
+          passage_id?: string
+          score_pct?: number | null
+          stage?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lexiox_jr_drill_results_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "lexiox_jr_passage_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lexiox_jr_drill_results_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lexiox_jr_passage_assignments: {
+        Row: {
+          assigned_by: string
+          created_at: string
+          due_at: string | null
+          id: string
+          passage_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          passage_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          passage_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lexiox_jr_passage_assignments_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       listening_answers: {
         Row: {
@@ -1261,6 +2630,66 @@ export type Database = {
         }
         Relationships: []
       }
+      listening_tests: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_locked: boolean | null
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_locked?: boolean | null
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_locked?: boolean | null
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      listening_tests_2026: {
+        Row: {
+          created_at: string
+          exam_era: string
+          id: string
+          is_active: boolean
+          is_locked: boolean
+          label: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_era?: string
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          label: string
+          payload: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_era?: string
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          label?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       listening_tracks: {
         Row: {
           audio_url: string
@@ -1317,6 +2746,92 @@ export type Database = {
           },
         ]
       }
+      middle_naesin_contents: {
+        Row: {
+          body_text: string | null
+          content_type: string
+          created_at: string
+          extra_data: Json | null
+          id: string
+          sort_order: number
+          title: string | null
+          translation_ko: string | null
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          body_text?: string | null
+          content_type: string
+          created_at?: string
+          extra_data?: Json | null
+          id?: string
+          sort_order?: number
+          title?: string | null
+          translation_ko?: string | null
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          body_text?: string | null
+          content_type?: string
+          created_at?: string
+          extra_data?: Json | null
+          id?: string
+          sort_order?: number
+          title?: string | null
+          translation_ko?: string | null
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "middle_naesin_contents_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "middle_naesin_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      middle_naesin_units: {
+        Row: {
+          created_at: string
+          grade: string
+          id: string
+          is_published: boolean
+          lesson_number: number | null
+          lesson_title: string | null
+          publisher: string
+          school_name: string | null
+          semester: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          grade: string
+          id?: string
+          is_published?: boolean
+          lesson_number?: number | null
+          lesson_title?: string | null
+          publisher: string
+          school_name?: string | null
+          semester: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          grade?: string
+          id?: string
+          is_published?: boolean
+          lesson_number?: number | null
+          lesson_title?: string | null
+          publisher?: string
+          school_name?: string | null
+          semester?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       migrations: {
         Row: {
           applied_at: string | null
@@ -1334,6 +2849,1269 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      naesin_assignments: {
+        Row: {
+          created_at: string
+          due_at: string | null
+          id: string
+          retry_allowed: boolean
+          review_required: boolean
+          scope_id: string
+          status: string
+          target_id: string
+          target_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          retry_allowed?: boolean
+          review_required?: boolean
+          scope_id: string
+          status?: string
+          target_id: string
+          target_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          retry_allowed?: boolean
+          review_required?: boolean
+          scope_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_assignments_scope_id_fkey"
+            columns: ["scope_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_exam_scopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_contents: {
+        Row: {
+          chapter: string | null
+          content_kind: string
+          created_at: string
+          difficulty: string | null
+          grade: string | null
+          id: string
+          is_active: boolean
+          publisher: string | null
+          question_origin_type: string | null
+          school_level: string
+          section: string
+          semester: string | null
+          source_book: string | null
+          source_type: string
+          tags: string[] | null
+          title: string
+          track: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          chapter?: string | null
+          content_kind: string
+          created_at?: string
+          difficulty?: string | null
+          grade?: string | null
+          id?: string
+          is_active?: boolean
+          publisher?: string | null
+          question_origin_type?: string | null
+          school_level: string
+          section: string
+          semester?: string | null
+          source_book?: string | null
+          source_type: string
+          tags?: string[] | null
+          title: string
+          track?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chapter?: string | null
+          content_kind?: string
+          created_at?: string
+          difficulty?: string | null
+          grade?: string | null
+          id?: string
+          is_active?: boolean
+          publisher?: string | null
+          question_origin_type?: string | null
+          school_level?: string
+          section?: string
+          semester?: string | null
+          source_book?: string | null
+          source_type?: string
+          tags?: string[] | null
+          title?: string
+          track?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      naesin_exam_schedule: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          exam_date: string
+          exam_name: string
+          id: string
+          note: string | null
+          school: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          exam_date: string
+          exam_name?: string
+          id?: string
+          note?: string | null
+          school?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          exam_date?: string
+          exam_name?: string
+          id?: string
+          note?: string | null
+          school?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_exam_schedule_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_exam_schedule_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_exam_scope_items: {
+        Row: {
+          body: string | null
+          content_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          item_type: string
+          note: string | null
+          scope_id: string
+          sort_order: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          content_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          item_type?: string
+          note?: string | null
+          scope_id: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          content_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          item_type?: string
+          note?: string | null
+          scope_id?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_exam_scope_items_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_contents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_exam_scope_items_scope_id_fkey"
+            columns: ["scope_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_exam_scopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_exam_scopes: {
+        Row: {
+          academic_year: number
+          created_at: string
+          end_date: string | null
+          exam_type: string
+          grade: string
+          id: string
+          is_active: boolean
+          memo: string | null
+          school_level: string
+          school_name: string
+          semester: string
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year: number
+          created_at?: string
+          end_date?: string | null
+          exam_type: string
+          grade: string
+          id?: string
+          is_active?: boolean
+          memo?: string | null
+          school_level: string
+          school_name: string
+          semester: string
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: number
+          created_at?: string
+          end_date?: string | null
+          exam_type?: string
+          grade?: string
+          id?: string
+          is_active?: boolean
+          memo?: string | null
+          school_level?: string
+          school_name?: string
+          semester?: string
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      naesin_passages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          exam_type: string | null
+          grade_label: string | null
+          id: string
+          is_published: boolean
+          original_question_style: string | null
+          paragraph_count: number
+          payload: Json
+          raw_passage: string
+          school_level: string | null
+          sentence_count: number
+          slug: string
+          source_label: string | null
+          source_type: string | null
+          status: string
+          tags: string[]
+          title: string
+          track: string
+          updated_at: string
+          updated_by: string | null
+          variant_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          exam_type?: string | null
+          grade_label?: string | null
+          id?: string
+          is_published?: boolean
+          original_question_style?: string | null
+          paragraph_count?: number
+          payload?: Json
+          raw_passage?: string
+          school_level?: string | null
+          sentence_count?: number
+          slug: string
+          source_label?: string | null
+          source_type?: string | null
+          status?: string
+          tags?: string[]
+          title: string
+          track: string
+          updated_at?: string
+          updated_by?: string | null
+          variant_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          exam_type?: string | null
+          grade_label?: string | null
+          id?: string
+          is_published?: boolean
+          original_question_style?: string | null
+          paragraph_count?: number
+          payload?: Json
+          raw_passage?: string
+          school_level?: string | null
+          sentence_count?: number
+          slug?: string
+          source_label?: string | null
+          source_type?: string | null
+          status?: string
+          tags?: string[]
+          title?: string
+          track?: string
+          updated_at?: string
+          updated_by?: string | null
+          variant_count?: number
+        }
+        Relationships: []
+      }
+      naesin_reading_analytics_snapshots: {
+        Row: {
+          accuracy_overall: number
+          avg_elapsed_sec_by_type: Json
+          by_passage: Json
+          by_question_type: Json
+          by_skill_group: Json
+          created_at: string
+          id: string
+          prescription_tags: Database["public"]["Enums"]["naesin_prescription_tag"][]
+          session_id: string
+          updated_at: string
+          wrong_reason_breakdown: Json
+        }
+        Insert: {
+          accuracy_overall?: number
+          avg_elapsed_sec_by_type?: Json
+          by_passage?: Json
+          by_question_type?: Json
+          by_skill_group?: Json
+          created_at?: string
+          id?: string
+          prescription_tags?: Database["public"]["Enums"]["naesin_prescription_tag"][]
+          session_id: string
+          updated_at?: string
+          wrong_reason_breakdown?: Json
+        }
+        Update: {
+          accuracy_overall?: number
+          avg_elapsed_sec_by_type?: Json
+          by_passage?: Json
+          by_question_type?: Json
+          by_skill_group?: Json
+          created_at?: string
+          id?: string
+          prescription_tags?: Database["public"]["Enums"]["naesin_prescription_tag"][]
+          session_id?: string
+          updated_at?: string
+          wrong_reason_breakdown?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_analytics_snapshots_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_answers: {
+        Row: {
+          answer_text: string | null
+          awarded_score: number
+          confidence: number | null
+          created_at: string
+          elapsed_sec: number | null
+          evidence_checked: boolean
+          flagged: boolean
+          id: string
+          is_correct: boolean
+          mapping_pairs: Json
+          max_score: number
+          omitted: boolean
+          ordered_values: string[]
+          question_id: string
+          selected_choice_id: string | null
+          selected_choice_ids: string[]
+          session_id: string
+          updated_at: string
+          wrong_reason_tags: Database["public"]["Enums"]["naesin_wrong_reason_tag"][]
+        }
+        Insert: {
+          answer_text?: string | null
+          awarded_score?: number
+          confidence?: number | null
+          created_at?: string
+          elapsed_sec?: number | null
+          evidence_checked?: boolean
+          flagged?: boolean
+          id?: string
+          is_correct: boolean
+          mapping_pairs?: Json
+          max_score?: number
+          omitted?: boolean
+          ordered_values?: string[]
+          question_id: string
+          selected_choice_id?: string | null
+          selected_choice_ids?: string[]
+          session_id: string
+          updated_at?: string
+          wrong_reason_tags?: Database["public"]["Enums"]["naesin_wrong_reason_tag"][]
+        }
+        Update: {
+          answer_text?: string | null
+          awarded_score?: number
+          confidence?: number | null
+          created_at?: string
+          elapsed_sec?: number | null
+          evidence_checked?: boolean
+          flagged?: boolean
+          id?: string
+          is_correct?: boolean
+          mapping_pairs?: Json
+          max_score?: number
+          omitted?: boolean
+          ordered_values?: string[]
+          question_id?: string
+          selected_choice_id?: string | null
+          selected_choice_ids?: string[]
+          session_id?: string
+          updated_at?: string
+          wrong_reason_tags?: Database["public"]["Enums"]["naesin_wrong_reason_tag"][]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_answers_selected_choice_id_fkey"
+            columns: ["selected_choice_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_choices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_choices: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean | null
+          label: string
+          order_index: number
+          question_id: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          label: string
+          order_index: number
+          question_id: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          label?: string
+          order_index?: number
+          question_id?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_choices_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_evidence: {
+        Row: {
+          created_at: string
+          end_offset: number | null
+          id: string
+          note: string | null
+          order_index: number
+          paragraph_label: string | null
+          question_id: string
+          quote: string | null
+          start_offset: number | null
+          type: Database["public"]["Enums"]["naesin_evidence_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_offset?: number | null
+          id?: string
+          note?: string | null
+          order_index?: number
+          paragraph_label?: string | null
+          question_id: string
+          quote?: string | null
+          start_offset?: number | null
+          type: Database["public"]["Enums"]["naesin_evidence_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_offset?: number | null
+          id?: string
+          note?: string | null
+          order_index?: number
+          paragraph_label?: string | null
+          question_id?: string
+          quote?: string | null
+          start_offset?: number | null
+          type?: Database["public"]["Enums"]["naesin_evidence_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_evidence_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_passages: {
+        Row: {
+          created_at: string
+          difficulty: Database["public"]["Enums"]["naesin_reading_difficulty"]
+          exam_context: Database["public"]["Enums"]["naesin_exam_context"]
+          genre: Database["public"]["Enums"]["naesin_passage_genre"]
+          grade_band: Database["public"]["Enums"]["naesin_grade_band"]
+          grammar_focus: string[]
+          id: string
+          metadata: Json
+          order_index: number
+          set_id: string
+          source_type: Database["public"]["Enums"]["naesin_reading_source_type"]
+          summary: string | null
+          tags: string[]
+          text: string
+          title: string | null
+          translation_ko: string | null
+          updated_at: string
+          vocab_focus: string[]
+        }
+        Insert: {
+          created_at?: string
+          difficulty: Database["public"]["Enums"]["naesin_reading_difficulty"]
+          exam_context: Database["public"]["Enums"]["naesin_exam_context"]
+          genre: Database["public"]["Enums"]["naesin_passage_genre"]
+          grade_band: Database["public"]["Enums"]["naesin_grade_band"]
+          grammar_focus?: string[]
+          id?: string
+          metadata?: Json
+          order_index: number
+          set_id: string
+          source_type: Database["public"]["Enums"]["naesin_reading_source_type"]
+          summary?: string | null
+          tags?: string[]
+          text: string
+          title?: string | null
+          translation_ko?: string | null
+          updated_at?: string
+          vocab_focus?: string[]
+        }
+        Update: {
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["naesin_reading_difficulty"]
+          exam_context?: Database["public"]["Enums"]["naesin_exam_context"]
+          genre?: Database["public"]["Enums"]["naesin_passage_genre"]
+          grade_band?: Database["public"]["Enums"]["naesin_grade_band"]
+          grammar_focus?: string[]
+          id?: string
+          metadata?: Json
+          order_index?: number
+          set_id?: string
+          source_type?: Database["public"]["Enums"]["naesin_reading_source_type"]
+          summary?: string | null
+          tags?: string[]
+          text?: string
+          title?: string | null
+          translation_ko?: string | null
+          updated_at?: string
+          vocab_focus?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_passages_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_questions: {
+        Row: {
+          answer_key: Json
+          created_at: string
+          difficulty:
+            | Database["public"]["Enums"]["naesin_reading_difficulty"]
+            | null
+          explanation: string | null
+          grammar_tags: string[]
+          id: string
+          logic_tags: string[]
+          metadata: Json
+          number_label: string
+          order_index: number
+          passage_id: string
+          prompt_ko: string | null
+          score: number
+          set_id: string
+          skill_tags: string[]
+          stem: string
+          type: Database["public"]["Enums"]["naesin_question_type"]
+          updated_at: string
+          vocab_tags: string[]
+        }
+        Insert: {
+          answer_key: Json
+          created_at?: string
+          difficulty?:
+            | Database["public"]["Enums"]["naesin_reading_difficulty"]
+            | null
+          explanation?: string | null
+          grammar_tags?: string[]
+          id?: string
+          logic_tags?: string[]
+          metadata?: Json
+          number_label: string
+          order_index: number
+          passage_id: string
+          prompt_ko?: string | null
+          score?: number
+          set_id: string
+          skill_tags?: string[]
+          stem: string
+          type: Database["public"]["Enums"]["naesin_question_type"]
+          updated_at?: string
+          vocab_tags?: string[]
+        }
+        Update: {
+          answer_key?: Json
+          created_at?: string
+          difficulty?:
+            | Database["public"]["Enums"]["naesin_reading_difficulty"]
+            | null
+          explanation?: string | null
+          grammar_tags?: string[]
+          id?: string
+          logic_tags?: string[]
+          metadata?: Json
+          number_label?: string
+          order_index?: number
+          passage_id?: string
+          prompt_ko?: string | null
+          score?: number
+          set_id?: string
+          skill_tags?: string[]
+          stem?: string
+          type?: Database["public"]["Enums"]["naesin_question_type"]
+          updated_at?: string
+          vocab_tags?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_questions_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_passages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_questions_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_review_evidence_logs: {
+        Row: {
+          created_at: string
+          id: string
+          matched: boolean
+          note: string | null
+          passage_id: string
+          question_id: string
+          selected_evidence: string[]
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matched?: boolean
+          note?: string | null
+          passage_id: string
+          question_id: string
+          selected_evidence?: string[]
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matched?: boolean
+          note?: string | null
+          passage_id?: string
+          question_id?: string
+          selected_evidence?: string[]
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_review_evidence_logs_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_passages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_review_evidence_logs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_review_evidence_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_review_sentence_analysis_logs: {
+        Row: {
+          complement_text: string | null
+          created_at: string
+          id: string
+          modifier_text: string | null
+          note: string | null
+          object_text: string | null
+          passage_id: string
+          question_id: string
+          session_id: string
+          subject_text: string | null
+          target_sentence: string
+          translation_ko: string | null
+          updated_at: string
+          verb_text: string | null
+        }
+        Insert: {
+          complement_text?: string | null
+          created_at?: string
+          id?: string
+          modifier_text?: string | null
+          note?: string | null
+          object_text?: string | null
+          passage_id: string
+          question_id: string
+          session_id: string
+          subject_text?: string | null
+          target_sentence: string
+          translation_ko?: string | null
+          updated_at?: string
+          verb_text?: string | null
+        }
+        Update: {
+          complement_text?: string | null
+          created_at?: string
+          id?: string
+          modifier_text?: string | null
+          note?: string | null
+          object_text?: string | null
+          passage_id?: string
+          question_id?: string
+          session_id?: string
+          subject_text?: string | null
+          target_sentence?: string
+          translation_ko?: string | null
+          updated_at?: string
+          verb_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_review_sentence_analysis_logs_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_passages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_review_sentence_analysis_logs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_review_sentence_analysis_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_review_unknown_word_logs: {
+        Row: {
+          created_at: string
+          id: string
+          passage_id: string
+          session_id: string
+          updated_at: string
+          words: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          passage_id: string
+          session_id: string
+          updated_at?: string
+          words?: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          passage_id?: string
+          session_id?: string
+          updated_at?: string
+          words?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_review_unknown_word_logs_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_passages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_review_unknown_word_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_review_vocab_logs: {
+        Row: {
+          attempt_no: number
+          cloze_text: string | null
+          created_at: string
+          id: string
+          is_correct: boolean
+          passage_id: string
+          prompt_sentence: string | null
+          session_id: string
+          updated_at: string
+          user_answer: string | null
+          word: string
+        }
+        Insert: {
+          attempt_no?: number
+          cloze_text?: string | null
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          passage_id: string
+          prompt_sentence?: string | null
+          session_id: string
+          updated_at?: string
+          user_answer?: string | null
+          word: string
+        }
+        Update: {
+          attempt_no?: number
+          cloze_text?: string | null
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          passage_id?: string
+          prompt_sentence?: string | null
+          session_id?: string
+          updated_at?: string
+          user_answer?: string | null
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_review_vocab_logs_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_passages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_review_vocab_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_session_analysis_snapshots: {
+        Row: {
+          accuracy_overall: number | null
+          behavior_metrics: Json
+          by_passage: Json
+          by_question_type: Json
+          created_at: string
+          evidence_metrics: Json
+          prescriptions: string[]
+          score_percent: number | null
+          sentence_metrics: Json
+          session_id: string
+          set_id: string
+          student_id: string
+          updated_at: string
+          vocab_metrics: Json
+          weak_tags: string[]
+        }
+        Insert: {
+          accuracy_overall?: number | null
+          behavior_metrics?: Json
+          by_passage?: Json
+          by_question_type?: Json
+          created_at?: string
+          evidence_metrics?: Json
+          prescriptions?: string[]
+          score_percent?: number | null
+          sentence_metrics?: Json
+          session_id: string
+          set_id: string
+          student_id: string
+          updated_at?: string
+          vocab_metrics?: Json
+          weak_tags?: string[]
+        }
+        Update: {
+          accuracy_overall?: number | null
+          behavior_metrics?: Json
+          by_passage?: Json
+          by_question_type?: Json
+          created_at?: string
+          evidence_metrics?: Json
+          prescriptions?: string[]
+          score_percent?: number | null
+          sentence_metrics?: Json
+          session_id?: string
+          set_id?: string
+          student_id?: string
+          updated_at?: string
+          vocab_metrics?: Json
+          weak_tags?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_session_analysis_snapshots_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "naesin_reading_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_session_analysis_snapshots_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_sessions: {
+        Row: {
+          analytics_snapshot: Json
+          assignment_id: string | null
+          band_label: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          mode: Database["public"]["Enums"]["naesin_session_mode"]
+          score_percent: number | null
+          score_raw: number | null
+          set_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["naesin_session_status"]
+          student_id: string
+          submitted_at: string | null
+          total_elapsed_sec: number | null
+          updated_at: string
+        }
+        Insert: {
+          analytics_snapshot?: Json
+          assignment_id?: string | null
+          band_label?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          mode?: Database["public"]["Enums"]["naesin_session_mode"]
+          score_percent?: number | null
+          score_raw?: number | null
+          set_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["naesin_session_status"]
+          student_id: string
+          submitted_at?: string | null
+          total_elapsed_sec?: number | null
+          updated_at?: string
+        }
+        Update: {
+          analytics_snapshot?: Json
+          assignment_id?: string | null
+          band_label?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          mode?: Database["public"]["Enums"]["naesin_session_mode"]
+          score_percent?: number | null
+          score_raw?: number | null
+          set_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["naesin_session_status"]
+          student_id?: string
+          submitted_at?: string | null
+          total_elapsed_sec?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_reading_sessions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "student_naesin_reading_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "naesin_reading_sessions_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      naesin_reading_sets: {
+        Row: {
+          book_name: string | null
+          created_at: string
+          created_by: string | null
+          curriculum_id: string | null
+          difficulty: Database["public"]["Enums"]["naesin_reading_difficulty"]
+          estimated_minutes: number | null
+          exam_context: Database["public"]["Enums"]["naesin_exam_context"]
+          grade_band: Database["public"]["Enums"]["naesin_grade_band"]
+          id: string
+          is_published: boolean
+          metadata: Json
+          school_name: string | null
+          semester: string | null
+          source_type: Database["public"]["Enums"]["naesin_reading_source_type"]
+          subtitle: string | null
+          tags: string[]
+          title: string
+          total_questions: number
+          track: string
+          unit_range: string | null
+          updated_at: string
+        }
+        Insert: {
+          book_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          curriculum_id?: string | null
+          difficulty: Database["public"]["Enums"]["naesin_reading_difficulty"]
+          estimated_minutes?: number | null
+          exam_context: Database["public"]["Enums"]["naesin_exam_context"]
+          grade_band: Database["public"]["Enums"]["naesin_grade_band"]
+          id?: string
+          is_published?: boolean
+          metadata?: Json
+          school_name?: string | null
+          semester?: string | null
+          source_type: Database["public"]["Enums"]["naesin_reading_source_type"]
+          subtitle?: string | null
+          tags?: string[]
+          title: string
+          total_questions?: number
+          track?: string
+          unit_range?: string | null
+          updated_at?: string
+        }
+        Update: {
+          book_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          curriculum_id?: string | null
+          difficulty?: Database["public"]["Enums"]["naesin_reading_difficulty"]
+          estimated_minutes?: number | null
+          exam_context?: Database["public"]["Enums"]["naesin_exam_context"]
+          grade_band?: Database["public"]["Enums"]["naesin_grade_band"]
+          id?: string
+          is_published?: boolean
+          metadata?: Json
+          school_name?: string | null
+          semester?: string | null
+          source_type?: Database["public"]["Enums"]["naesin_reading_source_type"]
+          subtitle?: string | null
+          tags?: string[]
+          title?: string
+          total_questions?: number
+          track?: string
+          unit_range?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      naesin_reading_student_tendency_snapshots: {
+        Row: {
+          basis_session_ids: string[]
+          created_at: string
+          id: string
+          prescription_tags: string[]
+          student_id: string
+          top_patterns: Json
+          updated_at: string
+          weak_tags: string[]
+          window_size: number
+        }
+        Insert: {
+          basis_session_ids?: string[]
+          created_at?: string
+          id?: string
+          prescription_tags?: string[]
+          student_id: string
+          top_patterns?: Json
+          updated_at?: string
+          weak_tags?: string[]
+          window_size: number
+        }
+        Update: {
+          basis_session_ids?: string[]
+          created_at?: string
+          id?: string
+          prescription_tags?: string[]
+          student_id?: string
+          top_patterns?: Json
+          updated_at?: string
+          weak_tags?: string[]
+          window_size?: number
+        }
+        Relationships: []
+      }
+      naesin_sessions: {
+        Row: {
+          assignment_id: string | null
+          id: string
+          logs: Json
+          passage_id: string
+          started_at: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          id?: string
+          logs?: Json
+          passage_id: string
+          started_at?: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string | null
+          id?: string
+          logs?: Json
+          passage_id?: string
+          started_at?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "naesin_sessions_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes: {
         Row: {
@@ -1394,6 +4172,75 @@ export type Database = {
         }
         Relationships: []
       }
+      passage_grammar_targets: {
+        Row: {
+          authoring_mode: string | null
+          created_at: string
+          detection_mode: string
+          explanation_override: string | null
+          grammar_unit_id: string
+          id: string
+          is_primary: boolean
+          label_axes_payload: Json
+          note: string | null
+          option_payload: Json
+          passage_id: string
+          sentence_id: string | null
+          status: string
+          updated_at: string
+          wrong_reason_notes: string[]
+        }
+        Insert: {
+          authoring_mode?: string | null
+          created_at?: string
+          detection_mode: string
+          explanation_override?: string | null
+          grammar_unit_id: string
+          id?: string
+          is_primary?: boolean
+          label_axes_payload?: Json
+          note?: string | null
+          option_payload?: Json
+          passage_id: string
+          sentence_id?: string | null
+          status: string
+          updated_at?: string
+          wrong_reason_notes?: string[]
+        }
+        Update: {
+          authoring_mode?: string | null
+          created_at?: string
+          detection_mode?: string
+          explanation_override?: string | null
+          grammar_unit_id?: string
+          id?: string
+          is_primary?: boolean
+          label_axes_payload?: Json
+          note?: string | null
+          option_payload?: Json
+          passage_id?: string
+          sentence_id?: string | null
+          status?: string
+          updated_at?: string
+          wrong_reason_notes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passage_grammar_targets_grammar_unit_id_fkey"
+            columns: ["grammar_unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_unit_taxonomy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_grammar_targets_passage_id_fkey"
+            columns: ["passage_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_passages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       passages: {
         Row: {
           content: string | null
@@ -1431,6 +4278,220 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      perk_catalog: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          metadata: Json | null
+          name: string
+          perk_type: string
+          point_cost: number
+          stock: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          metadata?: Json | null
+          name: string
+          perk_type: string
+          point_cost: number
+          stock?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          metadata?: Json | null
+          name?: string
+          perk_type?: string
+          point_cost?: number
+          stock?: number | null
+        }
+        Relationships: []
+      }
+      perk_redemptions: {
+        Row: {
+          admin_note: string | null
+          id: string
+          perk_id: string
+          points_spent: number
+          requested_at: string
+          resolved_at: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          id?: string
+          perk_id: string
+          points_spent: number
+          requested_at?: string
+          resolved_at?: string | null
+          status?: string
+          student_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          id?: string
+          perk_id?: string
+          points_spent?: number
+          requested_at?: string
+          resolved_at?: string | null
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perk_redemptions_perk_id_fkey"
+            columns: ["perk_id"]
+            isOneToOne: false
+            referencedRelation: "perk_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_homework: {
+        Row: {
+          answer_key_data: Json | null
+          answer_key_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          is_active: boolean
+          subject: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          answer_key_data?: Json | null
+          answer_key_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          is_active?: boolean
+          subject?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          answer_key_data?: Json | null
+          answer_key_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          is_active?: boolean
+          subject?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_homework_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_homework_submissions: {
+        Row: {
+          ai_results: Json | null
+          correct_count: number | null
+          created_at: string
+          graded_at: string | null
+          homework_id: string
+          id: string
+          photo_url: string | null
+          student_id: string
+          total_count: number | null
+        }
+        Insert: {
+          ai_results?: Json | null
+          correct_count?: number | null
+          created_at?: string
+          graded_at?: string | null
+          homework_id: string
+          id?: string
+          photo_url?: string | null
+          student_id: string
+          total_count?: number | null
+        }
+        Update: {
+          ai_results?: Json | null
+          correct_count?: number | null
+          created_at?: string
+          graded_at?: string | null
+          homework_id?: string
+          id?: string
+          photo_url?: string | null
+          student_id?: string
+          total_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_homework_submissions_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "photo_homework"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_homework_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_rules: {
+        Row: {
+          base_points: number
+          category: string
+          description: string | null
+          first_try_bonus: number
+          id: string
+          is_active: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          base_points?: number
+          category: string
+          description?: string | null
+          first_try_bonus?: number
+          id: string
+          is_active?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          base_points?: number
+          category?: string
+          description?: string | null
+          first_try_bonus?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       popup_quiz_results: {
         Row: {
@@ -1502,7 +4563,9 @@ export type Database = {
           name: string | null
           parent_phone: string | null
           phone: string | null
+          program: string | null
           role: string | null
+          tribe: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1523,7 +4586,9 @@ export type Database = {
           name?: string | null
           parent_phone?: string | null
           phone?: string | null
+          program?: string | null
           role?: string | null
+          tribe?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1544,7 +4609,9 @@ export type Database = {
           name?: string | null
           parent_phone?: string | null
           phone?: string | null
+          program?: string | null
           role?: string | null
+          tribe?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1725,6 +4792,8 @@ export type Database = {
       reading_answers: {
         Row: {
           choice_id: string | null
+          choice_ids: string[] | null
+          created_at: string | null
           elapsed_ms: number | null
           passage_id: string | null
           question_id: string
@@ -1732,6 +4801,8 @@ export type Database = {
         }
         Insert: {
           choice_id?: string | null
+          choice_ids?: string[] | null
+          created_at?: string | null
           elapsed_ms?: number | null
           passage_id?: string | null
           question_id: string
@@ -1739,6 +4810,8 @@ export type Database = {
         }
         Update: {
           choice_id?: string | null
+          choice_ids?: string[] | null
+          created_at?: string | null
           elapsed_ms?: number | null
           passage_id?: string | null
           question_id?: string
@@ -1764,6 +4837,51 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reading_attempt_answers: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_choice: Database["public"]["Enums"]["reading_choice"] | null
+          time_spent_ms: number | null
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id: string
+          selected_choice?: Database["public"]["Enums"]["reading_choice"] | null
+          time_spent_ms?: number | null
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_choice?: Database["public"]["Enums"]["reading_choice"] | null
+          time_spent_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_attempt_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "reading_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_attempt_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "reading_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -1897,6 +5015,83 @@ export type Database = {
           },
         ]
       }
+      reading_module_defs: {
+        Row: {
+          academic_count: number
+          branch: Database["public"]["Enums"]["reading_branch"]
+          created_at: string
+          ctw_count: number
+          daily_count: number
+          id: string
+          module_no: number
+          test_id: string
+        }
+        Insert: {
+          academic_count?: number
+          branch: Database["public"]["Enums"]["reading_branch"]
+          created_at?: string
+          ctw_count?: number
+          daily_count?: number
+          id?: string
+          module_no: number
+          test_id: string
+        }
+        Update: {
+          academic_count?: number
+          branch?: Database["public"]["Enums"]["reading_branch"]
+          created_at?: string
+          ctw_count?: number
+          daily_count?: number
+          id?: string
+          module_no?: number
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_module_defs_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "reading_test_defs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reading_module_items: {
+        Row: {
+          id: string
+          module_id: string
+          position: number
+          question_id: string
+        }
+        Insert: {
+          id?: string
+          module_id: string
+          position: number
+          question_id: string
+        }
+        Update: {
+          id?: string
+          module_id?: string
+          position?: number
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_module_items_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "reading_module_defs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_module_items_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "reading_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reading_notes: {
         Row: {
           content: string
@@ -1980,6 +5175,71 @@ export type Database = {
             columns: ["set_id"]
             isOneToOne: false
             referencedRelation: "v_user_reading_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reading_question_explanations: {
+        Row: {
+          correct_choice_explanation: string | null
+          created_at: string | null
+          evidence_interpretation: string | null
+          id: string
+          incorrect_choices: Json | null
+          question_id: string
+          question_interpretation: string | null
+          test_id: string
+          updated_at: string | null
+          vocabulary_notes: Json | null
+        }
+        Insert: {
+          correct_choice_explanation?: string | null
+          created_at?: string | null
+          evidence_interpretation?: string | null
+          id?: string
+          incorrect_choices?: Json | null
+          question_id: string
+          question_interpretation?: string | null
+          test_id: string
+          updated_at?: string | null
+          vocabulary_notes?: Json | null
+        }
+        Update: {
+          correct_choice_explanation?: string | null
+          created_at?: string | null
+          evidence_interpretation?: string | null
+          id?: string
+          incorrect_choices?: Json | null
+          question_id?: string
+          question_interpretation?: string | null
+          test_id?: string
+          updated_at?: string | null
+          vocabulary_notes?: Json | null
+        }
+        Relationships: []
+      }
+      reading_question_meta: {
+        Row: {
+          glossary: Json | null
+          question_id: string
+          target_span: Json | null
+        }
+        Insert: {
+          glossary?: Json | null
+          question_id: string
+          target_span?: Json | null
+        }
+        Update: {
+          glossary?: Json | null
+          question_id?: string
+          target_span?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_question_meta_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "reading_questions"
             referencedColumns: ["id"]
           },
         ]
@@ -2072,6 +5332,48 @@ export type Database = {
           },
         ]
       }
+      reading_session_answers: {
+        Row: {
+          choice_id: string
+          created_at: string
+          elapsed_ms: number | null
+          id: number
+          question_id: string
+          session_id: string
+        }
+        Insert: {
+          choice_id: string
+          created_at?: string
+          elapsed_ms?: number | null
+          id?: number
+          question_id: string
+          session_id: string
+        }
+        Update: {
+          choice_id?: string
+          created_at?: string
+          elapsed_ms?: number | null
+          id?: number
+          question_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_session_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "reading_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_session_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "reading_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reading_sessions: {
         Row: {
           band_score: number | null
@@ -2081,8 +5383,11 @@ export type Database = {
           legacy_score: number | null
           mode: string
           passage_id: string
+          product: string | null
+          profile_id: string | null
           set_id: string | null
           started_at: string | null
+          track: string | null
           user_id: string
         }
         Insert: {
@@ -2093,8 +5398,11 @@ export type Database = {
           legacy_score?: number | null
           mode: string
           passage_id: string
+          product?: string | null
+          profile_id?: string | null
           set_id?: string | null
           started_at?: string | null
+          track?: string | null
           user_id: string
         }
         Update: {
@@ -2105,8 +5413,11 @@ export type Database = {
           legacy_score?: number | null
           mode?: string
           passage_id?: string
+          product?: string | null
+          profile_id?: string | null
           set_id?: string | null
           started_at?: string | null
+          track?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2146,11 +5457,60 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_test_defs: {
+        Row: {
+          created_at: string
+          id: string
+          is_mst: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_mst?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_mst?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      reading_tests: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_locked: boolean | null
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_locked?: boolean | null
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_locked?: boolean | null
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reading_tests_2026: {
         Row: {
           created_at: string | null
           exam_era: string | null
           id: string
+          is_locked: boolean
           label: string
           payload: Json
           updated_at: string | null
@@ -2159,6 +5519,7 @@ export type Database = {
           created_at?: string | null
           exam_era?: string | null
           id: string
+          is_locked?: boolean
           label: string
           payload: Json
           updated_at?: string | null
@@ -2167,6 +5528,7 @@ export type Database = {
           created_at?: string | null
           exam_era?: string | null
           id?: string
+          is_locked?: boolean
           label?: string
           payload?: Json
           updated_at?: string | null
@@ -2385,11 +5747,26 @@ export type Database = {
       }
       speaking_results_2026: {
         Row: {
+          ai_delivery_score: number | null
+          ai_feedback: string | null
+          ai_graded_at: string | null
+          ai_language_score: number | null
+          ai_topic_score: number | null
+          ai_total_score: number | null
           approx_sentences: number | null
           approx_words: number | null
+          audio_url: string | null
           content_score: number | null
           created_at: string
+          final_delivery_score: number | null
+          final_feedback: string | null
+          final_language_score: number | null
+          final_topic_score: number | null
+          final_total_score: number | null
           fluency_score: number | null
+          graded_at: string | null
+          graded_by: string | null
+          grading_status: string
           id: string
           language_score: number | null
           meta: Json | null
@@ -2402,11 +5779,26 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          ai_delivery_score?: number | null
+          ai_feedback?: string | null
+          ai_graded_at?: string | null
+          ai_language_score?: number | null
+          ai_topic_score?: number | null
+          ai_total_score?: number | null
           approx_sentences?: number | null
           approx_words?: number | null
+          audio_url?: string | null
           content_score?: number | null
           created_at?: string
+          final_delivery_score?: number | null
+          final_feedback?: string | null
+          final_language_score?: number | null
+          final_topic_score?: number | null
+          final_total_score?: number | null
           fluency_score?: number | null
+          graded_at?: string | null
+          graded_by?: string | null
+          grading_status?: string
           id?: string
           language_score?: number | null
           meta?: Json | null
@@ -2419,11 +5811,26 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          ai_delivery_score?: number | null
+          ai_feedback?: string | null
+          ai_graded_at?: string | null
+          ai_language_score?: number | null
+          ai_topic_score?: number | null
+          ai_total_score?: number | null
           approx_sentences?: number | null
           approx_words?: number | null
+          audio_url?: string | null
           content_score?: number | null
           created_at?: string
+          final_delivery_score?: number | null
+          final_feedback?: string | null
+          final_language_score?: number | null
+          final_topic_score?: number | null
+          final_total_score?: number | null
           fluency_score?: number | null
+          graded_at?: string | null
+          graded_by?: string | null
+          grading_status?: string
           id?: string
           language_score?: number | null
           meta?: Json | null
@@ -2434,6 +5841,39 @@ export type Database = {
           task_id?: string
           test_id?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      speaking_tests: {
+        Row: {
+          created_at: string
+          exam_era: string
+          id: string
+          is_active: boolean
+          is_locked: boolean
+          label: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_era?: string
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          label?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_era?: string
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          label?: string
+          payload?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2577,6 +6017,225 @@ export type Database = {
           },
         ]
       }
+      student_activities: {
+        Row: {
+          accuracy: number | null
+          activity_type: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_at: string | null
+          id: string
+          meta: Json
+          score: number | null
+          section: string | null
+          source_id: string | null
+          source_table: string | null
+          started_at: string | null
+          status: string
+          student_id: string
+          title: string | null
+          track: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy?: number | null
+          activity_type: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          meta?: Json
+          score?: number | null
+          section?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          started_at?: string | null
+          status?: string
+          student_id: string
+          title?: string | null
+          track: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number | null
+          activity_type?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          meta?: Json
+          score?: number | null
+          section?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          started_at?: string | null
+          status?: string
+          student_id?: string
+          title?: string | null
+          track?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_activity_weak_tags: {
+        Row: {
+          activity_id: string
+          created_at: string
+          id: string
+          meta: Json
+          severity: string | null
+          source: string | null
+          student_id: string
+          weak_tag: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          severity?: string | null
+          source?: string | null
+          student_id: string
+          weak_tag: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          severity?: string | null
+          source?: string | null
+          student_id?: string
+          weak_tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_activity_weak_tags_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "student_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_avatars: {
+        Row: {
+          active_theme_id: string | null
+          equipped_items: Json
+          evolution_stage: number
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          active_theme_id?: string | null
+          equipped_items?: Json
+          evolution_stage?: number
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          active_theme_id?: string | null
+          equipped_items?: Json
+          evolution_stage?: number
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_avatars_active_theme_id_fkey"
+            columns: ["active_theme_id"]
+            isOneToOne: false
+            referencedRelation: "perk_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_gamification: {
+        Row: {
+          current_streak: number
+          last_activity_date: string | null
+          level: number
+          longest_streak: number
+          student_id: string
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          current_streak?: number
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          student_id: string
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          current_streak?: number
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          student_id?: string
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_naesin_reading_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          due_at: string | null
+          id: string
+          metadata: Json
+          mode: Database["public"]["Enums"]["naesin_session_mode"]
+          note: string | null
+          set_id: string
+          status: Database["public"]["Enums"]["naesin_session_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          metadata?: Json
+          mode?: Database["public"]["Enums"]["naesin_session_mode"]
+          note?: string | null
+          set_id: string
+          status?: Database["public"]["Enums"]["naesin_session_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          metadata?: Json
+          mode?: Database["public"]["Enums"]["naesin_session_mode"]
+          note?: string | null
+          set_id?: string
+          status?: Database["public"]["Enums"]["naesin_session_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_naesin_reading_assignments_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "naesin_reading_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_notes: {
         Row: {
           author_id: string | null
@@ -2618,6 +6277,127 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "academy_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_parent_links: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          parent_id: string
+          relation: string | null
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          parent_id: string
+          relation?: string | null
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          parent_id?: string
+          relation?: string | null
+          student_id?: string
+        }
+        Relationships: []
+      }
+      student_point_ledger: {
+        Row: {
+          bonus_points: number
+          earned_at: string
+          id: number
+          metadata: Json | null
+          points: number
+          rule_id: string
+          source_ref: string | null
+          student_id: string
+        }
+        Insert: {
+          bonus_points?: number
+          earned_at?: string
+          id?: number
+          metadata?: Json | null
+          points: number
+          rule_id: string
+          source_ref?: string | null
+          student_id: string
+        }
+        Update: {
+          bonus_points?: number
+          earned_at?: string
+          id?: number
+          metadata?: Json | null
+          points?: number
+          rule_id?: string
+          source_ref?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_point_ledger_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "point_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_prescriptions: {
+        Row: {
+          activity_id: string | null
+          completed_at: string | null
+          created_at: string
+          due_at: string | null
+          id: string
+          payload: Json
+          prescription_type: string
+          status: string
+          student_id: string
+          title: string | null
+          updated_at: string
+          weak_tag: string
+        }
+        Insert: {
+          activity_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          payload?: Json
+          prescription_type: string
+          status?: string
+          student_id: string
+          title?: string | null
+          updated_at?: string
+          weak_tag: string
+        }
+        Update: {
+          activity_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          payload?: Json
+          prescription_type?: string
+          status?: string
+          student_id?: string
+          title?: string | null
+          updated_at?: string
+          weak_tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_prescriptions_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "student_activities"
             referencedColumns: ["id"]
           },
         ]
@@ -3131,41 +6911,138 @@ export type Database = {
         }
         Relationships: []
       }
-      test_assignments: {
+      teacher_tasks: {
         Row: {
+          category: string
           created_at: string
           due_at: string | null
-          expires_at: string | null
+          due_display: string | null
           id: string
-          kind: string
-          status: Database["public"]["Enums"]["test_assignment_status"]
-          student_id: string
-          teacher_id: string | null
-          template_id: string
+          label: string
+          status: string
+          student_name: string | null
+          teacher_id: string
         }
         Insert: {
+          category?: string
           created_at?: string
           due_at?: string | null
-          expires_at?: string | null
+          due_display?: string | null
           id?: string
-          kind: string
-          status?: Database["public"]["Enums"]["test_assignment_status"]
-          student_id: string
-          teacher_id?: string | null
-          template_id: string
+          label: string
+          status?: string
+          student_name?: string | null
+          teacher_id: string
         }
         Update: {
+          category?: string
           created_at?: string
           due_at?: string | null
+          due_display?: string | null
+          id?: string
+          label?: string
+          status?: string
+          student_name?: string | null
+          teacher_id?: string
+        }
+        Relationships: []
+      }
+      test_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          completed_at: string | null
+          created_at: string
+          due_at: string | null
+          due_date: string | null
+          expires_at: string | null
+          id: string
+          kind: string | null
+          listening_test_id: string | null
+          reading_test_id: string | null
+          sections: string[] | null
+          speaking_test_id: string | null
+          started_at: string | null
+          status: string
+          student_id: string
+          teacher_id: string | null
+          template_id: string | null
+          updated_at: string | null
+          writing_test_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          due_date?: string | null
           expires_at?: string | null
           id?: string
-          kind?: string
-          status?: Database["public"]["Enums"]["test_assignment_status"]
+          kind?: string | null
+          listening_test_id?: string | null
+          reading_test_id?: string | null
+          sections?: string[] | null
+          speaking_test_id?: string | null
+          started_at?: string | null
+          status?: string
+          student_id: string
+          teacher_id?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          writing_test_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_at?: string | null
+          due_date?: string | null
+          expires_at?: string | null
+          id?: string
+          kind?: string | null
+          listening_test_id?: string | null
+          reading_test_id?: string | null
+          sections?: string[] | null
+          speaking_test_id?: string | null
+          started_at?: string | null
+          status?: string
           student_id?: string
           teacher_id?: string | null
-          template_id?: string
+          template_id?: string | null
+          updated_at?: string | null
+          writing_test_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "test_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_assignments_listening_test_id_fkey"
+            columns: ["listening_test_id"]
+            isOneToOne: false
+            referencedRelation: "listening_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_assignments_reading_test_id_fkey"
+            columns: ["reading_test_id"]
+            isOneToOne: false
+            referencedRelation: "reading_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_assignments_speaking_test_id_fkey"
+            columns: ["speaking_test_id"]
+            isOneToOne: false
+            referencedRelation: "speaking_tests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "test_assignments_student_id_fkey"
             columns: ["student_id"]
@@ -3185,6 +7062,13 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "test_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_assignments_writing_test_id_fkey"
+            columns: ["writing_test_id"]
+            isOneToOne: false
+            referencedRelation: "writing_tests"
             referencedColumns: ["id"]
           },
         ]
@@ -3353,6 +7237,300 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      textbook_lesson_grammar_map: {
+        Row: {
+          created_at: string
+          grade: string
+          grammar_unit_id: string
+          id: string
+          is_core: boolean
+          lesson_no: string
+          lesson_title: string | null
+          note: string | null
+          priority: number
+          semester: string
+          textbook_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          grade: string
+          grammar_unit_id: string
+          id?: string
+          is_core?: boolean
+          lesson_no: string
+          lesson_title?: string | null
+          note?: string | null
+          priority?: number
+          semester: string
+          textbook_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          grade?: string
+          grammar_unit_id?: string
+          id?: string
+          is_core?: boolean
+          lesson_no?: string
+          lesson_title?: string | null
+          note?: string | null
+          priority?: number
+          semester?: string
+          textbook_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "textbook_lesson_grammar_map_grammar_unit_id_fkey"
+            columns: ["grammar_unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_unit_taxonomy"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toefl_chapter_content: {
+        Row: {
+          chapter_id: string
+          content_ref_id: string | null
+          content_ref_table: string | null
+          content_type: Database["public"]["Enums"]["toefl_content_type"]
+          created_at: string | null
+          id: string
+          level: Database["public"]["Enums"]["toefl_level"]
+          notes: string | null
+          order_num: number
+          title: string | null
+        }
+        Insert: {
+          chapter_id: string
+          content_ref_id?: string | null
+          content_ref_table?: string | null
+          content_type: Database["public"]["Enums"]["toefl_content_type"]
+          created_at?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["toefl_level"]
+          notes?: string | null
+          order_num?: number
+          title?: string | null
+        }
+        Update: {
+          chapter_id?: string
+          content_ref_id?: string | null
+          content_ref_table?: string | null
+          content_type?: Database["public"]["Enums"]["toefl_content_type"]
+          created_at?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["toefl_level"]
+          notes?: string | null
+          order_num?: number
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toefl_chapter_content_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "toefl_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toefl_chapters: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          focus_type: string | null
+          id: string
+          order_num: number
+          skill: Database["public"]["Enums"]["toefl_skill"]
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          focus_type?: string | null
+          id?: string
+          order_num: number
+          skill: Database["public"]["Enums"]["toefl_skill"]
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          focus_type?: string | null
+          id?: string
+          order_num?: number
+          skill?: Database["public"]["Enums"]["toefl_skill"]
+          title?: string
+        }
+        Relationships: []
+      }
+      toefl_level_results: {
+        Row: {
+          id: string
+          level: Database["public"]["Enums"]["toefl_level"]
+          passed: boolean
+          score: number | null
+          skill: Database["public"]["Enums"]["toefl_skill"]
+          student_id: string
+          tested_at: string | null
+        }
+        Insert: {
+          id?: string
+          level: Database["public"]["Enums"]["toefl_level"]
+          passed?: boolean
+          score?: number | null
+          skill: Database["public"]["Enums"]["toefl_skill"]
+          student_id: string
+          tested_at?: string | null
+        }
+        Update: {
+          id?: string
+          level?: Database["public"]["Enums"]["toefl_level"]
+          passed?: boolean
+          score?: number | null
+          skill?: Database["public"]["Enums"]["toefl_skill"]
+          student_id?: string
+          tested_at?: string | null
+        }
+        Relationships: []
+      }
+      toefl_student_level: {
+        Row: {
+          current_level: Database["public"]["Enums"]["toefl_level"]
+          mode: Database["public"]["Enums"]["toefl_student_mode"]
+          skill: Database["public"]["Enums"]["toefl_skill"]
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          current_level?: Database["public"]["Enums"]["toefl_level"]
+          mode?: Database["public"]["Enums"]["toefl_student_mode"]
+          skill: Database["public"]["Enums"]["toefl_skill"]
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          current_level?: Database["public"]["Enums"]["toefl_level"]
+          mode?: Database["public"]["Enums"]["toefl_student_mode"]
+          skill?: Database["public"]["Enums"]["toefl_skill"]
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      toefl_student_progress: {
+        Row: {
+          chapter_id: string
+          completed_at: string | null
+          drill_done: boolean
+          lecture_done: boolean
+          level: Database["public"]["Enums"]["toefl_level"]
+          practice_done: boolean
+          review_done: boolean
+          student_id: string
+          test_done: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          chapter_id: string
+          completed_at?: string | null
+          drill_done?: boolean
+          lecture_done?: boolean
+          level: Database["public"]["Enums"]["toefl_level"]
+          practice_done?: boolean
+          review_done?: boolean
+          student_id: string
+          test_done?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          chapter_id?: string
+          completed_at?: string | null
+          drill_done?: boolean
+          lecture_done?: boolean
+          level?: Database["public"]["Enums"]["toefl_level"]
+          practice_done?: boolean
+          review_done?: boolean
+          student_id?: string
+          test_done?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toefl_student_progress_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "toefl_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ui_label_catalog: {
+        Row: {
+          audience: string | null
+          created_at: string
+          domain: string
+          id: string
+          is_active: boolean
+          key: string
+          label_en: string | null
+          label_ko: string
+          long_description_ko: string | null
+          parent_message_ko: string | null
+          school_level: string | null
+          section: string | null
+          short_description_ko: string | null
+          sort_order: number
+          student_message_ko: string | null
+          teacher_message_ko: string | null
+          track: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience?: string | null
+          created_at?: string
+          domain: string
+          id?: string
+          is_active?: boolean
+          key: string
+          label_en?: string | null
+          label_ko: string
+          long_description_ko?: string | null
+          parent_message_ko?: string | null
+          school_level?: string | null
+          section?: string | null
+          short_description_ko?: string | null
+          sort_order?: number
+          student_message_ko?: string | null
+          teacher_message_ko?: string | null
+          track?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience?: string | null
+          created_at?: string
+          domain?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          label_en?: string | null
+          label_ko?: string
+          long_description_ko?: string | null
+          parent_message_ko?: string | null
+          school_level?: string | null
+          section?: string | null
+          short_description_ko?: string | null
+          sort_order?: number
+          student_message_ko?: string | null
+          teacher_message_ko?: string | null
+          track?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_listening_sets: {
         Row: {
@@ -4402,6 +8580,7 @@ export type Database = {
           notes: string | null
           source_label: string | null
           title: string
+          track_id: string | null
         }
         Insert: {
           created_at?: string
@@ -4413,6 +8592,7 @@ export type Database = {
           notes?: string | null
           source_label?: string | null
           title: string
+          track_id?: string | null
         }
         Update: {
           created_at?: string
@@ -4424,8 +8604,17 @@ export type Database = {
           notes?: string | null
           source_label?: string | null
           title?: string
+          track_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vocab_sets_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "vocab_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vocab_track_day_sets: {
         Row: {
@@ -5122,19 +9311,55 @@ export type Database = {
       }
       writing_2026_sessions: {
         Row: {
+          ai_discussion_score: number | null
+          ai_email_score: number | null
+          ai_grade_feedback: string | null
+          ai_graded_at: string | null
+          ai_total_score: number | null
           created_at: string
+          final_discussion_score: number | null
+          final_email_score: number | null
+          final_grade_feedback: string | null
+          final_total_score: number | null
+          graded_at: string | null
+          graded_by: string | null
+          grading_status: string
           id: string
           test_id: string
           user_id: string
         }
         Insert: {
+          ai_discussion_score?: number | null
+          ai_email_score?: number | null
+          ai_grade_feedback?: string | null
+          ai_graded_at?: string | null
+          ai_total_score?: number | null
           created_at?: string
+          final_discussion_score?: number | null
+          final_email_score?: number | null
+          final_grade_feedback?: string | null
+          final_total_score?: number | null
+          graded_at?: string | null
+          graded_by?: string | null
+          grading_status?: string
           id?: string
           test_id: string
           user_id: string
         }
         Update: {
+          ai_discussion_score?: number | null
+          ai_email_score?: number | null
+          ai_grade_feedback?: string | null
+          ai_graded_at?: string | null
+          ai_total_score?: number | null
           created_at?: string
+          final_discussion_score?: number | null
+          final_email_score?: number | null
+          final_grade_feedback?: string | null
+          final_total_score?: number | null
+          graded_at?: string | null
+          graded_by?: string | null
+          grading_status?: string
           id?: string
           test_id?: string
           user_id?: string
@@ -5228,6 +9453,39 @@ export type Database = {
           scores?: Json
           total?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      writing_tests: {
+        Row: {
+          created_at: string
+          exam_era: string
+          id: string
+          is_active: boolean
+          is_locked: boolean
+          label: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exam_era?: string
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          label?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exam_era?: string
+          id?: string
+          is_active?: boolean
+          is_locked?: boolean
+          label?: string
+          payload?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -5422,19 +9680,49 @@ export type Database = {
       vocab_sets_with_counts: {
         Row: {
           created_at: string | null
-          created_by: string | null
           description: string | null
           grade_band: Database["public"]["Enums"]["grade_band"] | null
           id: string | null
           item_count: number | null
           level: string | null
-          notes: string | null
           source_label: string | null
           title: string | null
+          track_id: string | null
           word_count: number | null
-          words_count: number | null
         }
-        Relationships: []
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          grade_band?: Database["public"]["Enums"]["grade_band"] | null
+          id?: string | null
+          item_count?: never
+          level?: string | null
+          source_label?: string | null
+          title?: string | null
+          track_id?: string | null
+          word_count?: never
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          grade_band?: Database["public"]["Enums"]["grade_band"] | null
+          id?: string | null
+          item_count?: never
+          level?: string | null
+          source_label?: string | null
+          title?: string | null
+          track_id?: string | null
+          word_count?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vocab_sets_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "vocab_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       words_with_meaning: {
         Row: {
@@ -5514,6 +9802,17 @@ export type Database = {
         Args: { p_role: string; p_user: string }
         Returns: undefined
       }
+      award_points: {
+        Args: {
+          p_bonus?: number
+          p_metadata?: Json
+          p_rule_id: string
+          p_source_ref?: string
+          p_student_id: string
+        }
+        Returns: number
+      }
+      calc_level: { Args: { pts: number }; Returns: number }
       consume_listening_play:
         | {
             Args: { _counter_id: number }
@@ -5559,6 +9858,10 @@ export type Database = {
       is_admin_or_producer:
         | { Args: never; Returns: boolean }
         | { Args: { p_uid: string }; Returns: boolean }
+      is_current_user_student_key: {
+        Args: { p_student_id: string }
+        Returns: boolean
+      }
       is_member: {
         Args: {
           org: string
@@ -5607,6 +9910,36 @@ export type Database = {
       }
       make_admin: { Args: { p_email: string }; Returns: undefined }
       make_teacher: { Args: { p_email: string }; Returns: undefined }
+      reading_eval_answer:
+        | {
+            Args: { p_choice_id: string; p_question_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_choice_id: string
+              p_choice_ids: string[]
+              p_question_id: string
+            }
+            Returns: boolean
+          }
+      reading_review_rows: {
+        Args: { session_id: string }
+        Returns: {
+          correct_choice: string
+          is_correct: boolean
+          q_no: number
+          question: string
+          user_choice: string
+        }[]
+      }
+      reading_review_score: {
+        Args: { session_id: string }
+        Returns: {
+          correct: number
+          total: number
+        }[]
+      }
       record_vocab_drill_attempt_v2: {
         Args: {
           p_academy_student_id: string
@@ -5636,6 +9969,7 @@ export type Database = {
         Returns: undefined
       }
       show_claims: { Args: never; Returns: Json }
+      student_can_view_exam: { Args: { p_exam_id: string }; Returns: boolean }
       upsert_word_form_deriv: {
         Args: {
           p_adj_form?: string
@@ -5663,9 +9997,91 @@ export type Database = {
         | "CONJUNCTION"
         | "RELATIVE_PRONOUN"
       knowledge_status: "UNKNOWN" | "LEARNING" | "KNOWN" | "MASTERED"
+      naesin_evidence_type: "sentence" | "span" | "paragraph" | "logic"
+      naesin_exam_context:
+        | "midterm"
+        | "final"
+        | "monthly_mock"
+        | "csat_like"
+        | "homework"
+        | "clinic"
+      naesin_grade_band: "ELEM" | "M1" | "M2" | "M3" | "H1" | "H2" | "H3"
+      naesin_passage_genre:
+        | "narrative"
+        | "expository"
+        | "argumentative"
+        | "dialogue"
+        | "notice"
+        | "email"
+        | "ad"
+        | "chart_based"
+        | "hybrid"
+      naesin_prescription_tag:
+        | "vocab_context_weak"
+        | "blank_logic_weak"
+        | "sentence_order_weak"
+        | "detail_accuracy_low"
+        | "slow_reader"
+        | "grammar_context_weak"
+      naesin_question_type:
+        | "main_idea"
+        | "title"
+        | "purpose"
+        | "tone"
+        | "detail"
+        | "not_true"
+        | "inference"
+        | "vocab_in_context"
+        | "reference"
+        | "blank"
+        | "sentence_insertion"
+        | "order"
+        | "summary"
+        | "topic_sentence"
+        | "grammar_in_context"
+        | "phrase_meaning"
+        | "author_claim"
+        | "matching"
+        | "chart_interpretation"
+      naesin_reading_difficulty:
+        | "foundation"
+        | "basic"
+        | "standard"
+        | "advanced"
+        | "challenge"
+      naesin_reading_source_type:
+        | "school_exam"
+        | "mock_exam"
+        | "textbook"
+        | "academy_original"
+        | "worksheet"
+        | "ebs_like"
+      naesin_session_mode: "practice" | "test" | "review" | "clinic"
+      naesin_session_status: "assigned" | "started" | "submitted" | "reviewed"
+      naesin_wrong_reason_tag:
+        | "misread_sentence"
+        | "missed_keyword"
+        | "vocab_unknown"
+        | "grammar_confusion"
+        | "logic_confusion"
+        | "careless"
+        | "time_pressure"
+        | "guessed"
       note_type_enum: "listening_notes" | "reading_translation"
       proctoring_mode: "none" | "gaze_only"
       proctoring_status: "not_required" | "ok" | "suspicious"
+      reading_academic_subtype:
+        | "MAIN_IDEA"
+        | "DETAIL"
+        | "NEGATIVE_FACT"
+        | "VOCAB_IN_CONTEXT"
+        | "INFERENCE"
+        | "PURPOSE"
+      reading_branch: "ROUTING" | "LOWER" | "HIGHER"
+      reading_choice: "A" | "B" | "C" | "D"
+      reading_daily_format: "NOTICE" | "EMAIL" | "POST" | "SCHEDULE"
+      reading_difficulty_tier: "EASY" | "MEDIUM" | "HARD"
+      reading_task_type: "CTW" | "DAILY" | "ACADEMIC"
       retake_request_status: "pending" | "approved" | "rejected" | "cancelled"
       role_enum: "owner" | "manager" | "teacher" | "student"
       section_enum: "reading" | "listening" | "speaking" | "writing"
@@ -5687,6 +10103,10 @@ export type Database = {
         | "completed"
         | "expired"
         | "cancelled"
+      toefl_content_type: "lecture" | "practice" | "test" | "drill"
+      toefl_level: "basic" | "intermediate" | "advanced"
+      toefl_skill: "reading" | "listening" | "speaking" | "writing"
+      toefl_student_mode: "learning" | "exam"
       user_role: "student" | "teacher" | "admin"
       vocab_asset_status: "DRAFT" | "LOCKED" | "RETIRED"
       vocab_assignment_status: "ASSIGNED" | "IN_PROGRESS" | "COMPLETED"
@@ -5841,9 +10261,99 @@ export const Constants = {
         "RELATIVE_PRONOUN",
       ],
       knowledge_status: ["UNKNOWN", "LEARNING", "KNOWN", "MASTERED"],
+      naesin_evidence_type: ["sentence", "span", "paragraph", "logic"],
+      naesin_exam_context: [
+        "midterm",
+        "final",
+        "monthly_mock",
+        "csat_like",
+        "homework",
+        "clinic",
+      ],
+      naesin_grade_band: ["ELEM", "M1", "M2", "M3", "H1", "H2", "H3"],
+      naesin_passage_genre: [
+        "narrative",
+        "expository",
+        "argumentative",
+        "dialogue",
+        "notice",
+        "email",
+        "ad",
+        "chart_based",
+        "hybrid",
+      ],
+      naesin_prescription_tag: [
+        "vocab_context_weak",
+        "blank_logic_weak",
+        "sentence_order_weak",
+        "detail_accuracy_low",
+        "slow_reader",
+        "grammar_context_weak",
+      ],
+      naesin_question_type: [
+        "main_idea",
+        "title",
+        "purpose",
+        "tone",
+        "detail",
+        "not_true",
+        "inference",
+        "vocab_in_context",
+        "reference",
+        "blank",
+        "sentence_insertion",
+        "order",
+        "summary",
+        "topic_sentence",
+        "grammar_in_context",
+        "phrase_meaning",
+        "author_claim",
+        "matching",
+        "chart_interpretation",
+      ],
+      naesin_reading_difficulty: [
+        "foundation",
+        "basic",
+        "standard",
+        "advanced",
+        "challenge",
+      ],
+      naesin_reading_source_type: [
+        "school_exam",
+        "mock_exam",
+        "textbook",
+        "academy_original",
+        "worksheet",
+        "ebs_like",
+      ],
+      naesin_session_mode: ["practice", "test", "review", "clinic"],
+      naesin_session_status: ["assigned", "started", "submitted", "reviewed"],
+      naesin_wrong_reason_tag: [
+        "misread_sentence",
+        "missed_keyword",
+        "vocab_unknown",
+        "grammar_confusion",
+        "logic_confusion",
+        "careless",
+        "time_pressure",
+        "guessed",
+      ],
       note_type_enum: ["listening_notes", "reading_translation"],
       proctoring_mode: ["none", "gaze_only"],
       proctoring_status: ["not_required", "ok", "suspicious"],
+      reading_academic_subtype: [
+        "MAIN_IDEA",
+        "DETAIL",
+        "NEGATIVE_FACT",
+        "VOCAB_IN_CONTEXT",
+        "INFERENCE",
+        "PURPOSE",
+      ],
+      reading_branch: ["ROUTING", "LOWER", "HIGHER"],
+      reading_choice: ["A", "B", "C", "D"],
+      reading_daily_format: ["NOTICE", "EMAIL", "POST", "SCHEDULE"],
+      reading_difficulty_tier: ["EASY", "MEDIUM", "HARD"],
+      reading_task_type: ["CTW", "DAILY", "ACADEMIC"],
       retake_request_status: ["pending", "approved", "rejected", "cancelled"],
       role_enum: ["owner", "manager", "teacher", "student"],
       section_enum: ["reading", "listening", "speaking", "writing"],
@@ -5867,6 +10377,10 @@ export const Constants = {
         "expired",
         "cancelled",
       ],
+      toefl_content_type: ["lecture", "practice", "test", "drill"],
+      toefl_level: ["basic", "intermediate", "advanced"],
+      toefl_skill: ["reading", "listening", "speaking", "writing"],
+      toefl_student_mode: ["learning", "exam"],
       user_role: ["student", "teacher", "admin"],
       vocab_asset_status: ["DRAFT", "LOCKED", "RETIRED"],
       vocab_assignment_status: ["ASSIGNED", "IN_PROGRESS", "COMPLETED"],
@@ -5886,3 +10400,5 @@ export const Constants = {
     },
   },
 } as const
+A new version of Supabase CLI is available: v2.109.0 (currently installed v2.53.6)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

@@ -110,7 +110,32 @@ function FlagButton({
 }
 
 export default function LearningShowroom({ word, index, total, onDoneWord }: Props) {
-  const WORD_PALE = "#86AFA1";
+  // 모던 미니멀 색상 팔레트
+  const colors = {
+    bg: "#FFFFFF",
+    bgLight: "#F3F4F6",
+    text: "#1F2937",
+    textLight: "#6B7280",
+    textPale: "#D1D5DB",
+    point: "#3B82F6",
+    pointLight: "#DBEAFE",
+    success: "#10B981",
+  };
+
+  // 완성 시 튀기는 애니메이션
+  const bounceAnimation = `
+    @keyframes bounce-pop {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+  `;
+
+  const getInputAnimation = (isOk: boolean) => {
+    if (isOk) {
+      return "bounce-pop 0.4s ease-in-out";
+    }
+    return "none";
+  };
 
   const [accent, setAccent] = useState<Accent>("US");
 
@@ -121,12 +146,39 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
   const meaningsKo = useMemo(() => pickMeaningsKo(w), [w]);
   const synonyms = useMemo(() => pickSynonyms(w), [w]);
 
-  // ✅ "희미하게 보여줄 정답"
+  // 뜻에서 품사 자동 유추
+  const inferPosFromMeaning = (meaning: string): string => {
+    if (!meaning) return "v";
+    // "하다", "되다" 등으로 끝나면 동사
+    if (meaning.endsWith("하다") || meaning.endsWith("되다") || meaning.endsWith("하게")) {
+      return "v";
+    }
+    // 그 외는 명사
+    return "n";
+  };
+
+  // 뜻 정의
   const meaning1Expected = meaningsKo[0] ?? "";
   const meaning2Expected = meaningsKo[1] ?? (meaningsKo[0] ?? "");
 
+  // 품사 배열 파싱
+  const posList = useMemo(() => {
+    const posRaw = w?.pos || "";
+    if (typeof posRaw === "string") {
+      return posRaw.split(",").map(p => p.trim()).filter(Boolean);
+    }
+    return Array.isArray(posRaw) ? posRaw : [];
+  }, [w?.pos]);
+
+  // 예문 가져오기
+  const exampleSentence = (w?.example_en || w?.sentence_en || w?.example || "") as string;
+  const exampleKo = (w?.example_ko || w?.sentence_ko || "") as string;
+
   const [spelling, setSpelling] = useState("");
   const [spellingOk, setSpellingOk] = useState(false);
+
+  const [pos, setPos] = useState(""); // 품사
+  const [posOk, setPosOk] = useState(false);
 
   const [meaning1, setMeaning1] = useState("");
   const [meaning1Ok, setMeaning1Ok] = useState(false);
@@ -134,31 +186,59 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
   const [meaning2, setMeaning2] = useState("");
   const [meaning2Ok, setMeaning2Ok] = useState(false);
 
+  const [showExample, setShowExample] = useState(false);
+
+  // 현재 뜻에 해당하는 품사 유추
+  const currentMeaning = meaning1Ok ? meaning2Expected : meaning1Expected;
+  const inferredPos = useMemo(() => {
+    if (posList.length > 0) return posList;
+    return [inferPosFromMeaning(currentMeaning)];
+  }, [posList, currentMeaning, meaning1Ok]);
+
   const spellingRef = useRef<HTMLInputElement | null>(null);
+  const posRef = useRef<HTMLSelectElement | null>(null);
   const meaning1Ref = useRef<HTMLInputElement | null>(null);
   const meaning2Ref = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    setAccent("US");
+    console.log("📚 Word Data:", {
+      id: w.id,
+      text: w.text,
+      pos: w.pos,
+      meanings_ko: w.meanings_ko,
+      lemma: w.lemma,
+      allKeys: Object.keys(w)
+    });
 
+    setAccent("US");
     setSpelling("");
     setSpellingOk(false);
-
+    setPos("");
+    setPosOk(false);
     setMeaning1("");
     setMeaning1Ok(false);
-
     setMeaning2("");
     setMeaning2Ok(false);
+    setShowExample(false);
 
     const t = window.setTimeout(() => spellingRef.current?.focus(), 120);
     return () => window.clearTimeout(t);
   }, [targetNorm]);
 
+  // 철자 완료 시 자동으로 품사 설정
+  useEffect(() => {
+    if (spellingOk && !posOk) {
+      setPos(inferredPos[0]);
+      setPosOk(true);
+      window.setTimeout(() => meaning1Ref.current?.focus(), 250);
+    }
+  }, [spellingOk, posOk, inferredPos]);
+
   const passSpelling = () => {
     if (spellingOk) return;
     setSpellingOk(true);
     if (target) speak(target, accent);
-    window.setTimeout(() => meaning1Ref.current?.focus(), 250);
+    window.setTimeout(() => posRef.current?.focus(), 250);
   };
 
   const onChangeSpelling = (v: string) => {
@@ -167,12 +247,31 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
     if (normEn(v) === targetNorm) passSpelling();
   };
 
+  const tryPassPos = (v: string) => {
+    if (posOk) return;
+    if (!v) return;
+    setPosOk(true);
+    window.setTimeout(() => meaning1Ref.current?.focus(), 100);
+  };
+
+  const speakKorean = (text: string) => {
+    if (typeof window === "undefined") return;
+    if (!("speechSynthesis" in window)) return;
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ko-KR";
+    u.rate = 0.95;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  };
+
   const tryPassMeaning1 = (v: string) => {
     if (meaning1Ok) return;
     if (!meaning1Expected) return;
     if (normKo(v) === normKo(meaning1Expected)) {
       setMeaning1Ok(true);
-      window.setTimeout(() => meaning2Ref.current?.focus(), 250);
+      speakKorean(meaning1Expected);
+      window.setTimeout(() => meaning2Ref.current?.focus(), 50);
     }
   };
 
@@ -181,10 +280,12 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
     if (!meaning2Expected) return;
     if (normKo(v) === normKo(meaning2Expected)) {
       setMeaning2Ok(true);
+      speakKorean(meaning2Expected);
+      window.setTimeout(() => setShowExample(true), 50);
     }
   };
 
-  const nextEnabled = spellingOk && meaning1Ok && meaning2Ok;
+  const nextEnabled = spellingOk && posOk && meaning1Ok && meaning2Ok;
 
   const syn1 = synonyms[0] ?? "";
   const syn2 = synonyms[1] ?? synonyms[0] ?? "";
@@ -196,179 +297,225 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
       <button
         type="button"
         onClick={() => target && speak(target, accent)}
-        className="h-9 px-4 rounded-full font-extrabold"
-        style={{ background: "rgba(26,61,48,0.8)", border: "1px solid rgba(93,202,165,0.3)", color: "#9FE1CB", fontSize: "clamp(12px, 1.35cqi, 14px)" }}
+        className="h-9 px-4 rounded-lg font-semibold transition-colors"
+        style={{ background: colors.point, border: "none", color: "white", fontSize: "13px" }}
       >
-        Play
+        🔊 Play
       </button>
     </div>
   );
 
-  const cardStyle = { background: "rgba(26,61,48,0.6)", border: "0.5px solid rgba(255,255,255,0.1)" };
-  const labelStyle = { fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" };
+  const cardStyle = { background: colors.bgLight, border: `1px solid ${colors.textPale}` };
+  const labelStyle = { fontSize: "12px", color: colors.textLight, fontWeight: 600 };
   const inputStyle = (ok: boolean, active: boolean) => ({
-    fontSize: "clamp(16px, 2.0cqi, 24px)",
-    background: "rgba(15,40,30,0.7)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: ok ? "#5DCAA5" : active ? "#E1F5EE" : "rgba(225,245,238,0.5)",
+    fontSize: "clamp(20px, 2.5cqi, 32px)",
+    background: colors.bg,
+    border: ok ? `2px solid ${colors.success}` : active ? `2px solid ${colors.point}` : `1px solid ${colors.textPale}`,
+    color: colors.text,
+    fontWeight: 600,
+    animation: ok ? "1s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0s 1 normal none running bounce-pop" : "none",
   });
 
   return (
-    <div className="h-full w-full">
-      <StageScaffold
-        stageKey="learning"
-        stageLabel="Learning"
-        subtitle="Type spelling, then enter two meanings to unlock synonyms."
-        step={{ index: index + 1, total }}
-        topRight={topRight}
-        primary={{ label: "Next", onClick: onDoneWord, disabled: !nextEnabled }}
-        align="center"
-        theme="dark"
-      >
-        <div className="h-full w-full flex flex-col justify-center">
-          <div className="w-full space-y-5">
-            {/* Spelling */}
-            <div className="rounded-2xl px-5 py-5" style={cardStyle}>
-              <div className="font-semibold" style={labelStyle}>Spelling</div>
+    <div className="fixed inset-0 w-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 z-50">
+      <style>{`
+        @keyframes bounce-pop {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+      `}</style>
 
+      {/* 헤더 - 진행률 */}
+      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div style={{ fontSize: "24px", color: colors.point, fontWeight: 700 }}>
+            {index + 1}/{total}
+          </div>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: colors.text }}>
+            {target}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => target && speak(target, accent)}
+          style={{
+            background: colors.point,
+            border: "none",
+            color: "white",
+            width: "44px",
+            height: "44px",
+            borderRadius: "50%",
+            fontSize: "20px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          🔊
+        </button>
+      </div>
+
+      {/* 메인 콘텐츠 */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-8 overflow-y-auto">
+        <div className="w-full max-w-sm space-y-6">
+            {/* Spelling */}
+            <div className="rounded-xl p-5" style={cardStyle}>
+              <div style={labelStyle}>철자 (Spelling)</div>
               <div className="relative mt-3">
                 <div
-                  className="absolute inset-0 grid place-items-center select-none pointer-events-none"
+                  className="absolute inset-0 grid place-items-center select-none pointer-events-none transition-all duration-300"
                   style={{
-                    color: "#2d6652",
-                    fontWeight: 900,
-                    fontSize: "clamp(28px, 4.0cqi, 56px)",
-                    letterSpacing: "-0.02em",
-                    opacity: spelling.length > 0 ? 0.5 : 0.9,
+                    color: colors.textPale,
+                    fontWeight: 800,
+                    fontSize: "clamp(16px, 2.0cqi, 28px)",
+                    opacity: spellingOk ? 0 : 1
                   }}
                 >
-                  {target || "WORD"}
+                  {target}
                 </div>
-
                 <input
                   ref={spellingRef}
                   value={spelling}
                   onChange={(e) => onChangeSpelling(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && normEn(spelling) === targetNorm) passSpelling();
-                  }}
+                  onKeyDown={(e) => e.key === "Enter" && passSpelling()}
                   disabled={spellingOk}
-                  className="w-full rounded-2xl px-5 py-4 text-center outline-none font-extrabold focus:ring-2"
-                  style={{ ...inputStyle(spellingOk, true), letterSpacing: "-0.02em", fontSize: "clamp(18px, 2.3cqi, 30px)" }}
-                  placeholder=""
+                  className="w-full rounded-lg px-5 py-4 text-center outline-none focus:ring-2 transition-all duration-300"
+                  style={inputStyle(spellingOk, true)}
                   autoComplete="off"
                   spellCheck={false}
                 />
               </div>
-
-              {spellingOk ? (
-                <div className="mt-3 font-extrabold" style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#5DCAA5" }}>
-                  ✅ Spelling OK
-                </div>
-              ) : null}
+              {spellingOk && <div style={{ fontSize: "12px", color: colors.success, marginTop: "8px" }}>✅ 철자 완료</div>}
             </div>
+
+            {/* POS (품사) - 자동 표시 */}
+            {spellingOk && (
+              <div className="rounded-xl p-5" style={cardStyle}>
+                <div style={{ fontSize: "12px", color: colors.textLight, fontWeight: 600 }}>
+                  품사 (Part of Speech)
+                </div>
+                <div style={{ marginTop: "8px", fontSize: "14px", color: colors.text, fontWeight: 500 }}>
+                  {inferredPos[0] === "n" ? "명사" : inferredPos[0] === "v" ? "동사" : inferredPos[0]}
+                  <span style={{ marginLeft: "6px", color: colors.textLight }}>({inferredPos[0]})</span>
+                </div>
+              </div>
+            )}
 
             {/* Meanings */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {/* Meaning 1 */}
-              <div className="rounded-2xl px-5 py-5" style={cardStyle}>
-                <div className="font-semibold" style={labelStyle}>Meaning 1 (KO)</div>
-
-                <div className="relative mt-3">
-                  <div
-                    className="absolute inset-0 grid place-items-center select-none pointer-events-none"
-                    style={{
-                      color: "#2d6652",
-                      fontWeight: 800,
-                      fontSize: "clamp(16px, 2.0cqi, 24px)",
-                      opacity: meaning1.length > 0 ? 0.5 : 0.9,
-                    }}
-                  >
-                    {meaning1Expected || "—"}
+            {posOk && (
+              <div className="space-y-3">
+                {/* Meaning 1 */}
+                <div className="rounded-xl p-5" style={cardStyle}>
+                  <div style={labelStyle}>뜻 1 (Meaning)</div>
+                  <div className="relative mt-3">
+                    <div
+                      className="absolute inset-0 grid place-items-center select-none pointer-events-none transition-all duration-300"
+                      style={{
+                        color: colors.textPale,
+                        fontWeight: 700,
+                        fontSize: "clamp(12px, 1.2cqi, 16px)",
+                        opacity: meaning1Ok ? 0 : 1
+                      }}
+                    >
+                      {meaning1Expected}
+                    </div>
+                    <input
+                      ref={meaning1Ref}
+                      value={meaning1}
+                      onChange={(e) => { setMeaning1(e.target.value); tryPassMeaning1(e.target.value); }}
+                      onKeyDown={(e) => e.key === "Enter" && tryPassMeaning1(meaning1)}
+                      disabled={meaning1Ok}
+                      className="w-full rounded-lg px-4 py-3 text-center outline-none focus:ring-2 transition-all duration-300"
+                      style={inputStyle(meaning1Ok, posOk)}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
                   </div>
-
-                  <input
-                    ref={meaning1Ref}
-                    value={meaning1}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setMeaning1(v);
-                      if (spellingOk) tryPassMeaning1(v);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && spellingOk) tryPassMeaning1(meaning1);
-                    }}
-                    disabled={!spellingOk || meaning1Ok}
-                    className="w-full rounded-2xl px-4 py-3 text-center outline-none font-extrabold"
-                    style={{ ...inputStyle(meaning1Ok, spellingOk), opacity: !spellingOk ? 0.4 : 1 }}
-                    placeholder=""
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                  {meaning1Ok && <div style={{ fontSize: "12px", color: colors.success, marginTop: "8px" }}>✅ {syn1 && `동의어: ${syn1}`}</div>}
                 </div>
 
-                {meaning1Ok ? (
-                  <div className="mt-3 inline-flex items-center justify-center rounded-full px-4 py-2 font-extrabold"
-                    style={{ background: "rgba(15,40,30,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <span style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>Syn:</span>
-                    <span className="ml-2" style={{ color: "#EF9F27", fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                      {syn1 || "—"}
-                    </span>
+                {/* Meaning 2 */}
+                {meaning1Ok && (
+                  <div className="rounded-xl p-5" style={cardStyle}>
+                    <div style={labelStyle}>뜻 2 (Meaning)</div>
+                    <div className="relative mt-3">
+                      <div
+                        className="absolute inset-0 grid place-items-center select-none pointer-events-none transition-all duration-300"
+                        style={{
+                          color: colors.textPale,
+                          fontWeight: 700,
+                          fontSize: "clamp(12px, 1.2cqi, 16px)",
+                          opacity: meaning2Ok ? 0 : 1
+                        }}
+                      >
+                        {meaning2Expected}
+                      </div>
+                      <input
+                        ref={meaning2Ref}
+                        value={meaning2}
+                        onChange={(e) => { setMeaning2(e.target.value); tryPassMeaning2(e.target.value); }}
+                        onKeyDown={(e) => e.key === "Enter" && tryPassMeaning2(meaning2)}
+                        disabled={meaning2Ok}
+                        className="w-full rounded-lg px-4 py-3 text-center outline-none focus:ring-2 transition-all duration-300"
+                        style={inputStyle(meaning2Ok, meaning1Ok)}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </div>
+                    {meaning2Ok && <div style={{ fontSize: "12px", color: colors.success, marginTop: "8px" }}>✅ {syn2 && `동의어: ${syn2}`}</div>}
                   </div>
-                ) : null}
+                )}
               </div>
+            )}
 
-              {/* Meaning 2 */}
-              <div className="rounded-2xl px-5 py-5" style={cardStyle}>
-                <div className="font-semibold" style={labelStyle}>Meaning 2 (KO)</div>
-
-                <div className="relative mt-3">
-                  <div
-                    className="absolute inset-0 grid place-items-center select-none pointer-events-none"
-                    style={{
-                      color: "#2d6652",
-                      fontWeight: 800,
-                      fontSize: "clamp(16px, 2.0cqi, 24px)",
-                      opacity: meaning2.length > 0 ? 0.5 : 0.9,
-                    }}
-                  >
-                    {meaning2Expected || "—"}
-                  </div>
-
-                  <input
-                    ref={meaning2Ref}
-                    value={meaning2}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setMeaning2(v);
-                      if (meaning1Ok) tryPassMeaning2(v);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && meaning1Ok) tryPassMeaning2(meaning2);
-                    }}
-                    disabled={!meaning1Ok || meaning2Ok}
-                    className="w-full rounded-2xl px-4 py-3 text-center outline-none font-extrabold"
-                    style={{ ...inputStyle(meaning2Ok, meaning1Ok), opacity: !meaning1Ok ? 0.4 : 1 }}
-                    placeholder=""
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </div>
-
-                {meaning2Ok ? (
-                  <div className="mt-3 inline-flex items-center justify-center rounded-full px-4 py-2 font-extrabold"
-                    style={{ background: "rgba(15,40,30,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <span style={{ fontSize: "clamp(12px, 1.35cqi, 13px)", color: "#4da88a" }}>Syn:</span>
-                    <span className="ml-2" style={{ color: "#EF9F27", fontSize: "clamp(12px, 1.35cqi, 13px)" }}>
-                      {syn2 || "—"}
-                    </span>
-                  </div>
-                ) : null}
+            {/* Example */}
+            {meaning2Ok && exampleSentence && (
+              <div className="rounded-xl p-5" style={{ ...cardStyle, background: colors.pointLight }}>
+                <div style={labelStyle}>예문 (Example)</div>
+                <p style={{ fontSize: "clamp(14px, 1.8cqi, 18px)", color: colors.text, marginTop: "12px", fontWeight: 500 }}>
+                  {exampleSentence}
+                </p>
+                {exampleKo && (
+                  <p style={{ fontSize: "13px", color: colors.textLight, marginTop: "8px" }}>
+                    {exampleKo}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => exampleSentence && speak(exampleSentence, accent)}
+                  style={{ fontSize: "12px", color: colors.point, marginTop: "8px", cursor: "pointer", fontWeight: 600 }}
+                >
+                  🔊 예문 발음 듣기
+                </button>
               </div>
-            </div>
-          </div>
+            )}
         </div>
-      </StageScaffold>
+      </div>
+
+      {/* 하단 버튼 */}
+      <div className="bg-white border-t px-6 py-4 flex gap-3">
+        <button
+          type="button"
+          onClick={() => onDoneWord()}
+          disabled={!nextEnabled}
+          style={{
+            flex: 1,
+            padding: "14px 24px",
+            borderRadius: "12px",
+            border: "none",
+            background: nextEnabled ? colors.success : colors.textPale,
+            color: "white",
+            fontSize: "16px",
+            fontWeight: 600,
+            cursor: nextEnabled ? "pointer" : "not-allowed",
+            opacity: nextEnabled ? 1 : 0.5,
+            transition: "all 200ms"
+          }}
+        >
+          {nextEnabled ? "다음 단어 →" : "진행 중..."}
+        </button>
+      </div>
     </div>
   );
 }

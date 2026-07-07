@@ -112,12 +112,28 @@ async function runImport(params: {
   sourceLabel?: string | null;
   note?: string | null;
   maxItems?: number;
+  clearExisting?: boolean;
 }) {
   const supabase = await getServerSupabase();
 
   const sourceLabel = params.sourceLabel ?? null;
   const note = params.note ?? null;
   const maxItems = Math.min(Math.max(params.maxItems ?? 500, 1), 2000);
+  const clearExisting = params.clearExisting ?? false;
+
+  // ✅ 기존 데이터 삭제 (sourceLabel 기반)
+  if (clearExisting && sourceLabel) {
+    console.log(`🗑️ Clearing existing words with sourceLabel: ${sourceLabel}`);
+    const { error: deleteErr } = await supabase
+      .from("words")
+      .delete()
+      .like("notes", `import:${sourceLabel}%`);
+
+    if (deleteErr) {
+      console.error("기존 단어 삭제 실패:", deleteErr);
+      throw new Error(`기존 단어 삭제 실패: ${deleteErr.message}`);
+    }
+  }
 
   const entriesAll = params.entries ?? [];
   const entries = entriesAll.slice(0, maxItems);
@@ -414,13 +430,16 @@ export async function importWordsFromJsonForm(...args: any[]) {
   const maxItemsRaw = cleanStr(formData.get("maxItems") ?? formData.get("max_items") ?? formData.get("limit"));
   const maxItems = maxItemsRaw ? Number.parseInt(maxItemsRaw, 10) : undefined;
 
+  const clearExistingRaw = cleanStr(formData.get("clearExisting") ?? formData.get("clear_existing") ?? "");
+  const clearExisting = clearExistingRaw === "on" || clearExistingRaw === "true" || clearExistingRaw === "1";
+
   // 1) file upload (most reliable)
   const fileAny = formData.get("file") as any;
   if (fileAny && typeof fileAny.text === "function" && typeof fileAny.size === "number" && fileAny.size > 0) {
     const text = await fileAny.text();
     const parsed = JSON.parse(text);
     const entries = normalizeJsonEntries(parsed);
-    return runImport({ entries, sourceLabel, note, maxItems });
+    return runImport({ entries, sourceLabel, note, maxItems, clearExisting });
   }
 
   // 2) json textarea
@@ -435,7 +454,7 @@ export async function importWordsFromJsonForm(...args: any[]) {
     try {
       const parsed = JSON.parse(jsonText);
       const entries = normalizeJsonEntries(parsed);
-      return runImport({ entries, sourceLabel, note, maxItems });
+      return runImport({ entries, sourceLabel, note, maxItems, clearExisting });
     } catch {
       return importVocabWordsListAction({
         raw: jsonText,

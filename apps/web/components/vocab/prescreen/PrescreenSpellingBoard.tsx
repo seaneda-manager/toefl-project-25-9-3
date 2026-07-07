@@ -121,12 +121,13 @@ export default function PrescreenSpellingBoard({
   }
 
   return (
-    <div className="h-full w-full flex items-center justify-center bg-[#F7FAF9]">
+    <div className="fixed inset-0 w-screen flex flex-col bg-[#F7FAF9] z-50">
       <div
-        className="flex flex-col w-[min(600px,88%)] gap-6"
+        className="flex-1 flex flex-col justify-center items-center px-6 py-8"
         key={animKey}
         style={{ animation: "lx-card-in 220ms cubic-bezier(0.22,1,0.36,1) both" }}
       >
+        <div className="w-full max-w-sm flex flex-col gap-6">
         {/* 헤더 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -194,6 +195,7 @@ export default function PrescreenSpellingBoard({
           >
             모르겠어요 <span className="ml-2 opacity-40 text-xs">(Esc)</span>
           </button>
+        </div>
         </div>
       </div>
 

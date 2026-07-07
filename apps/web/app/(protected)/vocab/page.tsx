@@ -83,6 +83,7 @@ export default async function VocabHomePage() {
     academyStudentId = (acByAuth as any)?.id ?? undefined;
   }
 
+
   type PlanCard = {
     id: string;
     trackId: string;
@@ -112,13 +113,13 @@ export default async function VocabHomePage() {
           .select('id, title, total_days')
           .in('id', trackIds),
 
+        // student_vocab_plans에서 직접 조회
         supabase
-          .from('student_vocab_assignments')
+          .from('student_vocab_plans')
           .select('track_id')
           .eq('student_id', academyStudentId)
           .in('track_id', trackIds)
-          .lte('available_at', todayISO)
-          .is('completed_at', null),
+          .eq('is_enabled', true),
       ]);
 
       const trackMap = new Map((tracks ?? []).map((t: any) => [t.id as string, t]));
@@ -128,6 +129,7 @@ export default async function VocabHomePage() {
         const tid = String(r.track_id);
         todayByTrack.set(tid, (todayByTrack.get(tid) ?? 0) + 1);
       }
+
 
       plans = (planRows ?? []).map((p: any) => {
         const track  = trackMap.get(p.track_id as string) as any;
@@ -254,7 +256,7 @@ export default async function VocabHomePage() {
               return (
                 <Link
                   key={plan.id}
-                  href={isActive ? '/vocab/session' : '#'}
+                  href={isActive ? `/voca/study?trackId=${plan.trackId}` : '#'}
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white border transition hover:shadow-sm"
                   style={{ borderColor: isActive ? '#5DCAA5' : '#e5e7eb' }}
                 >
@@ -282,10 +284,18 @@ export default async function VocabHomePage() {
                   </svg>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate"
-                      style={{ color: isActive ? '#065f46' : '#6b7280' }}>
-                      {plan.trackTitle}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {/* 모노톤 아이콘 */}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ color: isActive ? '#059669' : '#9ca3af', flexShrink: 0 }}>
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                      <p className="text-sm font-medium truncate"
+                        style={{ color: isActive ? '#065f46' : '#6b7280' }}>
+                        {plan.trackTitle}
+                      </p>
+                    </div>
                     <p className="text-xs mt-0.5 text-gray-400">
                       Day {plan.cursor} / {plan.totalDays}
                       {plan.isPaused ? ' · 일시정지' : plan.todayCount > 0 ? ' · 오늘 가능' : ' · 내일 오픈'}

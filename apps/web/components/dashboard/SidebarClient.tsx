@@ -286,15 +286,15 @@ export default function SidebarClient({ role, program = null }: Props) {
     // ── Teacher ───────────────────────────────────────────────
     if (role === 'teacher') {
       return [
-        { section: '콘텐츠',  href: '/home',  label: '홈' },
-        { section: '콘텐츠',  href: '/vocab', label: '단어 학습' },
-        { section: '콘텐츠',  href: '/teacher/speaking-drills', label: '🎮 Speaking 훈련' },
+        { section: '콘텐츠',  href: '/home',  label: '홈', icon: Home },
+        { section: '콘텐츠',  href: '/vocab', label: '단어 학습', icon: Library },
+        { section: '콘텐츠',  href: '/teacher/speaking-drills', label: '🎮 Speaking 훈련', icon: PlayCircle },
 
-        { section: '학생 관리', href: '/teacher/home',     label: '선생님 홈' },
-        { section: '학생 관리', href: '/teacher/tasks',    label: '할 일 관리' },
-        { section: '학생 관리', href: '/teacher/students', label: '학생 현황' },
+        { section: '학생 관리', href: '/teacher/home',     label: '선생님 홈', icon: Home },
+        { section: '학생 관리', href: '/teacher/tasks',    label: '할 일 관리', icon: CheckSquare },
+        { section: '학생 관리', href: '/teacher/students', label: '학생 현황', icon: Users },
 
-        { section: '설정', href: '/settings', label: '설정' },
+        { section: '설정', href: '/settings', label: '설정', icon: Settings },
       ];
     }
 
@@ -303,26 +303,26 @@ export default function SidebarClient({ role, program = null }: Props) {
       return [
         { section: '내 현황', href: '/student/home', label: '홈', icon: Home },
 
-        { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴' },
-        { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황' },
-        { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리' },
+        { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴', icon: PlayCircle },
+        { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황', icon: BarChart2 },
+        { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리', icon: BookOpen },
 
-        { section: '내신' as NavSection, href: '/naesin/middle', label: '중학 내신 드릴' },
+        { section: '내신' as NavSection, href: '/naesin/middle', label: '중학 내신 드릴', icon: ClipboardList },
 
-        { section: 'Jr.' as NavSection, href: '/jr/drill', label: 'Jr. 드릴' },
+        { section: 'Jr.' as NavSection, href: '/jr/drill', label: 'Jr. 드릴', icon: PlayCircle },
 
         { section: '학습', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
-        { section: '학습', href: '/grammar-2026',          label: 'Grammar' },
+        { section: '학습', href: '/grammar-2026',          label: 'Grammar', icon: BookText },
 
-        { section: '어휘', href: '/vocab', label: '단어 학습' },
+        { section: '어휘', href: '/vocab', label: '단어 학습', icon: Library },
 
-        { section: '숙제', href: '/student/exams',    label: '📋 예상문제' },
-        { section: '숙제', href: '/student/homework', label: '숙제 채점' },
-        { section: '숙제', href: '/student/lectures', label: '🎬 강의' },
+        { section: '숙제', href: '/student/exams',    label: '📋 예상문제', icon: CheckSquare },
+        { section: '숙제', href: '/student/homework', label: '숙제 채점', icon: ClipboardCheck },
+        { section: '숙제', href: '/student/lectures', label: '🎬 강의', icon: PlayCircle },
 
-        { section: '설정', href: '/student/progress', label: '포인트 히스토리' },
-        { section: '설정', href: '/student/perks',    label: 'Perk 샵' },
-        { section: '설정', href: '/settings',         label: '설정' },
+        { section: '설정', href: '/student/progress', label: '포인트 히스토리', icon: BarChart2 },
+        { section: '설정', href: '/student/perks',    label: 'Perk 샵', icon: Gift },
+        { section: '설정', href: '/settings',         label: '설정', icon: Settings },
       ];
     }
 
@@ -335,46 +335,46 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '학습', href: '/updated-listening',      label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/speaking-2026/study',    label: 'Speaking',  skill: 'speaking'  as SkillColor },
         { section: '학습', href: '/speaking-2026/drills',   label: '🎮 Speaking 훈련', skill: 'speaking' as SkillColor },
-        { section: '학습', href: '/speaking-2026/shadowing', label: '쉐도잉 게임' },
+        { section: '학습', href: '/speaking-2026/shadowing', label: '쉐도잉 게임', icon: PlayCircle },
         { section: '학습', href: '/updated-writing/test',   label: 'Writing',   skill: 'writing'   as SkillColor },
-        { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram' },
-        { section: '학습', href: '/vocab',                 label: '단어 학습' },
+        { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram', icon: BookText },
+        { section: '학습', href: '/vocab',                 label: '단어 학습', icon: Library },
 
-        { section: '내 현황', href: '/student',            label: '대시보드' },
-        { section: '내 현황', href: '/student/exams',       label: '📋 예상문제' },
-        { section: '내 현황', href: '/student/homework',   label: '숙제 채점' },
-        { section: '내 현황', href: '/student/lectures',  label: '🎬 강의' },
-        { section: '내 현황', href: '/student/tests',      label: '시험 목록' },
-        { section: '내 현황', href: '/student/review',     label: '복습' },
-        { section: '내 현황', href: '/student/progress',   label: '진도 현황' },
+        { section: '내 현황', href: '/student',            label: '대시보드', icon: LayoutDashboard },
+        { section: '내 현황', href: '/student/exams',       label: '📋 예상문제', icon: CheckSquare },
+        { section: '내 현황', href: '/student/homework',   label: '숙제 채점', icon: ClipboardCheck },
+        { section: '내 현황', href: '/student/lectures',  label: '🎬 강의', icon: PlayCircle },
+        { section: '내 현황', href: '/student/tests',      label: '시험 목록', icon: FileText },
+        { section: '내 현황', href: '/student/review',     label: '복습', icon: BookOpen },
+        { section: '내 현황', href: '/student/progress',   label: '진도 현황', icon: BarChart2 },
 
-        { section: '설정', href: '/settings', label: '설정' },
+        { section: '설정', href: '/settings', label: '설정', icon: Settings },
       ];
     }
 
     // ── Student: 미지정 (기존 계정 / 하위호환) ──────────────
     return [
       { section: '내 학습', href: '/student/home', label: '홈', icon: Home },
-      { section: '내 학습', href: '/student',           label: '대시보드' },
-      { section: '내 학습', href: '/hi-naesin',         label: '내신 드릴' },
-      { section: '내 학습', href: '/hi-naesin/stats',   label: '학습 현황' },
-      { section: '내 학습', href: '/hi-naesin/review',  label: '직전정리' },
-      { section: '내 학습', href: '/vocab',              label: '단어 학습' },
-      { section: '내 학습', href: '/student/exams',     label: '📋 예상문제' },
-      { section: '내 학습', href: '/student/tests',     label: '시험 목록' },
-      { section: '내 학습', href: '/student/review',    label: '복습' },
-      { section: '내 학습', href: '/student/progress',  label: '진도 현황' },
-      { section: '내 학습', href: '/student/homework',  label: '숙제' },
-      { section: '내 학습', href: '/student/lectures',  label: '🎬 강의' },
+      { section: '내 학습', href: '/student',           label: '대시보드', icon: LayoutDashboard },
+      { section: '내 학습', href: '/hi-naesin',         label: '내신 드릴', icon: PlayCircle },
+      { section: '내 학습', href: '/hi-naesin/stats',   label: '학습 현황', icon: BarChart2 },
+      { section: '내 학습', href: '/hi-naesin/review',  label: '직전정리', icon: BookOpen },
+      { section: '내 학습', href: '/vocab',              label: '단어 학습', icon: Library },
+      { section: '내 학습', href: '/student/exams',     label: '📋 예상문제', icon: CheckSquare },
+      { section: '내 학습', href: '/student/tests',     label: '시험 목록', icon: FileText },
+      { section: '내 학습', href: '/student/review',    label: '복습', icon: BookOpen },
+      { section: '내 학습', href: '/student/progress',  label: '진도 현황', icon: BarChart2 },
+      { section: '내 학습', href: '/student/homework',  label: '숙제', icon: ClipboardCheck },
+      { section: '내 학습', href: '/student/lectures',  label: '🎬 강의', icon: PlayCircle },
 
-      { section: '학습 콘텐츠', href: '/home',                  label: 'Home' },
+      { section: '학습 콘텐츠', href: '/home',                  label: 'Home', icon: Home },
       { section: '학습 콘텐츠', href: '/updated-reading/study',   label: 'Reading',   skill: 'reading'   as SkillColor },
       { section: '학습 콘텐츠', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
       { section: '학습 콘텐츠', href: '/speaking-2026/study',     label: 'Speaking',  skill: 'speaking'  as SkillColor },
-      { section: '학습 콘텐츠', href: '/speaking-2026/shadowing', label: '쉐도잉 게임' },
+      { section: '학습 콘텐츠', href: '/speaking-2026/shadowing', label: '쉐도잉 게임', icon: PlayCircle },
       { section: '학습 콘텐츠', href: '/updated-writing/test',    label: 'Writing',   skill: 'writing'   as SkillColor },
 
-      { section: '설정', href: '/settings', label: '설정' },
+      { section: '설정', href: '/settings', label: '설정', icon: Settings },
     ];
   }, [role, program]);
 

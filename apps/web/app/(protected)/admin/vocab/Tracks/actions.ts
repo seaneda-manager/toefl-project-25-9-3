@@ -58,7 +58,7 @@ function nextScheduledISODateLocal(from: Date, weekdays: number[]): string {
   // schedule missing -> treat as today
   if (allowed.length === 0) return toISODateLocal(base);
 
-  // search up to 14 days ahead
+  // 오늘부터 검색 (i=0부터 시작하므로 오늘이 가능한 요일이면 오늘 반환)
   for (let i = 0; i < 14; i++) {
     const d = addDaysLocal(base, i);
     const wd = toISOWeekday(d);
@@ -68,8 +68,7 @@ function nextScheduledISODateLocal(from: Date, weekdays: number[]): string {
 }
 function nextScheduledISODateAfterISO(prevISO: string, weekdays: number[]): string {
   const prev = parseISODate(prevISO);
-  const from = addDaysLocal(prev, 1);
-  return nextScheduledISODateLocal(from, weekdays);
+  return nextScheduledISODateLocal(prev, weekdays);
 }
 function clampInt(n: unknown, min: number, max: number, fallback: number) {
   const x = Number(n);
