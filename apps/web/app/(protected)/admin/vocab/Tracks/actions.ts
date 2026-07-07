@@ -756,7 +756,7 @@ export async function createStudentVocabPlanAction(params: {
   const ensureRes = await ensureCockedQueueForPlan(supabase, {
     studentId,
     trackId,
-    mode: "auto",
+    mode: "manual",
     queueSize,
   });
 
