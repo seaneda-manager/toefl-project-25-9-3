@@ -1,6 +1,5 @@
-// apps/web/app/(protected)/voca/study/page.tsx
-
 import { getServerSupabase } from "@/lib/supabase/server";
+import VocaStudyClient from "./_client";
 import type { TVocaWord } from "@/models/voca";
 
 export const dynamic = "force-dynamic";
@@ -77,7 +76,7 @@ export default async function VocaStudyPage({
         <p className="text-sm text-gray-600">
           {trackId
             ? `할당받은 단어를 학습하고 있습니다.`
-            : '오늘 학습할 단어, 예문, Reinforcing Passage, 그리고 Speaking/Writing 연습을 한 곳에서 진행하는 공간입니다.'}
+            : '오늘 학습할 단어를 학습하는 공간입니다.'}
         </p>
       </header>
 
@@ -106,84 +105,10 @@ export default async function VocaStudyPage({
         </section>
       )}
 
-      {/* 단어 카드 리스트 */}
+      {/* 단어 학습 UI - LearningRunner 사용 */}
       {!hasError && !isEmpty && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-gray-800">
-            오늘의 단어 (최대 20개 샘플)
-          </h2>
-
-          <ul className="space-y-2">
-            {words.map((w) => {
-              const posList = typeof w.pos === 'string'
-                ? w.pos.split(',').map(p => p.trim()).filter(Boolean)
-                : Array.isArray(w.pos) ? w.pos : [];
-
-              const meaningKrList = Array.isArray(w.meanings_ko) ? w.meanings_ko :
-                                    (typeof w.meaning_kr === 'string'
-                                      ? w.meaning_kr.split(/[,/]/).map(m => m.trim()).filter(Boolean)
-                                      : []);
-
-              const meaningEnList = Array.isArray(w.meanings_en_simple) ? w.meanings_en_simple :
-                                    (typeof w.meaning_en === 'string'
-                                      ? w.meaning_en.split(/[,/]/).map(m => m.trim()).filter(Boolean)
-                                      : []);
-
-              return (
-              <li
-                key={w.id}
-                className="flex items-start justify-between rounded-xl border bg-white/80 px-4 py-3 text-sm shadow-sm"
-              >
-                <div className="w-full">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-semibold text-gray-900">
-                      {w.word}
-                    </span>
-                    <span className="rounded-full bg-gray-50 px-2 py-0.5 text-[11px] text-gray-500">
-                      Lv.{w.level}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 space-y-1 text-xs text-gray-700">
-                    {meaningKrList.map((meaning, idx) => (
-                      <div key={idx} className="flex items-baseline gap-2">
-                        <span className="font-medium text-gray-800">
-                          {meaning}
-                        </span>
-                        {posList[idx] && (
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                            {posList[idx]}
-                          </span>
-                        )}
-                        <span className="mx-0.5 text-gray-400">/</span>
-                        <span className="italic text-gray-600">
-                          {meaningEnList[idx] || ''}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {Array.isArray(w.tags) && w.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {w.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </li>
-              );
-            })}
-          </ul>
-        </section>
+        <VocaStudyClient words={words} />
       )}
-
-      {/* TODO: 아래에 Reinforcing Passage / Output Task 연결 예정 */}
     </main>
   );
 }
