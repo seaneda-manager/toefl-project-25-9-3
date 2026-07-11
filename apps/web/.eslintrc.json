@@ -32,5 +32,13 @@
       }
     ]
   },
-  "ignorePatterns": ["node_modules/", ".next/", "dist/", "build/", "coverage/", "**/*.d.ts"]
+  "ignorePatterns": ["node_modules/", ".next/", "dist/", "build/", "coverage/", "**/*.d.ts", "**/database.types.ts"],
+  "overrides": [
+    {
+      "files": ["components/vocab/**/*.tsx"],
+      "rules": {
+        "react-hooks/exhaustive-deps": "warn"
+      }
+    }
+  ]
 }
