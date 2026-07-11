@@ -15,3 +15,6 @@ apps/web/.trash-*
 
 .vercel
 pnpm-lock.yaml
+
+.env*
+.vercel
