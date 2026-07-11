@@ -24,6 +24,8 @@ node_modules
 .supabase
 supabase/.temp
 supabase/functions/.next
+lib/supabase/database.types.ts
+schema_public.types.ts
 
 # -------------------------
 # IDE / OS 별 불필요 파일
