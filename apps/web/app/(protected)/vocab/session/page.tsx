@@ -974,6 +974,10 @@ export default function VocabSessionPage() {
     if (!userId || userId === "__anon__" || userId === "__error__") return;
     if (!allWordIds || allWordIds.length === 0) return;
 
+    // ✅ fallback ID일 때는 repair하지 않기 (fallback id는 "w1", "w2" 형식)
+    const isFallbackIds = allWordIds.every(id => /^w\d+$/.test(id));
+    if (isFallbackIds) return;
+
     const existingRows = Object.values(wordFormsById ?? {});
     const validCount = existingRows.filter(hasAnyWordFormValue).length;
 
