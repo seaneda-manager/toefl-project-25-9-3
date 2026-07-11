@@ -171,7 +171,7 @@ export default async function VocabHomePage() {
 
       {/* ── CTA 카드 ── */}
       {todayPlan ? (
-        <Link href="/vocab/session" className="block rounded-2xl overflow-hidden relative"
+        <Link href="/vocab/study" className="block rounded-2xl overflow-hidden relative"
           style={{ background: '#5DCAA5' }}>
           <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-20"
             style={{ background: '#9FE1CB' }} />
