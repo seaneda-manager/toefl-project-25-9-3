@@ -295,17 +295,19 @@ type ShortcutParams = {
   jump: string;
   only: string;
   setId: string;
+  planId: string;
   n: number; // dev-only
   seed: string; // dev-only
   debug: string; // ✅ debug gating
 };
 
 function readShortcutParams(): ShortcutParams {
-  if (typeof window === "undefined") return { jump: "", only: "", setId: "", n: 0, seed: "", debug: "" };
+  if (typeof window === "undefined") return { jump: "", only: "", setId: "", planId: "", n: 0, seed: "", debug: "" };
   const sp = new URL(window.location.href).searchParams;
   const jump = (sp.get("jump") ?? "").trim().toUpperCase();
   const only = (sp.get("only") ?? "").trim().toUpperCase();
   const setId = (sp.get("setId") ?? "").trim();
+  const planId = (sp.get("planId") ?? "").trim();
 
   const nRaw = (sp.get("n") ?? sp.get("limit") ?? "").trim();
   const n = Number.isFinite(Number(nRaw)) ? Math.max(0, Math.floor(Number(nRaw))) : 0;
@@ -313,7 +315,7 @@ function readShortcutParams(): ShortcutParams {
   const seed = (sp.get("seed") ?? "").trim();
   const debug = (sp.get("debug") ?? "").trim();
 
-  return { jump, only, setId, n, seed, debug };
+  return { jump, only, setId, planId, n, seed, debug };
 }
 
 function canonOnlyToDrillType(raw: string): DrillType | "" {
@@ -716,6 +718,7 @@ export default function VocabSessionPage() {
 
         const res: LoadSessionWordsActionResult = await loadSessionWordsAction({
           setId: forcedSetId,
+          planId: shortcut.planId,
         } as any);
 
         if (cancelled) return;
