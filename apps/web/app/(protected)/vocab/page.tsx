@@ -148,7 +148,7 @@ export default async function VocabHomePage() {
         todayByTrack.set(tid, (todayByTrack.get(tid) ?? 0) + 1);
       }
 
-      // trackId → setId 맵 (각 track의 가장 최신 할당만 사용)
+      // trackId → setId 맵 (각 track의 가장 먼저 해야 할 미완료 할당 선택)
       const setIdByTrack = new Map<string, string>();
       const assignmentsByTrack = new Map<string, any[]>();
 
@@ -160,13 +160,13 @@ export default async function VocabHomePage() {
         assignmentsByTrack.get(tid)?.push(a);
       }
 
-      // 각 track마다 available_at이 가장 최신인 할당 선택
+      // 각 track마다 day_index가 가장 낮은 미완료 할당 선택 (다음으로 해야 할 것)
       for (const [tid, asgs] of assignmentsByTrack.entries()) {
-        const latest = asgs.sort((a, b) =>
-          String(b.available_at).localeCompare(String(a.available_at))
+        const nextTodo = asgs.sort((a, b) =>
+          (a.day_index ?? 999) - (b.day_index ?? 999)
         )[0];
-        if (latest?.set_id) {
-          setIdByTrack.set(tid, String(latest.set_id));
+        if (nextTodo?.set_id) {
+          setIdByTrack.set(tid, String(nextTodo.set_id));
         }
       }
 
