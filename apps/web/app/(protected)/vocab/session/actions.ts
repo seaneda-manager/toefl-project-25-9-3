@@ -11,8 +11,6 @@ import type { WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
 export type LoadSessionWordsActionInput = {
   /** Optional: force a specific setId (debug / admin / shortcut) */
   setId?: string | null;
-  /** Optional: load words from a specific plan */
-  planId?: string | null;
 };
 
 export type LoadSessionWordsActionResult =
@@ -503,61 +501,6 @@ export async function loadSessionWordsAction(
     let resolvedSetId = cleanStr(input?.setId ?? "");
     let assignmentId: string | null = null;
     let assignedAt: string | null = null;
-
-    // 3-0) if planId provided, resolve via student_vocab_plans
-    if (!resolvedSetId && input?.planId) {
-      const planId = cleanStr(input.planId);
-      if (planId && academyStudentId) {
-        try {
-          const { data: planData, error: planErr } = await client
-            .from("student_vocab_plans")
-            .select("id,track_id,cursor_day_index")
-            .eq("id", planId)
-            .eq("student_id", academyStudentId)
-            .maybeSingle();
-
-          diag.steps.push({
-            kind: "resolvePlan",
-            by: "planId",
-            ok: !planErr,
-            err: planErr ? toErrMsg(planErr) : null,
-          });
-
-          if (!planErr && planData?.track_id) {
-            const trackId = cleanStr(planData.track_id);
-            const dayIndex = planData.cursor_day_index ?? 0;
-
-            // Find assignment for this track and day
-            const { data: assignData, error: assignErr } = await client
-              .from("student_vocab_assignments")
-              .select("id,set_id,available_at,assigned_at,day_index,completed_at,canceled_at")
-              .eq("student_id", academyStudentId)
-              .eq("track_id", trackId)
-              .eq("day_index", dayIndex + 1)
-              .is("completed_at", null)
-              .is("canceled_at", null)
-              .maybeSingle();
-
-            diag.steps.push({
-              kind: "resolveAssignmentByPlan",
-              trackId,
-              dayIndex: dayIndex + 1,
-              ok: !assignErr,
-              err: assignErr ? toErrMsg(assignErr) : null,
-            });
-
-            if (!assignErr && assignData?.set_id) {
-              assignmentId = cleanStr(assignData.id) || null;
-              resolvedSetId = cleanStr(assignData.set_id) || "";
-              assignedAt = pickDate(assignData);
-              diag.assignmentSource = "student_vocab_plans->student_vocab_assignments";
-            }
-          }
-        } catch (e) {
-          diag.steps.push({ kind: "resolvePlan", by: "planId", ok: false, err: toErrMsg(e) });
-        }
-      }
-    }
 
     if (!resolvedSetId) {
       if (!academyStudentId) {

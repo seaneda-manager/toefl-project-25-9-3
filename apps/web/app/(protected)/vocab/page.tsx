@@ -256,7 +256,7 @@ export default async function VocabHomePage() {
               return (
                 <Link
                   key={plan.id}
-                  href={isActive ? `/vocab/session?planId=${plan.id}` : '#'}
+                  href={isActive ? `/vocab/session?trackId=${plan.trackId}` : '#'}
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white border transition hover:shadow-sm"
                   style={{ borderColor: isActive ? '#5DCAA5' : '#e5e7eb' }}
                 >
