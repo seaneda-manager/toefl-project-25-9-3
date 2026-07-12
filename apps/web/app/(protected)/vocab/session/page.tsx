@@ -16,6 +16,7 @@ import LearningRunner from "@/components/vocab/learning/LearningRunner";
 import type { LearningWord } from "@/components/vocab/learning/learning.types";
 
 import DodgeMatchRunner from "@/components/vocab/game/DodgeMatchRunner";
+import RangeSelectorModal, { type GameRange } from "@/components/vocab/game/RangeSelectorModal";
 import DrillRunner from "@/components/vocab/drill/DrillRunner";
 import type { DrillTask, DrillType } from "@/components/vocab/drill/drill.types";
 import { buildBlockDrillTasksV1, type WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
@@ -600,6 +601,7 @@ export default function VocabSessionPage() {
   const [spellingResult, setSpellingResult] = useState<SpellingResult | null>(null);
 
   const [learningWords, setLearningWords] = useState<SessionWord[]>([]);
+  const [gameRange, setGameRange] = useState<GameRange | null>(null);
 
   const [userId, setUserId] = useState<string>("__anon__");
 
@@ -1378,6 +1380,73 @@ export default function VocabSessionPage() {
     }
 
     if (stage === "DRILL_INTRO") {
+      // 범위를 선택하지 않았으면 RangeSelectorModal 표시
+      if (!gameRange) {
+        return (
+          <>
+            <CardWrap>
+              {Debug}
+              <div className="text-center py-8">
+                <div className="text-2xl font-bold mb-4">🎮 Dodge & Match</div>
+                <div className="text-gray-600">게임 난이도를 선택하세요...</div>
+              </div>
+            </CardWrap>
+            <RangeSelectorModal
+              onSelect={(range) => {
+                setGameRange(range);
+              }}
+            />
+          </>
+        );
+      }
+
+      // 범위에 따라 단어 필터링
+      let gameWords: SessionWord[] = [];
+
+      if (gameRange === "TODAY") {
+        // 오늘 진도: 학습 단어들
+        gameWords = drillTargetWordIds
+          .map((id) => allWords.find((w) => w.id === id))
+          .filter(Boolean) as SessionWord[];
+      } else if (gameRange === "CUMULATIVE") {
+        // 누적진도: 모든 단어
+        gameWords = allWords;
+      }
+
+      if (gameWords.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
+              <div className="text-xl font-bold mb-2">게임에 사용할 단어가 없습니다.</div>
+              <div className="text-sm">다른 범위를 선택해주세요.</div>
+            </div>
+            <button
+              type="button"
+              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black mt-4"
+              onClick={() => setGameRange(null)}
+            >
+              ⬅️ 범위 다시 선택
+            </button>
+          </CardWrap>
+        );
+      }
+
+      // DodgeMatchRunner 시작
+      return (
+        <DodgeMatchRunner
+          words={gameWords}
+          onFinish={(score) => {
+            console.log("🎮 Dodge & Match completed! Score:", score);
+            setGameRange(null);
+            setStage("DONE");
+          }}
+        />
+      );
+    }
+
+    // 기존 DRILL_INTRO 코드 (백업용 주석)
+    if (stage === "DRILL_INTRO_OLD") {
       const canDrill = drillTasks.length > 0;
       const effectiveSetId = shortcut.setId || debugInfo?.assignmentSetId || "";
       const setIdQS = effectiveSetId ? `&setId=${encodeURIComponent(effectiveSetId)}` : "";
