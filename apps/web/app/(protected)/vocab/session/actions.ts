@@ -23,6 +23,10 @@ export type LoadSessionWordsActionResult =
       assignedAt: string | null;
       words: SessionWord[];
 
+      trackTitle?: string;
+      dayIndex?: number;
+      totalDays?: number;
+
       wordFormsByWordId?: Record<string, WordFormRowLike>;
       wordExamplesByWordId?: Record<string, any>;
       wordCollocationsByWordId?: Record<string, any>;
@@ -37,6 +41,10 @@ export type LoadSessionWordsActionResult =
       assignmentId?: string | null;
       setId?: string | null;
       assignedAt?: string | null;
+
+      trackTitle?: string;
+      dayIndex?: number;
+      totalDays?: number;
 
       words?: SessionWord[];
       error?: string;
@@ -501,6 +509,7 @@ export async function loadSessionWordsAction(
     let resolvedSetId = cleanStr(input?.setId ?? "");
     let assignmentId: string | null = null;
     let assignedAt: string | null = null;
+    let dayIndex: number | null = null;
 
     if (!resolvedSetId) {
       if (!academyStudentId) {
@@ -545,6 +554,7 @@ export async function loadSessionWordsAction(
           assignmentId = cleanStr(row.id) || null;
           resolvedSetId = cleanStr(row.set_id) || "";
           assignedAt = pickDate(row);
+          dayIndex = typeof row.day_index === "number" ? row.day_index : null;
           diag.assignmentSource = "student_vocab_assignments(open)";
         }
       }
@@ -802,6 +812,39 @@ export async function loadSessionWordsAction(
       })
       .filter(Boolean) as SessionWord[];
 
+    // 8) 트랙 정보 조회 (Day 표시를 위함)
+    let trackTitle: string | null = null;
+    let totalDays: number | null = null;
+
+    {
+      try {
+        // vocab_sets → track_id 찾기
+        const { data: setData } = await client
+          .from("vocab_sets")
+          .select("track_id")
+          .eq("id", resolvedSetId)
+          .maybeSingle();
+
+        if (setData?.track_id) {
+          const trackId = cleanStr(setData.track_id);
+
+          // vocab_tracks → title, total_days 찾기
+          const { data: trackData } = await client
+            .from("vocab_tracks")
+            .select("title, total_days")
+            .eq("id", trackId)
+            .maybeSingle();
+
+          if (trackData) {
+            trackTitle = cleanStr(trackData.title) || null;
+            totalDays = typeof trackData.total_days === "number" ? trackData.total_days : null;
+          }
+        }
+      } catch (e) {
+        diag.steps.push({ kind: "loadTrackInfo", ok: false, err: toErrMsg(e) });
+      }
+    }
+
     return {
       ok: true,
       userId,
@@ -809,6 +852,9 @@ export async function loadSessionWordsAction(
       assignmentId,
       setId: resolvedSetId,
       assignedAt,
+      trackTitle,
+      dayIndex,
+      totalDays,
       words,
       wordFormsByWordId: wfMap,
       wordExamplesByWordId,

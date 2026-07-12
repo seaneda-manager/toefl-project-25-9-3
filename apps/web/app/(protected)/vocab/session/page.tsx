@@ -616,6 +616,10 @@ export default function VocabSessionPage() {
   const [wordExamplesById, setWordExamplesById] = useState<Record<string, any>>({});
   const [wordCollocationsById, setWordCollocationsById] = useState<Record<string, any>>({});
 
+  const [trackTitle, setTrackTitle] = useState<string | null>(null);
+  const [dayIndex, setDayIndex] = useState<number | null>(null);
+  const [totalDays, setTotalDays] = useState<number | null>(null);
+
   const shortcut = useMemo(() => readShortcutParams(), []);
   const onlyType = useMemo(() => canonOnlyToDrillType(shortcut.only), [shortcut.only]);
 
@@ -798,6 +802,9 @@ export default function VocabSessionPage() {
         const limited = applyDevWordLimit(loaded, shortcut, contextKey);
 
         setAllWords(limited.words);
+        setTrackTitle((res as any).trackTitle ?? null);
+        setDayIndex((res as any).dayIndex ?? null);
+        setTotalDays((res as any).totalDays ?? null);
         setLoadError(null);
 
         setDebugInfo({
@@ -1211,6 +1218,13 @@ export default function VocabSessionPage() {
       return (
         <CardWrap>
           {Debug}
+
+          {trackTitle && dayIndex != null && totalDays != null && (
+            <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 px-6 py-4">
+              <div className="text-sm font-semibold text-blue-900">{trackTitle}</div>
+              <div className="text-2xl font-bold text-blue-700 mt-1">Day {dayIndex} / {totalDays}</div>
+            </div>
+          )}
 
           {process.env.NODE_ENV !== "production" && shortcut.n > 0 && (
             <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-800">
