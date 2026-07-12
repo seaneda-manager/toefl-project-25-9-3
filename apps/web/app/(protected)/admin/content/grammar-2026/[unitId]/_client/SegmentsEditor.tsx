@@ -101,8 +101,8 @@ export default function SegmentsEditor({ unitId, segments, onChange }: Props) {
               {seg.type === "blank" && ((seg.content as any).prompt || <span className="italic text-gray-300">문장 없음</span>)}
               {seg.type === "video" && (
                 <span className="text-indigo-500">
-                  {(seg.content as VideoSegmentContent).video_url
-                    ? `🎬 ${(seg.content as VideoSegmentContent).video_url.split("/").at(-1)} — 빈칸 ${(seg.content as VideoSegmentContent).pause_points.length}개`
+                  {(seg.content as any).video_url
+                    ? `🎬 ${(seg.content as any).video_url.split("/").at(-1)} — 빈칸 ${(seg.content as any).pause_points.length}개`
                     : <span className="italic text-gray-300">영상 URL 없음</span>}
                 </span>
               )}
@@ -147,7 +147,7 @@ export default function SegmentsEditor({ unitId, segments, onChange }: Props) {
 
               {seg.type === "video" && (
                 <VideoSegmentEditor
-                  content={seg.content as VideoSegmentContent}
+                  content={seg.content as any}
                   onChange={(c) => handleUpdateContent(seg.id, c)}
                 />
               )}

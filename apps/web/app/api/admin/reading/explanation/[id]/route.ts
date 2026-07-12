@@ -3,9 +3,10 @@ import { getServerSupabase } from "@/lib/supabase/server";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
 
     const supabase = await getServerSupabase();
@@ -19,7 +20,7 @@ export async function PATCH(
         incorrect_choices: body.incorrect_choices,
         vocabulary_notes: body.vocabulary_notes,
       })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) {
       return NextResponse.json(

@@ -1,12 +1,23 @@
 import { getServerSupabase } from '@/lib/supabase/server';
 import AdminPerksClient from './AdminPerksClient';
 
+type Redemption = {
+  id:           string;
+  status:       string;
+  points_spent: number;
+  requested_at: string;
+  resolved_at:  string | null;
+  admin_note:   string | null;
+  student_id:   string;
+  perk:         { name: string; perk_type: string } | null;
+};
+
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPerksPage() {
   const supabase = await getServerSupabase();
 
-  const [{ data: catalog }, { data: redemptions }] = await Promise.all([
+  const [{ data: catalog }, { data: rawRedemptions }] = await Promise.all([
     supabase
       .from('perk_catalog')
       .select('*')
@@ -22,5 +33,10 @@ export default async function AdminPerksPage() {
       .limit(100),
   ]);
 
-  return <AdminPerksClient catalog={catalog ?? []} redemptions={redemptions ?? []} />;
+  const redemptions: Redemption[] = (rawRedemptions ?? []).map((r: any) => ({
+    ...r,
+    perk: Array.isArray(r.perk) && r.perk.length > 0 ? r.perk[0] : null,
+  }));
+
+  return <AdminPerksClient catalog={catalog ?? []} redemptions={redemptions} />;
 }

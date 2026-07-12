@@ -5,16 +5,17 @@ import type { RReadingTest2026 } from "@/models/reading";
 
 export async function GET(
   req: Request,
-  { params }: { params: { resultId: string } }
+  { params }: { params: Promise<{ resultId: string }> }
 ) {
   try {
+    const { resultId } = await params;
     const supabase = await getServerSupabase();
 
     // 1. 결과 데이터 조회
     const { data: resultData, error: resultError } = await supabase
       .from("reading_results_2026")
       .select("*")
-      .eq("id", params.resultId)
+      .eq("id", resultId)
       .single();
 
     if (resultError || !resultData) {

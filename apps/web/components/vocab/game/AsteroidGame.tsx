@@ -62,8 +62,8 @@ export default function AsteroidGame({ words, onFinish }: Props) {
 
   const taskTypeIndexRef = useRef(0);
   const wordQueueRef = useRef(words);
-  const spawnTimerRef = useRef<NodeJS.Timeout>();
-  const fireTimerRef = useRef<NodeJS.Timeout>();
+  const spawnTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fireTimerRef = useRef<NodeJS.Timeout | null>(null);
   const upgradeCountRef = useRef(0);
 
   // 초기 Task 생성

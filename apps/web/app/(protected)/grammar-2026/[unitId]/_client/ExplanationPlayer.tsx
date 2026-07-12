@@ -19,7 +19,7 @@ export default function ExplanationPlayer({ segments, onDone }: Props) {
   if (videoSeg) {
     return (
       <VideoExplanationPlayer
-        content={videoSeg.content as VideoSegmentContent}
+        content={videoSeg.content as any}
         onDone={onDone}
       />
     );

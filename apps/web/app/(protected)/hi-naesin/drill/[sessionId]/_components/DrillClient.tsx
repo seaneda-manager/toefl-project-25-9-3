@@ -195,7 +195,7 @@ export default function DrillClient({
   if (!drill) return null;
 
   // writing drills for PassageProgress
-  const writingDrills = (drillsByType['writing'] ?? []) as Array<{
+  const writingDrills = (drillsByType['writing'] ?? []) as any as Array<{
     id: string;
     order_index: number;
     payload: { answerEn: string; koPrompt: string };

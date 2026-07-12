@@ -1295,7 +1295,7 @@ export default function VocabSessionPage() {
             onContinue={(payload: any) => {
               if (payload?.xknowList && Array.isArray(payload.xknowList)) {
                 setLearningWords(payload.xknowList);
-                setStage(payload.xknowList.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
+                setStage("LEARNING_INTRO");
                 return;
               }
 
@@ -1314,7 +1314,7 @@ export default function VocabSessionPage() {
 
               const final = [...map.values()];
               setLearningWords(final);
-              setStage(final.length === 0 ? "SPEED_INTRO" : "LEARNING_INTRO");
+              setStage("LEARNING_INTRO");
             }}
           />
         </CardWrap>
@@ -1335,46 +1335,6 @@ export default function VocabSessionPage() {
         <CardWrap>
           {Debug}
           <LearningRunner words={learningPayload} onFinish={() => setStage("DRILL_INTRO")} />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_SUMMARY" && speedResult) {
-      const canRetry = retrySpeedQuestions.length > 0;
-
-      return (
-        <CardWrap>
-          {Debug}
-
-          <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
-            <div className="text-lg font-semibold text-white">Quick Check Result</div>
-
-            <pre className="max-h-64 overflow-auto rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
-              {JSON.stringify(speedResult, null, 2)}
-            </pre>
-
-            <div className="flex gap-2">
-              {canRetry ? (
-                <button
-                  type="button"
-                  className="flex-1 rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white"
-                  onClick={() => setStage("SPEED_2")}
-                >
-                  Retry
-                </button>
-              ) : null}
-
-              <button
-                type="button"
-                className="flex-1 rounded-lg bg-emerald-500/90 px-3 py-2 text-sm font-semibold text-black"
-                onClick={() => setStage("DRILL_INTRO")}
-              >
-                Continue
-              </button>
-            </div>
-
-            {!canRetry ? <div className="text-xs text-white/50">No wrong words detected, skipping retry.</div> : null}
-          </div>
         </CardWrap>
       );
     }
@@ -1445,103 +1405,6 @@ export default function VocabSessionPage() {
       );
     }
 
-    // 기존 DRILL_INTRO 코드 (백업용 주석)
-    if (stage === "DRILL_INTRO_OLD") {
-      const canDrill = drillTasks.length > 0;
-      const effectiveSetId = shortcut.setId || debugInfo?.assignmentSetId || "";
-      const setIdQS = effectiveSetId ? `&setId=${encodeURIComponent(effectiveSetId)}` : "";
-
-      const title =
-        onlyType === "SENTENCE_BLANK" ? "Fill in the Blank" : onlyType ? `Drill: ${onlyType}` : "Drill Time";
-      const subtitle =
-        onlyType === "SENTENCE_BLANK"
-          ? "SENTENCE_BLANK only (shortcut)"
-          : onlyType
-          ? `${onlyType} only (shortcut)`
-          : "이제 완전히 내 것으로 만듭니다";
-
-      return (
-        <CardWrap>
-          {Debug}
-
-          {!canDrill && (
-            <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">
-              drillTasks가 비어있어서 Drill을 실행할 수 없어요.
-            </div>
-          )}
-
-          <StageIntroScreen
-            title={title}
-            subtitle={subtitle}
-            onDone={() => {
-              if (!canDrill) return;
-              setStage("DRILL");
-            }}
-          />
-
-          <button
-            disabled={!canDrill}
-            onClick={() => {
-              if (!canDrill) return;
-              seedOptionalDrillEntry();
-              window.location.href = "/vocab/drill";
-            }}
-            className={[
-              "w-full rounded-xl border py-3 text-sm",
-              canDrill ? "border-white/15 bg-white text-black" : "border-white/10 bg-white/10 text-white/40",
-            ].join(" ")}
-          >
-            (Debug) Optional Drill Page로 실행 (/vocab/drill)
-          </button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => {
-                window.location.href = `/vocab/session?jump=DRILL&only=FILL_IN_THE_BLANKS${setIdQS}`;
-              }}
-              className="w-full rounded-xl border border-white/15 bg-white py-3 text-sm text-black"
-            >
-              Shortcut: Fill in the Blank
-            </button>
-
-            <button
-              onClick={() => {
-                window.location.href = `/vocab/session?jump=DRILL${setIdQS}`;
-              }}
-              className="w-full rounded-xl border border-white/15 bg-white py-3 text-sm text-black"
-            >
-              Shortcut: Drill (all)
-            </button>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/80">
-            <div className="font-semibold">Drill Policy Snapshot</div>
-            <div className="mt-1">targetWordIds: {drillTargetWordIds.length}</div>
-            <div>tasks: {drillTasks.length}</div>
-            <div className="text-white/50">
-              order: {effectiveDrillOrder.join(" → ")}
-              {effectiveDrillOrder.includes("WORD_FORM_PICK") ? "" : " (WORD_FORM_PICK skipped: no word_forms)"}
-            </div>
-
-            <div className="mt-2 font-semibold">types:</div>
-            <pre className="mt-1 whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-2 text-[11px] text-white/80">
-              {JSON.stringify(countByDrillType(drillTasks), null, 2)}
-            </pre>
-
-            {shortcut.jump === "DRILL" && (
-              <div className="mt-1 text-emerald-200">
-                shortcut: jump=DRILL {onlyType ? `/ only=${onlyType}` : shortcut.only ? `/ only=${shortcut.only}` : ""}{" "}
-                {effectiveSetId ? `/ setId=${effectiveSetId}` : ""}{" "}
-                {process.env.NODE_ENV !== "production" && shortcut.n > 0 ? `/ n=${shortcut.n}` : ""}{" "}
-                {process.env.NODE_ENV !== "production" && shortcut.seed ? `/ seed=${shortcut.seed}` : ""}{" "}
-                {showDebug ? "/ debug=1" : ""}
-              </div>
-            )}
-          </div>
-        </CardWrap>
-      );
-    }
-
     if (stage === "DRILL") {
       const canDrill = drillTasks.length > 0;
 
@@ -1587,10 +1450,10 @@ export default function VocabSessionPage() {
       }
 
       return (
-        <DodgeMatchRunner
+        <AsteroidGame
           words={drillWords}
           onFinish={(score) => {
-            console.log("🎮 Dodge & Match completed! Score:", score);
+            console.log("🎮 Asteroid Game completed! Score:", score);
             setStage("DONE");
           }}
         />

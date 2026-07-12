@@ -7,6 +7,7 @@ export type InterviewQuestion = {
   question: string;
   audioUrl?: string;
   topic?: string;
+  answerSeconds?: number;
 };
 
 type Phase = "idle" | "listening" | "prepare" | "recording" | "done";
@@ -17,6 +18,10 @@ type Props = {
   questions: InterviewQuestion[];
   interviewerImageUrl?: string;
   mode?: "study" | "test";
+  defaultAnswerSeconds?: number;
+  totalQuestionOffset?: number;
+  totalQuestions?: number;
+  autoStartAfterAudio?: boolean;
   onComplete?: (results: RecordingResult[]) => void;
 };
 
@@ -51,7 +56,7 @@ function playBeep(ctx: AudioContext, freq = 880, duration = 0.15) {
 
 export default function InterviewRunner({
   questions,
-  interviewerGifUrl,
+  interviewerImageUrl,
   mode = "test",
   defaultAnswerSeconds = 45,
   totalQuestionOffset = 8,
@@ -210,9 +215,9 @@ export default function InterviewRunner({
         {/* 아바타 비디오 영역 */}
         <div className="overflow-hidden"
           style={{ width: 860, height: 485, border: "4px solid #E0E0E0", borderRadius: 12, backgroundColor: "#1A2B4C", flexShrink: 0 }}>
-          {interviewerGifUrl ? (
+          {interviewerImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={interviewerGifUrl} alt="Interviewer" className="h-full w-full" style={{ objectFit: "cover" }} />
+            <img src={interviewerImageUrl} alt="Interviewer" className="h-full w-full" style={{ objectFit: "cover" }} />
           ) : (
             <div className="flex h-full w-full flex-col items-center justify-center gap-3" style={{ color: "#94A3B8" }}>
               <div style={{ fontSize: 64 }}>👤</div>

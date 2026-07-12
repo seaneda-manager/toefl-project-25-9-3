@@ -114,7 +114,7 @@ export default function SpeakingAssignmentRunner({ assignmentId, test, testLabel
           answerSeconds: q.speakingSeconds,
           topic: q.topic,
         }))}
-        interviewerGifUrl={interview.interviewerGifUrl}
+        interviewerImageUrl={interview.interviewerImageUrl}
         mode="test"
         defaultAnswerSeconds={45}
         totalQuestionOffset={8}

@@ -38,14 +38,15 @@ type ResultData = {
   }>;
 };
 
-export default function ReadingResultPage({ params }: { params: { resultId: string } }) {
+export default function ReadingResultPage({ params }: { params: Promise<{ resultId: string }> }) {
   const [result, setResult] = useState<ResultData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchResult = async () => {
       try {
-        const res = await fetch(`/api/updated-reading/result/${params.resultId}`);
+        const { resultId } = await params;
+        const res = await fetch(`/api/updated-reading/result/${resultId}`);
         if (!res.ok) throw new Error("결과를 불러올 수 없습니다");
         const data = await res.json();
         setResult(data);
@@ -57,7 +58,7 @@ export default function ReadingResultPage({ params }: { params: { resultId: stri
     };
 
     fetchResult();
-  }, [params.resultId]);
+  }, [params]);
 
   if (loading) {
     return (

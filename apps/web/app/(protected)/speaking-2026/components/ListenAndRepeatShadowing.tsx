@@ -18,6 +18,8 @@ type Props = {
   mode?: "study" | "test";
   stage?: number; // Stage 1-50
   startStage?: number; // 시작 stage (기본값: 1)
+  totalQuestionOffset?: number;
+  totalQuestions?: number;
   onStageComplete?: (stage: number, score: number) => void; // stage 완료 콜백
   onComplete?: (result: { itemId: string; blob: Blob | null }[]) => void;
 };
@@ -66,6 +68,8 @@ export default function ListenAndRepeatShadowing({
   mode = "test",
   stage = 1,
   startStage = 1,
+  totalQuestionOffset = 0,
+  totalQuestions = items.length,
   onStageComplete,
   onComplete,
 }: Props) {
