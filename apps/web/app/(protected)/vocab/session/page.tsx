@@ -15,9 +15,6 @@ import SummaryScreen from "@/components/vocab/summary/SummaryScreen";
 import LearningRunner from "@/components/vocab/learning/LearningRunner";
 import type { LearningWord } from "@/components/vocab/learning/learning.types";
 
-import SpeedChallengeRunner from "@/components/vocab/speed/SpeedChallengeRunner";
-import type { SpeedQuestion, SpeedAttemptResult } from "@/models/vocab/speed.types";
-
 import DrillRunner from "@/components/vocab/drill/DrillRunner";
 import type { DrillTask, DrillType } from "@/components/vocab/drill/drill.types";
 import { buildBlockDrillTasksV1, type WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
@@ -101,10 +98,6 @@ type Stage =
   | "SUMMARY"
   | "LEARNING_INTRO"
   | "LEARNING"
-  | "SPEED_INTRO"
-  | "SPEED_1"
-  | "SPEED_2"
-  | "SPEED_SUMMARY"
   | "DRILL_INTRO"
   | "DRILL"
   | "DONE";
@@ -606,7 +599,6 @@ export default function VocabSessionPage() {
   const [spellingResult, setSpellingResult] = useState<SpellingResult | null>(null);
 
   const [learningWords, setLearningWords] = useState<SessionWord[]>([]);
-  const [speedResult, setSpeedResult] = useState<SpeedAttemptResult | null>(null);
 
   const [userId, setUserId] = useState<string>("__anon__");
 
@@ -666,7 +658,7 @@ export default function VocabSessionPage() {
   useEffect(() => {
     if (stage === "LOADING") penguin.setDefault();
     if (stage === "PRESCREEN" || stage === "SPELLING") penguin.focus();
-    if (stage === "LEARNING" || stage === "SPEED_1" || stage === "SPEED_2" || stage === "DRILL") penguin.focus();
+    if (stage === "LEARNING" || stage === "DRILL") penguin.focus();
     if (stage === "DONE") penguin.celebrate();
   }, [stage]);
 
@@ -1098,51 +1090,20 @@ export default function VocabSessionPage() {
     [learningWords],
   );
 
-  const speedQuestions: SpeedQuestion[] = useMemo(
-    () =>
-      allWords.map((w) => ({
-        id: `speed-${w.id}`,
-        type: "MEANING_TO_WORD",
-        wordId: w.id,
-        prompt: w.meanings_ko?.[0] ? w.meanings_ko[0] : "(뜻 미입력)",
-        answer: w.text,
-      })),
-    [allWords],
-  );
-
-  const retryIds = useMemo(() => {
-    if (!speedResult) return [];
-    const anyResult: any = speedResult as any;
-    const r: string[] = Array.isArray(anyResult.retryWordIds)
-      ? anyResult.retryWordIds
-      : Array.isArray(speedResult.wrongWordIds)
-      ? speedResult.wrongWordIds
-      : [];
-    return r;
-  }, [speedResult]);
-
-  const retrySpeedQuestions = useMemo(() => {
-    if (!speedResult) return [];
-    if (retryIds.length === 0) return [];
-    const s = new Set(retryIds);
-    return speedQuestions.filter((q) => s.has(q.wordId));
-  }, [speedResult, retryIds, speedQuestions]);
-
   const drillTargetWordIds = useMemo(() => {
     if (shortcut.jump === "DRILL") return allWordIds;
 
     const unknown = prescreenResult?.unknownWordIds ?? [];
     const failed = (spellingResult as any)?.spellingFailedIds ?? [];
-    const wrong = retryIds ?? [];
 
-    const core = uniq([...(unknown as string[]), ...(failed as string[]), ...(wrong as string[])]).filter(Boolean).filter((id) => allWordIds.includes(id));
+    const core = uniq([...(unknown as string[]), ...(failed as string[])]).filter(Boolean).filter((id) => allWordIds.includes(id));
 
     if (core.length >= MIN_DRILL_WORDS) return core;
 
     const need = Math.min(allWordIds.length, MIN_DRILL_WORDS) - core.length;
     const filler = pickRandomSample(allWordIds.filter((id) => !core.includes(id)), need);
     return uniq([...core, ...filler]);
-  }, [shortcut.jump, prescreenResult, spellingResult, retryIds, allWordIds]);
+  }, [shortcut.jump, prescreenResult, spellingResult, allWordIds]);
 
   const drillTasks: DrillTask[] = useMemo(() => {
     const getWordText = (id: string) => ((wordMap as any)?.[id]?.text ? String((wordMap as any)[id].text) : "");
@@ -1370,67 +1331,7 @@ export default function VocabSessionPage() {
       return (
         <CardWrap>
           {Debug}
-          <LearningRunner words={learningPayload} onFinish={() => setStage("SPEED_INTRO")} />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_INTRO") {
-      return (
-        <CardWrap>
-          {Debug}
-          <StageIntroScreen title="Quick Check" subtitle="오늘 단어 전체를 빠르게 확인합니다" onDone={() => setStage("SPEED_1")} />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_1") {
-      return (
-        <CardWrap>
-          {Debug}
-          <SpeedChallengeRunner
-            userId={userId}
-            questions={shuffleArray(speedQuestions)}
-            tryIndex={1}
-            onFinish={(r) => {
-              setSpeedResult(r);
-              setStage("SPEED_SUMMARY");
-            }}
-          />
-        </CardWrap>
-      );
-    }
-
-    if (stage === "SPEED_2") {
-      if (!retrySpeedQuestions || retrySpeedQuestions.length === 0) {
-        return (
-          <CardWrap>
-            {Debug}
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-              No retry questions. Continue to Drill.
-            </div>
-            <button
-              type="button"
-              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
-              onClick={() => setStage("DRILL_INTRO")}
-            >
-              Continue
-            </button>
-          </CardWrap>
-        );
-      }
-
-      return (
-        <CardWrap>
-          {Debug}
-          <div key={`speed-2-${retryIds.join(",") || "none"}`}>
-            <SpeedChallengeRunner
-              userId={userId}
-              questions={shuffleArray(retrySpeedQuestions)}
-              tryIndex={2}
-              onFinish={() => setStage("DRILL_INTRO")}
-            />
-          </div>
+          <LearningRunner words={learningPayload} onFinish={() => setStage("DRILL_INTRO")} />
         </CardWrap>
       );
     }
