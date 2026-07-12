@@ -15,7 +15,7 @@ import SummaryScreen from "@/components/vocab/summary/SummaryScreen";
 import LearningRunner from "@/components/vocab/learning/LearningRunner";
 import type { LearningWord } from "@/components/vocab/learning/learning.types";
 
-import DodgeMatchRunner from "@/components/vocab/game/DodgeMatchRunner";
+import AsteroidGame from "@/components/vocab/game/AsteroidGame";
 import RangeSelectorModal, { type GameRange } from "@/components/vocab/game/RangeSelectorModal";
 import DrillRunner from "@/components/vocab/drill/DrillRunner";
 import type { DrillTask, DrillType } from "@/components/vocab/drill/drill.types";
@@ -1432,12 +1432,12 @@ export default function VocabSessionPage() {
         );
       }
 
-      // DodgeMatchRunner 시작
+      // AsteroidGame 시작
       return (
-        <DodgeMatchRunner
+        <AsteroidGame
           words={gameWords}
           onFinish={(score) => {
-            console.log("🎮 Dodge & Match completed! Score:", score);
+            console.log("🎮 Asteroid Game completed! Score:", score);
             setGameRange(null);
             setStage("DONE");
           }}

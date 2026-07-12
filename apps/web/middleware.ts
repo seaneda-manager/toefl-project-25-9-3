@@ -47,6 +47,7 @@ const ONBOARDING_BYPASS = [
 
 const PUBLIC_FILE = /\.(.*)$/;
 const DEV_ALLOW = process.env.NEXT_PUBLIC_LEGACY_ALLOW === "1";
+const DEV_BYPASS_AUTH = process.env.DEV_BYPASS_AUTH === "1";
 
 // --- copy cookies from one response to another ---
 function applySupabaseCookies(from: NextResponse, to: NextResponse) {
@@ -102,6 +103,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // ✅ DEV: bypass auth for /vocab in dev
+  if (DEV_BYPASS_AUTH && pathname.startsWith("/vocab")) {
+    return NextResponse.next();
+  }
+
   if (
     PUBLIC_FILE.test(pathname) ||
     pathname.startsWith("/_next") ||
@@ -141,7 +147,7 @@ export async function middleware(req: NextRequest) {
   const isAuthed = !!session;
 
   // not authed + protected → redirect to login (carry cookies!)
-  if (isProtected(pathname) && !isAuthed) {
+  if (isProtected(pathname) && !isAuthed && !DEV_BYPASS_AUTH) {
     const loginUrl = url.clone();
     loginUrl.pathname = "/auth/login";
     loginUrl.searchParams.set("next", `${pathname}${search}`);
