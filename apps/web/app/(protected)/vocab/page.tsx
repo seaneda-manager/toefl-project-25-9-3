@@ -148,10 +148,26 @@ export default async function VocabHomePage() {
         todayByTrack.set(tid, (todayByTrack.get(tid) ?? 0) + 1);
       }
 
-      // trackId → setId 맵
+      // trackId → setId 맵 (각 track의 가장 최신 할당만 사용)
       const setIdByTrack = new Map<string, string>();
+      const assignmentsByTrack = new Map<string, any[]>();
+
       for (const a of (assignments ?? [])) {
-        setIdByTrack.set(String(a.track_id), String(a.set_id));
+        const tid = String(a.track_id);
+        if (!assignmentsByTrack.has(tid)) {
+          assignmentsByTrack.set(tid, []);
+        }
+        assignmentsByTrack.get(tid)?.push(a);
+      }
+
+      // 각 track마다 available_at이 가장 최신인 할당 선택
+      for (const [tid, asgs] of assignmentsByTrack.entries()) {
+        const latest = asgs.sort((a, b) =>
+          String(b.available_at).localeCompare(String(a.available_at))
+        )[0];
+        if (latest?.set_id) {
+          setIdByTrack.set(tid, String(latest.set_id));
+        }
       }
 
       plans = (planRows ?? []).map((p: any) => {
