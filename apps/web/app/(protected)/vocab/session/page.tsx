@@ -15,6 +15,7 @@ import SummaryScreen from "@/components/vocab/summary/SummaryScreen";
 import LearningRunner from "@/components/vocab/learning/LearningRunner";
 import type { LearningWord } from "@/components/vocab/learning/learning.types";
 
+import DodgeMatchRunner from "@/components/vocab/game/DodgeMatchRunner";
 import DrillRunner from "@/components/vocab/drill/DrillRunner";
 import type { DrillTask, DrillType } from "@/components/vocab/drill/drill.types";
 import { buildBlockDrillTasksV1, type WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
@@ -1493,23 +1494,37 @@ export default function VocabSessionPage() {
         );
       }
 
-      const DrillRunnerAny = DrillRunner as any;
+      // Get drill words
+      const drillWords = drillTargetWordIds
+        .map((id) => allWords.find((w) => w.id === id))
+        .filter(Boolean) as SessionWord[];
+
+      if (drillWords.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
+              No words available for Dodge & Match game.
+            </div>
+            <button
+              type="button"
+              className="w-full rounded-xl bg-emerald-500/90 py-3 text-sm font-semibold text-black"
+              onClick={() => setStage("DRILL_INTRO")}
+            >
+              Back
+            </button>
+          </CardWrap>
+        );
+      }
 
       return (
-        <CardWrap>
-          {Debug}
-
-          <DrillRunnerAny
-            userId={userId}
-            tasks={drillTasks}
-            wordMap={wordMap}
-            wordFormsById={wordFormsById}
-            exampleStringsById={exampleStringsById}
-            collocationStringsById={collocationStringsById}
-            onFinish={() => setStage("DONE")}
-            onDone={() => setStage("DONE")}
-          />
-        </CardWrap>
+        <DodgeMatchRunner
+          words={drillWords}
+          onFinish={(score) => {
+            console.log("🎮 Dodge & Match completed! Score:", score);
+            setStage("DONE");
+          }}
+        />
       );
     }
 
