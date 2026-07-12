@@ -107,7 +107,15 @@ export default async function VocabHomePage() {
     if ((planRows ?? []).length > 0) {
       const trackIds = (planRows ?? []).map((p: any) => p.track_id as string);
 
-      const [{ data: tracks }, { data: todayAsg }] = await Promise.all([
+      function toISODateLocal(d: Date): string {
+        const y  = d.getFullYear();
+        const m  = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dd}`;
+      }
+      const todayISO = toISODateLocal(new Date());
+
+      const [{ data: tracks }, { data: todayAsg }, { data: assignments }] = await Promise.all([
         supabase
           .from('vocab_tracks')
           .select('id, title, total_days')
@@ -120,6 +128,16 @@ export default async function VocabHomePage() {
           .eq('student_id', academyStudentId)
           .in('track_id', trackIds)
           .eq('is_enabled', true),
+
+        // 현재 활성 할당의 setId 조회
+        supabase
+          .from('student_vocab_assignments')
+          .select('track_id, set_id')
+          .eq('student_id', academyStudentId)
+          .in('track_id', trackIds)
+          .is('completed_at', null)
+          .is('canceled_at', null)
+          .lte('available_at', todayISO),
       ]);
 
       const trackMap = new Map((tracks ?? []).map((t: any) => [t.id as string, t]));
@@ -130,6 +148,11 @@ export default async function VocabHomePage() {
         todayByTrack.set(tid, (todayByTrack.get(tid) ?? 0) + 1);
       }
 
+      // trackId → setId 맵
+      const setIdByTrack = new Map<string, string>();
+      for (const a of (assignments ?? [])) {
+        setIdByTrack.set(String(a.track_id), String(a.set_id));
+      }
 
       plans = (planRows ?? []).map((p: any) => {
         const track  = trackMap.get(p.track_id as string) as any;
@@ -143,6 +166,7 @@ export default async function VocabHomePage() {
           cursor:     cursor,
           isPaused:   Boolean(p.is_paused),
           todayCount: todayByTrack.get(p.track_id as string) ?? 0,
+          setId:      setIdByTrack.get(p.track_id as string) ?? null,
         };
       });
     }
@@ -171,7 +195,7 @@ export default async function VocabHomePage() {
 
       {/* ── CTA 카드 ── */}
       {todayPlan ? (
-        <Link href="/vocab/session" className="block rounded-2xl overflow-hidden relative"
+        <Link href={`/vocab/session?setId=${todayPlan.setId}`} className="block rounded-2xl overflow-hidden relative"
           style={{ background: '#5DCAA5' }}>
           <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-20"
             style={{ background: '#9FE1CB' }} />
@@ -256,7 +280,7 @@ export default async function VocabHomePage() {
               return (
                 <Link
                   key={plan.id}
-                  href={isActive ? `/vocab/session?trackId=${plan.trackId}` : '#'}
+                  href={isActive ? `/vocab/session?setId=${plan.setId}` : '#'}
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white border transition hover:shadow-sm"
                   style={{ borderColor: isActive ? '#5DCAA5' : '#e5e7eb' }}
                 >
