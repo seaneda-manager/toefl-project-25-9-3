@@ -329,7 +329,7 @@ export default function LearningShowroom({ word, index, total, onDoneWord, track
       `}</style>
 
       {/* 헤더 - 단어장 정보 + 진행률 */}
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+      <div className="bg-emerald-600 border-b px-6 py-4 flex items-center justify-between">
         <div className="flex flex-col gap-1">
           {trackTitle && dayIndex !== null && totalDays !== null ? (
             <div style={{ fontSize: "12px", color: "white", fontWeight: 700 }}>
