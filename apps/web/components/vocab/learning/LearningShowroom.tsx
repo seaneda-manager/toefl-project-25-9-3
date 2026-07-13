@@ -367,8 +367,8 @@ export default function LearningShowroom({ word, index, total, onDoneWord, track
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-8 overflow-y-auto">
-        <div className="w-full max-w-sm space-y-6 min-h-fit">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-8">
+        <div className="w-full max-w-sm space-y-6 max-h-[calc(100vh-250px)] overflow-y-auto">
             {/* Spelling */}
             <div className="rounded-xl p-5" style={cardStyle}>
               <div style={labelStyle}>철자 (Spelling)</div>
