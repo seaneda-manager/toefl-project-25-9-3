@@ -839,6 +839,24 @@ export async function loadSessionWordsAction(
             trackTitle = cleanStr(trackData.title) || null;
             totalDays = typeof trackData.total_days === "number" ? trackData.total_days : null;
           }
+
+          // student_vocab_plans에서 cursor_day_index 조회
+          if (academyStudentId) {
+            try {
+              const { data: planData } = await client
+                .from("student_vocab_plans")
+                .select("cursor_day_index")
+                .eq("student_id", academyStudentId)
+                .eq("track_id", trackId)
+                .maybeSingle();
+
+              if (planData && typeof planData.cursor_day_index === "number") {
+                dayIndex = planData.cursor_day_index;
+              }
+            } catch (e) {
+              // 이 쿼리 실패는 무시 (trackTitle/totalDays는 이미 있음)
+            }
+          }
         }
       } catch (e) {
         diag.steps.push({ kind: "loadTrackInfo", ok: false, err: toErrMsg(e) });
