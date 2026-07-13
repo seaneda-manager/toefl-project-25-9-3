@@ -1350,7 +1350,13 @@ export default function VocabSessionPage() {
       return (
         <CardWrap>
           {Debug}
-          <LearningRunner words={learningPayload} onFinish={() => setStage("DRILL_INTRO")} />
+          <LearningRunner
+            words={learningPayload}
+            onFinish={() => setStage("DRILL_INTRO")}
+            trackTitle={trackTitle}
+            dayIndex={dayIndex}
+            totalDays={totalDays}
+          />
         </CardWrap>
       );
     }

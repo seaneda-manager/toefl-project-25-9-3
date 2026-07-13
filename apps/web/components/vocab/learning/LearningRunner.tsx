@@ -12,9 +12,12 @@ type Props = {
   words: LearningWord[];
   speedQuestions?: SpeedQuestion[]; // legacy prop (ignored)
   onFinish: () => void;
+  trackTitle?: string | null;
+  dayIndex?: number | null;
+  totalDays?: number | null;
 };
 
-export default function LearningRunner({ words, onFinish }: Props) {
+export default function LearningRunner({ words, onFinish, trackTitle, dayIndex, totalDays }: Props) {
   const [index, setIndex] = useState(0);
   const [stage, setStage] = useState<Stage>("PRESENT");
 
@@ -76,6 +79,9 @@ export default function LearningRunner({ words, onFinish }: Props) {
         index={index}
         total={total}
         onDoneWord={doneWord}
+        trackTitle={trackTitle}
+        dayIndex={dayIndex}
+        totalDays={totalDays}
       />
     </Fragment>
   );

@@ -11,6 +11,9 @@ type Props = {
   index: number;
   total: number;
   onDoneWord: () => void;
+  trackTitle?: string | null;
+  dayIndex?: number | null;
+  totalDays?: number | null;
 };
 
 function normEn(s: string) {
@@ -109,7 +112,7 @@ function FlagButton({
   );
 }
 
-export default function LearningShowroom({ word, index, total, onDoneWord }: Props) {
+export default function LearningShowroom({ word, index, total, onDoneWord, trackTitle, dayIndex, totalDays }: Props) {
   // 모던 미니멀 색상 팔레트
   const colors = {
     bg: "#FFFFFF",
@@ -325,14 +328,21 @@ export default function LearningShowroom({ word, index, total, onDoneWord }: Pro
         }
       `}</style>
 
-      {/* 헤더 - 진행률 */}
+      {/* 헤더 - 단어장 정보 + 진행률 */}
       <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div style={{ fontSize: "24px", color: colors.point, fontWeight: 700 }}>
-            {index + 1}/{total}
-          </div>
-          <div style={{ fontSize: "18px", fontWeight: 600, color: colors.text }}>
-            {target}
+        <div className="flex flex-col gap-1">
+          {trackTitle && dayIndex !== null && totalDays !== null ? (
+            <div style={{ fontSize: "12px", color: colors.textLight, fontWeight: 500 }}>
+              {trackTitle} - Day {dayIndex}/{totalDays}
+            </div>
+          ) : null}
+          <div className="flex items-center gap-3">
+            <div style={{ fontSize: "24px", color: colors.point, fontWeight: 700 }}>
+              {index + 1}/{total}
+            </div>
+            <div style={{ fontSize: "18px", fontWeight: 600, color: colors.text }}>
+              {target}
+            </div>
           </div>
         </div>
         <button
