@@ -332,7 +332,7 @@ export default function LearningShowroom({ word, index, total, onDoneWord, track
       <div className="bg-emerald-600 border-b px-6 py-4 flex items-center justify-between">
         <div className="flex flex-col gap-1">
           {trackTitle && dayIndex !== null && totalDays !== null ? (
-            <div style={{ fontSize: "12px", color: "white", fontWeight: 700 }}>
+            <div style={{ fontSize: "16px", color: "#ffffff", fontWeight: 700, letterSpacing: "0.5px" }}>
               {trackTitle} - Day {dayIndex}/{totalDays}
             </div>
           ) : null}
