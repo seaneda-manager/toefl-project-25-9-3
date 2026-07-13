@@ -1215,12 +1215,16 @@ export default function VocabSessionPage() {
     const Debug = null; // DebugPanel 비활성화
 
     // ✅ 모든 stage에서 공통으로 보여줄 헤더
-    const headerBlock = trackTitle && dayIndex != null && totalDays != null && (
+    const headerBlock = trackTitle ? (
       <div className="mb-6 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 px-6 py-4">
         <div className="text-sm font-semibold text-blue-900">{trackTitle}</div>
-        <div className="text-2xl font-bold text-blue-700 mt-1">Day {dayIndex} / {totalDays}</div>
+        {dayIndex != null && totalDays != null ? (
+          <div className="text-2xl font-bold text-blue-700 mt-1">Day {dayIndex} / {totalDays}</div>
+        ) : (
+          <div className="text-2xl font-bold text-blue-700 mt-1">진도 정보 로딩 중...</div>
+        )}
       </div>
-    );
+    ) : null;
 
     if (stage === "LOADING") {
       return <div className="mx-auto max-w-xl p-6 text-center text-slate-700">Loading session...</div>;
