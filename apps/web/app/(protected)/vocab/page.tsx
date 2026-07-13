@@ -285,7 +285,7 @@ export default async function VocabHomePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {plans.map((plan) => {
+            {plans.filter(p => p.setId).map((plan) => {
               const pct = plan.totalDays > 0
                 ? Math.min(Math.round((plan.cursor / plan.totalDays) * 100), 100)
                 : 0;
