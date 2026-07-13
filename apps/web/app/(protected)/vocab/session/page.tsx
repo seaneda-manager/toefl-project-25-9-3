@@ -802,9 +802,13 @@ export default function VocabSessionPage() {
         const limited = applyDevWordLimit(loaded, shortcut, contextKey);
 
         setAllWords(limited.words);
-        setTrackTitle((res as any).trackTitle ?? null);
-        setDayIndex((res as any).dayIndex ?? null);
-        setTotalDays((res as any).totalDays ?? null);
+        const tt = (res as any).trackTitle ?? null;
+        const di = (res as any).dayIndex ?? null;
+        const td = (res as any).totalDays ?? null;
+        console.log("🔍 API Response:", { trackTitle: tt, dayIndex: di, totalDays: td, res });
+        setTrackTitle(tt);
+        setDayIndex(di);
+        setTotalDays(td);
         setLoadError(null);
 
         setDebugInfo({
