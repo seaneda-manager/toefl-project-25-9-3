@@ -37,11 +37,11 @@ export default function TeacherDashboard() {
           return;
         }
 
-        // 1. 선생님이 관리하는 모든 학생 조회
+        // 1. 모든 학생 조회 (향후 teacher_id로 필터링)
         const { data: teacherStudents } = await supabase
           .from("academy_students")
-          .select("id, username")
-          .eq("teacher_id", user.id);
+          .select("id, full_name")
+          .eq("is_active", true);
 
         if (!teacherStudents || teacherStudents.length === 0) {
           setLoading(false);
