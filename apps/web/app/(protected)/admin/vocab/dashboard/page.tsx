@@ -91,7 +91,7 @@ export default function TeacherDashboard() {
 
           studentStats.push({
             studentId: student.id,
-            studentName: student.username || "Unknown",
+            studentName: student.full_name || "Unknown",
             totalAttempts,
             weakWordCount: weakWordIds.size,
             averageSuccessRate: Math.max(0, averageSuccessRate),
