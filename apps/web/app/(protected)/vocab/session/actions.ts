@@ -1007,6 +1007,7 @@ export type SaveVocabAttemptInput = {
   stage: "know" | "spelling" | "speed"; // 어느 stage에서 틀렸는지
   accuracy?: number; // 정확도 (speed의 경우)
   passed?: boolean; // 통과 여부
+  assignmentId?: string | null; // student_vocab_assignments ID
 };
 
 export type SaveVocabAttemptResult = {
@@ -1041,8 +1042,8 @@ export async function saveVocabAttemptAction(
 
     const nowISO = new Date().toISOString();
 
-    // vocab_learning_attempts 테이블에 저장
-    const { error } = await client.from("vocab_learning_attempts").insert([
+    // 1. vocab_learning_attempts 테이블에 저장
+    const { error: attemptError } = await client.from("vocab_learning_attempts").insert([
       {
         student_id: cleanStr(input.studentId),
         set_id: cleanStr(input.setId),
@@ -1054,10 +1055,20 @@ export async function saveVocabAttemptAction(
       },
     ] as any);
 
-    if (error) {
-      console.warn("saveVocabAttemptAction: insert failed", toErrMsg(error));
-      // 테이블이 없으면 실패해도 계속 진행 (optional)
-      return { ok: true }; // non-fatal
+    if (attemptError) {
+      console.warn("saveVocabAttemptAction: insert failed", toErrMsg(attemptError));
+    }
+
+    // 2. assignmentId가 있으면 student_vocab_assignments의 completed_at 업데이트
+    if (input.assignmentId) {
+      const { error: assignmentError } = await client
+        .from("student_vocab_assignments")
+        .update({ completed_at: nowISO })
+        .eq("id", input.assignmentId);
+
+      if (assignmentError) {
+        console.warn("saveVocabAttemptAction: assignment update failed", toErrMsg(assignmentError));
+      }
     }
 
     return { ok: true };
