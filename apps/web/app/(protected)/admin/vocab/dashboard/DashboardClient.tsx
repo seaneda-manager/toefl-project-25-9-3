@@ -8,6 +8,10 @@ type StudentProgress = {
   totalAttempts: number;
   weakWordCount: number;
   averageSuccessRate: number;
+  knowSuccessRate: number;
+  spellingSuccessRate: number;
+  speedSuccessRate: number;
+  weakWords: Array<{ id: string; text: string }>;
   activeGoals: number;
   lastActivityDate: string | null;
 };
@@ -28,6 +32,8 @@ export default function DashboardClient({
   classStats: ClassStats[];
 }) {
   const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
+  const [showWeakWords, setShowWeakWords] = useState<StudentProgress | null>(null);
+  const [showSuccessRates, setShowSuccessRates] = useState<StudentProgress | null>(null);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -87,16 +93,27 @@ export default function DashboardClient({
                       <td className="px-4 py-3 font-semibold text-slate-900">{student.studentName}</td>
                       <td className="px-4 py-3 text-center text-slate-700">{student.totalAttempts}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${
-                          student.weakWordCount > 50 ? "bg-red-100 text-red-700" :
-                          student.weakWordCount > 20 ? "bg-amber-100 text-amber-700" :
-                          "bg-emerald-100 text-emerald-700"
-                        }`}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowWeakWords(student);
+                          }}
+                          className={`inline-block rounded-full px-3 py-1 text-sm font-semibold cursor-pointer hover:opacity-80 ${
+                            student.weakWordCount > 50 ? "bg-red-100 text-red-700" :
+                            student.weakWordCount > 20 ? "bg-amber-100 text-amber-700" :
+                            "bg-emerald-100 text-emerald-700"
+                          }`}>
                           {student.weakWordCount}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSuccessRates(student);
+                          }}
+                          className="flex items-center justify-center gap-2 cursor-pointer hover:opacity-80"
+                        >
                           <div className="h-2 w-24 rounded-full bg-slate-200">
                             <div
                               className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
@@ -104,7 +121,7 @@ export default function DashboardClient({
                             />
                           </div>
                           <span className="text-sm font-semibold text-slate-700">{student.averageSuccessRate}%</span>
-                        </div>
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">
@@ -172,6 +189,84 @@ export default function DashboardClient({
               <button
                 onClick={() => setSelectedStudent(null)}
                 className="mt-6 w-full rounded-lg bg-slate-900 px-4 py-3 text-white font-semibold hover:bg-slate-800 transition"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 약한 단어 모달 */}
+        {showWeakWords && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">약한 단어</h2>
+                <button
+                  onClick={() => setShowWeakWords(null)}
+                  className="text-2xl text-slate-500 hover:text-slate-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="mb-4 text-sm text-slate-600">
+                {showWeakWords.studentName} - {showWeakWords.weakWordCount}개
+              </div>
+              <div className="max-h-96 overflow-y-auto rounded-lg bg-slate-50 p-4">
+                <div className="space-y-2">
+                  {showWeakWords.weakWords.map((word) => (
+                    <div
+                      key={word.id}
+                      className="flex items-center gap-2 rounded-lg bg-white p-2 text-sm text-slate-700"
+                    >
+                      <span className="font-medium">{word.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWeakWords(null)}
+                className="mt-4 w-full rounded-lg bg-slate-900 px-4 py-2 text-white font-semibold hover:bg-slate-800"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 단계별 성공률 모달 */}
+        {showSuccessRates && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">성공률 상세</h2>
+                <button
+                  onClick={() => setShowSuccessRates(null)}
+                  className="text-2xl text-slate-500 hover:text-slate-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="mb-6 text-sm text-slate-600">
+                {showSuccessRates.studentName}
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-lg bg-blue-50 p-4">
+                  <div className="mb-2 text-sm font-semibold text-blue-700">뜻 (Meaning)</div>
+                  <div className="text-2xl font-bold text-blue-900">{showSuccessRates.knowSuccessRate}%</div>
+                </div>
+                <div className="rounded-lg bg-amber-50 p-4">
+                  <div className="mb-2 text-sm font-semibold text-amber-700">철자 (Spelling)</div>
+                  <div className="text-2xl font-bold text-amber-900">{showSuccessRates.spellingSuccessRate}%</div>
+                </div>
+                <div className="rounded-lg bg-purple-50 p-4">
+                  <div className="mb-2 text-sm font-semibold text-purple-700">발음 (Pronunciation)</div>
+                  <div className="text-2xl font-bold text-purple-900">{showSuccessRates.speedSuccessRate}%</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSuccessRates(null)}
+                className="mt-6 w-full rounded-lg bg-slate-900 px-4 py-2 text-white font-semibold hover:bg-slate-800"
               >
                 닫기
               </button>
