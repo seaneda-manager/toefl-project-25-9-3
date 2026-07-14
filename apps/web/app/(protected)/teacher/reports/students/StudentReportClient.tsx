@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { createBrowserClient } from "@/lib/supabase/client";
 
 type StudentSummary = {
   id: string;
@@ -13,6 +14,7 @@ type StudentSummary = {
   hiNaeSin: { total: number; completed: number; inProgress: number; lastAt: string | null };
   jrNaesin: { total: number; avgScore: number | null; lastAt: string | null };
   vocab: { total: number; correct: number; lastAt: string | null };
+  vocabLearning: { attempts: number; weakWords: Array<{ id: string; text: string }> };
 };
 
 type SchoolLevel = "all" | "elementary" | "middle" | "high" | "unset";
@@ -67,7 +69,38 @@ export default function StudentReportClient({
   hiSessionTotal: number;
   vocabTotal: number;
 }) {
+  const supabase = createBrowserClient();
   const [filter, setFilter] = useState<SchoolLevel>("all");
+  const [warningStudent, setWarningStudent] = useState<StudentSummary | null>(null);
+  const [warningReason, setWarningReason] = useState("");
+  const [warningLoading, setWarningLoading] = useState(false);
+
+  const handleIssueWarning = async () => {
+    if (!warningStudent || !warningReason.trim()) return;
+
+    setWarningLoading(true);
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.id) return;
+
+      await supabase.from("teacher_warnings").insert({
+        student_id: warningStudent.id,
+        teacher_id: user.id,
+        reason: warningReason,
+        severity: "yellow",
+        status: "active",
+      });
+
+      setWarningStudent(null);
+      setWarningReason("");
+      alert(`${warningStudent.name}에게 Yellow Card를 발급했습니다.`);
+    } catch (e) {
+      console.error("Failed to issue warning:", e);
+      alert("경고 발급에 실패했습니다.");
+    } finally {
+      setWarningLoading(false);
+    }
+  };
 
   const filtered = filter === "all"
     ? summaries
@@ -130,6 +163,8 @@ export default function StudentReportClient({
                 <th className="border-l border-violet-100 bg-violet-50/60 text-violet-700">어휘 시도</th>
                 <th className="bg-violet-50/60 text-violet-700">정답률</th>
                 <th className="bg-violet-50/60 text-violet-700">마지막</th>
+                <th className="border-l border-red-100 bg-red-50/60 text-red-700">약한 단어</th>
+                <th className="border-l border-yellow-100 bg-yellow-50/60 text-yellow-700">경고</th>
                 <th></th>
               </tr>
             </thead>
@@ -213,6 +248,33 @@ export default function StudentReportClient({
                         {mods.vocab ? fmtDate(s.vocab.lastAt) : "—"}
                       </td>
 
+                      {/* 약한 단어 */}
+                      <td className="text-xs">
+                        {s.vocabLearning.weakWords.length > 0 ? (
+                          <button
+                            onClick={() => {
+                              const wordList = s.vocabLearning.weakWords.map((w) => w.text).join(", ");
+                              alert(`${s.name}의 약한 단어:\n${wordList}`);
+                            }}
+                            className="rounded-lg bg-red-50 px-2 py-1 text-red-700 hover:bg-red-100"
+                          >
+                            📋 {s.vocabLearning.weakWords.length}개
+                          </button>
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </td>
+
+                      {/* Yellow Card */}
+                      <td>
+                        <button
+                          onClick={() => setWarningStudent(s)}
+                          className="rounded-lg bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-700 hover:bg-yellow-100 transition"
+                        >
+                          ⚠️ 경고
+                        </button>
+                      </td>
+
                       <td>
                         <Link href={`/teacher/students/${s.id}`}
                           className="rounded-lg border px-3 py-1 text-xs hover:bg-neutral-50">
@@ -227,6 +289,53 @@ export default function StudentReportClient({
           </table>
         </div>
       </section>
+
+      {/* Yellow Card Modal */}
+      {warningStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+            <div className="mb-6 text-center">
+              <div className="text-6xl mb-3">⚠️</div>
+              <h2 className="text-xl font-bold text-slate-900">Yellow Card 발급</h2>
+              <p className="mt-2 text-sm text-slate-600">{warningStudent.name}</p>
+            </div>
+
+            <div className="mb-6 space-y-3">
+              <div className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800">
+                <strong>학습 저조 경고</strong>
+                <p className="mt-1">부모님에게 안내될 수 있습니다.</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700">경고 사유</label>
+                <textarea
+                  value={warningReason}
+                  onChange={(e) => setWarningReason(e.target.value)}
+                  placeholder="예: 최근 1주간 어휘 학습 없음, 약한 단어 50개 이상"
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setWarningStudent(null)}
+                className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleIssueWarning}
+                disabled={!warningReason.trim() || warningLoading}
+                className="flex-1 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-600 transition disabled:opacity-50"
+              >
+                {warningLoading ? "발급 중..." : "Yellow Card 발급"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

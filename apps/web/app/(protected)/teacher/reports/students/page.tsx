@@ -40,15 +40,22 @@ export default async function TeacherStudentsReportPage() {
     );
   }
 
-  const [{ data: hiSessions }, { data: jrResults }, { data: vocabAttempts }] = await Promise.all([
+  // academy_students 테이블에서 student_id 추출
+  const academyStudentIds = students.map((s) => s.id).filter((id): id is string => !!id);
+
+  const [{ data: hiSessions }, { data: jrResults }, { data: vocabAttempts }, { data: vocabLearningAttempts }, { data: weakWords }] = await Promise.all([
     supabase.from("hi_naesin_sessions").select("student_id, status, submitted_at").in("student_id", studentIds),
     supabase.from("lexiox_jr_drill_results").select("student_id, stage, score_pct, completed_at").in("student_id", studentIds),
     supabase.from("vocab_drill_attempts").select("user_id, is_correct, created_at").in("user_id", studentIds),
+    supabase.from("vocab_learning_attempts").select("student_id, wrong_word_ids, stage").in("student_id", academyStudentIds),
+    supabase.from("words").select("id, text"),
   ]);
 
   const hiSessionRows = hiSessions ?? [];
   const jrRows = jrResults ?? [];
   const vocabRows = vocabAttempts ?? [];
+  const vocabLearningRows = vocabLearningAttempts ?? [];
+  const wordMap = new Map((weakWords ?? []).map((w) => [w.id, w.text]));
 
   const summaries = students.map((s) => {
     const uid = s.auth_user_id; // 활동 데이터는 auth_user_id 기준
@@ -69,6 +76,18 @@ export default async function TeacherStudentsReportPage() {
     const vCorrect = vAttempts.filter((r) => r.is_correct).length;
     const lastVocab = vAttempts.map((r) => r.created_at).sort().at(-1) ?? null;
 
+    // 새로운 vocab_learning_attempts 데이터
+    const vocabLearning = s.id ? vocabLearningRows.filter((r) => r.student_id === s.id) : [];
+    const allWeakWordIds = new Set<string>();
+    vocabLearning.forEach((attempt) => {
+      const wrongIds = Array.isArray(attempt.wrong_word_ids) ? attempt.wrong_word_ids : [];
+      wrongIds.forEach((id) => allWeakWordIds.add(id));
+    });
+
+    const weakWordList = Array.from(allWeakWordIds)
+      .map((id) => ({ id, text: wordMap.get(id) || "[Unknown]" }))
+      .sort((a, b) => (a.text || "").localeCompare(b.text || ""));
+
     return {
       id: s.id,
       name: s.full_name ?? "(이름 없음)",
@@ -79,6 +98,7 @@ export default async function TeacherStudentsReportPage() {
       hiNaeSin: { total: sessions.length, completed: completed.length, inProgress: inProgress.length, lastAt: lastHi },
       jrNaesin: { total: jr.length, avgScore: jrAvg, lastAt: lastJr },
       vocab: { total: vAttempts.length, correct: vCorrect, lastAt: lastVocab },
+      vocabLearning: { attempts: vocabLearning.length, weakWords: weakWordList },
     };
   });
 
