@@ -559,6 +559,17 @@ export async function createTrackAndSetsFromDaysJsonAction(params: {
 
     if ((res as any).missing?.length) missingAll[String(dayIndex)] = (res as any).missing;
 
+    // ✅ Course 모델(신규 소스): 세트에 소속(track_id)+순서(order_index)를 직접 박는다.
+    const { error: setLinkErr } = await supabase
+      .from("vocab_sets")
+      .update({ track_id: trackId, order_index: dayIndex } as any)
+      .eq("id", String((res as any).setId));
+
+    if (setLinkErr) {
+      throw new Error(`vocab_sets link failed (day ${dayIndex}): ${setLinkErr.message}`);
+    }
+
+    // (하위호환) 옛 연결 테이블도 함께 채워둔다 — 아직 이 테이블을 읽는 코드가 있으면 안 깨지게.
     const { error: linkErr } = await supabase
       .from("vocab_track_sets")
       .insert({
@@ -683,6 +694,7 @@ export async function createStudentVocabPlanAction(params: {
   isPaused?: boolean;
   pausedReason?: string | null;
   queueSize?: number; // default 3 (not stored)
+  setsPerDay?: number; // 하루 몇 세트 (기본 1) — 저장됨. 지정 시 즉시 오픈 배치 크기로도 사용
 }) {
   const supabase = await getServerSupabase();
   await getUserOrThrow(supabase);
@@ -706,7 +718,10 @@ export async function createStudentVocabPlanAction(params: {
   const isPaused = Boolean(params.isPaused ?? false);
   const pausedReason = cleanStr(params.pausedReason) || null;
 
-  const queueSize = clampInt(params.queueSize ?? 3, 1, 20, 3);
+  const setsPerDay = clampInt(params.setsPerDay ?? 1, 1, 20, 1);
+  // sets_per_day 가 명시되면 그만큼을 지금 오픈(배치)한다. 아니면 기존 queueSize 기본.
+  const queueSize =
+    params.setsPerDay != null ? setsPerDay : clampInt(params.queueSize ?? 3, 1, 20, 3);
 
   if (!trackId) throw new Error("trackId is required");
   if (!startDateISO) throw new Error("startDateISO is required");
@@ -741,6 +756,7 @@ export async function createStudentVocabPlanAction(params: {
         cursor_day_index: nextCursor,
         is_paused: isPaused,
         paused_reason: pausedReason,
+        sets_per_day: setsPerDay,
       } as any,
       { onConflict: "student_id,track_id" },
     )
@@ -949,21 +965,23 @@ async function ensureCockedQueueForPlan(
   let cursor = clampInt((plan as any).cursor_day_index ?? startDay, 1, 9999, startDay);
   if (cursor < startDay) cursor = startDay;
 
-  // track sets (day_index -> set_id)
+  // Course 모델: 세트가 소속(track_id)+순서(order_index)를 스스로 가진다.
+  // (구 vocab_track_sets 연결 테이블 은퇴 — 20260714000001 마이그레이션에서 백필됨)
   const { data: days, error: derr } = await supabase
-    .from("vocab_track_sets")
-    .select("day_index, set_id")
+    .from("vocab_sets")
+    .select("order_index, id")
     .eq("track_id", trackIdUsed)
-    .order("day_index", { ascending: true });
+    .not("order_index", "is", null)
+    .order("order_index", { ascending: true });
 
-  if (derr) throw new Error("track sets lookup failed");
+  if (derr) throw new Error("course sets lookup failed");
   if (!(days as any)?.length) {
     return { assigned: false, reason: "NO_DAYS", todayISO, todayWeekday, trackIdUsed };
   }
 
   const setMap = new Map<number, string>();
   for (const d of (days as any[]) ?? []) {
-    setMap.set(Number((d as any).day_index), String((d as any).set_id));
+    setMap.set(Number((d as any).order_index), String((d as any).id));
   }
   const totalDays = Math.max(...Array.from(setMap.keys()));
 
@@ -1827,6 +1845,15 @@ export async function syncImportedDaySetsToTrackAction(params: {
 
       if (uErr) throw new Error(`vocab_track_sets upsert failed: ${uErr.message ?? ""}`);
       upserted += part.length;
+
+      // ✅ Course 모델(신규 소스): 세트에 소속(track_id)+순서(order_index) 직접 반영
+      for (const row of part) {
+        const { error: sErr2 } = await supabase
+          .from("vocab_sets")
+          .update({ track_id: row.track_id, order_index: row.day_index } as any)
+          .eq("id", row.set_id);
+        if (sErr2) throw new Error(`vocab_sets link failed (day ${row.day_index}): ${sErr2.message}`);
+      }
     }
 
     // total_days update

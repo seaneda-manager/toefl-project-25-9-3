@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import type { SessionWord, VocabExample, VocabCollocation } from "@/models/vocab/SessionWord";
 import type { WordFormRowLike } from "@/lib/vocab/drill/buildBlockDrillTasksV1";
+import { ensureCockedQueueAdminAction } from "@/app/(protected)/admin/vocab/Tracks/actions";
 
 export type LoadSessionWordsActionInput = {
   /** Optional: force a specific setId (debug / admin / shortcut) */
@@ -887,5 +888,181 @@ export async function loadSessionWordsAction(
       note: toErrMsg(e),
       diag: { steps: diag.steps, exception: toErrMsg(e) },
     };
+  }
+}
+
+/* =========================================================
+ * ✅ Day 완료 처리
+ * - speed 최종점검 통과 시 호출
+ * - 해당 set의 열린 assignment 에 completed_at 기록
+ * - 큐 정렬(다음 Day 오픈)까지 수행
+ * ======================================================= */
+export type CompleteVocabDayResult = {
+  ok: boolean;
+  completedAssignmentId: string | null;
+  dayIndex: number | null;
+  nextOpened: number;
+  error?: string;
+  note?: string;
+};
+
+async function resolveAcademyStudentId(
+  client: any,
+  userId: string,
+): Promise<string | null> {
+  // id -> auth_user_id -> user_id -> profile_id
+  if (isUuidLike(userId)) {
+    const { data } = await client.from("academy_students").select("id").eq("id", userId).maybeSingle();
+    if (data?.id) return cleanStr(data.id) || null;
+  }
+  for (const col of ["auth_user_id", "user_id", "profile_id"]) {
+    const { data } = await client.from("academy_students").select("id").eq(col, userId).maybeSingle();
+    if (data?.id) return cleanStr(data.id) || null;
+  }
+  return null;
+}
+
+export async function completeVocabDayAction(input: {
+  setId: string;
+}): Promise<CompleteVocabDayResult> {
+  const empty: CompleteVocabDayResult = {
+    ok: false,
+    completedAssignmentId: null,
+    dayIndex: null,
+    nextOpened: 0,
+  };
+
+  try {
+    const authed = await createAuthedServerClient();
+    const admin = createAdminClient();
+    const client = admin ?? authed;
+
+    const setId = cleanStr(input?.setId);
+    if (!setId) return { ...empty, error: "SET_ID_REQUIRED" };
+
+    const { data: userData, error: userErr } = await authed.auth.getUser();
+    if (userErr || !userData?.user?.id) return { ...empty, error: "NOT_LOGGED_IN" };
+    const userId = userData.user.id;
+
+    const academyStudentId = await resolveAcademyStudentId(client, userId);
+    if (!academyStudentId) return { ...empty, error: "STUDENT_NOT_FOUND" };
+
+    // 이 set 의 "열린" 할당 찾기 (미완료·미취소)
+    const { data: rows, error } = await client
+      .from("student_vocab_assignments")
+      .select("id, track_id, day_index")
+      .eq("student_id", academyStudentId)
+      .eq("set_id", setId)
+      .is("completed_at", null)
+      .is("canceled_at", null)
+      .order("day_index", { ascending: true })
+      .limit(1);
+
+    if (error) return { ...empty, error: "ASSIGNMENT_LOOKUP_FAILED", note: toErrMsg(error) };
+
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row?.id) {
+      // 이미 완료됐거나 배정이 없음 — 학습 자체는 성공이므로 ok로 취급
+      return { ...empty, ok: true, note: "NO_OPEN_ASSIGNMENT (already completed or none)" };
+    }
+
+    const nowISO = new Date().toISOString();
+    const { error: updErr } = await client
+      .from("student_vocab_assignments")
+      .update({ completed_at: nowISO } as any)
+      .eq("id", row.id);
+
+    if (updErr) return { ...empty, error: "UPDATE_FAILED", note: toErrMsg(updErr) };
+
+    // 다음 Day 오픈 (큐 정렬) — 실패해도 완료 자체는 성공 처리
+    let nextOpened = 0;
+    try {
+      const ensure: any = await ensureCockedQueueAdminAction({
+        studentId: academyStudentId,
+        trackId: cleanStr(row.track_id),
+      } as any);
+      nextOpened = Number(ensure?.assignedCount ?? 0);
+    } catch {
+      /* non-fatal */
+    }
+
+    return {
+      ok: true,
+      completedAssignmentId: cleanStr(row.id),
+      dayIndex: typeof row.day_index === "number" ? row.day_index : null,
+      nextOpened,
+    };
+  } catch (e: any) {
+    return { ...empty, error: "ACTION_EXCEPTION", note: toErrMsg(e) };
+  }
+}
+
+/**
+ * 학습 결과 저장 (Know/DontKnow, Spelling, Speed)
+ */
+export type SaveVocabAttemptInput = {
+  studentId: string;
+  setId: string;
+  wordIds: string[]; // 틀린/취약 단어 ID
+  stage: "know" | "spelling" | "speed"; // 어느 stage에서 틀렸는지
+  accuracy?: number; // 정확도 (speed의 경우)
+  passed?: boolean; // 통과 여부
+};
+
+export type SaveVocabAttemptResult = {
+  ok: boolean;
+  error?: string;
+};
+
+export async function saveVocabAttemptAction(
+  input: SaveVocabAttemptInput,
+): Promise<SaveVocabAttemptResult> {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: (cookies) => {
+            cookies.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          },
+        },
+      },
+    );
+
+    const client = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    const nowISO = new Date().toISOString();
+
+    // vocab_learning_attempts 테이블에 저장
+    const { error } = await client.from("vocab_learning_attempts").insert([
+      {
+        student_id: cleanStr(input.studentId),
+        set_id: cleanStr(input.setId),
+        wrong_word_ids: input.wordIds,
+        stage: input.stage,
+        accuracy: input.accuracy ?? null,
+        passed: input.passed ?? null,
+        attempted_at: nowISO,
+      },
+    ] as any);
+
+    if (error) {
+      console.warn("saveVocabAttemptAction: insert failed", toErrMsg(error));
+      // 테이블이 없으면 실패해도 계속 진행 (optional)
+      return { ok: true }; // non-fatal
+    }
+
+    return { ok: true };
+  } catch (e: any) {
+    console.warn("saveVocabAttemptAction exception:", toErrMsg(e));
+    return { ok: true }; // non-fatal
   }
 }

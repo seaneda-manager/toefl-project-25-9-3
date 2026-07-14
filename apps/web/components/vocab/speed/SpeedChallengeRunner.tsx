@@ -182,6 +182,16 @@ export default function SpeedChallengeRunner({
     gradeAndAdvance(ok);
   }
 
+  // ✅ 객관식(단어→뜻): 보기 클릭 시 즉시 채점
+  function onPick(choice: string) {
+    if (!q) return;
+    if (locked) return;
+    setInput(choice);
+    gradeAndAdvance(norm(choice) === norm(q.answer));
+  }
+
+  const isMcq = Array.isArray(q?.choices) && (q?.choices?.length ?? 0) > 0;
+
   if (total === 0) return null;
 
   const accuracySoFar = index === 0 ? 0 : correctCount / index;
@@ -205,11 +215,19 @@ export default function SpeedChallengeRunner({
         stageKey="speed"
         stageLabel="Speed Check"
         title="Speed Check"
-        subtitle={`Type the correct word. ${timeLimit}s per question.`}
+        subtitle={
+          isMcq
+            ? `뜻을 고르세요. ${timeLimit}s per question.`
+            : `Type the correct word. ${timeLimit}s per question.`
+        }
         step={{ index: index + 1, total }}
         topRight={topRight}
         hint={hint}
-        primary={{ label: "Submit", onClick: onSubmit, disabled: locked || norm(input).length === 0 }}
+        primary={
+          isMcq
+            ? { label: "보기를 클릭하세요", onClick: () => {}, disabled: true }
+            : { label: "Submit", onClick: onSubmit, disabled: locked || norm(input).length === 0 }
+        }
         align="center"
       >
         <div className="w-full space-y-4">
@@ -222,20 +240,37 @@ export default function SpeedChallengeRunner({
             </div>
           </div>
 
-          <input
-            ref={inputRef}
-            value={input}
-            disabled={locked}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onSubmit();
-            }}
-            className="w-full rounded-2xl border border-black/10 bg-white/80 px-5 py-4 text-center font-extrabold outline-none focus:ring-2 focus:ring-black/10"
-            style={{ fontSize: "clamp(18px, 2.3cqi, 30px)" }}
-            placeholder="Type here..."
-            autoComplete="off"
-            spellCheck={false}
-          />
+          {isMcq ? (
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {(q?.choices ?? []).map((choice, i) => (
+                <button
+                  key={`${choice}:${i}`}
+                  type="button"
+                  disabled={locked}
+                  onClick={() => onPick(choice)}
+                  className="rounded-2xl border border-black/10 bg-white/85 px-5 py-4 text-left font-bold text-neutral-900 transition-colors hover:border-black/30 hover:bg-white disabled:opacity-60"
+                  style={{ fontSize: "clamp(15px, 1.9cqi, 20px)" }}
+                >
+                  {choice}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <input
+              ref={inputRef}
+              value={input}
+              disabled={locked}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onSubmit();
+              }}
+              className="w-full rounded-2xl border border-black/10 bg-white/80 px-5 py-4 text-center font-extrabold outline-none focus:ring-2 focus:ring-black/10"
+              style={{ fontSize: "clamp(18px, 2.3cqi, 30px)" }}
+              placeholder="Type here..."
+              autoComplete="off"
+              spellCheck={false}
+            />
+          )}
 
           {lastVerdict === "correct" ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 font-bold">

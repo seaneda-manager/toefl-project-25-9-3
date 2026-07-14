@@ -259,6 +259,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: 'Jr.' as NavSection, href: '/admin/naesin/drill-demo',    label: '드릴 미리보기',  icon: PlayCircle },
         { section: 'Jr.' as NavSection, label: '커리큘럼', disabled: true },
 
+        { section: '어휘관리' as NavSection, href: '/admin/vocab/assign',      label: '단어 배정',       icon: UserPlus },
         { section: '어휘관리' as NavSection, href: '/admin/vocab/sets',        label: '단어 책 관리',    icon: Library },
         { section: '어휘관리' as NavSection, href: '/admin/vocab/words',        label: '단어 목록',       icon: List },
         { section: '어휘관리' as NavSection, href: '/admin/vocab/words/import', label: '단어 가져오기',   icon: Download },

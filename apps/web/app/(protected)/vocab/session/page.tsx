@@ -25,8 +25,11 @@ import { createBrowserClient } from "@/lib/supabase/client";
 import StageBackground from "@/components/common/StageBackground";
 import MascotLayer from "@/components/common/MascotLayer";
 
+import SpeedChallengeRunner from "@/components/vocab/speed/SpeedChallengeRunner";
+import type { SpeedQuestion, SpeedAttemptResult } from "@/models/vocab/speed.types";
+
 // ✅ server action (service-role)
-import { loadSessionWordsAction } from "./actions";
+import { loadSessionWordsAction, completeVocabDayAction, saveVocabAttemptAction } from "./actions";
 import type { LoadSessionWordsActionResult } from "./actions";
 
 import type { PrescreenResult } from "@/models/vocab/session/prescreen";
@@ -98,8 +101,10 @@ type Stage =
   | "PRESCREEN"
   | "SPELLING"
   | "SUMMARY"
+  | "QUIZ"
   | "LEARNING_INTRO"
   | "LEARNING"
+  | "SPEED"
   | "DRILL_INTRO"
   | "DRILL"
   | "DONE";
@@ -620,6 +625,19 @@ export default function VocabSessionPage() {
   const [dayIndex, setDayIndex] = useState<number | null>(null);
   const [totalDays, setTotalDays] = useState<number | null>(null);
 
+  // ✅ 2 Days Review: 지난 2일 약한 단어들
+  const [recentWeakWords, setRecentWeakWords] = useState<SessionWord[]>([]);
+
+  // ✅ Cumulative Quiz: 전체 기간 오답 단어들
+  const [cumulativeWeakWords, setCumulativeWeakWords] = useState<SessionWord[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean>>({});
+
+  // ✅ SPEED 최종점검 + 완료
+  const [sessionSetId, setSessionSetId] = useState<string | null>(null);
+  const [speedWrongIds, setSpeedWrongIds] = useState<string[] | null>(null);
+  const [speedTry, setSpeedTry] = useState<number>(1);
+  const [completing, setCompleting] = useState<boolean>(false);
+
   const shortcut = useMemo(() => readShortcutParams(), []);
   const onlyType = useMemo(() => canonOnlyToDrillType(shortcut.only), [shortcut.only]);
 
@@ -802,6 +820,7 @@ export default function VocabSessionPage() {
         const limited = applyDevWordLimit(loaded, shortcut, contextKey);
 
         setAllWords(limited.words);
+        setSessionSetId((res as any).setId ?? forcedSetId ?? null);
         const tt = (res as any).trackTitle ?? null;
         const di = (res as any).dayIndex ?? null;
         const td = (res as any).totalDays ?? null;
@@ -1210,9 +1229,185 @@ export default function VocabSessionPage() {
     setStage("DRILL_INTRO");
   }, [stage, allWordIds]);
 
+  // ✅ SPEED 최종점검 문항 (양방향)
+  //  - 뜻 → 단어 : 타이핑(스펠링)
+  //  - 단어 → 뜻 : 객관식(다의어면 정답 보기에 뜻 여러 개), 오답 보기는 다른 단어의 뜻
+  const speedQuestions: SpeedQuestion[] = useMemo(() => {
+    const meaningOf = (w: SessionWord) =>
+      (w.meanings_ko ?? []).map(cleanStr).filter(Boolean).join(", ");
+
+    const pool =
+      speedWrongIds && speedWrongIds.length > 0
+        ? allWords.filter((w) => speedWrongIds.includes(w.id))
+        : allWords;
+
+    const allMeanings = uniq(allWords.map(meaningOf).filter(Boolean));
+
+    const out: SpeedQuestion[] = [];
+    for (const w of pool) {
+      const word = cleanStr(w.text);
+      const meaning = meaningOf(w);
+      if (!word || !meaning) continue;
+
+      // 뜻 → 단어 (타이핑)
+      out.push({
+        id: `${w.id}:M2W`,
+        type: "MEANING_TO_WORD",
+        wordId: w.id,
+        prompt: meaning,
+        answer: word,
+      });
+
+      // 단어 → 뜻 (객관식)
+      const distractors = pickRandomSample(
+        allMeanings.filter((m) => m !== meaning),
+        3,
+      );
+      out.push({
+        id: `${w.id}:W2M`,
+        type: "WORD_TO_MEANING",
+        wordId: w.id,
+        prompt: word,
+        answer: meaning,
+        choices: shuffleArray([meaning, ...distractors]),
+      });
+    }
+    return shuffleArray(out);
+  }, [allWords, speedWrongIds]);
+
+  async function finishDay() {
+    setCompleting(true);
+    try {
+      if (sessionSetId) await completeVocabDayAction({ setId: sessionSetId });
+    } catch {
+      /* 완료 기록 실패해도 학습은 끝났으니 진행 */
+    } finally {
+      setCompleting(false);
+      setStage("DONE");
+    }
+  }
+
+  async function handleSpeedFinish(result: SpeedAttemptResult) {
+    const total = Number(result?.totalQuestions ?? 0);
+    const correct = Number(result?.correctCount ?? 0);
+    const acc = total > 0 ? correct / total : 1;
+    const wrong = (result?.wrongWordIds ?? []).filter(Boolean);
+
+    // ✅ 결과 저장 (know, spelling, speed)
+    if (academyStudentId && sessionSetId) {
+      try {
+        await saveVocabAttemptAction({
+          studentId: academyStudentId,
+          setId: sessionSetId,
+          wordIds: wrong,
+          stage: "speed",
+          accuracy: acc,
+          passed: acc >= 0.7,
+        });
+      } catch (e) {
+        console.warn("Failed to save speed attempt:", e);
+        /* non-fatal */
+      }
+    }
+
+    // 불합격(70% 미만) + 틀린 단어 있으면 → 틀린 것만 재도전
+    if (acc < 0.7 && wrong.length > 0) {
+      setSpeedWrongIds(wrong);
+      setSpeedTry((n) => n + 1);
+      return;
+    }
+
+    // 통과 → Day 완료 기록 + 다음 Day 오픈
+    await finishDay();
+  }
+
+  // ✅ 2 Days Review: 지난 2일 약한 단어들 조회
+  useEffect(() => {
+    if (stage !== "SUMMARY" || !debugInfo?.academyStudentId || allWords.length === 0) {
+      return;
+    }
+
+    (async () => {
+      try {
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+        const { data, error } = await supabase
+          .from("vocab_learning_attempts")
+          .select("wrong_word_ids")
+          .eq("student_id", debugInfo.academyStudentId)
+          .gte("attempted_at", twoDaysAgo.toISOString())
+          .execute();
+
+        if (error) {
+          console.warn("Failed to load 2-days review:", error);
+          return;
+        }
+
+        // 집계: 모든 wrong_word_ids 수집 후 중복 제거
+        const weakWordIds = new Set<string>();
+        for (const record of data ?? []) {
+          const ids = Array.isArray(record.wrong_word_ids) ? record.wrong_word_ids : [];
+          ids.forEach((id) => weakWordIds.add(id));
+        }
+
+        // 단어 정보 조회
+        const weak = Array.from(weakWordIds)
+          .map((id) => allWords.find((w) => w.id === id))
+          .filter(Boolean) as SessionWord[];
+
+        setRecentWeakWords(weak);
+      } catch (e) {
+        console.warn("Error loading 2-days review:", e);
+      }
+    })();
+  }, [stage, debugInfo?.academyStudentId, allWords, supabase]);
+
+  // ✅ Cumulative Quiz: 전체 기간 오답 단어들 조회
+  useEffect(() => {
+    if (stage !== "QUIZ" || !debugInfo?.academyStudentId || allWords.length === 0) {
+      return;
+    }
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("vocab_learning_attempts")
+          .select("wrong_word_ids")
+          .eq("student_id", debugInfo.academyStudentId)
+          .execute();
+
+        if (error) {
+          console.warn("Failed to load cumulative quiz:", error);
+          return;
+        }
+
+        // 집계: 모든 wrong_word_ids 수집 후 중복 제거
+        const weakWordIds = new Set<string>();
+        for (const record of data ?? []) {
+          const ids = Array.isArray(record.wrong_word_ids) ? record.wrong_word_ids : [];
+          ids.forEach((id) => weakWordIds.add(id));
+        }
+
+        // 단어 정보 조회
+        const weak = Array.from(weakWordIds)
+          .map((id) => allWords.find((w) => w.id === id))
+          .filter(Boolean) as SessionWord[];
+
+        // 최대 10개 문항 (무작위 선택)
+        const shuffled = weak.sort(() => Math.random() - 0.5).slice(0, 10);
+        setCumulativeWeakWords(shuffled);
+        setQuizAnswers({});
+      } catch (e) {
+        console.warn("Error loading cumulative quiz:", e);
+      }
+    })();
+  }, [stage, debugInfo?.academyStudentId, allWords, supabase]);
+
   // ✅ stage renderer
   const renderStage = () => {
     const Debug = null; // DebugPanel 비활성화
+    const academyStudentId = debugInfo?.academyStudentId ?? null;
 
     // ✅ 모든 stage에서 공통으로 보여줄 헤더
     const headerBlock = trackTitle ? (
@@ -1247,6 +1442,21 @@ export default function VocabSessionPage() {
             words={prescreenWords as any}
             onFinish={(r: PrescreenResult) => {
               setPrescreenResult(r);
+
+              // ✅ 결과 저장: 모르는 단어들 기록
+              if (academyStudentId && sessionSetId) {
+                try {
+                  saveVocabAttemptAction({
+                    studentId: academyStudentId,
+                    setId: sessionSetId,
+                    wordIds: r.unknownWordIds || [],
+                    stage: "know",
+                    passed: undefined,
+                  }).catch((e) => console.warn("Failed to save prescreen attempt:", e));
+                } catch (e) {
+                  console.warn("Failed to save prescreen attempt:", e);
+                }
+              }
 
               const knownCount = Array.isArray((r as any)?.knownWordIds) ? (r as any).knownWordIds.length : 0;
 
@@ -1283,6 +1493,22 @@ export default function VocabSessionPage() {
             words={spellingWords as any}
             onFinish={(r: SpellingResult) => {
               setSpellingResult(r);
+
+              // ✅ 결과 저장: 철자를 틀린 단어들 기록
+              if (academyStudentId && sessionSetId) {
+                try {
+                  saveVocabAttemptAction({
+                    studentId: academyStudentId,
+                    setId: sessionSetId,
+                    wordIds: r.spellingFailedIds || [],
+                    stage: "spelling",
+                    passed: undefined,
+                  }).catch((e) => console.warn("Failed to save spelling attempt:", e));
+                } catch (e) {
+                  console.warn("Failed to save spelling attempt:", e);
+                }
+              }
+
               setStage("SUMMARY");
             }}
           />
@@ -1306,6 +1532,7 @@ export default function VocabSessionPage() {
 
           <SummaryScreen
             words={allWords}
+            recentWeakWords={recentWeakWords}
             prescreenMap={(() => {
               const m: Record<string, any> = {};
               for (const id of prescreenResult?.knownWordIds ?? []) m[id] = true;
@@ -1320,6 +1547,7 @@ export default function VocabSessionPage() {
               }
               return m;
             })()}
+            onQuiz={() => setStage("QUIZ")}
             onContinue={(payload: any) => {
               if (payload?.xknowList && Array.isArray(payload.xknowList)) {
                 setLearningWords(payload.xknowList);
@@ -1349,6 +1577,99 @@ export default function VocabSessionPage() {
       );
     }
 
+    if (stage === "QUIZ") {
+      if (cumulativeWeakWords.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border bg-white p-6 text-center text-slate-700">
+              <div className="text-lg font-bold mb-4">No Quiz Available</div>
+              <p className="mb-6">You haven't accumulated enough vulnerable words yet.</p>
+              <button
+                type="button"
+                onClick={() => setStage("LEARNING_INTRO")}
+                className="w-full rounded-xl bg-emerald-600 py-3 text-white font-bold"
+              >
+                Back to Learning
+              </button>
+            </div>
+          </CardWrap>
+        );
+      }
+
+      const currentQuizIdx = Object.keys(quizAnswers).length;
+      const currentWord = cumulativeWeakWords[currentQuizIdx];
+      const isQuizComplete = currentQuizIdx >= cumulativeWeakWords.length;
+
+      if (isQuizComplete) {
+        const correct = Object.values(quizAnswers).filter((v) => v === true).length;
+        const total = cumulativeWeakWords.length;
+        const percentage = Math.round((correct / total) * 100);
+
+        return (
+          <CardWrap>
+            {Debug}
+            <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 p-8 text-center">
+              <div className="text-5xl mb-4">✅</div>
+              <div className="text-2xl font-bold text-emerald-900 mb-2">Quiz Complete!</div>
+              <div className="text-4xl font-bold text-emerald-700 mb-6">{percentage}%</div>
+              <div className="text-sm text-emerald-800 mb-6">
+                {correct} / {total} correct
+              </div>
+              <button
+                type="button"
+                onClick={() => setStage("LEARNING_INTRO")}
+                className="w-full rounded-xl bg-emerald-600 py-3 text-white font-bold hover:bg-emerald-700 transition"
+              >
+                Continue to Learning
+              </button>
+            </div>
+          </CardWrap>
+        );
+      }
+
+      return (
+        <CardWrap>
+          {Debug}
+          <div className="rounded-2xl border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 p-8">
+            <div className="mb-6 text-sm font-semibold text-purple-700">
+              Question {currentQuizIdx + 1} / {cumulativeWeakWords.length}
+            </div>
+
+            <div className="mb-8 space-y-4">
+              <div className="text-3xl font-bold text-purple-900">{currentWord?.text || "?"}</div>
+              {currentWord?.meanings_ko && currentWord.meanings_ko.length > 0 ? (
+                <div className="text-lg text-purple-700">{currentWord.meanings_ko[0]}</div>
+              ) : (
+                <div className="text-sm text-slate-500">No meaning available</div>
+              )}
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuizAnswers({ ...quizAnswers, [currentWord.id]: true });
+                }}
+                className="flex-1 rounded-xl bg-emerald-500 py-4 text-white font-bold hover:bg-emerald-600 transition text-lg"
+              >
+                ✓ Correct
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuizAnswers({ ...quizAnswers, [currentWord.id]: false });
+                }}
+                className="flex-1 rounded-xl bg-red-500 py-4 text-white font-bold hover:bg-red-600 transition text-lg"
+              >
+                ✕ Wrong
+              </button>
+            </div>
+          </div>
+        </CardWrap>
+      );
+    }
+
     if (stage === "LEARNING_INTRO") {
       return (
         <CardWrap>
@@ -1364,10 +1685,54 @@ export default function VocabSessionPage() {
           {Debug}
           <LearningRunner
             words={learningPayload}
-            onFinish={() => setStage("DRILL_INTRO")}
+            onFinish={() => setStage("SPEED")}
             trackTitle={trackTitle}
             dayIndex={dayIndex}
             totalDays={totalDays}
+          />
+        </CardWrap>
+      );
+    }
+
+    if (stage === "SPEED") {
+      // 테스트할 문항이 없으면(뜻 없는 세트 등) 바로 완료 처리
+      if (speedQuestions.length === 0) {
+        return (
+          <CardWrap>
+            {Debug}
+            {headerBlock}
+            <div className="rounded-2xl border bg-white p-6 text-center">
+              <div className="text-lg font-bold text-slate-900">최종 점검할 항목이 없어요</div>
+              <button
+                type="button"
+                disabled={completing}
+                onClick={finishDay}
+                className="mt-4 w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white disabled:opacity-50"
+              >
+                {completing ? "완료 처리 중…" : "오늘 학습 완료"}
+              </button>
+            </div>
+          </CardWrap>
+        );
+      }
+
+      return (
+        <CardWrap>
+          {Debug}
+          {headerBlock}
+          {speedTry > 1 && (
+            <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
+              틀린 단어 {speedQuestions.length}개 재도전 ({speedTry}차) — 통과하면 완료돼요
+            </div>
+          )}
+          <SpeedChallengeRunner
+            key={speedTry}
+            userId={userId}
+            questions={speedQuestions}
+            tryIndex={speedTry}
+            secondsPerQuestion={6}
+            minPassAccuracy={0.7}
+            onFinish={handleSpeedFinish}
           />
         </CardWrap>
       );

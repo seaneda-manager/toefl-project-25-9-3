@@ -39,13 +39,28 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        // 성공 응답이면 캐시에 저장
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        // 성공 응답이면 캐시에 저장 (http/https만)
+        if (res.ok && (url.protocol === 'http:' || url.protocol === 'https:')) {
+          try {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone).catch(() => {}));
+          } catch (e) {
+            // 캐시 저장 실패는 무시
+          }
         }
         return res;
       })
-      .catch(() => caches.match(event.request))
+      .catch(async () => {
+        // 네트워크 실패시 캐시에서 찾기
+        const cached = await caches.match(event.request);
+        if (cached) {
+          return cached;
+        }
+        // 캐시도 없으면 null 대신 에러 응답 반환
+        return new Response('Offline - 네트워크 연결이 필요합니다', {
+          status: 503,
+          statusText: 'Service Unavailable'
+        });
+      })
   );
 });

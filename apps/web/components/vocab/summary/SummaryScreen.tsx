@@ -83,6 +83,8 @@ export default function SummaryScreen(props: AnyProps) {
             ? props.onFinish
             : null;
 
+  const onQuiz = typeof props?.onQuiz === "function" ? props.onQuiz : null;
+
   const words = useMemo(() => {
     const list =
       pickFirst<any[]>(
@@ -116,6 +118,11 @@ export default function SummaryScreen(props: AnyProps) {
       props.spellcheckMap,
       props.spellCheckMap,
     ) ?? null;
+
+  const recentWeakWords = useMemo(() => {
+    const list = props.recentWeakWords ?? [];
+    return safeList(list);
+  }, [props.recentWeakWords]);
 
   const { unknownList, spellFailedList, knowCount, unknownCount, spellFailedCount, learnList } = useMemo(() => {
     const unknown: any[] = [];
@@ -217,6 +224,33 @@ export default function SummaryScreen(props: AnyProps) {
           </div>
         ) : (
           <div className="mt-4 space-y-6">
+            {/* 2 Days Review */}
+            {recentWeakWords.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="font-extrabold" style={{ color: "#FFE3B3" }}>
+                    2 Days Review{" "}
+                    <span className="ml-2 font-bold" style={{ color: "#FF9800" }}>({recentWeakWords.length})</span>
+                  </div>
+                  <div className="text-sm font-semibold" style={{ color: "#FF9800" }}>Vulnerable words</div>
+                </div>
+
+                <div className="rounded-2xl px-4 py-4" style={{ background: "rgba(255,152,0,0.05)", border: "0.5px solid rgba(255,152,0,0.2)" }}>
+                  <ul className={gridClassForCount(recentWeakWords.length).list}>
+                    {recentWeakWords.map((w, idx) => (
+                      <li
+                        key={`${getId(w) || getText(w) || "r"}-${idx}`}
+                        className={gridClassForCount(recentWeakWords.length).item.replace("text-slate-800", "")}
+                        style={{ color: "#FFB74D" }}
+                        title={getText(w) || ""}
+                      >
+                        {getText(w) || "—"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
             {/* Unknown */}
             {unknownCount > 0 ? (
               <div className="space-y-3">
@@ -274,6 +308,22 @@ export default function SummaryScreen(props: AnyProps) {
           </div>
         )}
       </StageIntroScreen>
+
+      {/* Quiz Option */}
+      {onQuiz ? (
+        <div className="mt-4 px-4">
+          <button
+            type="button"
+            onClick={() => (onQuiz as any)()}
+            className="w-full rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 py-3 px-4 text-sm font-bold text-white hover:shadow-lg transition-shadow"
+          >
+            📝 Take Cumulative Quiz
+          </button>
+          <div className="mt-2 text-xs text-slate-500 text-center">
+            Review vulnerable words from past sessions
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

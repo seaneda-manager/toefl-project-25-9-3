@@ -204,8 +204,13 @@ export default async function VocabHomePage() {
             }
           </h1>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
-          🔥 7일 연속
+        <div className="flex items-center gap-2">
+          <Link href="/vocab/dashboard" className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition">
+            📊 대시보드
+          </Link>
+          <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium bg-amber-50 border border-amber-200 text-amber-700">
+            🔥 7일 연속
+          </div>
         </div>
       </header>
 
