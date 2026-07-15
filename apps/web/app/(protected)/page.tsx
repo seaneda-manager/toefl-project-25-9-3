@@ -1,6 +1,8 @@
 import { getUserAndProfile } from "@/lib/getUserAndProfile";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProtectedRootPage() {
   const { user, profile } = await getUserAndProfile();
   
