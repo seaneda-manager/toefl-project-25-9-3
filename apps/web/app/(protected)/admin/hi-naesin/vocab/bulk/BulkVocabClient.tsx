@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useState } from 'react';
 import { bulkInsertVocabAction } from './actions';
 
 type Passage = { id: string; title: string | null; grade: string | null };
@@ -17,13 +17,23 @@ persist\t지속하다
 remarkable\t주목할 만한`;
 
 export default function BulkVocabClient({ passages }: { passages: Passage[] }) {
-  const [state, action, pending] = useActionState<State, FormData>(
-    async (_, fd) => bulkInsertVocabAction(fd),
-    null,
-  );
+  const [state, setState] = useState<State>(null);
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPending(true);
+    try {
+      const fd = new FormData(e.currentTarget);
+      const result = await bulkInsertVocabAction(fd);
+      setState(result);
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
-    <form action={action} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* 지문 선택 */}
       <div className="space-y-1">
         <label className="block text-xs font-medium text-neutral-600">지문 선택 *</label>
