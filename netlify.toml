@@ -6,3 +6,4 @@
 
 [build.environment]
   NODE_ENV = "production"
+  SKIP_BUILD_CACHE = "true"
