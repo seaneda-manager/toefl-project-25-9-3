@@ -1,7 +1,7 @@
 "use server";
 
-import { getServiceSupabase } from "@/lib/supabase/service";
-import { getUser } from "@/lib/supabase/auth";
+import { getSupabaseServer } from "@/lib/supabaseServer";
+import { getUserAndProfile } from "@/lib/getUserAndProfile";
 
 export async function submitSpeakingWritingAction(input: {
   taskId: string;
@@ -9,12 +9,12 @@ export async function submitSpeakingWritingAction(input: {
   audioUrl?: string;
 }) {
   try {
-    const user = await getUser();
+    const { user } = await getUserAndProfile();
     if (!user) {
       return { ok: false, error: "Unauthorized" };
     }
 
-    const supabase = getServiceSupabase();
+    const supabase = await getSupabaseServer();
     const result = await supabase
       .from("jr_speaking_writing_submissions")
       .insert([

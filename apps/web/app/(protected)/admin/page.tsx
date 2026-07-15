@@ -144,6 +144,35 @@ export default function AdminPage() {
         />
       </div>
 
+      {/* Jr. Learning */}
+      <GroupLabel label="Jr. Learning" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <DashCard
+          title="콘텐츠 관리"
+          description="Reading 지문, Grammar 단원, Listening 음성, Speaking&Writing 과제를 생성합니다."
+          links={[
+            { label: '콘텐츠 관리', href: '/admin/jr/content', primary: true },
+          ]}
+          color="border-purple-100"
+        />
+        <DashCard
+          title="과제 할당"
+          description="학생에게 Reading/Grammar/Listening/Speaking&Writing 과제를 할당합니다."
+          links={[
+            { label: '과제 할당', href: '/admin/jr/assignments', primary: true },
+          ]}
+          color="border-purple-100"
+        />
+        <DashCard
+          title="학습 대시보드"
+          description="Jr. 모듈의 학생 진도·제출물·피드백을 관리합니다."
+          links={[
+            { label: '대시보드', href: '/admin/jr/dashboard', primary: true },
+          ]}
+          color="border-purple-100"
+        />
+      </div>
+
       {/* 어휘 */}
       <GroupLabel label="어휘" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,15 +1,15 @@
-import { getUser } from "@/lib/supabase/auth";
-import { getServiceSupabase } from "@/lib/supabase/service";
+import { getUser } from "@/lib/getUserAndProfile";
+import { getServiceSupabase } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import JrDashboardClient from "./JrDashboardClient";
 
 export default async function JrDashboardPage() {
-  const user = await getUser();
+  const { user } = await getUserAndProfile();
   if (!user) redirect("/login");
 
-  const supabase = getServiceSupabase();
+  const supabase = await getSupabaseServer();
 
-  // 선생님이 가르치는 학생들 조회
+  // ?�생?�이 가르치???�생??조회
   const { data: assignments } = await supabase
     .from("teacher_student_assignments")
     .select("student_id, students(id, full_name, username)")

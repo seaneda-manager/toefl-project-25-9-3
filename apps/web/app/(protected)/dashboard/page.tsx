@@ -1,18 +1,17 @@
-import { getUser } from "@/lib/supabase/auth";
-import { getServiceSupabase } from "@/lib/supabase/service";
+import { getUserAndProfile } from "@/lib/getUserAndProfile";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import TeacherDashboardClient from "./_components/TeacherDashboardClient";
 
 export default async function DashboardPage() {
-  const user = await getUser();
+  const { user, profile } = await getUserAndProfile();
   if (!user) redirect("/login");
 
-  const userRole = user.user_metadata?.role;
-  if (userRole !== "teacher") {
+  if (profile?.role !== "teacher") {
     redirect("/student");
   }
 
-  const supabase = getServiceSupabase();
+  const supabase = await getSupabaseServer();
 
   // 학생 목록
   const { data: assignments } = await supabase

@@ -1,10 +1,10 @@
-import { getUser } from "@/lib/supabase/auth";
-import { getServiceSupabase } from "@/lib/supabase/service";
+import { getUser } from "@/lib/getUserAndProfile";
+import { getServiceSupabase } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import PerformanceReportClient from "./_components/PerformanceReportClient";
 
 export default async function ReportsPage() {
-  const user = await getUser();
+  const { user } = await getUserAndProfile();
   if (!user) redirect("/login");
 
   const userRole = user.user_metadata?.role;
@@ -12,7 +12,7 @@ export default async function ReportsPage() {
     redirect("/student");
   }
 
-  const supabase = getServiceSupabase();
+  const supabase = await getSupabaseServer();
 
   const { data: assignments } = await supabase
     .from("teacher_student_assignments")

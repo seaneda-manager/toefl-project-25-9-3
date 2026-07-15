@@ -1,10 +1,10 @@
-import { getUser } from "@/lib/supabase/auth";
-import { getServiceSupabase } from "@/lib/supabase/service";
+import { getUser } from "@/lib/getUserAndProfile";
+import { getServiceSupabase } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import JrAnalyticsClient from "./_components/JrAnalyticsClient";
 
 export default async function JrAnalyticsPage() {
-  const user = await getUser();
+  const { user } = await getUserAndProfile();
   if (!user) redirect("/login");
 
   const userRole = user.user_metadata?.role;
@@ -12,7 +12,7 @@ export default async function JrAnalyticsPage() {
     redirect("/student");
   }
 
-  const supabase = getServiceSupabase();
+  const supabase = await getSupabaseServer();
 
   const { data: assignments } = await supabase
     .from("teacher_student_assignments")
