@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { createWordAction } from "@/app/(protected)/admin/vocab/words/new/actions";
+import { createWordAction } from "@/app/protected/admin/vocab/words/new/actions";
 
 // ✅ SSOT는 무조건 index.ts (DB enum 기반)만 사용
 import {

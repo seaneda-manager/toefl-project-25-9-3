@@ -2,7 +2,7 @@
 "use client";
 
 import WritingRunner2026 from "@/components/writing/WritingRunner2026";
-import { demoWritingTest2026 } from "@/app/(protected)/writing-2026/study";
+import { demoWritingTest2026 } from "@/app/protected/writing-2026/study";
 
 export default function Writing2026StudyPage() {
   return (

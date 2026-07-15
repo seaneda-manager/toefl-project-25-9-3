@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ListeningTrack, LQuestion } from '@/app/types/types-listening';
 import type { Mode as QuestionMode } from '@/types/listening';
-import LAudioScreen from '@/app/(protected)/listening/test/components/LAudioScreen';
-import LQuestionScreen from '@/app/(protected)/listening/test/components/LQuestionScreen';
+import LAudioScreen from '@/app/protected/listening/test/components/LAudioScreen';
+import LQuestionScreen from '@/app/protected/listening/test/components/LQuestionScreen';
 import {
   startListeningSessionClient as startListeningSession,
   submitListeningAnswerClient as submitListeningAnswer,

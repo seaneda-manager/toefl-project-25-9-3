@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import InterviewRunner from "@/app/(protected)/speaking-2026/components/InterviewRunner";
-import ListenAndRepeatRunner from "@/app/(protected)/speaking-2026/components/ListenAndRepeatRunner";
+import InterviewRunner from "@/app/protected/speaking-2026/components/InterviewRunner";
+import ListenAndRepeatRunner from "@/app/protected/speaking-2026/components/ListenAndRepeatRunner";
 import type {
   SpeakingTest2026,
   SpeakingTaskListenRepeat2026,

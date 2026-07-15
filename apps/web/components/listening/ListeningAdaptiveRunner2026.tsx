@@ -7,7 +7,7 @@ import type {
   LListeningModule,
   LBaseItem,
 } from "@/models/listening";
-import Timer from "@/app/(protected)/reading/components/Timer";
+import Timer from "@/app/protected/reading/components/Timer";
 
 type Props = {
   test: LListeningTest2026;

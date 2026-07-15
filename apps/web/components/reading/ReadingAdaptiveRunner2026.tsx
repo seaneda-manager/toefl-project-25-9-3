@@ -10,7 +10,7 @@ import type {
   RDailyLifeItem,
   RAcademicPassageItem,
 } from "@/models/reading";
-import Timer from "@/app/(protected)/reading/components/Timer";
+import Timer from "@/app/protected/reading/components/Timer";
 
 type Props = {
   test: RReadingTest2026;

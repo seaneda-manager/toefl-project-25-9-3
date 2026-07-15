@@ -14,7 +14,7 @@ import {
   runAutoSuggestPassageGrammarTargetsAction,
   updatePassageGrammarTargetAction,
   type PassageGrammarTargetRecord,
-} from "@/app/(protected)/admin/naesin/passages/grammar-actions";
+} from "@/app/protected/admin/naesin/passages/grammar-actions";
 import type { GrammarUnitLite } from "@/lib/naesin/grammar/ruleScanV1";
 
 const QUESTION_STYLE_OPTIONS: Array<{

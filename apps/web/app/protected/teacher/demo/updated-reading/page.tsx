@@ -2,7 +2,7 @@
 "use client";
 
 import ReadingAdaptiveRunner2026 from "@/components/reading/ReadingAdaptiveRunner2026";
-import { adaptiveReadingTest2026 } from "@/app/(protected)/reading/adaptive/adaptive-demo/demo-data";
+import { adaptiveReadingTest2026 } from "@/app/protected/reading/adaptive/adaptive-demo/demo-data";
 
 export default function Reading2026DemoPage() {
   return (

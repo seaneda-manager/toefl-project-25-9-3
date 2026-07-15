@@ -31,7 +31,7 @@ import {
   removeAssignmentAction,
   updateEnabledDrillTypesAction,
 } from './assign-actions';
-import { startHiNaesinDrillSessionAction } from '@/app/(protected)/hi-naesin/passages/actions';
+import { startHiNaesinDrillSessionAction } from '@/app/protected/hi-naesin/passages/actions';
 
 export const dynamic = 'force-dynamic';
 

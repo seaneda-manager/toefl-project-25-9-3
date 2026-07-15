@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import LTimer from '@/app/(protected)/listening/components/LTimer';
+import LTimer from '@/app/protected/listening/components/LTimer';
 import {
   startListeningSession,
   submitListeningAnswer,

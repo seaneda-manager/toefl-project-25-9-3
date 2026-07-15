@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { generatePassageWorkoutAction } from "@/app/(protected)/admin/naesin/passages/[id]/generate-workout/actions";
-import { saveNaesinPassageAction } from "@/app/(protected)/admin/naesin/passages/actions";
+import { generatePassageWorkoutAction } from "@/app/protected/admin/naesin/passages/[id]/generate-workout/actions";
+import { saveNaesinPassageAction } from "@/app/protected/admin/naesin/passages/actions";
 import type { PassageAuthoringDocument } from "@/components/naesin/authoring/passage_authoring_schema_v1";
 import { SENTENCE_FUNCTION_LABEL, SENTENCE_FUNCTION_TYPES } from "@/components/naesin/drill/types";
 

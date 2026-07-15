@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { runAutoSuggestPassageGrammarTargetsAction } from "@/app/(protected)/admin/naesin/passages/grammar-actions";
+import { runAutoSuggestPassageGrammarTargetsAction } from "@/app/protected/admin/naesin/passages/grammar-actions";
 import type { GrammarUnitLite } from "@/lib/naesin/grammar/ruleScanV1";
 
 type Props = {

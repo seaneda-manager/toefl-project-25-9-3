@@ -1,8 +1,8 @@
 // apps/web/app/(protected)/toefl-2026/test/demo-tests.ts
 
 import type { RReadingTest2026 } from "@/models/reading";
-import { demoAdaptiveReadingTest } from "@/app/(protected)/reading/adaptive/demo-data";
-import { demoWritingTest2026 } from "@/app/(protected)/writing-2026/study";
+import { demoAdaptiveReadingTest } from "@/app/protected/reading/adaptive/demo-data";
+import { demoWritingTest2026 } from "@/app/protected/writing-2026/study";
 
 // ✅ 이미 있는 리딩 2026 데모 재사용
 export const demoReadingTest2026: RReadingTest2026 = demoAdaptiveReadingTest;

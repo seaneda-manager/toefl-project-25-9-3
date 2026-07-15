@@ -1,5 +1,5 @@
 // apps/web/app/(protected)/admin/users/page.tsx
-import UsersManager from '@/app/(protected)/admin/users/UsersManager';
+import UsersManager from '@/app/protected/admin/users/UsersManager';
 
 export const dynamic = 'force-dynamic'; // 항상 최신 목록을 불러오기
 

@@ -19,7 +19,7 @@ import GrammarTargetsEditor from "@/components/naesin/authoring/GrammarTargetsEd
 import ReadAloudItemsEditor from "@/components/naesin/authoring/ReadAloudItemsEditor";
 import SentenceOrderItemsEditor from "@/components/naesin/authoring/SentenceOrderItemsEditor";
 import WorkoutReviewPanel from "@/components/naesin/authoring/WorkoutReviewPanel";
-import { saveNaesinPassageAction } from "@/app/(protected)/admin/naesin/passages/actions";
+import { saveNaesinPassageAction } from "@/app/protected/admin/naesin/passages/actions";
 import type { GrammarUnitLite } from "@/lib/naesin/grammar/ruleScanV1";
 
 const SOURCE_OPTIONS: Array<{ value: PassageSourceType; label: string }> = [
