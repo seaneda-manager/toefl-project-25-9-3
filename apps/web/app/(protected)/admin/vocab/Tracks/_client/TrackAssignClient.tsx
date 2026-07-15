@@ -53,7 +53,7 @@ function PlanCard({ plan }: { plan: StudentPlanLite }) {
       </div>
       <div>
         <div className="text-xs text-slate-500">활성 캡</div>
-        <div className="font-semibold">{plan.max_active_sets ?? 1}</div>
+        <div className="font-semibold">{plan.max_active_sets ?? 2}</div>
       </div>
       <div>
         <div className="text-xs text-slate-500">시작 Day</div>
@@ -111,7 +111,7 @@ export default function TrackAssignClient({
 
   const [startDateISO, setStartDateISO] = useState<string>(todayISO());
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [maxActiveSets, setMaxActiveSets] = useState<number>(1);
+  const [maxActiveSets, setMaxActiveSets] = useState<number>(2);
   const [startDayIndex, setStartDayIndex] = useState<number>(1);
   const [cursorDayIndex, setCursorDayIndex] = useState<number | "">("");
   const [queueSize, setQueueSize] = useState<number>(3);
@@ -147,7 +147,7 @@ export default function TrackAssignClient({
       if (res.plan) {
         setStartDateISO(res.plan.start_date ?? todayISO());
         setWeekdays(res.plan.weekdays ?? [1, 2, 3, 4, 5]);
-        setMaxActiveSets(res.plan.max_active_sets ?? 1);
+        setMaxActiveSets(res.plan.max_active_sets ?? 2);
         setStartDayIndex(res.plan.start_day_index ?? 1);
         setCursorDayIndex(res.plan.cursor_day_index ?? "");
         setIsPaused(res.plan.is_paused ?? false);

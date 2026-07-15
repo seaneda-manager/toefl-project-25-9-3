@@ -662,7 +662,7 @@ export async function getStudentPlanAndQueueAction(params: {
     const unlockedCount = (queue ?? []).filter(
       (r: any) => String(r.available_at) <= todayISO,
     ).length;
-    const maxActive = clampInt((plan as any)?.max_active_sets ?? 1, 1, 20, 1);
+    const maxActive = clampInt((plan as any)?.max_active_sets ?? 2, 1, 20, 2);
 
     return {
       ok: true,
@@ -707,7 +707,7 @@ export async function createStudentVocabPlanAction(params: {
     ? params.weekdays.map(Number).filter((n) => n >= 1 && n <= 7)
     : [];
 
-  const maxActiveSets = clampInt(params.maxActiveSets ?? 1, 1, 20, 1);
+  const maxActiveSets = clampInt(params.maxActiveSets ?? 2, 1, 20, 2);
 
   const startDayIndex = clampInt(params.startDayIndex ?? 1, 1, 9999, 1);
   const cursorDayIndex =
@@ -959,7 +959,7 @@ async function ensureCockedQueueForPlan(
   const weekdays = Array.isArray((plan as any).weekdays)
     ? ((plan as any).weekdays as any[]).map(Number)
     : [];
-  const maxActive = clampInt((plan as any).max_active_sets ?? 1, 1, 20, 1);
+  const maxActive = clampInt((plan as any).max_active_sets ?? 2, 1, 20, 2);
 
   const startDay = clampInt((plan as any).start_day_index ?? 1, 1, 9999, 1);
   let cursor = clampInt((plan as any).cursor_day_index ?? startDay, 1, 9999, startDay);
@@ -1939,7 +1939,7 @@ export async function bulkCreateStudentVocabPlansAction(params: {
     if (weekdays.length === 0) return { ok: false, error: "weekdays required" };
 
     const startDateISO = cleanStr(params.startDateISO);
-    const maxActiveSets = clampInt(params.maxActiveSets ?? 1, 1, 20, 1);
+    const maxActiveSets = clampInt(params.maxActiveSets ?? 2, 1, 20, 2);
     const startDayIndex = clampInt(params.startDayIndex ?? 1, 1, 9999, 1);
     const queueSize = clampInt(params.queueSize ?? 3, 1, 20, 3);
 
