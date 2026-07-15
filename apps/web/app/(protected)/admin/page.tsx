@@ -58,9 +58,19 @@ function GroupLabel({ label }: { label: string }) {
 export default function AdminPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-2 py-6">
-      <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Admin</h1>
-        <p className="mt-1 text-sm text-neutral-500">LexioX 콘텐츠 · 학생 · 시스템 관리</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-neutral-900">Admin</h1>
+          <p className="mt-1 text-sm text-neutral-500">LexioX 콘텐츠 · 학생 · 시스템 관리</p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard"
+            className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-700 font-semibold hover:bg-neutral-50"
+          >
+            📊 대시보드
+          </Link>
+        </div>
       </div>
 
       {/* TOEFL */}

@@ -1,15 +1,15 @@
-import { getUser } from "@/lib/getUserAndProfile";
-import { getServiceSupabase } from "@/lib/supabaseServer";
+import { getUserAndProfile } from "@/lib/getUserAndProfile";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export default async function JrHubPage() {
   const { user } = await getUserAndProfile();
-  if (!user) redirect("/login");
+  if (!user) redirect("/auth/login");
 
   const supabase = await getSupabaseServer();
 
-  // ?�생???�당??과제??조회
+  // ?�생???�당??과제??조회
   const { data: readingSessions } = await supabase
     .from("jr_reading_sessions")
     .select("id, passage_id, stage, completed_at")
@@ -42,9 +42,25 @@ export default async function JrHubPage() {
     <main className="min-h-screen bg-slate-50">
       <div className="border-b bg-white p-4">
         <div className="mx-auto max-w-6xl px-6">
-          <h1 className="text-3xl font-bold text-slate-900">Jr. Learning</h1>
-          <p className="text-slate-600 mt-1">
-            ?�신 ?��?4?� 모듈: Reading · Grammar · Listening · Speaking & Writing
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold text-slate-900">Jr. Learning</h1>
+            <div className="flex gap-2">
+              <Link
+                href="/student/dashboard"
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-900 font-semibold hover:bg-slate-50"
+              >
+                📊 내 진도
+              </Link>
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-900 font-semibold hover:bg-slate-50"
+              >
+                👨‍🏫 선생님용
+              </Link>
+            </div>
+          </div>
+          <p className="text-slate-600">
+            당신의 4대 모듈: Reading · Grammar · Listening · Speaking & Writing
           </p>
         </div>
       </div>
@@ -55,11 +71,11 @@ export default async function JrHubPage() {
           {/* Reading */}
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-emerald-900">?�� Reading</h2>
+              <h2 className="text-xl font-bold text-emerald-900">?�� Reading</h2>
               <div className="text-3xl">??/div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              ?�어 책업 · 문법 · ?�석 · ?�해 · ?�론 (5?�계)
+              ?�어 책업 · 문법 · ?�석 · ?�해 · ?�론 (5?�계)
             </p>
             {readingSessions && readingSessions.length > 0 ? (
               <div className="space-y-2">
@@ -75,18 +91,18 @@ export default async function JrHubPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당???�션???�습?�다</p>
+              <p className="text-sm text-slate-500">?�당???�션???�습?�다</p>
             )}
           </div>
 
           {/* Grammar */}
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-blue-900">?�� Grammar</h2>
+              <h2 className="text-xl font-bold text-blue-900">?�� Grammar</h2>
               <div className="text-3xl">??/div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              문법 개념 ?�습 · ?�습 문제 (2?�계)
+              문법 개념 ?�습 · ?�습 문제 (2?�계)
             </p>
             {grammarSessions && grammarSessions.length > 0 ? (
               <div className="space-y-2">
@@ -102,18 +118,18 @@ export default async function JrHubPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당???�원???�습?�다</p>
+              <p className="text-sm text-slate-500">?�당???�원???�습?�다</p>
             )}
           </div>
 
           {/* Listening */}
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-amber-900">?�� Listening</h2>
+              <h2 className="text-xl font-bold text-amber-900">?�� Listening</h2>
               <div className="text-3xl">??/div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              ?�트 · 문제 ?�??· ?�크립트 · Shadowing · 과제 (5?�계)
+              ?�트 · 문제 ?�??· ?�크립트 · Shadowing · 과제 (5?�계)
             </p>
             {listeningSessions && listeningSessions.length > 0 ? (
               <div className="space-y-2">
@@ -129,7 +145,7 @@ export default async function JrHubPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당???�션???�습?�다</p>
+              <p className="text-sm text-slate-500">?�당???�션???�습?�다</p>
             )}
           </div>
 
@@ -137,12 +153,12 @@ export default async function JrHubPage() {
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-purple-900">
-                ?�� Speaking & Writing
+                ?�� Speaking & Writing
               </h2>
               <div className="text-3xl">??/div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              ?�성 ?�음 ?�는 글?�기 ?�출
+              ?�성 ?�음 ?�는 글?�기 ?�출
             </p>
             {speakingWritingTasks && speakingWritingTasks.length > 0 ? (
               <div className="space-y-2">
@@ -152,43 +168,43 @@ export default async function JrHubPage() {
                     href={`/jr/speaking-writing/${task.id}`}
                     className="block text-sm px-3 py-2 bg-purple-50 rounded hover:bg-purple-100 transition"
                   >
-                    ??{task.task_type === "speaking" ? "?��" : "?�️"} 과제
+                    ??{task.task_type === "speaking" ? "?��" : "?�️"} 과제
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당??과제가 ?�습?�다</p>
+              <p className="text-sm text-slate-500">?�당??과제가 ?�습?�다</p>
             )}
           </div>
         </div>
 
         {/* Learning Stats */}
         <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">?�습 진도</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">?�습 진도</h3>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-600">
                 {readingSessions?.filter((s) => s.completed_at).length || 0}
               </div>
-              <div className="text-xs text-slate-600">Reading ?�료</div>
+              <div className="text-xs text-slate-600">Reading ?�료</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {grammarSessions?.filter((s) => s.completed_at).length || 0}
               </div>
-              <div className="text-xs text-slate-600">Grammar ?�료</div>
+              <div className="text-xs text-slate-600">Grammar ?�료</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-amber-600">
                 {listeningSessions?.filter((s) => s.completed_at).length || 0}
               </div>
-              <div className="text-xs text-slate-600">Listening ?�료</div>
+              <div className="text-xs text-slate-600">Listening ?�료</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {speakingWritingTasks?.length || 0}
               </div>
-              <div className="text-xs text-slate-600">?�당??과제</div>
+              <div className="text-xs text-slate-600">?�당??과제</div>
             </div>
           </div>
         </div>
