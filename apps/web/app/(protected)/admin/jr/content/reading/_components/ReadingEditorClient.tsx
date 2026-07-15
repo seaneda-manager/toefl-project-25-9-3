@@ -2,13 +2,20 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveReadingPassageAction } from "../actions";
+import { saveReadingPassageAction, updateReadingPassageAction } from "../actions";
 
-export default function ReadingEditorClient() {
+type Props = {
+  initialPassage?: any;
+};
+
+export default function ReadingEditorClient({ initialPassage }: Props) {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const isEditing = !!initialPassage;
+  const [title, setTitle] = useState(initialPassage?.title || "");
+  const [content, setContent] = useState(initialPassage?.content || "");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
+    initialPassage?.difficulty || "medium"
+  );
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -18,17 +25,28 @@ export default function ReadingEditorClient() {
     }
 
     setSaving(true);
-    const result = await saveReadingPassageAction({
-      title,
-      content,
-      difficulty,
-    });
+    let result;
+
+    if (isEditing) {
+      result = await updateReadingPassageAction({
+        id: initialPassage.id,
+        title,
+        content,
+        difficulty,
+      });
+    } else {
+      result = await saveReadingPassageAction({
+        title,
+        content,
+        difficulty,
+      });
+    }
 
     if (result.ok) {
-      alert("지문이 저장되었습니다");
+      alert(`지문이 ${isEditing ? "수정" : "저장"}되었습니다`);
       router.push("/admin/jr/content/reading");
     } else {
-      alert("저장 실패: " + result.error);
+      alert(`${isEditing ? "수정" : "저장"} 실패: ` + result.error);
     }
     setSaving(false);
   };
@@ -37,7 +55,9 @@ export default function ReadingEditorClient() {
     <main className="min-h-screen bg-slate-50">
       <div className="border-b bg-white p-4">
         <div className="mx-auto max-w-7xl px-6">
-          <h1 className="text-3xl font-bold text-slate-900">새 Reading 지문</h1>
+          <h1 className="text-3xl font-bold text-slate-900">
+            {isEditing ? "Reading 지문 편집" : "새 Reading 지문"}
+          </h1>
         </div>
       </div>
 
