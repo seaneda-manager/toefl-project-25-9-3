@@ -30,8 +30,8 @@ export default function StudentDashboardClient({
     <main className="min-h-screen bg-slate-50">
       <div className="border-b bg-white p-4">
         <div className="mx-auto max-w-7xl px-6">
-          <h1 className="text-3xl font-bold text-slate-900">{studentName}´ÔÀÇ ÇĞ½À</h1>
-          <p className="text-slate-600 mt-1">Jr. Learning Áøµµ¸¦ È®ÀÎÇÕ´Ï´Ù</p>
+          <h1 className="text-3xl font-bold text-slate-900">{studentName}ì˜ í•™ìŠµ ì§„ë„</h1>
+          <p className="text-slate-600 mt-1">Jr. Learning ëª¨ë“ˆ ì§„í–‰ í˜„í™©ì„ í™•ì¸í•©ë‹ˆë‹¤</p>
         </div>
       </div>
 
@@ -40,7 +40,7 @@ export default function StudentDashboardClient({
         <div className="grid grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg p-4 shadow text-center">
             <div className="text-3xl font-bold text-slate-900">{completionRate}%</div>
-            <p className="text-xs text-slate-600 mt-1">ÀüÃ¼ Áøµµ</p>
+            <p className="text-xs text-slate-600 mt-1">ì „ì²´ ì™„ë£Œìœ¨</p>
           </div>
           <div className="bg-white rounded-lg p-4 shadow text-center">
             <div className="text-3xl font-bold text-emerald-600">{readingCompleted}</div>
@@ -69,7 +69,7 @@ export default function StudentDashboardClient({
             />
           </div>
           <p className="text-sm text-slate-600 mt-3">
-            {totalCompleted} / {totalAssigned} °úÁ¦ ¿Ï·á
+            {totalCompleted} / {totalAssigned} ê³¼ì œ ì™„ë£Œ
           </p>
         </div>
 
@@ -77,9 +77,9 @@ export default function StudentDashboardClient({
         <div className="grid grid-cols-2 gap-6">
           {/* Reading */}
           <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-lg font-bold text-emerald-600 mb-4">?? Reading</h2>
+            <h2 className="text-lg font-bold text-emerald-600 mb-4">ğŸ“š Reading</h2>
             <p className="text-sm text-slate-600 mb-2">
-              {readingCompleted} / {readingSessions.length} ¿Ï·á
+              {readingCompleted} / {readingSessions.length} ì™„ë£Œ
             </p>
             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
               <div
@@ -90,15 +90,15 @@ export default function StudentDashboardClient({
               />
             </div>
             <p className="text-xs text-slate-500 mt-3">
-              {readingSessions.length > 0 ? "ÁøÇà Áß" : "ÇÒ´çµÈ °úÁ¦ ¾øÀ½"}
+              {readingSessions.length > 0 ? "í•™ìŠµ ì¤‘" : "í• ë‹¹ëœ ê³¼ì œ ì—†ìŒ"}
             </p>
           </div>
 
           {/* Grammar */}
           <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-lg font-bold text-blue-600 mb-4">?? Grammar</h2>
+            <h2 className="text-lg font-bold text-blue-600 mb-4">ğŸ”¤ Grammar</h2>
             <p className="text-sm text-slate-600 mb-2">
-              {grammarCompleted} / {grammarSessions.length} ¿Ï·á
+              {grammarCompleted} / {grammarSessions.length} ì™„ë£Œ
             </p>
             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
               <div
@@ -109,15 +109,15 @@ export default function StudentDashboardClient({
               />
             </div>
             <p className="text-xs text-slate-500 mt-3">
-              {grammarSessions.length > 0 ? "ÁøÇà Áß" : "ÇÒ´çµÈ °úÁ¦ ¾øÀ½"}
+              {grammarSessions.length > 0 ? "í•™ìŠµ ì¤‘" : "í• ë‹¹ëœ ë‹¨ì› ì—†ìŒ"}
             </p>
           </div>
 
           {/* Listening */}
           <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-lg font-bold text-amber-600 mb-4">?? Listening</h2>
+            <h2 className="text-lg font-bold text-amber-600 mb-4">ğŸ”Š Listening</h2>
             <p className="text-sm text-slate-600 mb-2">
-              {listeningCompleted} / {listeningSessions.length} ¿Ï·á
+              {listeningCompleted} / {listeningSessions.length} ì™„ë£Œ
             </p>
             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
               <div
@@ -128,15 +128,15 @@ export default function StudentDashboardClient({
               />
             </div>
             <p className="text-xs text-slate-500 mt-3">
-              {listeningSessions.length > 0 ? "ÁøÇà Áß" : "ÇÒ´çµÈ °úÁ¦ ¾øÀ½"}
+              {listeningSessions.length > 0 ? "í•™ìŠµ ì¤‘" : "í• ë‹¹ëœ ìŒì„± ì—†ìŒ"}
             </p>
           </div>
 
           {/* Speaking */}
           <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-lg font-bold text-purple-600 mb-4">?? Speaking</h2>
+            <h2 className="text-lg font-bold text-purple-600 mb-4">ğŸ¤ Speaking</h2>
             <p className="text-sm text-slate-600 mb-2">
-              {speakingWithFeedback} / {speakingSubmissions.length} ÇÇµå¹é¿Ï·á
+              {speakingWithFeedback} / {speakingSubmissions.length} í”¼ë“œë°± ì™„ë£Œ
             </p>
             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
               <div
@@ -147,7 +147,7 @@ export default function StudentDashboardClient({
               />
             </div>
             <p className="text-xs text-slate-500 mt-3">
-              {speakingSubmissions.length > 0 ? "ÁøÇà Áß" : "ÇÒ´çµÈ °úÁ¦ ¾øÀ½"}
+              {speakingSubmissions.length > 0 ? "ê²€ìˆ˜ ì¤‘" : "í• ë‹¹ëœ ê³¼ì œ ì—†ìŒ"}
             </p>
           </div>
         </div>

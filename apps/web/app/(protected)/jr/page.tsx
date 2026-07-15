@@ -9,7 +9,7 @@ export default async function JrHubPage() {
 
   const supabase = await getSupabaseServer();
 
-  // ?�생???�당??과제??조회
+  // 학생에게 할당된 과제들 조회
   const { data: readingSessions } = await supabase
     .from("jr_reading_sessions")
     .select("id, passage_id, stage, completed_at")
@@ -71,11 +71,11 @@ export default async function JrHubPage() {
           {/* Reading */}
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-emerald-900">?�� Reading</h2>
-              <div className="text-3xl">??/div>
+              <h2 className="text-xl font-bold text-emerald-900">📚 Reading</h2>
+              <div className="text-3xl">📖</div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              ?�어 책업 · 문법 · ?�석 · ?�해 · ?�론 (5?�계)
+              단어 책업 · 문법 · 번역 · 이해 · 토론 (5단계)
             </p>
             {readingSessions && readingSessions.length > 0 ? (
               <div className="space-y-2">
@@ -85,24 +85,24 @@ export default async function JrHubPage() {
                     href={`/jr/reading/${session.id}`}
                     className="block text-sm px-3 py-2 bg-emerald-50 rounded hover:bg-emerald-100 transition"
                   >
-                    {session.completed_at ? "?? : "??} Session{" "}
+                    {session.completed_at ? "✅" : "⏳"} Session{" "}
                     {readingSessions.indexOf(session) + 1}
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당???�션???�습?�다</p>
+              <p className="text-sm text-slate-500">할당된 세션이 없습니다</p>
             )}
           </div>
 
           {/* Grammar */}
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-blue-900">?�� Grammar</h2>
-              <div className="text-3xl">??/div>
+              <h2 className="text-xl font-bold text-blue-900">🔤 Grammar</h2>
+              <div className="text-3xl">📚</div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              문법 개념 ?�습 · ?�습 문제 (2?�계)
+              문법 개념 학습 · 연습 문제 (2단계)
             </p>
             {grammarSessions && grammarSessions.length > 0 ? (
               <div className="space-y-2">
@@ -112,24 +112,24 @@ export default async function JrHubPage() {
                     href={`/jr/grammar/${session.id}`}
                     className="block text-sm px-3 py-2 bg-blue-50 rounded hover:bg-blue-100 transition"
                   >
-                    {session.completed_at ? "?? : "??} Chapter{" "}
+                    {session.completed_at ? "✅" : "⏳"} Chapter{" "}
                     {grammarSessions.indexOf(session) + 1}
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당???�원???�습?�다</p>
+              <p className="text-sm text-slate-500">할당된 단원이 없습니다</p>
             )}
           </div>
 
           {/* Listening */}
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-amber-900">?�� Listening</h2>
-              <div className="text-3xl">??/div>
+              <h2 className="text-xl font-bold text-amber-900">🔊 Listening</h2>
+              <div className="text-3xl">🎧</div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              ?�트 · 문제 ?�??· ?�크립트 · Shadowing · 과제 (5?�계)
+              노트 · 문제 풀이 · 스크립트 · Shadowing · 과제 (5단계)
             </p>
             {listeningSessions && listeningSessions.length > 0 ? (
               <div className="space-y-2">
@@ -139,13 +139,13 @@ export default async function JrHubPage() {
                     href={`/jr/listening/${session.id}`}
                     className="block text-sm px-3 py-2 bg-amber-50 rounded hover:bg-amber-100 transition"
                   >
-                    {session.completed_at ? "?? : "??} Session{" "}
+                    {session.completed_at ? "✅" : "⏳"} Session{" "}
                     {listeningSessions.indexOf(session) + 1}
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당???�션???�습?�다</p>
+              <p className="text-sm text-slate-500">할당된 세션이 없습니다</p>
             )}
           </div>
 
@@ -153,12 +153,12 @@ export default async function JrHubPage() {
           <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-purple-900">
-                ?�� Speaking & Writing
+                🎤 Speaking & Writing
               </h2>
-              <div className="text-3xl">??/div>
+              <div className="text-3xl">✏️</div>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              ?�성 ?�음 ?�는 글?�기 ?�출
+              음성 녹음·글쓰기 제출
             </p>
             {speakingWritingTasks && speakingWritingTasks.length > 0 ? (
               <div className="space-y-2">
@@ -168,43 +168,43 @@ export default async function JrHubPage() {
                     href={`/jr/speaking-writing/${task.id}`}
                     className="block text-sm px-3 py-2 bg-purple-50 rounded hover:bg-purple-100 transition"
                   >
-                    ??{task.task_type === "speaking" ? "?��" : "?�️"} 과제
+                    {task.task_type === "speaking" ? "🎤" : "✍️"} 과제
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">?�당??과제가 ?�습?�다</p>
+              <p className="text-sm text-slate-500">할당된 과제가 없습니다</p>
             )}
           </div>
         </div>
 
         {/* Learning Stats */}
         <div className="bg-white rounded-lg p-6 shadow">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">?�습 진도</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-4">학습 진도</h3>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-600">
                 {readingSessions?.filter((s) => s.completed_at).length || 0}
               </div>
-              <div className="text-xs text-slate-600">Reading ?�료</div>
+              <div className="text-xs text-slate-600">Reading 완료</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {grammarSessions?.filter((s) => s.completed_at).length || 0}
               </div>
-              <div className="text-xs text-slate-600">Grammar ?�료</div>
+              <div className="text-xs text-slate-600">Grammar 완료</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-amber-600">
                 {listeningSessions?.filter((s) => s.completed_at).length || 0}
               </div>
-              <div className="text-xs text-slate-600">Listening ?�료</div>
+              <div className="text-xs text-slate-600">Listening 완료</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {speakingWritingTasks?.length || 0}
               </div>
-              <div className="text-xs text-slate-600">?�당??과제</div>
+              <div className="text-xs text-slate-600">할당된 과제</div>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
-import { getUser } from "@/lib/getUserAndProfile";
-import { getServiceSupabase } from "@/lib/supabaseServer";
+import { getUserAndProfile } from "@/lib/getUserAndProfile";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import JrDashboardClient from "./JrDashboardClient";
 
@@ -9,7 +9,7 @@ export default async function JrDashboardPage() {
 
   const supabase = await getSupabaseServer();
 
-  // ?�생?�이 가르치???�생??조회
+  // 현재 사용자가 가르치는 학생들 조회
   const { data: assignments } = await supabase
     .from("teacher_student_assignments")
     .select("student_id, students(id, full_name, username)")
