@@ -67,11 +67,6 @@ function normalizePath(raw?: string | null) {
   s = s.trim();
   if (!s || s.includes("://")) return "/home";
   if (!s.startsWith("/")) s = `/${s}`;
-  const groupHead = /^\/\([^/]+\)(?=\/|$)/;
-  while (groupHead.test(s)) {
-    s = s.replace(groupHead, "");
-    if (!s) break;
-  }
   if (s === "" || s === "/" || s.startsWith("/auth")) return "/home";
   return s;
 }
