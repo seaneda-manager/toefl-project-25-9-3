@@ -1,7 +1,8 @@
 // apps/web/app/(protected)/admin/content/updated-reading/[testId]/_client/ReadingTestFormClient.tsx
 "use client";
 
-import ReadingTestForm from "@/components/reading/admin/ReadingTestForm";
+// TODO: Import when ReadingTestForm is available
+// import ReadingTestForm from "@/components/reading/admin/ReadingTestForm";
 import type { RReadingTest2026 } from "@/models/reading";
 
 type Props = {

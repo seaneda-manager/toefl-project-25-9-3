@@ -8,9 +8,10 @@ import type {
   GrammarStylisticItem,
   GrammarStudentResponse,
 } from "@/models/grammar/types";
-import ExplanationPlayer from "@/app/(protected)/grammar-2026/[unitId]/_client/ExplanationPlayer";
-import DrillRunner from "@/app/(protected)/grammar-2026/[unitId]/_client/DrillRunner";
-import StylisticQuiz from "@/app/(protected)/grammar-2026/[unitId]/_client/StylisticQuiz";
+// TODO: Import these components when available
+// import ExplanationPlayer from "@/app/(protected)/grammar-2026/[unitId]/_client/ExplanationPlayer";
+// import DrillRunner from "@/app/(protected)/grammar-2026/[unitId]/_client/DrillRunner";
+// import StylisticQuiz from "@/app/(protected)/grammar-2026/[unitId]/_client/StylisticQuiz";
 
 type Tab = "segments" | "drills" | "stylistic";
 

@@ -48,3 +48,6 @@ coverage
 '@ | Set-Content -Encoding UTF8 .gitignore
 
 .vercel
+
+.vercel
+.env*
