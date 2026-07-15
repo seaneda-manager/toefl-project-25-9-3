@@ -1,14 +1,29 @@
 'use client';
 
-import { useState, useActionState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { createHiNaesinPassageAction } from '../actions';
 
 type SourceType = 'mock_exam' | 'textbook' | 'external_book' | '';
 
+type State = { error?: string } | null;
+
 export default function HiNaesinPassageNewPage() {
   const [sourceType, setSourceType] = useState<SourceType>('');
-  const [state, formAction, isPending] = useActionState(createHiNaesinPassageAction, null);
+  const [state, setState] = useState<State>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    try {
+      const fd = new FormData(e.currentTarget);
+      const result = await createHiNaesinPassageAction(fd);
+      setState(result);
+    } finally {
+      setIsPending(false);
+    }
+  }
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-6 py-8">
@@ -33,7 +48,7 @@ export default function HiNaesinPassageNewPage() {
         </div>
       )}
 
-      <form action={formAction} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* ── 출처 + 학년 ── */}
         <section className="rounded-2xl border bg-white p-5 space-y-4">
