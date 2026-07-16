@@ -176,6 +176,23 @@ export default async function JrHubPage() {
               <p className="text-sm text-slate-500">할당된 과제가 없습니다</p>
             )}
           </div>
+
+          {/* Vocabulary */}
+          <div className="bg-white rounded-lg p-6 shadow hover:shadow-lg transition">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-indigo-900">📝 단어학습</h2>
+              <div className="text-3xl">💡</div>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              단어 학습 · 드릴 · 게임
+            </p>
+            <Link
+              href="/vocab"
+              className="block text-sm px-3 py-2 bg-indigo-50 rounded hover:bg-indigo-100 transition text-center font-medium text-indigo-700"
+            >
+              단어학습 시작하기 →
+            </Link>
+          </div>
         </div>
 
         {/* Learning Stats */}
