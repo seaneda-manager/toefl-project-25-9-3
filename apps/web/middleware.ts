@@ -1,12 +1,27 @@
-﻿// apps/web/middleware.ts - Temporarily disabled for Vercel edge runtime compatibility
-// TODO: Migrate to edge-compatible auth checks
+﻿// apps/web/middleware.ts - Route rewrites for protected paths
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  // Pass through all requests for now
-  // Auth checks will be done in page-level layout components
+  const pathname = req.nextUrl.pathname;
+
+  // Rewrite protected routes to /protected prefix
+  // Preserves /admin, /student, /teacher, etc. but serves from /protected/...
+  if (
+    pathname.startsWith("/admin/") ||
+    pathname.startsWith("/student/") ||
+    pathname.startsWith("/teacher/") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/settings") ||
+    pathname.match(/^\/\w+\/(study|test|drill|review)/)
+  ) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/protected${pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
   return NextResponse.next();
 }
 
