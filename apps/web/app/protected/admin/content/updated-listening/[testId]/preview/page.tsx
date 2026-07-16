@@ -30,7 +30,7 @@ export default async function Listening2026PreviewPage({ params }: PageProps) {
   }
 
   const rawPayload = data.payload as LListeningTest2026 | null;
-  if (!rawPayload || !Array.isArray(rawPayload.modules)) notFound();
+  if (!rawPayload || !Array.isArray(rawPayload.tracks)) notFound();
 
   const test: LListeningTest2026 = {
     ...rawPayload,
