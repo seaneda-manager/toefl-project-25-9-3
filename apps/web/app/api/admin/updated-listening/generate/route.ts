@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { ElevenLabsClient } from 'elevenlabs';
+import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
-const client = new Anthropic();
+const anthropic = new Anthropic();
+const elevenlabs = new ElevenLabsClient();
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
 
 export async function POST(req: Request) {
   try {
@@ -133,7 +140,7 @@ Return ONLY valid JSON, no markdown, no explanation:
   ]
 }`;
 
-    const message = await client.messages.create({
+    const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 8000,
       messages: [{ role: 'user', content: prompt }],
@@ -146,6 +153,37 @@ Return ONLY valid JSON, no markdown, no explanation:
 
     const id = randomUUID();
     payload.meta.id = id;
+
+    // 각 track의 음성 생성
+    for (const track of payload.tracks) {
+      try {
+        const audio = await elevenlabs.generate({
+          voice: 'Rachel',
+          text: track.transcript,
+          model_id: 'eleven_monolingual_v1',
+        });
+
+        const audioBuffer = await audio.arrayBuffer();
+        const fileName = `listening/${id}/${track.id}.mp3`;
+
+        const { error } = await supabase.storage
+          .from('content')
+          .upload(fileName, audioBuffer, {
+            contentType: 'audio/mpeg',
+            upsert: true,
+          });
+
+        if (error) throw error;
+
+        const { data } = supabase.storage
+          .from('content')
+          .getPublicUrl(fileName);
+
+        track.audioUrl = data.publicUrl;
+      } catch (err) {
+        console.error(`Audio generation failed for track ${track.id}:`, err);
+      }
+    }
 
     return NextResponse.json({ ok: true, id, payload });
   } catch (err: any) {
