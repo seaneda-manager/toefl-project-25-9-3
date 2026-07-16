@@ -20,10 +20,17 @@ export default async function VocabHomePage() {
   const todayISO = toISODateLocal(new Date());
 
   // ── 1. 내신 단어 stats ──────────────────────────────────────────
-  const { data: hiAssignments } = await supabase
-    .from('hi_naesin_assignments')
-    .select('passage_id')
-    .eq('student_id', user.id);
+  let hiAssignments;
+  try {
+    const result = await supabase
+      .from('hi_naesin_assignments')
+      .select('passage_id')
+      .eq('student_id', user.id);
+    hiAssignments = result.data;
+  } catch (error) {
+    console.error('Error fetching hi_naesin_assignments:', error);
+    hiAssignments = null;
+  }
 
   const assignedPassageIds = [...new Set((hiAssignments ?? []).map((a) => a.passage_id))];
 
