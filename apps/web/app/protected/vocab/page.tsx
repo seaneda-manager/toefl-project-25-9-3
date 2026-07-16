@@ -92,6 +92,7 @@ export default async function VocabHomePage() {
     cursor: number;
     isPaused: boolean;
     todayCount: number;
+    setId: string | null;
   };
 
   let plans: PlanCard[] = [];

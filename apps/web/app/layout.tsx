@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "LEXiOX",
   description: "LEXiOX 학습 플랫폼",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/lingox/mascot/fox/fox-calm.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
