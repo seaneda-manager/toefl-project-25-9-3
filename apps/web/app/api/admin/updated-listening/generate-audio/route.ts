@@ -16,11 +16,14 @@ interface TrackAudio {
   transcript: string;
 }
 
+type Difficulty = 'easy' | 'hard';
+
 export async function POST(req: Request) {
   try {
-    const { testId, tracks } = await req.json() as {
+    const { testId, tracks, difficulty = 'easy' } = await req.json() as {
       testId: string;
       tracks: TrackAudio[];
+      difficulty?: Difficulty;
     };
 
     if (!testId || !tracks || tracks.length === 0) {
