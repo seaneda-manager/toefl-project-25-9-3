@@ -10,11 +10,23 @@ export function middleware(req: NextRequest) {
   // Preserves /admin, /student, /teacher, etc. but serves from /protected/...
   if (
     pathname.startsWith("/admin/") ||
+    pathname.startsWith("/admin") ||
     pathname.startsWith("/student/") ||
+    pathname.startsWith("/student") ||
     pathname.startsWith("/teacher/") ||
+    pathname.startsWith("/teacher") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/settings") ||
+    pathname.startsWith("/jr") ||
+    pathname.startsWith("/reading") ||
+    pathname.startsWith("/listening") ||
+    pathname.startsWith("/speaking") ||
+    pathname.startsWith("/writing") ||
+    pathname.startsWith("/vocab") ||
+    pathname.startsWith("/grammar") ||
+    pathname.startsWith("/naesin") ||
+    pathname.startsWith("/hi-naesin") ||
     pathname.match(/^\/\w+\/(study|test|drill|review)/)
   ) {
     const url = req.nextUrl.clone();
