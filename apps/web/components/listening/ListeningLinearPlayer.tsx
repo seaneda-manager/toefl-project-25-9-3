@@ -52,16 +52,24 @@ export default function ListeningLinearPlayer({ test }: Props) {
         </div>
 
         {/* 음성 플레이어 */}
-        {currentTrack.audioUrl && (
-          <div className="mb-6">
+        <div className="mb-6">
+          {!currentTrack.audioUrl ? (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              ⚠️ 음성 파일이 없습니다. (audioUrl: {currentTrack.audioUrl})
+            </div>
+          ) : (
             <audio
               controls
               className="w-full"
               src={currentTrack.audioUrl}
               style={{ height: "40px" }}
+              onError={(e) => {
+                console.error("Audio loading error:", e);
+                console.error("Audio source:", currentTrack.audioUrl);
+              }}
             />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* 트랜스크립트 - Review 단계에서만 표시 */}
         {phase === "review" && (

@@ -157,6 +157,8 @@ Return ONLY valid JSON, no markdown, no explanation:
     // 각 track의 음성 생성
     for (const track of payload.tracks) {
       try {
+        console.log(`[Audio] Starting generation for track ${track.id}...`);
+
         const audio = await elevenlabs.generate({
           voice: 'Rachel',
           text: track.transcript,
@@ -164,24 +166,33 @@ Return ONLY valid JSON, no markdown, no explanation:
         });
 
         const audioBuffer = await audio.arrayBuffer();
+        console.log(`[Audio] Generated buffer size: ${audioBuffer.byteLength} bytes`);
+
         const fileName = `listening/${id}/${track.id}.mp3`;
 
-        const { error } = await supabase.storage
+        const { error, data: uploadData } = await supabase.storage
           .from('content')
           .upload(fileName, audioBuffer, {
             contentType: 'audio/mpeg',
             upsert: true,
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error(`[Audio] Upload failed for ${track.id}:`, error);
+          throw error;
+        }
+
+        console.log(`[Audio] Uploaded to: ${fileName}`);
 
         const { data } = supabase.storage
           .from('content')
           .getPublicUrl(fileName);
 
         track.audioUrl = data.publicUrl;
+        console.log(`[Audio] Public URL: ${data.publicUrl}`);
       } catch (err) {
-        console.error(`Audio generation failed for track ${track.id}:`, err);
+        console.error(`[Audio] Generation failed for track ${track.id}:`, err);
+        throw new Error(`Audio generation failed for track ${track.id}: ${(err as any)?.message}`);
       }
     }
 
