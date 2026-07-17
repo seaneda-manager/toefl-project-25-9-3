@@ -160,7 +160,7 @@ Return ONLY valid JSON, no markdown, no explanation:
         console.log(`[Audio] Starting generation for track ${track.id}...`);
 
         const audio = await elevenlabs.generate({
-          voice: 'Rachel',
+          voice: process.env.ELEVENLABS_KEY_ID || 'Rachel',
           text: track.transcript,
           model_id: 'eleven_monolingual_v1',
         });

@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     for (const track of tracks) {
       try {
         const audio = await elevenlabs.generate({
-          voice: 'Rachel',
+          voice: process.env.ELEVENLABS_KEY_ID || 'Rachel',
           text: track.transcript,
           model_id: 'eleven_monolingual_v1',
         });
