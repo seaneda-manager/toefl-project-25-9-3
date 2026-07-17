@@ -1,12 +1,43 @@
 // apps/web/app/api/admin/updated-listening/generate-mst/route.ts
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { ElevenLabsClient } from "elevenlabs";
+import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 const client = new Anthropic();
+const elevenlabs = new ElevenLabsClient();
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
+function getRandomVoiceId(): string {
+  try {
+    const voicePool = JSON.parse(process.env.VOICE_POOL || '{}') as Record<string, string[]>;
+    const random = Math.random() * 100;
+
+    let selectedCountry: string;
+    if (random < 60) {
+      selectedCountry = 'us';
+    } else if (random < 80) {
+      selectedCountry = 'au';
+    } else {
+      selectedCountry = 'uk';
+    }
+
+    const voices = voicePool[selectedCountry] || [];
+    if (voices.length === 0) return process.env.ELEVENLABS_KEY_ID || '';
+
+    return voices[Math.floor(Math.random() * voices.length)];
+  } catch (err) {
+    console.error('Error parsing VOICE_POOL:', err);
+    return process.env.ELEVENLABS_KEY_ID || '';
+  }
+}
 
 type Part = "module1" | "hard" | "easy";
 
@@ -121,6 +152,8 @@ export async function POST(req: Request) {
 
     const stage = part === "module1" ? 1 : 2;
     const difficulty = part === "module1" ? "core" : part;
+    const testId = randomUUID();
+
     const items = parsed.items.map((it) => ({
       id: randomUUID(),
       taskKind: it.taskKind,
@@ -143,7 +176,47 @@ export async function POST(req: Request) {
       })),
     }));
 
-    return NextResponse.json({ ok: true, part, items });
+    // Generate audio for each item
+    console.log(`[Audio] Generating ${part} audio for ${items.length} items...`);
+    for (const item of items) {
+      try {
+        const voiceId = getRandomVoiceId();
+        const audio = await elevenlabs.generate({
+          voice: voiceId,
+          text: item.transcript,
+          model_id: 'eleven_turbo_v2_5',
+        });
+
+        let audioBuffer: Buffer;
+        if (Buffer.isBuffer(audio)) {
+          audioBuffer = audio;
+        } else if (audio instanceof ArrayBuffer) {
+          audioBuffer = Buffer.from(audio);
+        } else {
+          const chunks: Buffer[] = [];
+          for await (const chunk of audio) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          audioBuffer = Buffer.concat(chunks);
+        }
+
+        const fileName = `listening/${testId}/${item.id}.mp3`;
+        const { error } = await supabase.storage.from('content').upload(fileName, audioBuffer, {
+          contentType: 'audio/mpeg',
+          upsert: true,
+        });
+
+        if (error) throw error;
+
+        const { data } = supabase.storage.from('content').getPublicUrl(fileName);
+        item.audioUrl = data.publicUrl;
+      } catch (err) {
+        console.error(`[Audio] Generation failed for item ${item.id}:`, err);
+        throw new Error(`Audio generation failed for ${part} item ${item.id}: ${(err as any)?.message}`);
+      }
+    }
+
+    return NextResponse.json({ ok: true, part, items, testId });
   } catch (err: any) {
     console.error("LISTENING-MST GENERATE ERROR", err);
     return NextResponse.json({ ok: false, error: err?.message ?? "Unknown error" }, { status: 500 });
