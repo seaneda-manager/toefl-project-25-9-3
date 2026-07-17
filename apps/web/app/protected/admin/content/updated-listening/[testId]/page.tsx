@@ -26,6 +26,7 @@ export default function ListeningTestEditPage() {
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<Record<string, boolean>>({});
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [difficulty, setDifficulty] = useState<Record<string, 'easy' | 'hard'>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +82,43 @@ export default function ListeningTestEditPage() {
     }
   };
 
+  const uploadAudio = async (trackId: string, file: File) => {
+    if (!file.type.includes('audio')) {
+      setError('MP3 파일만 업로드 가능합니다');
+      return;
+    }
+
+    setUploading(prev => ({ ...prev, [trackId]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('testId', testId);
+      formData.append('trackId', trackId);
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/updated-listening/upload-audio', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+
+      setTest(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tracks: prev.tracks.map(t =>
+            t.id === trackId ? { ...t, audioUrl: data.audioUrl } : t
+          )
+        };
+      });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUploading(prev => ({ ...prev, [trackId]: false }));
+    }
+  };
+
   const handleSave = async () => {
     if (!test) return;
     try {
@@ -126,11 +164,11 @@ export default function ListeningTestEditPage() {
                 <h2 className="font-semibold text-gray-900">{track.title}</h2>
                 <p className="text-xs text-gray-500 mt-1">{track.taskKind}</p>
               </div>
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center flex-wrap">
                 <select
                   value={difficulty[track.id] || 'easy'}
                   onChange={(e) => setDifficulty(prev => ({ ...prev, [track.id]: e.target.value as 'easy' | 'hard' }))}
-                  disabled={generating[track.id]}
+                  disabled={generating[track.id] || uploading[track.id]}
                   className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs font-medium disabled:opacity-50"
                 >
                   <option value="easy">Easy</option>
@@ -138,11 +176,24 @@ export default function ListeningTestEditPage() {
                 </select>
                 <button
                   onClick={() => generateAudio(track.id)}
-                  disabled={generating[track.id]}
+                  disabled={generating[track.id] || uploading[track.id]}
                   className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {generating[track.id] ? '생성 중...' : '🎧 음성생성'}
                 </button>
+                <label className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer">
+                  📤 파일업로드
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    disabled={uploading[track.id]}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadAudio(track.id, file);
+                    }}
+                  />
+                </label>
                 {track.audioUrl && (
                   <audio controls className="h-7 max-w-xs">
                     <source src={track.audioUrl} type="audio/mpeg" />

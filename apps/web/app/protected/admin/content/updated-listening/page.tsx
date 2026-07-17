@@ -72,6 +72,12 @@ export default async function Listening2026AdminListPage() {
                     <span className="rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">🔒 Locked</span>
                   )}
                   <Link
+                    href={`/admin/content/updated-listening/${t.id}`}
+                    className="inline-flex items-center rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:border-blue-400 hover:bg-blue-50"
+                  >
+                    수정
+                  </Link>
+                  <Link
                     href={`/admin/content/updated-listening/${t.id}/preview`}
                     target="_blank"
                     className="inline-flex items-center rounded-lg border border-amber-200 bg-white px-2.5 py-1 text-[11px] font-medium text-amber-700 hover:border-amber-400 hover:bg-amber-50"

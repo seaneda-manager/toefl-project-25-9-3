@@ -18,6 +18,30 @@ interface TrackAudio {
 
 type Difficulty = 'easy' | 'hard';
 
+function getRandomVoiceId(): string {
+  try {
+    const voicePool = JSON.parse(process.env.VOICE_POOL || '{}') as Record<string, string[]>;
+    const random = Math.random() * 100;
+
+    let selectedCountry: string;
+    if (random < 60) {
+      selectedCountry = 'us';
+    } else if (random < 80) {
+      selectedCountry = 'au';
+    } else {
+      selectedCountry = 'uk';
+    }
+
+    const voices = voicePool[selectedCountry] || [];
+    if (voices.length === 0) return process.env.ELEVENLABS_KEY_ID || '';
+
+    return voices[Math.floor(Math.random() * voices.length)];
+  } catch (err) {
+    console.error('Error parsing VOICE_POOL:', err);
+    return process.env.ELEVENLABS_KEY_ID || '';
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { testId, tracks, difficulty = 'easy' } = await req.json() as {
@@ -37,13 +61,29 @@ export async function POST(req: Request) {
 
     for (const track of tracks) {
       try {
+        const voiceId = getRandomVoiceId();
+        console.log(`[Audio] Generating audio for ${track.trackId} with voice ${voiceId}`);
+
         const audio = await elevenlabs.generate({
-          voice: process.env.ELEVENLABS_KEY_ID || 'Rachel',
+          voice: voiceId,
           text: track.transcript,
-          model_id: 'eleven_monolingual_v1',
+          model_id: 'eleven_turbo_v2_5',
         });
 
-        const audioBuffer = await audio.arrayBuffer();
+        let audioBuffer: Buffer;
+        if (Buffer.isBuffer(audio)) {
+          audioBuffer = audio;
+        } else if (audio instanceof ArrayBuffer) {
+          audioBuffer = Buffer.from(audio);
+        } else {
+          // Handle stream or async iterable
+          const chunks: Buffer[] = [];
+          for await (const chunk of audio) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          audioBuffer = Buffer.concat(chunks);
+        }
+
         const fileName = `listening/${testId}/${track.trackId}.mp3`;
 
         const { error } = await supabase.storage

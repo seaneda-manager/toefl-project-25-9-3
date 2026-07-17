@@ -378,6 +378,12 @@ export default async function AdminContentPage({
             Reading 2026 전용 목록
           </Link>
           <Link
+            href="/admin/content/updated-listening"
+            className="rounded-lg border px-4 py-2 text-sm font-medium text-blue-700 border-blue-200 hover:bg-blue-50"
+          >
+            🎧 Listening 2026 전용 목록
+          </Link>
+          <Link
             href="/admin/content/grammar-2026"
             className="rounded-lg border px-4 py-2 text-sm font-medium text-indigo-700 border-indigo-200 hover:bg-indigo-50"
           >

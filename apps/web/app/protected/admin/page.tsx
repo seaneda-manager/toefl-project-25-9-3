@@ -87,13 +87,13 @@ export default function AdminPage() {
         />
         <DashCard
           title="Listening"
-          description="TOEFL / Jr. Listening 오디오·스크립트·문제 세트를 관리합니다."
+          description="TOEFL 2026 Listening 오디오·스크립트·문제 세트를 관리합니다."
           links={[
-            { label: '새 세트', href: '/admin/content/new?kind=listening', primary: true },
-            { label: '목록', href: '/admin/content/list?kind=listening' },
-            { label: 'TOEFL', href: '/admin/content/listening/toefl' },
-            { label: 'Jr.', href: '/admin/content/listening/jr' },
+            { label: '새 시험', href: '/admin/content/updated-listening/new', primary: true },
+            { label: '목록', href: '/admin/content/updated-listening' },
+            { label: '콘텐츠 관리', href: '/admin/content' },
           ]}
+          color="border-blue-100"
         />
         <DashCard
           title="Grammar"
