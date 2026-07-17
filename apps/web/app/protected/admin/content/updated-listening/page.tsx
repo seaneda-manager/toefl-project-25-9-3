@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { PlusCircle } from "lucide-react";
+import TestRowActions from "./_client/TestRowActions";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,7 @@ export default async function Listening2026AdminListPage() {
                   >
                     미리보기
                   </Link>
+                  <TestRowActions testId={t.id} testLabel={t.label} />
                 </div>
               </div>
             ))}
