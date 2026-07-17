@@ -26,6 +26,7 @@ export default function ListeningTestEditPage() {
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<Record<string, boolean>>({});
+  const [difficulty, setDifficulty] = useState<Record<string, 'easy' | 'hard'>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function ListeningTestEditPage() {
     const track = test?.tracks.find(t => t.id === trackId);
     if (!track) return;
 
+    const diff = difficulty[trackId] || 'easy';
     setGenerating(prev => ({ ...prev, [trackId]: true }));
     try {
       const res = await fetch('/api/admin/updated-listening/generate-audio', {
@@ -55,7 +57,8 @@ export default function ListeningTestEditPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           testId,
-          tracks: [{ trackId, transcript: track.transcript }]
+          tracks: [{ trackId, transcript: track.transcript }],
+          difficulty: diff
         })
       });
 
@@ -123,7 +126,16 @@ export default function ListeningTestEditPage() {
                 <h2 className="font-semibold text-gray-900">{track.title}</h2>
                 <p className="text-xs text-gray-500 mt-1">{track.taskKind}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                <select
+                  value={difficulty[track.id] || 'easy'}
+                  onChange={(e) => setDifficulty(prev => ({ ...prev, [track.id]: e.target.value as 'easy' | 'hard' }))}
+                  disabled={generating[track.id]}
+                  className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs font-medium disabled:opacity-50"
+                >
+                  <option value="easy">Easy</option>
+                  <option value="hard">Hard</option>
+                </select>
                 <button
                   onClick={() => generateAudio(track.id)}
                   disabled={generating[track.id]}
