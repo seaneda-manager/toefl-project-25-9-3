@@ -7,8 +7,11 @@ type Props = {
   test: LListeningTest2026;
 };
 
+type Phase = "listening" | "review";
+
 export default function ListeningLinearPlayer({ test }: Props) {
   const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
+  const [phase, setPhase] = useState<Phase>("listening");
 
   const tracks = test.tracks ?? [];
   if (tracks.length === 0) {
@@ -19,11 +22,20 @@ export default function ListeningLinearPlayer({ test }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
-      {/* 진행률 */}
+      {/* 진행률 & 단계 표시 */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-600">
-          {currentTrackIdx + 1} / {tracks.length}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-600">
+            {currentTrackIdx + 1} / {tracks.length}
+          </span>
+          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+            phase === "listening"
+              ? "bg-blue-100 text-blue-700"
+              : "bg-amber-100 text-amber-700"
+          }`}>
+            {phase === "listening" ? "🎧 Listening" : "📖 Review"}
+          </span>
+        </div>
         <div className="h-2 flex-1 mx-4 overflow-hidden rounded-full bg-gray-200">
           <div
             className="h-full bg-violet-600 transition-all"
@@ -39,13 +51,6 @@ export default function ListeningLinearPlayer({ test }: Props) {
           <p className="mt-1 text-xs text-gray-500">{currentTrack.taskKind}</p>
         </div>
 
-        {/* 트랜스크립트 */}
-        <div className="mb-6 rounded-lg bg-gray-50 p-4">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-            {currentTrack.transcript}
-          </p>
-        </div>
-
         {/* 음성 플레이어 */}
         {currentTrack.audioUrl && (
           <div className="mb-6">
@@ -58,33 +63,79 @@ export default function ListeningLinearPlayer({ test }: Props) {
           </div>
         )}
 
+        {/* 트랜스크립트 - Review 단계에서만 표시 */}
+        {phase === "review" && (
+          <div className="mb-6 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+            <p className="text-xs font-semibold text-yellow-700 mb-2">📝 스크립트</p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+              {currentTrack.transcript}
+            </p>
+          </div>
+        )}
+
         {/* 문제들 */}
         {currentTrack.questions && currentTrack.questions.length > 0 && (
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">문제</h3>
             {currentTrack.questions.map((q, idx) => (
-              <div key={q.id} className="rounded-lg bg-blue-50 p-3">
+              <div key={q.id} className={`rounded-lg p-3 ${
+                phase === "review"
+                  ? "bg-amber-50 border border-amber-200"
+                  : "bg-blue-50"
+              }`}>
                 <p className="text-sm font-medium text-gray-900">
                   {idx + 1}. {q.text}
                 </p>
                 <div className="mt-2 space-y-2">
-                  {q.choices.map((choice) => (
-                    <label
-                      key={choice.id}
-                      className="flex items-center gap-2 text-sm text-gray-700"
-                    >
-                      <input
-                        type="radio"
-                        name={`q-${q.id}`}
-                        disabled
-                        className="cursor-not-allowed"
-                      />
-                      {choice.text}
-                    </label>
-                  ))}
+                  {q.choices.map((choice) => {
+                    const isCorrect = (q as any).correctIndices?.includes(q.choices.indexOf(choice));
+                    return (
+                      <label
+                        key={choice.id}
+                        className={`flex items-center gap-2 text-sm px-2 py-1 rounded transition ${
+                          phase === "review" && isCorrect
+                            ? "bg-green-100 text-green-800 font-medium"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q-${q.id}`}
+                          disabled
+                          className="cursor-not-allowed"
+                        />
+                        {choice.text}
+                        {phase === "review" && isCorrect && <span className="ml-auto">✓</span>}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Review 버튼 */}
+        {phase === "listening" && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => setPhase("review")}
+              className="rounded-lg bg-amber-600 px-6 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+            >
+              📖 검토하기
+            </button>
+          </div>
+        )}
+
+        {/* 다시 풀기 버튼 */}
+        {phase === "review" && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => setPhase("listening")}
+              className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              🎧 다시 풀기
+            </button>
           </div>
         )}
       </div>
