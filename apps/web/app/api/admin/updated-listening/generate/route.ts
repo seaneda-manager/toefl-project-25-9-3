@@ -31,12 +31,15 @@ function getRandomVoiceId(): string {
     }
 
     const voices = voicePool[selectedCountry] || [];
-    if (voices.length === 0) return process.env.ELEVENLABS_KEY_ID || '';
+    if (voices.length === 0) {
+      console.warn(`No voices found for country: ${selectedCountry}`);
+      return '21m00Tcm4TlvDq8ikWAM'; // Default ElevenLabs voice
+    }
 
     return voices[Math.floor(Math.random() * voices.length)];
   } catch (err) {
     console.error('Error parsing VOICE_POOL:', err);
-    return process.env.ELEVENLABS_KEY_ID || '';
+    return '21m00Tcm4TlvDq8ikWAM'; // Default ElevenLabs voice
   }
 }
 
