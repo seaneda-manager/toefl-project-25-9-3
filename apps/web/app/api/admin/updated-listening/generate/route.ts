@@ -111,9 +111,22 @@ Return ONLY valid JSON: { "items": [...] }`;
   const raw = (message.content[0] as { type: string; text: string }).text.trim();
   const jsonStart = raw.indexOf('{');
   const jsonEnd = raw.lastIndexOf('}');
-  const parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1)) as { items: any[] };
 
-  return parsed.items;
+  if (jsonStart === -1 || jsonEnd === -1) {
+    throw new Error('No JSON found in response');
+  }
+
+  const jsonStr = raw.slice(jsonStart, jsonEnd + 1);
+
+  try {
+    const parsed = JSON.parse(jsonStr) as { items: any[] };
+    return parsed.items;
+  } catch (err) {
+    console.error('JSON parsing error:', err);
+    console.error('JSON start:', jsonStr.slice(0, 200));
+    console.error('JSON end:', jsonStr.slice(-200));
+    throw new Error(`Invalid JSON from Claude: ${(err as Error)?.message}`);
+  }
 }
 
 export async function POST(req: Request) {
