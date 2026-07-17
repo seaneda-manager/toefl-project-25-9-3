@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
 export const runtime = 'nodejs';
-export const maxDuration = 120;
+export const maxDuration = 240;
 
 const anthropic = new Anthropic();
 const elevenlabs = new ElevenLabsClient();
@@ -21,11 +21,11 @@ function getRandomVoiceId(): string {
 
     let selectedCountry: string;
     if (random < 60) {
-      selectedCountry = 'us'; // 60%
+      selectedCountry = 'us';
     } else if (random < 80) {
-      selectedCountry = 'au'; // 20%
+      selectedCountry = 'au';
     } else {
-      selectedCountry = 'uk'; // 20%
+      selectedCountry = 'uk';
     }
 
     const voices = voicePool[selectedCountry] || [];
@@ -38,184 +38,116 @@ function getRandomVoiceId(): string {
   }
 }
 
-export async function POST(req: Request) {
-  try {
-    const { mode = 'hard', responsesTopic, conversationTopic, lecture1Topic, lecture2Topic } = await req.json() as {
-      mode?: 'easy' | 'hard';
-      responsesTopic: string;
-      conversationTopic: string;
-      lecture1Topic: string;
-      lecture2Topic: string;
-    };
+async function generateModule(part: 'hard' | 'easy', conversationTopic: string, lectureTopic: string, campusTopic: string) {
+  const prompt = part === 'hard'
+    ? `You are an expert Updated TOEFL iBT Listening (Module 2 Hard) content creator.
+Generate a complete Updated TOEFL Listening Module 2 test JSON with Hard structure: 15 total items.
 
-    if (!responsesTopic?.trim() || !conversationTopic?.trim() || !lecture1Topic?.trim() || !lecture2Topic?.trim()) {
-      return NextResponse.json({ ok: false, error: 'All 4 topics required' }, { status: 400 });
-    }
-
-    const prompt = `You are an expert Updated TOEFL iBT Listening (Mode 2 Hard) content creator.
-Generate a complete Updated TOEFL Listening Module 2 test JSON with Mode 2 (Hard) structure: 15 total items.
-
-Track 1 — Listen and Choose a Response (topic: "${responsesTopic}"):
+Track 1 — Listen and Choose a Response:
 - taskKind: "choose_response"
 - 3-4 individual single utterances (campus conversation snippets)
 - Each item: 1 sentence + 4 response choices, 1 correct
-- Requires pragmatic understanding (tone, context, implication)
+- Requires pragmatic understanding
 - totalItems: 3-4
 
 Track 2 — Conversation (topic: "${conversationTopic}"):
 - taskKind: "conversation"
-- Two speakers (student + professor/staff), 60-90 seconds
-- ~140-180 words transcript
-- Exactly 2 questions (types: main_topic, pragmatic_meaning, or inference)
-- Each question: 4 choices, exactly 1 correct
+- Two speakers (student + professor/staff), 60-90 seconds, ~140-180 words
+- Exactly 2 questions
 - audioSeconds: 75
-- testingSeconds: 150
 
-Track 3 — Academic Talk #1 (topic: "${lecture1Topic}"):
+Track 3 — Academic Talk #1 (topic: "${lectureTopic}"):
 - taskKind: "academic_talk"
-- Professor monologue on academic subject, 90-120 seconds
-- ~250-300 words transcript
-- Exactly 4 questions (types: main_idea, detail, function, inference)
-- Each question: 4 choices, exactly 1 correct
+- Professor monologue, 90-120 seconds, ~250-300 words
+- Exactly 4 questions (main_idea, detail, function, inference)
 - audioSeconds: 105
-- testingSeconds: 240
 
-Track 4 — Academic Talk #2 (topic: "${lecture2Topic}"):
+Track 4 — Academic Talk #2 (topic: "${lectureTopic}"):
 - taskKind: "academic_talk"
-- Professor monologue on different academic subject, 90-120 seconds
-- ~250-300 words transcript
-- Exactly 4 questions (types: main_idea, detail, function, inference)
-- Each question: 4 choices, exactly 1 correct
+- Different professor/topic, 90-120 seconds, ~250-300 words
+- Exactly 4 questions
 - audioSeconds: 105
-- testingSeconds: 240
 
-For each track:
-- id: unique slug (e.g., "resp-1", "resp-2", "conv-1", "talk-1", "talk-2")
-- title: short descriptive title
-- audioUrl: "" (empty — will be uploaded separately)
-- illustrationUrl: "" (empty)
-- transcript: realistic spoken English
-- For choose_response items: full_transcript (full conversation context), utterance_index (which speaker turn is the prompt)
+For each track: id, taskKind, title, transcript, questions (with choices: text, correct flag)
+Return ONLY valid JSON: { "items": [...] }`
+    : `You are an expert Updated TOEFL iBT Listening (Module 2 Easy) content creator.
+Generate a complete Updated TOEFL Listening Module 2 test JSON with Easy structure.
 
-TOTAL: 3-4 responses + 2 conversation + 4 lecture1 + 4 lecture2 = 13-15 items
+Track 1 — Listen and Choose a Response:
+- taskKind: "choose_response"
+- 3-4 individual utterances (easier, simpler pragmatics)
+- Each: 1 sentence + 4 choices, 1 correct
+- totalItems: 3-4
 
-Return ONLY valid JSON, no markdown, no explanation:
+Track 2 — Conversation (topic: "${conversationTopic}"):
+- taskKind: "conversation"
+- Two speakers, 60-90 seconds, ~140-180 words (easier vocabulary)
+- Exactly 2 questions
+- audioSeconds: 75
 
-{
-  "meta": {
-    "id": "PLACEHOLDER",
-    "label": "Module 2 Hard – [descriptive label]",
-    "examEra": "ibt_2026",
-    "source": "ai-generated",
-    "mode": "hard"
-  },
-  "tracks": [
-    {
-      "id": "resp-1",
-      "taskKind": "choose_response",
-      "title": "Listen and Choose a Response",
-      "audioUrl": "",
-      "illustrationUrl": "",
-      "transcript": "Speaker A: ...\nSpeaker B: ...",
-      "questions": [
-        {
-          "id": "resp-1-q1",
-          "number": 1,
-          "type": "pragmatic_meaning",
-          "stem": "What does the speaker imply?",
-          "correctIndices": [2],
-          "choices": [
-            { "id": "resp-1-q1-a", "text": "...", "isCorrect": false },
-            { "id": "resp-1-q1-b", "text": "...", "isCorrect": false },
-            { "id": "resp-1-q1-c", "text": "...", "isCorrect": true },
-            { "id": "resp-1-q1-d", "text": "...", "isCorrect": false }
-          ]
-        },
-        {
-          "id": "resp-1-q2",
-          "number": 2,
-          "type": "pragmatic_meaning",
-          "stem": "What is the most appropriate response?",
-          "correctIndices": [1],
-          "choices": [
-            { "id": "resp-1-q2-a", "text": "...", "isCorrect": false },
-            { "id": "resp-1-q2-b", "text": "...", "isCorrect": true },
-            { "id": "resp-1-q2-c", "text": "...", "isCorrect": false },
-            { "id": "resp-1-q2-d", "text": "...", "isCorrect": false }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "conv-1",
-      "taskKind": "conversation",
-      "title": "Conversation",
-      "audioUrl": "",
-      "illustrationUrl": "",
-      "audioSeconds": 75,
-      "transcript": "Student: ...\nProfessor: ...",
-      "testingSeconds": 150,
-      "questions": [
-        { "id": "conv-1-q1", "number": 3, "type": "main_topic", "stem": "What is the conversation mainly about?", "correctIndices": [0], "choices": [...4 choices...] },
-        { "id": "conv-1-q2", "number": 4, "type": "pragmatic_meaning", "stem": "Why does the student say this?", "correctIndices": [2], "choices": [...4 choices...] }
-      ]
-    },
-    {
-      "id": "talk-1",
-      "taskKind": "academic_talk",
-      "title": "Academic Talk 1",
-      "audioUrl": "",
-      "illustrationUrl": "",
-      "audioSeconds": 105,
-      "transcript": "Professor: Today we will discuss ...",
-      "testingSeconds": 240,
-      "questions": [
-        { "id": "talk-1-q1", "number": 5, "type": "main_idea", "stem": "What is the main idea?", "correctIndices": [1], "choices": [...4 choices...] },
-        { "id": "talk-1-q2", "number": 6, "type": "detail", "stem": "According to the professor, ...", "correctIndices": [3], "choices": [...4 choices...] },
-        { "id": "talk-1-q3", "number": 7, "type": "function", "stem": "Why does the professor mention this?", "correctIndices": [0], "choices": [...4 choices...] },
-        { "id": "talk-1-q4", "number": 8, "type": "inference", "stem": "What can be inferred from the lecture?", "correctIndices": [2], "choices": [...4 choices...] }
-      ]
-    },
-    {
-      "id": "talk-2",
-      "taskKind": "academic_talk",
-      "title": "Academic Talk 2",
-      "audioUrl": "",
-      "illustrationUrl": "",
-      "audioSeconds": 105,
-      "transcript": "Professor: Let me explain ...",
-      "testingSeconds": 240,
-      "questions": [
-        { "id": "talk-2-q1", "number": 9, "type": "main_idea", "stem": "What is the lecture mainly about?", "correctIndices": [2], "choices": [...4 choices...] },
-        { "id": "talk-2-q2", "number": 10, "type": "detail", "stem": "What does the professor state?", "correctIndices": [1], "choices": [...4 choices...] },
-        { "id": "talk-2-q3", "number": 11, "type": "function", "stem": "The professor provides an example to ...", "correctIndices": [0], "choices": [...4 choices...] },
-        { "id": "talk-2-q4", "number": 12, "type": "inference", "stem": "What does the lecture suggest?", "correctIndices": [3], "choices": [...4 choices...] }
-      ]
+Track 3 — Announcement (topic: "${campusTopic}"):
+- taskKind: "announcement"
+- Single-speaker campus announcement, 30-50 seconds, ~80-120 words (clear, direct)
+- Exactly 2 questions (detail/purpose)
+- audioSeconds: 40
+
+Track 4 — Announcement #2 (topic: "${campusTopic}"):
+- taskKind: "announcement"
+- Different announcement, 30-50 seconds, ~80-120 words
+- Exactly 2 questions
+- audioSeconds: 40
+
+For each track: id, taskKind, title, transcript, questions (with choices: text, correct flag)
+Return ONLY valid JSON: { "items": [...] }`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 16000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const raw = (message.content[0] as { type: string; text: string }).text.trim();
+  const jsonStart = raw.indexOf('{');
+  const jsonEnd = raw.lastIndexOf('}');
+  const parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1)) as { items: any[] };
+
+  return parsed.items;
+}
+
+export async function POST(req: Request) {
+  try {
+    const { conversationTopic, lectureTopic, campusTopic } = await req.json() as {
+      conversationTopic: string;
+      lectureTopic: string;
+      campusTopic: string;
+    };
+
+    if (!conversationTopic?.trim() || !lectureTopic?.trim() || !campusTopic?.trim()) {
+      return NextResponse.json({ ok: false, error: 'All 3 topics required' }, { status: 400 });
     }
-  ]
-}`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    console.log('[Generate] Starting Hard + Easy generation...');
 
-    const raw = (message.content[0] as { type: string; text: string }).text.trim();
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    const payload = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
+    // Generate both Hard and Easy in parallel
+    const [hardItems, easyItems] = await Promise.all([
+      generateModule('hard', conversationTopic, lectureTopic, campusTopic),
+      generateModule('easy', conversationTopic, lectureTopic, campusTopic),
+    ]);
 
-    const id = randomUUID();
-    payload.meta.id = id;
+    const testId = randomUUID();
 
-    // 각 track의 음성 생성
-    for (const track of payload.tracks) {
+    // Process Hard module with audio
+    console.log('[Audio] Generating audio for Hard items...');
+    const hardTracks = hardItems.map((item, i) => ({
+      id: `h-${i}`,
+      ...item,
+      audioUrl: '',
+      illustrationUrl: '',
+    }));
+
+    for (const track of hardTracks) {
       try {
         const voiceId = getRandomVoiceId();
-        console.log(`[Audio] Starting generation for track ${track.id}...`);
-        console.log(`[Audio] Voice ID: ${voiceId}`);
-
         const audio = await elevenlabs.generate({
           voice: voiceId,
           text: track.transcript,
@@ -228,44 +160,88 @@ Return ONLY valid JSON, no markdown, no explanation:
         } else if (audio instanceof ArrayBuffer) {
           audioBuffer = Buffer.from(audio);
         } else {
-          // Handle stream or async iterable
           const chunks: Buffer[] = [];
           for await (const chunk of audio) {
             chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
           }
           audioBuffer = Buffer.concat(chunks);
         }
-        console.log(`[Audio] Generated buffer size: ${audioBuffer.byteLength} bytes`);
 
-        const fileName = `listening/${id}/${track.id}.mp3`;
+        const fileName = `listening/${testId}/${track.id}-hard.mp3`;
+        const { error } = await supabase.storage.from('content').upload(fileName, audioBuffer, {
+          contentType: 'audio/mpeg',
+          upsert: true,
+        });
 
-        const { error, data: uploadData } = await supabase.storage
-          .from('content')
-          .upload(fileName, audioBuffer, {
-            contentType: 'audio/mpeg',
-            upsert: true,
-          });
+        if (error) throw error;
 
-        if (error) {
-          console.error(`[Audio] Upload failed for ${track.id}:`, error);
-          throw error;
-        }
-
-        console.log(`[Audio] Uploaded to: ${fileName}`);
-
-        const { data } = supabase.storage
-          .from('content')
-          .getPublicUrl(fileName);
-
+        const { data } = supabase.storage.from('content').getPublicUrl(fileName);
         track.audioUrl = data.publicUrl;
-        console.log(`[Audio] Public URL: ${data.publicUrl}`);
       } catch (err) {
-        console.error(`[Audio] Generation failed for track ${track.id}:`, err);
-        throw new Error(`Audio generation failed for track ${track.id}: ${(err as any)?.message}`);
+        console.error(`[Audio] Generation failed for hard ${track.id}:`, err);
+        throw new Error(`Audio generation failed for hard ${track.id}: ${(err as any)?.message}`);
       }
     }
 
-    return NextResponse.json({ ok: true, id, payload });
+    // Process Easy module with audio
+    console.log('[Audio] Generating audio for Easy items...');
+    const easyTracks = easyItems.map((item, i) => ({
+      id: `e-${i}`,
+      ...item,
+      audioUrl: '',
+      illustrationUrl: '',
+    }));
+
+    for (const track of easyTracks) {
+      try {
+        const voiceId = getRandomVoiceId();
+        const audio = await elevenlabs.generate({
+          voice: voiceId,
+          text: track.transcript,
+          model_id: 'eleven_turbo_v2_5',
+        });
+
+        let audioBuffer: Buffer;
+        if (Buffer.isBuffer(audio)) {
+          audioBuffer = audio;
+        } else if (audio instanceof ArrayBuffer) {
+          audioBuffer = Buffer.from(audio);
+        } else {
+          const chunks: Buffer[] = [];
+          for await (const chunk of audio) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          audioBuffer = Buffer.concat(chunks);
+        }
+
+        const fileName = `listening/${testId}/${track.id}-easy.mp3`;
+        const { error } = await supabase.storage.from('content').upload(fileName, audioBuffer, {
+          contentType: 'audio/mpeg',
+          upsert: true,
+        });
+
+        if (error) throw error;
+
+        const { data } = supabase.storage.from('content').getPublicUrl(fileName);
+        track.audioUrl = data.publicUrl;
+      } catch (err) {
+        console.error(`[Audio] Generation failed for easy ${track.id}:`, err);
+        throw new Error(`Audio generation failed for easy ${track.id}: ${(err as any)?.message}`);
+      }
+    }
+
+    const payload = {
+      meta: {
+        id: testId,
+        label: 'AI Generated Listening Test',
+        examEra: 'ibt_2026',
+        source: 'ai-generated',
+      },
+      hard: { tracks: hardTracks },
+      easy: { tracks: easyTracks },
+    };
+
+    return NextResponse.json({ ok: true, id: testId, payload });
   } catch (err: any) {
     console.error('LISTENING GENERATE ERROR', err);
     return NextResponse.json({ ok: false, error: err?.message ?? 'Unknown error' }, { status: 500 });
