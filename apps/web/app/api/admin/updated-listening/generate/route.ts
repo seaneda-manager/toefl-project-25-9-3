@@ -59,19 +59,19 @@ Track 2 — Conversation (topic: "${conversationTopic}"):
 - taskKind: "conversation"
 - Two speakers (student + professor/staff), 60-90 seconds, ~140-180 words
 - Exactly 2 questions
-- audioSeconds: 75
+- audioSeconds: 75, testingSeconds: 30
 
 Track 3 — Academic Talk #1 (topic: "${lectureTopic}"):
 - taskKind: "academic_talk"
 - Professor monologue, 90-120 seconds, ~250-300 words
 - Exactly 4 questions (main_idea, detail, function, inference)
-- audioSeconds: 105
+- audioSeconds: 105, testingSeconds: 45
 
 Track 4 — Academic Talk #2 (topic: "${lectureTopic}"):
 - taskKind: "academic_talk"
 - Different professor/topic, 90-120 seconds, ~250-300 words
 - Exactly 4 questions
-- audioSeconds: 105
+- audioSeconds: 105, testingSeconds: 45
 
 For each track: id, taskKind, title, transcript, questions (with choices: text, correct flag)
 
@@ -117,19 +117,19 @@ Track 2 — Conversation (topic: "${conversationTopic}"):
 - taskKind: "conversation"
 - Two speakers, 60-90 seconds, ~140-180 words (easier vocabulary)
 - Exactly 2 questions
-- audioSeconds: 75
+- audioSeconds: 75, testingSeconds: 30
 
 Track 3 — Announcement (topic: "${campusTopic}"):
 - taskKind: "announcement"
 - Single-speaker campus announcement, 30-50 seconds, ~80-120 words (clear, direct)
 - Exactly 2 questions (detail/purpose)
-- audioSeconds: 40
+- audioSeconds: 40, testingSeconds: 20
 
 Track 4 — Announcement #2 (topic: "${campusTopic}"):
 - taskKind: "announcement"
 - Different announcement, 30-50 seconds, ~80-120 words
 - Exactly 2 questions
-- audioSeconds: 40
+- audioSeconds: 40, testingSeconds: 20
 
 For each track: id, taskKind, title, transcript, questions (with choices: text, correct flag)
 
