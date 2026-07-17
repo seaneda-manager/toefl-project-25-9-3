@@ -21,7 +21,30 @@ export default function ResultsPage() {
   useEffect(() => {
     const data = sessionStorage.getItem(`test-${testId}-results`);
     if (data) {
-      setResult(JSON.parse(data));
+      const parsed = JSON.parse(data);
+      setResult(parsed);
+
+      // Save result to database
+      const saveResult = async () => {
+        try {
+          const res = await fetch('/api/student/listening/submit-result', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              testId,
+              ...parsed,
+            }),
+          });
+
+          if (!res.ok) {
+            console.error('Failed to save result to database');
+          }
+        } catch (err) {
+          console.error('Error saving result:', err);
+        }
+      };
+
+      saveResult();
     }
   }, [testId]);
 
