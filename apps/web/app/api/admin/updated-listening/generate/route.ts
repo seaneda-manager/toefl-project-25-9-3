@@ -71,7 +71,36 @@ Track 4 — Academic Talk #2 (topic: "${lectureTopic}"):
 - audioSeconds: 105
 
 For each track: id, taskKind, title, transcript, questions (with choices: text, correct flag)
-Return ONLY valid JSON: { "items": [...] }`
+
+IMPORTANT: Return ONLY a valid JSON object with this structure:
+{
+  "items": [
+    {
+      "id": "t1",
+      "taskKind": "choose_response",
+      "title": "...",
+      "transcript": "...",
+      "audioSeconds": 10,
+      "testingSeconds": 15,
+      "questions": [
+        {
+          "id": "q1",
+          "number": 1,
+          "type": "single_choice",
+          "stem": "What...",
+          "choices": [
+            {"id": "c1", "text": "...", "correct": true},
+            {"id": "c2", "text": "...", "correct": false}
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+- Escape all special characters in strings (quotes, newlines)
+- Do NOT include markdown or explanations
+- Return ONLY the JSON object`
     : `You are an expert Updated TOEFL iBT Listening (Module 2 Easy) content creator.
 Generate a complete Updated TOEFL Listening Module 2 test JSON with Easy structure.
 
@@ -100,7 +129,36 @@ Track 4 — Announcement #2 (topic: "${campusTopic}"):
 - audioSeconds: 40
 
 For each track: id, taskKind, title, transcript, questions (with choices: text, correct flag)
-Return ONLY valid JSON: { "items": [...] }`;
+
+IMPORTANT: Return ONLY a valid JSON object with this structure:
+{
+  "items": [
+    {
+      "id": "t1",
+      "taskKind": "choose_response",
+      "title": "...",
+      "transcript": "...",
+      "audioSeconds": 10,
+      "testingSeconds": 15,
+      "questions": [
+        {
+          "id": "q1",
+          "number": 1,
+          "type": "single_choice",
+          "stem": "What...",
+          "choices": [
+            {"id": "c1", "text": "...", "correct": true},
+            {"id": "c2", "text": "...", "correct": false}
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+- Escape all special characters in strings (quotes, newlines)
+- Do NOT include markdown or explanations
+- Return ONLY the JSON object`;
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
