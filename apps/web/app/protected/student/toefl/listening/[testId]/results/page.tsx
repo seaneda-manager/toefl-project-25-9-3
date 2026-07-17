@@ -114,6 +114,7 @@ export default function ResultsPage() {
                   {correctRate.toFixed(0)}%
                 </td>
               </tr>
+            </tbody>
             </table>
           </div>
 
