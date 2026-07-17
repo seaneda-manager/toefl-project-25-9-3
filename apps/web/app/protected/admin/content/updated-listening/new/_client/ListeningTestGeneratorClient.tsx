@@ -237,6 +237,19 @@ export default function ListeningTestGeneratorClient() {
                 <span className="text-xs text-gray-400">· {track.questions.length}Q · {track.audioSeconds ?? "?"}s</span>
               </div>
 
+              {/* Audio Player */}
+              {track.audioUrl && (
+                <div className="rounded-lg bg-blue-50 p-3">
+                  <p className="text-xs font-semibold text-blue-700 mb-2">🎧 음성</p>
+                  <audio
+                    controls
+                    className="w-full"
+                    src={track.audioUrl}
+                    style={{ height: "32px" }}
+                  />
+                </div>
+              )}
+
               {/* Transcript */}
               <div className="space-y-1">
                 <label className="text-xs text-gray-500">스크립트</label>

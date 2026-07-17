@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { LListeningTest2026 } from "@/models/listening";
 import { Eye } from "lucide-react";
-import ListeningAdaptiveRunner2026 from "@/components/listening/ListeningAdaptiveRunner2026";
+import ListeningLinearPlayer from "@/components/listening/ListeningLinearPlayer";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,8 +58,8 @@ export default async function Listening2026PreviewPage({ params }: PageProps) {
         </Link>
       </header>
 
-      <div className="flex-1 overflow-hidden p-4">
-        <ListeningAdaptiveRunner2026 test={test} />
+      <div className="flex-1 overflow-auto">
+        <ListeningLinearPlayer test={test} />
       </div>
     </div>
   );
