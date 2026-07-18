@@ -107,15 +107,29 @@ export async function loadVocabHubAction() {
     // 4) 세트별로 그룹화
     const setIds = [...new Set((assignments as any[]).map((a) => a.set_id))];
 
-    // 4-1) 단어장 메타데이터 조회 (이름 등)
+    // 4-1) 단어장 메타데이터 조회 (track_id 포함)
     const { data: setMetadata } = await supabase
       .from("vocab_sets")
-      .select("id, name")
+      .select("id, title, track_id")
       .in("id", setIds);
 
-    const setNameMap = new Map<string, string>();
+    // 4-2) track_id별로 vocab_tracks 정보 조회
+    const trackIds = [...new Set((setMetadata ?? []).map((s: any) => s.track_id).filter(Boolean))];
+    const { data: trackMetadata } = await supabase
+      .from("vocab_tracks")
+      .select("id, title")
+      .in("id", trackIds);
+
+    const trackNameMap = new Map<string, string>();
+    (trackMetadata ?? []).forEach((t: any) => {
+      trackNameMap.set(t.id, t.title || `Track ${t.id.slice(0, 8)}`);
+    });
+
+    // setId → track title 매핑
+    const setTrackMap = new Map<string, string>();
     (setMetadata ?? []).forEach((s: any) => {
-      setNameMap.set(s.id, s.name || `Set ${s.id.slice(0, 8)}`);
+      const trackName = s.track_id ? trackNameMap.get(s.track_id) || `Track ${s.track_id.slice(0, 8)}` : `Set ${s.id.slice(0, 8)}`;
+      setTrackMap.set(s.id, trackName);
     });
 
     const { data: vocabSets } = await supabase
@@ -163,20 +177,21 @@ export async function loadVocabHubAction() {
       });
     }
 
-    // 8) 코스별로 변환
+    // 8) 코스별로 변환 (track_id를 key로 사용하여 같은 track의 모든 Days 묶기)
     const courseMap = new Map<string, VocabCourse>();
 
     (assignments as any[]).forEach((assignment) => {
       const setId = assignment.set_id;
+      const trackId = assignment.track_id; // track_id 사용
       const dayIndex = assignment.day_index ?? 1;
       const isCompleted = !!assignment.completed_at;
       const isAvailable = assignment.available_at <= todayISO;
 
-      if (!courseMap.has(setId)) {
-        const setName = setNameMap.get(setId) || `Vocabulary Set ${setId.slice(0, 8)}`;
-        courseMap.set(setId, {
-          courseId: setId,
-          courseName: setName, // 실제 단어장 이름
+      if (!courseMap.has(trackId)) {
+        const trackName = trackId ? trackNameMap.get(trackId) || `Track ${trackId.slice(0, 8)}` : `Vocabulary Set ${setId.slice(0, 8)}`;
+        courseMap.set(trackId, {
+          courseId: trackId,
+          courseName: trackName, // Track 이름 (예: "해커스 토플 보카")
           program: program ?? "toefl",
           totalDays: 0,
           completedDays: 0,
@@ -185,7 +200,7 @@ export async function loadVocabHubAction() {
         });
       }
 
-      const course = courseMap.get(setId)!;
+      const course = courseMap.get(trackId)!;
       const wordCount = setWordCount.get(setId) ?? 0;
 
       // 완료 Day 카운트

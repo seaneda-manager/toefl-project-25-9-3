@@ -47,15 +47,28 @@ export default function DebugPage() {
           .is("canceled_at", null)
           .order("available_at", { ascending: true });
 
-        // 모든 vocab_sets
+        // 모든 vocab_sets (track_id 포함)
         const { data: allSets } = await supabase
           .from("vocab_sets")
-          .select("id, name");
+          .select("id, title, track_id, order_index");
+
+        // track 정보 조회
+        const trackIds = [...new Set((allSets ?? []).map((s: any) => s.track_id).filter(Boolean))];
+        const { data: tracks } = await supabase
+          .from("vocab_tracks")
+          .select("id, title")
+          .in("id", trackIds);
+
+        const trackMap = new Map<string, string>();
+        (tracks ?? []).forEach((t: any) => {
+          trackMap.set(t.id, t.title);
+        });
 
         setData({
           studentId: studentData.id,
           assignments,
           allSets,
+          trackMap: Object.fromEntries(trackMap),
         });
       } catch (e: any) {
         setData({ error: String(e?.message ?? e) });
@@ -102,8 +115,14 @@ export default function DebugPage() {
 
           <div>
             <h2 className="text-lg font-bold mb-2">📚 All Available Sets</h2>
-            <div className="bg-slate-50 p-4 rounded overflow-auto">
-              <pre>{JSON.stringify(data.allSets, null, 2)}</pre>
+            <div className="bg-slate-50 p-4 rounded overflow-auto max-h-60">
+              {data.allSets?.map((s: any) => (
+                <div key={s.id} className="bg-white p-2 rounded mb-2 border border-gray-200">
+                  <p><strong>Title:</strong> {s.title} (Day {s.order_index})</p>
+                  <p><strong>Track:</strong> {data.trackMap?.[s.track_id] || s.track_id}</p>
+                  <p className="text-xs text-gray-600"><strong>ID:</strong> {s.id}</p>
+                </div>
+              ))}
             </div>
           </div>
 
