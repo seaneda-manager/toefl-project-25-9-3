@@ -28,6 +28,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/naesin") ||
     pathname.startsWith("/hi-naesin") ||
     pathname.startsWith("/updated-") ||
+    pathname.startsWith("/speaking-2026") ||
     pathname.match(/^\/\w+\/(study|test|drill|review)/)
   ) {
     const url = req.nextUrl.clone();

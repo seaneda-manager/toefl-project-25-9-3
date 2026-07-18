@@ -335,7 +335,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: '학습', href: '/updated-reading',        label: 'Reading',   skill: 'reading'   as SkillColor },
         { section: '학습', href: '/updated-listening',      label: 'Listening', skill: 'listening' as SkillColor },
-        { section: '학습', href: '/updated-speaking',  label: '🎤 Updated Speaking 2026', icon: Mic },
+        { section: '학습', href: '/speaking-2026/setup/audio-check',  label: '🎤 Speaking 2026', icon: Mic },
         { section: '학습', href: '/speaking-2026/study',    label: 'Speaking',  skill: 'speaking'  as SkillColor },
         { section: '학습', href: '/speaking-2026/drills',   label: '🎮 Speaking 훈련', skill: 'speaking' as SkillColor },
         { section: '학습', href: '/speaking-2026/shadowing', label: '쉐도잉 게임', icon: PlayCircle },
