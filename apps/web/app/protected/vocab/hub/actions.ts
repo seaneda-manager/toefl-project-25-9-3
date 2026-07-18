@@ -210,7 +210,46 @@ export async function loadVocabHubAction() {
 
     const courses = Array.from(courseMap.values());
 
-    return { ok: true, courses, program, studentId };
+    // 9) 누적 학습 통계
+    const completedAssignments = (assignments as any[]).filter(a => a.completed_at);
+    let totalWordsLearned = 0;
+    const wordsByPOS: Record<string, number> = {};
+
+    for (const assignment of completedAssignments) {
+      const setId = assignment.set_id;
+      const wordCount = setWordCount.get(setId) ?? 0;
+      totalWordsLearned += wordCount;
+
+      // 해당 set의 모든 단어 조회
+      const { data: setWords } = await supabase
+        .from("vocab_set_items")
+        .select("word_id")
+        .eq("set_id", setId);
+
+      if (setWords && setWords.length > 0) {
+        const wordIds = setWords.map((w: any) => w.word_id);
+        const { data: words } = await supabase
+          .from("words")
+          .select("id, base_pos")
+          .in("id", wordIds);
+
+        (words ?? []).forEach((w: any) => {
+          const pos = w.base_pos ?? "unknown";
+          wordsByPOS[pos] = (wordsByPOS[pos] ?? 0) + 1;
+        });
+      }
+    }
+
+    return {
+      ok: true,
+      courses,
+      program,
+      studentId,
+      cumulativeStats: {
+        totalWordsLearned,
+        wordsByPOS
+      }
+    };
   } catch (e: any) {
     console.error("loadVocabHubAction error:", e);
     return { ok: false, error: String(e?.message ?? e) };

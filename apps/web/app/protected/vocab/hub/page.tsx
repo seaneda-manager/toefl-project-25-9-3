@@ -36,11 +36,17 @@ type Course = {
   };
 };
 
+type CumulativeStats = {
+  totalWordsLearned: number;
+  wordsByPOS: Record<string, number>;
+};
+
 export default function VocabHubPage() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [program, setProgram] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cumulativeStats, setCumulativeStats] = useState<CumulativeStats | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -49,6 +55,9 @@ export default function VocabHubPage() {
         if (result.ok) {
           setCourses(result.courses);
           setProgram(result.program);
+          if (result.cumulativeStats) {
+            setCumulativeStats(result.cumulativeStats);
+          }
         } else {
           setError(result.error || "Failed to load vocab hub");
         }
@@ -102,6 +111,71 @@ export default function VocabHubPage() {
           <h1 className="text-4xl font-bold text-slate-900">📚 단어 학습</h1>
           <p className="mt-2 text-slate-600">배정된 단어 커리를 선택하여 학습을 시작하세요</p>
         </div>
+
+        {/* 누적 학습 통계 섹션 */}
+        {cumulativeStats && (
+          <section className="mb-12">
+            <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-6 mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">📊 누적 학습 통계</h2>
+              <p className="mt-1 text-slate-600">완료된 Day의 학습 통계입니다</p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* 총 학습 단어 */}
+              <div className="rounded-2xl border-2 border-purple-300 bg-white p-6 shadow-sm">
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-slate-600">총 학습한 단어</p>
+                  <p className="text-5xl font-bold text-purple-600 mt-3">{cumulativeStats.totalWordsLearned}</p>
+                  <p className="text-xs text-slate-500 mt-2">개</p>
+                </div>
+              </div>
+
+              {/* 품사별 분포 */}
+              <div className="rounded-2xl border-2 border-purple-300 bg-white p-6 shadow-sm">
+                <p className="text-sm font-semibold text-slate-600 mb-4">📈 품사별 분포</p>
+                <div className="space-y-3">
+                  {Object.entries(cumulativeStats.wordsByPOS).length > 0 ? (
+                    Object.entries(cumulativeStats.wordsByPOS)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([pos, count]) => {
+                        const posLabel = {
+                          noun: "명사",
+                          verb: "동사",
+                          adj: "형용사",
+                          adv: "부사",
+                          prep: "전치사",
+                          conj: "접속사",
+                          unknown: "기타",
+                        }[pos] || pos;
+
+                        const total = cumulativeStats.totalWordsLearned;
+                        const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+
+                        return (
+                          <div key={pos} className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <div className="flex justify-between mb-1">
+                                <span className="text-sm font-medium text-slate-700">{posLabel}</span>
+                                <span className="text-sm font-bold text-purple-600">{count}개 ({percentage}%)</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-slate-200">
+                                <div
+                                  className="h-2 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 transition-all"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                  ) : (
+                    <p className="text-sm text-slate-500">아직 완료한 Day가 없습니다</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* LexioX */}
         {groupedCourses.lexiox.length > 0 && (
