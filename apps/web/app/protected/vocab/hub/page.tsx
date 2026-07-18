@@ -120,59 +120,71 @@ export default function VocabHubPage() {
               <p className="mt-1 text-slate-600">완료된 Day의 학습 통계입니다</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* 총 학습 단어 */}
-              <div className="rounded-2xl border-2 border-purple-300 bg-white p-6 shadow-sm">
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-slate-600">총 학습한 단어</p>
-                  <p className="text-5xl font-bold text-purple-600 mt-3">{cumulativeStats.totalWordsLearned}</p>
-                  <p className="text-xs text-slate-500 mt-2">개</p>
-                </div>
-              </div>
+            <div className="rounded-2xl border-2 border-purple-300 bg-white p-8 shadow-sm">
+              {cumulativeStats.totalWordsLearned > 0 ? (
+                <div>
+                  <div className="mb-8 text-center">
+                    <p className="text-sm font-semibold text-slate-600">총 학습한 단어</p>
+                    <p className="text-6xl font-bold text-purple-600 mt-2">{cumulativeStats.totalWordsLearned}</p>
+                    <p className="text-sm text-slate-500 mt-1">개</p>
+                  </div>
 
-              {/* 품사별 분포 */}
-              <div className="rounded-2xl border-2 border-purple-300 bg-white p-6 shadow-sm">
-                <p className="text-sm font-semibold text-slate-600 mb-4">📈 품사별 분포</p>
-                <div className="space-y-3">
-                  {Object.entries(cumulativeStats.wordsByPOS).length > 0 ? (
-                    Object.entries(cumulativeStats.wordsByPOS)
-                      .sort(([, a], [, b]) => b - a)
-                      .map(([pos, count]) => {
-                        const posLabel = {
-                          noun: "명사",
-                          verb: "동사",
-                          adj: "형용사",
-                          adv: "부사",
-                          prep: "전치사",
-                          conj: "접속사",
-                          unknown: "기타",
-                        }[pos] || pos;
+                  <div>
+                    <p className="text-sm font-semibold text-slate-600 mb-6">📈 품사별 분포</p>
+                    <div className="space-y-4">
+                      {(() => {
+                        const posLabels: Record<string, { label: string; color: string }> = {
+                          noun: { label: "명사", color: "bg-blue-500" },
+                          verb: { label: "동사", color: "bg-emerald-500" },
+                          adj: { label: "형용사", color: "bg-amber-500" },
+                          adv: { label: "부사", color: "bg-rose-500" },
+                          prep: { label: "전치사", color: "bg-indigo-500" },
+                          conj: { label: "접속사", color: "bg-cyan-500" },
+                          idiom: { label: "관용구", color: "bg-pink-500" },
+                          expression: { label: "숙어", color: "bg-orange-500" },
+                          unknown: { label: "기타", color: "bg-slate-400" },
+                        };
 
-                        const total = cumulativeStats.totalWordsLearned;
-                        const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                        const sorted = Object.entries(cumulativeStats.wordsByPOS)
+                          .sort(([, a], [, b]) => b - a);
 
-                        return (
-                          <div key={pos} className="flex items-center gap-3">
-                            <div className="flex-1">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-sm font-medium text-slate-700">{posLabel}</span>
-                                <span className="text-sm font-bold text-purple-600">{count}개 ({percentage}%)</span>
+                        const maxCount = Math.max(...sorted.map(([, count]) => count), 1);
+
+                        return sorted.map(([pos, count]) => {
+                          const info = posLabels[pos] || { label: pos, color: "bg-slate-400" };
+                          const percentage = (count / cumulativeStats.totalWordsLearned) * 100;
+                          const barWidth = (count / maxCount) * 100;
+
+                          return (
+                            <div key={pos}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-semibold text-slate-700 w-16">{info.label}</span>
+                                <span className="text-sm font-bold text-slate-900">{count}개</span>
+                                <span className="text-xs text-slate-500 w-12 text-right">{percentage.toFixed(1)}%</span>
                               </div>
-                              <div className="h-2 rounded-full bg-slate-200">
+                              <div className="h-8 rounded-lg bg-slate-100 overflow-hidden">
                                 <div
-                                  className="h-2 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 transition-all"
-                                  style={{ width: `${percentage}%` }}
-                                />
+                                  className={`h-full ${info.color} transition-all flex items-center justify-end pr-3`}
+                                  style={{ width: `${barWidth}%` }}
+                                >
+                                  {barWidth > 10 && (
+                                    <span className="text-xs font-bold text-white">{count}</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })
-                  ) : (
-                    <p className="text-sm text-slate-500">아직 완료한 Day가 없습니다</p>
-                  )}
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-500">아직 완료한 Day가 없습니다</p>
+                  <p className="text-xs text-slate-400 mt-2">Day를 완료하면 통계가 표시됩니다</p>
+                </div>
+              )}
             </div>
           </section>
         )}
