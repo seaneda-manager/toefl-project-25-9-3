@@ -13,7 +13,7 @@ import { VuMeter } from '../../_components/VuMeter';
  */
 export default function AudioCheckPage() {
   const router = useRouter();
-  const { micLevel, isReady, error, startAudioCheck, stopAudioCheck } = useAudioCheck();
+  const { micLevel, isReady, error, gainLevel, setGainLevel, startAudioCheck, stopAudioCheck } = useAudioCheck();
   const { initSession, setState } = useSpeakingSession();
 
   useEffect(() => {
@@ -71,6 +71,30 @@ export default function AudioCheckPage() {
         {/* VU Meter */}
         <div className="mb-12">
           <VuMeter level={micLevel} isReady={isReady} />
+        </div>
+
+        {/* Gain Control */}
+        <div className="mb-12 p-6 bg-blue-50 rounded-lg border border-blue-200">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
+            Microphone Level Adjustment
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="0.1"
+              max="2"
+              step="0.1"
+              value={gainLevel}
+              onChange={(e) => setGainLevel(parseFloat(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-sm font-medium text-gray-700 min-w-12">
+              {Math.round(gainLevel * 100)}%
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Adjust the slider to increase or decrease your microphone volume
+          </p>
         </div>
 
         {/* 샘플 문장 */}

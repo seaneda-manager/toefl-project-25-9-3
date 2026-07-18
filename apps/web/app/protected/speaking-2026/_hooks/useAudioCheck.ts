@@ -12,10 +12,12 @@ export function useAudioCheck() {
   const [micLevel, setMicLevel] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gainLevel, setGainLevel] = useState(1); // 1 = 100% (0.1 ~ 2.0)
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const startAudioCheck = useCallback(async () => {
     try {
@@ -32,11 +34,16 @@ export function useAudioCheck() {
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = gainLevel;
+      gainNodeRef.current = gainNode;
+
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       analyserRef.current = analyser;
 
-      source.connect(analyser);
+      source.connect(gainNode);
+      gainNode.connect(analyser);
 
       const updateLevel = () => {
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -82,10 +89,19 @@ export function useAudioCheck() {
     };
   }, [stopAudioCheck]);
 
+  // Update gain when gainLevel changes
+  useEffect(() => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = gainLevel;
+    }
+  }, [gainLevel]);
+
   return {
     micLevel,
     isReady,
     error,
+    gainLevel,
+    setGainLevel,
     startAudioCheck,
     stopAudioCheck,
   };
