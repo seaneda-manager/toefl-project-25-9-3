@@ -24,14 +24,14 @@ export function useAudioCheck() {
 
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
 
-      // AudioContext가 suspended 상태면 resume
+      // Resume if suspended
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
 
       audioContextRef.current = audioContext;
 
-      const source = audioContext.createMediaStreamAudioSource(stream);
+      const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       analyserRef.current = analyser;
