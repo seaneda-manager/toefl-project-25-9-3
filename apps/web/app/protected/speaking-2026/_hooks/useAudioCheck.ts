@@ -22,7 +22,8 @@ export function useAudioCheck() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+      const audioContext = new AudioContextClass();
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamAudioSource(stream);
