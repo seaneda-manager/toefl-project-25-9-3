@@ -189,6 +189,9 @@ export async function loadVocabHubAction() {
       });
 
       // Day 정보 추가
+      // isLocked: 이전 Day가 완료되지 않았으면 잠금 (Day 1은 항상 선택 가능)
+      const prevDayCompleted = dayIndex === 1 ? true : course.days.some(d => d.dayIndex === dayIndex - 1 && d.isCompleted);
+
       course.days.push({
         dayIndex,
         setId,
@@ -197,7 +200,7 @@ export async function loadVocabHubAction() {
         availableAt: assignment.available_at,
         isCompleted,
         isAvailable,
-        isLocked: !isAvailable || (dayIndex > 1 && !isCompleted),
+        isLocked: !prevDayCompleted,
         weakWordStats: wrongWordIds.size > 0 ? {
           totalWrong: wrongWordIds.size,
           byPOS: posByCount,
