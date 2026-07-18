@@ -109,7 +109,7 @@ export default function VocabHubPage() {
         {/* 헤더 */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-slate-900">📚 단어 학습</h1>
-          <p className="mt-2 text-slate-600">배정된 단어 커리를 선택하여 학습을 시작하세요</p>
+          <p className="mt-2 text-slate-600">Assigned VOCA books (할당 단어집)</p>
         </div>
 
         {/* 누적 학습 통계 섹션 */}
@@ -189,34 +189,20 @@ export default function VocabHubPage() {
           </section>
         )}
 
-        {/* LexioX */}
-        {groupedCourses.lexiox.length > 0 && (
-          <Section
-            title="🎮 LexioX Vocab"
-            subtitle="할당된 단어장 학습"
-            color="violet"
-            courses={groupedCourses.lexiox}
-          />
-        )}
+        {/* 할당된 단어집 */}
+        {courses.length > 0 && (
+          <section className="mb-12">
+            <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100 p-6 mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">📚 Assigned VOCA books</h2>
+              <p className="mt-1 text-slate-600">할당된 단어집을 선택하여 학습하세요</p>
+            </div>
 
-        {/* TOEFL */}
-        {groupedCourses.toefl.length > 0 && (
-          <Section
-            title="🎓 TOEFL Vocab"
-            subtitle="Reading · Listening · Speaking · Writing"
-            color="blue"
-            courses={groupedCourses.toefl}
-          />
-        )}
-
-        {/* 내신 */}
-        {groupedCourses.naesin.length > 0 && (
-          <Section
-            title="📖 내신 Vocab"
-            subtitle="내신 범위 단어 학습"
-            color="emerald"
-            courses={groupedCourses.naesin}
-          />
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {courses.map((course) => (
+                <CourseCard key={course.courseId} course={course} color="violet" />
+              ))}
+            </div>
+          </section>
         )}
 
         {courses.length === 0 && (

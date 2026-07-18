@@ -107,6 +107,17 @@ export async function loadVocabHubAction() {
     // 4) 세트별로 그룹화
     const setIds = [...new Set((assignments as any[]).map((a) => a.set_id))];
 
+    // 4-1) 단어장 메타데이터 조회 (이름 등)
+    const { data: setMetadata } = await supabase
+      .from("vocab_sets")
+      .select("id, name")
+      .in("id", setIds);
+
+    const setNameMap = new Map<string, string>();
+    (setMetadata ?? []).forEach((s: any) => {
+      setNameMap.set(s.id, s.name || `Set ${s.id.slice(0, 8)}`);
+    });
+
     const { data: vocabSets } = await supabase
       .from("vocab_set_items")
       .select("set_id, word_id")
@@ -162,9 +173,10 @@ export async function loadVocabHubAction() {
       const isAvailable = assignment.available_at <= todayISO;
 
       if (!courseMap.has(setId)) {
+        const setName = setNameMap.get(setId) || `Vocabulary Set ${setId.slice(0, 8)}`;
         courseMap.set(setId, {
           courseId: setId,
-          courseName: `Vocab Day ${dayIndex}`, // 임시 이름
+          courseName: setName, // 실제 단어장 이름
           program: program ?? "toefl",
           totalDays: 0,
           completedDays: 0,
