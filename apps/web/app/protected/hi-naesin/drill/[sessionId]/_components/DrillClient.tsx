@@ -166,19 +166,21 @@ export default function DrillClient({
   }, [currentStep, typeTotal, nextType, typeInfoMap, sessionId, router]);
 
   // ── 답변 제출 ─────────────────────────────────────────
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!drill) return;
-    const fd = new FormData(e.currentTarget);
-    const result = await submitAnswerClientAction(sessionId, drill.id, fd);
-    if ('error' in result) {
-      console.error(result.error);
-      return;
-    }
-    setResponses((prev) => new Map(prev).set(drill.id, result));
+    startTransition(async () => {
+      const fd = new FormData(e.currentTarget);
+      const result = await submitAnswerClientAction(sessionId, drill.id, fd);
+      if ('error' in result) {
+        console.error(result.error);
+        return;
+      }
+      setResponses((prev) => new Map(prev).set(drill.id, result));
+    });
 
     // fill_blank / grammar_choice → 자동으로 다음으로 넘어가지 않음 (결과 표시)
-  }, [drill, sessionId]);
+  }, [drill, sessionId, startTransition]);
 
   // ── 자기 채점 ─────────────────────────────────────────
   const handleSelfCheck = useCallback(async (isCorrect: boolean) => {
@@ -495,10 +497,10 @@ function TranslationDrill({
           />
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isPending}
             className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
           >
-            {submitting ? '제출 중...' : '제출'}
+            {isPending ? '제출 중...' : '제출'}
           </button>
         </form>
       ) : (
@@ -560,7 +562,7 @@ function FillBlankDrill({
           />
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isPending}
             className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {submitting ? '채점 중...' : '제출'}
@@ -633,10 +635,10 @@ function WritingDrill({
           />
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isPending}
             className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
           >
-            {submitting ? '제출 중...' : '제출'}
+            {isPending ? '제출 중...' : '제출'}
           </button>
         </form>
       ) : (
@@ -696,7 +698,7 @@ function VocabDrill({
           />
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isPending}
             className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {submitting ? '채점 중...' : '제출'}
@@ -787,7 +789,7 @@ function GrammarChoiceDrill({
           </div>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isPending}
             className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {submitting ? '채점 중...' : '제출'}
@@ -993,7 +995,7 @@ function TranslationChoiceDrill({
           </div>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={isPending}
             className="mt-3 w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
           >
             {submitting ? '채점 중...' : '제출'}
