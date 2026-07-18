@@ -305,6 +305,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '내 현황', href: '/student/home', label: '홈', icon: Home },
 
         { section: 'Hi-내신', href: '/hi-naesin',        label: 'Hi-내신 드릴', icon: PlayCircle },
+        { section: 'Hi-내신', href: '/hi-naesin/passages', label: 'Reading', skill: 'reading' as SkillColor },
         { section: 'Hi-내신', href: '/hi-naesin/stats',  label: '학습 현황', icon: BarChart2 },
         { section: 'Hi-내신', href: '/hi-naesin/review', label: '직전정리', icon: BookOpen },
 
@@ -334,6 +335,7 @@ export default function SidebarClient({ role, program = null }: Props) {
 
         { section: '학습', href: '/updated-reading',        label: 'Reading',   skill: 'reading'   as SkillColor },
         { section: '학습', href: '/updated-listening',      label: 'Listening', skill: 'listening' as SkillColor },
+        { section: '학습', href: '/protected/updated-speaking',  label: '🎤 Updated Speaking 2026', icon: Mic },
         { section: '학습', href: '/speaking-2026/study',    label: 'Speaking',  skill: 'speaking'  as SkillColor },
         { section: '학습', href: '/speaking-2026/drills',   label: '🎮 Speaking 훈련', skill: 'speaking' as SkillColor },
         { section: '학습', href: '/speaking-2026/shadowing', label: '쉐도잉 게임', icon: PlayCircle },
