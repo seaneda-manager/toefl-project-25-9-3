@@ -81,8 +81,8 @@ export default function AudioCheckPage() {
           <div className="flex items-center gap-4">
             <input
               type="range"
-              min="0.1"
-              max="2"
+              min="0.5"
+              max="1.5"
               step="0.1"
               value={gainLevel}
               onChange={(e) => setGainLevel(parseFloat(e.target.value))}

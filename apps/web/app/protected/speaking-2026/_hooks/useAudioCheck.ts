@@ -12,12 +12,13 @@ export function useAudioCheck() {
   const [micLevel, setMicLevel] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [gainLevel, setGainLevel] = useState(1); // 1 = 100% (0.1 ~ 2.0)
+  const [gainLevel, setGainLevel] = useState(1); // 1 = 100% (0.5 ~ 1.5)
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const isReadyRef = useRef(false);
 
   const startAudioCheck = useCallback(async () => {
     try {
@@ -45,6 +46,8 @@ export function useAudioCheck() {
       source.connect(gainNode);
       gainNode.connect(analyser);
 
+      let readyFrameCount = 0;
+
       const updateLevel = () => {
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(dataArray);
@@ -53,11 +56,13 @@ export function useAudioCheck() {
         const normalizedLevel = Math.min(100, (average / 255) * 100);
         setMicLevel(normalizedLevel);
 
-        // 임계값 체크 (대략 -20dB 이상)
-        if (normalizedLevel >= 30) {
-          setIsReady(true);
-        } else {
-          setIsReady(false);
+        // 한 번 ready가 되면 계속 ready 유지
+        if (!isReadyRef.current && normalizedLevel >= 15) {
+          readyFrameCount++;
+          if (readyFrameCount >= 5) {
+            isReadyRef.current = true;
+            setIsReady(true);
+          }
         }
 
         animationRef.current = requestAnimationFrame(updateLevel);
@@ -78,9 +83,11 @@ export function useAudioCheck() {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
 
-    if (audioContextRef.current) {
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close();
     }
+
+    isReadyRef.current = false;
   }, []);
 
   useEffect(() => {
