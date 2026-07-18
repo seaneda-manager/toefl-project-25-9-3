@@ -213,7 +213,7 @@ export default async function StudentPage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         <Link
-          href="/vocab/session"
+          href="/vocab/hub"
           className="group rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md"
         >
           <div className="flex items-center justify-between gap-4">

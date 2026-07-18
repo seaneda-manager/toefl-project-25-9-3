@@ -300,6 +300,7 @@ type ShortcutParams = {
   jump: string;
   only: string;
   setId: string;
+  dayIndex: number | null;
   trackId: string;
   n: number; // dev-only
   seed: string; // dev-only
@@ -307,12 +308,15 @@ type ShortcutParams = {
 };
 
 function readShortcutParams(): ShortcutParams {
-  if (typeof window === "undefined") return { jump: "", only: "", setId: "", trackId: "", n: 0, seed: "", debug: "" };
+  if (typeof window === "undefined") return { jump: "", only: "", setId: "", dayIndex: null, trackId: "", n: 0, seed: "", debug: "" };
   const sp = new URL(window.location.href).searchParams;
   const jump = (sp.get("jump") ?? "").trim().toUpperCase();
   const only = (sp.get("only") ?? "").trim().toUpperCase();
   const setId = (sp.get("setId") ?? "").trim();
   const trackId = (sp.get("trackId") ?? "").trim();
+
+  const dayIndexRaw = (sp.get("dayIndex") ?? "").trim();
+  const dayIndex = Number.isFinite(Number(dayIndexRaw)) ? Math.max(1, Math.floor(Number(dayIndexRaw))) : null;
 
   const nRaw = (sp.get("n") ?? sp.get("limit") ?? "").trim();
   const n = Number.isFinite(Number(nRaw)) ? Math.max(0, Math.floor(Number(nRaw))) : 0;
@@ -320,7 +324,7 @@ function readShortcutParams(): ShortcutParams {
   const seed = (sp.get("seed") ?? "").trim();
   const debug = (sp.get("debug") ?? "").trim();
 
-  return { jump, only, setId, trackId, n, seed, debug };
+  return { jump, only, setId, dayIndex, trackId, n, seed, debug };
 }
 
 function canonOnlyToDrillType(raw: string): DrillType | "" {
@@ -740,6 +744,7 @@ export default function VocabSessionPage() {
 
         const res: LoadSessionWordsActionResult = await loadSessionWordsAction({
           setId: forcedSetId,
+          dayIndex: shortcut.dayIndex,
         } as any);
 
         if (cancelled) return;
@@ -893,7 +898,7 @@ export default function VocabSessionPage() {
     return () => {
       cancelled = true;
     };
-  }, [supabase, shortcut.jump, shortcut.setId, shortcut.n, shortcut.seed]);
+  }, [supabase, shortcut.jump, shortcut.setId, shortcut.dayIndex, shortcut.n, shortcut.seed]);
 
   /* =========================================================
      DERIVED

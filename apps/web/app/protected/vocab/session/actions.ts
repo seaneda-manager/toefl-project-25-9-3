@@ -12,6 +12,8 @@ import { ensureCockedQueueAdminAction } from "@/app/protected/admin/vocab/Tracks
 export type LoadSessionWordsActionInput = {
   /** Optional: force a specific setId (debug / admin / shortcut) */
   setId?: string | null;
+  /** Optional: force a specific dayIndex for reviewing past days */
+  dayIndex?: number | null;
 };
 
 export type LoadSessionWordsActionResult =
@@ -528,19 +530,31 @@ export async function loadSessionWordsAction(
         };
       }
 
-      // A) student_vocab_assignments: OPEN + available today
+      // A) student_vocab_assignments: OPEN + available today (or specific dayIndex for review)
       {
-        const { data, error } = await client
+        let query = client
           .from("student_vocab_assignments")
           .select("id,set_id,available_at,assigned_at,day_index,completed_at,canceled_at")
           .eq("student_id", academyStudentId)
-          .is("completed_at", null)
-          .is("canceled_at", null)
-          .lte("available_at", todayISO)
-          .order("available_at", { ascending: false })
-          .order("day_index", { ascending: false })
-          .order("assigned_at", { ascending: false })
-          .limit(1);
+          .is("canceled_at", null);
+
+        // If dayIndex is specified (review mode), allow any assignment
+        // Otherwise, only allow available assignments
+        if (!input?.dayIndex) {
+          query = query
+            .is("completed_at", null)
+            .lte("available_at", todayISO)
+            .order("available_at", { ascending: false })
+            .order("day_index", { ascending: false })
+            .order("assigned_at", { ascending: false });
+        } else {
+          // Review mode: find the specific dayIndex
+          query = query
+            .eq("day_index", input.dayIndex)
+            .order("assigned_at", { ascending: false });
+        }
+
+        const { data, error } = await query.limit(1);
 
         diag.steps.push({
           kind: "resolveAssignment",
@@ -548,6 +562,7 @@ export async function loadSessionWordsAction(
           ok: !error,
           err: error ? toErrMsg(error) : null,
           rows: Array.isArray(data) ? data.length : 0,
+          mode: input?.dayIndex ? `review(dayIndex=${input.dayIndex})` : "auto",
         });
 
         const row = Array.isArray(data) ? data[0] : null;
@@ -556,7 +571,9 @@ export async function loadSessionWordsAction(
           resolvedSetId = cleanStr(row.set_id) || "";
           assignedAt = pickDate(row);
           dayIndex = typeof row.day_index === "number" ? row.day_index : null;
-          diag.assignmentSource = "student_vocab_assignments(open)";
+          diag.assignmentSource = input?.dayIndex
+            ? `student_vocab_assignments(review, dayIndex=${input.dayIndex})`
+            : "student_vocab_assignments(open)";
         }
       }
 

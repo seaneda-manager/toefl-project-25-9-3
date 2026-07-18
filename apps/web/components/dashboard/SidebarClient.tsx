@@ -315,7 +315,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '학습', href: '/updated-listening/study', label: 'Listening', skill: 'listening' as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'Grammar', icon: BookText },
 
-        { section: '어휘', href: '/vocab', label: '단어 학습', icon: Library },
+        { section: '어휘', href: '/vocab/hub', label: '단어 학습', icon: Library },
 
         { section: '숙제', href: '/student/exams',    label: '📋 예상문제', icon: CheckSquare },
         { section: '숙제', href: '/student/homework', label: '숙제 채점', icon: ClipboardCheck },
@@ -339,7 +339,7 @@ export default function SidebarClient({ role, program = null }: Props) {
         { section: '학습', href: '/speaking-2026/shadowing', label: '쉐도잉 게임', icon: PlayCircle },
         { section: '학습', href: '/updated-writing/test',   label: 'Writing',   skill: 'writing'   as SkillColor },
         { section: '학습', href: '/grammar-2026',          label: 'LEXiOX-Gram', icon: BookText },
-        { section: '학습', href: '/vocab',                 label: '단어 학습', icon: Library },
+        { section: '학습', href: '/vocab/hub',                 label: '단어 학습', icon: Library },
 
         { section: '내 현황', href: '/student',            label: '대시보드', icon: LayoutDashboard },
         { section: '내 현황', href: '/student/exams',       label: '📋 예상문제', icon: CheckSquare },
