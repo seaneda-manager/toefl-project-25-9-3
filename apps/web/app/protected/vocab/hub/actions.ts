@@ -210,35 +210,24 @@ export async function loadVocabHubAction() {
 
     const courses = Array.from(courseMap.values());
 
-    // 9) 누적 학습 통계
+    // 9) 누적 학습 통계 (이미 조회한 데이터 활용)
     const completedAssignments = (assignments as any[]).filter(a => a.completed_at);
     let totalWordsLearned = 0;
     const wordsByPOS: Record<string, number> = {};
 
-    for (const assignment of completedAssignments) {
+    // 완료된 set들의 모든 단어에 대해 품사별로 집계
+    completedAssignments.forEach((assignment) => {
       const setId = assignment.set_id;
       const wordCount = setWordCount.get(setId) ?? 0;
       totalWordsLearned += wordCount;
 
-      // 해당 set의 모든 단어 조회
-      const { data: setWords } = await supabase
-        .from("vocab_set_items")
-        .select("word_id")
-        .eq("set_id", setId);
-
-      if (setWords && setWords.length > 0) {
-        const wordIds = setWords.map((w: any) => w.word_id);
-        const { data: words } = await supabase
-          .from("words")
-          .select("id, base_pos")
-          .in("id", wordIds);
-
-        (words ?? []).forEach((w: any) => {
-          const pos = w.base_pos ?? "unknown";
-          wordsByPOS[pos] = (wordsByPOS[pos] ?? 0) + 1;
-        });
-      }
-    }
+      // vocab_set_items에서 이 set의 모든 단어 찾기
+      const setVocabItems = (vocabSets ?? []).filter((v: any) => v.set_id === setId);
+      setVocabItems.forEach((item: any) => {
+        const pos = wordPOS[item.word_id] ?? "unknown";
+        wordsByPOS[pos] = (wordsByPOS[pos] ?? 0) + 1;
+      });
+    });
 
     return {
       ok: true,
