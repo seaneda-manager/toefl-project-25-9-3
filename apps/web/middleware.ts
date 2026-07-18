@@ -27,6 +27,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/grammar") ||
     pathname.startsWith("/naesin") ||
     pathname.startsWith("/hi-naesin") ||
+    pathname.startsWith("/updated-") ||
     pathname.match(/^\/\w+\/(study|test|drill|review)/)
   ) {
     const url = req.nextUrl.clone();
