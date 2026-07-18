@@ -22,8 +22,13 @@ export function useAudioCheck() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
-      const audioContext = new AudioContextClass();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // AudioContext가 suspended 상태면 resume
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamAudioSource(stream);
