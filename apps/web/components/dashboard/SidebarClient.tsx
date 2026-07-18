@@ -288,7 +288,7 @@ export default function SidebarClient({ role, program = null }: Props) {
     if (role === 'teacher') {
       return [
         { section: '콘텐츠',  href: '/home',  label: '홈', icon: Home },
-        { section: '콘텐츠',  href: '/vocab', label: '단어 학습', icon: Library },
+        { section: '콘텐츠',  href: '/vocab/hub', label: '단어 학습', icon: Library },
         { section: '콘텐츠',  href: '/teacher/speaking-drills', label: '🎮 Speaking 훈련', icon: PlayCircle },
 
         { section: '학생 관리', href: '/teacher/home',     label: '선생님 홈', icon: Home },
@@ -360,7 +360,7 @@ export default function SidebarClient({ role, program = null }: Props) {
       { section: '내 학습', href: '/hi-naesin',         label: '내신 드릴', icon: PlayCircle },
       { section: '내 학습', href: '/hi-naesin/stats',   label: '학습 현황', icon: BarChart2 },
       { section: '내 학습', href: '/hi-naesin/review',  label: '직전정리', icon: BookOpen },
-      { section: '내 학습', href: '/vocab',              label: '단어 학습', icon: Library },
+      { section: '내 학습', href: '/vocab/hub',         label: '단어 학습', icon: Library },
       { section: '내 학습', href: '/student/exams',     label: '📋 예상문제', icon: CheckSquare },
       { section: '내 학습', href: '/student/tests',     label: '시험 목록', icon: FileText },
       { section: '내 학습', href: '/student/review',    label: '복습', icon: BookOpen },
