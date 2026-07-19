@@ -76,13 +76,13 @@ export default async function AssignSpeakingPage({ searchParams }: { searchParam
       </header>
 
       {errorMsg && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {decodeURIComponent(errorMsg)}
+        <div className="fixed inset-x-0 top-4 z-50 mx-auto max-w-md rounded-lg border border-red-300 bg-red-100 px-4 py-3 shadow-lg">
+          <p className="text-sm font-semibold text-red-800">❌ {decodeURIComponent(errorMsg)}</p>
         </div>
       )}
       {successMsg && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          ✓ {decodeURIComponent(successMsg)}
+        <div className="fixed inset-x-0 top-4 z-50 mx-auto max-w-md rounded-lg border border-emerald-300 bg-emerald-100 px-4 py-3 shadow-lg">
+          <p className="text-sm font-semibold text-emerald-800">✓ {decodeURIComponent(successMsg)}</p>
         </div>
       )}
 

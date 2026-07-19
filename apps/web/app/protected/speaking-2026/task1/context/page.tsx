@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSpeakingSession } from '../_hooks/useSpeakingSession';
+import { useSpeakingSession } from '../../_hooks/useSpeakingSession';
 
 /**
- * Task 1 Context Load 페이지
+ * Task 1 Context Page
  * - 배경 이미지 표시
  * - 5초 컨텍스트 오디오 재생
  * - 자동으로 Listen 화면으로 전환
@@ -26,9 +26,8 @@ export default function Task1ContextPage() {
   const [contextLoaded, setContextLoaded] = useState(false);
 
   useEffect(() => {
-    const scenario = CONTEXT_SCENARIOS[0]; // 첫 번째 시나리오
+    const scenario = CONTEXT_SCENARIOS[0];
 
-    // 백그라운드 오디오 재생 (선택사항)
     let audio: HTMLAudioElement | null = null;
     try {
       audio = new Audio(scenario.audioUrl);
@@ -39,7 +38,6 @@ export default function Task1ContextPage() {
       console.warn('Audio creation failed, continuing anyway');
     }
 
-    // 5초 후 Listen 화면으로 전환
     const timeout = setTimeout(() => {
       setState('T1_STREAMING_PROMPT');
       router.push('/speaking-2026/task1/listen');
@@ -56,14 +54,12 @@ export default function Task1ContextPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
       <div className="max-w-2xl w-full">
-        {/* 배경 이미지 */}
         <img
           src={scenario.imageUrl}
           alt={scenario.title}
           className="w-full h-96 object-cover rounded-lg mb-8 shadow-lg"
         />
 
-        {/* 시나리오 설명 */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {scenario.title}
@@ -73,7 +69,6 @@ export default function Task1ContextPage() {
           </p>
         </div>
 
-        {/* 진행 상황 */}
         <div className="text-center text-gray-600">
           <p className="text-sm mb-2">Item {currentItemIndex + 1} of 7</p>
           <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden mb-4">

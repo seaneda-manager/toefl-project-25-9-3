@@ -37,6 +37,17 @@ export default function Task1RecordPage() {
     };
   }, [currentItemIndex]);
 
+  // recordingTime 업데이트
+  useEffect(() => {
+    if (!isRecording) return;
+
+    const interval = setInterval(() => {
+      setRecordingTime((prev) => Math.min(prev + 1, maxDuration));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRecording, maxDuration]);
+
   const playBeepAndStartRecording = async () => {
     // 비프음 재생
     const beep = new Audio('/audio/beep.mp3');

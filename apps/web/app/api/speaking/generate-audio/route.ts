@@ -6,7 +6,7 @@ import { generateSpeech } from "@/lib/elevenlabs/generate-speech";
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, voiceId, modelId, stability, similarityBoost } =
+    const { text, voiceId, voiceIndex, modelId, stability, similarityBoost } =
       await req.json();
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const result = await generateSpeech(text, {
       voiceId,
+      voiceIndex,
       modelId,
       stability,
       similarityBoost,

@@ -220,6 +220,52 @@ export default function SpeakingEditClient({ test: initial, isLocked }: Props) {
   const [siteMapState, setSiteMapState] = useState<UploadState>("idle");
   const [gifState, setGifState] = useState<UploadState>("idle");
 
+  // ── GIF 생성 ────────────────────────────────────────────────────
+  const [spriteFile, setSpriteFile] = useState<File | null>(null);
+  const [spriteRows, setSpriteRows] = useState("2");
+  const [spriteCols, setSpriteCols] = useState("4");
+  const [spriteDuration, setSpriteDuration] = useState("100");
+  const [creatingGif, setCreatingGif] = useState(false);
+  const [createdGifUrl, setCreatedGifUrl] = useState<string | null>(null);
+  const [gifError, setGifError] = useState<string | null>(null);
+
+  const handleCreateGif = async () => {
+    if (!spriteFile) return;
+    setCreatingGif(true);
+    setGifError(null);
+    setCreatedGifUrl(null);
+
+    try {
+      const form = new FormData();
+      form.append("file", spriteFile);
+      form.append("rows", spriteRows);
+      form.append("cols", spriteCols);
+      form.append("duration", spriteDuration);
+
+      const res = await fetch("/api/admin/updated-speaking/create-gif", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+
+      setCreatedGifUrl(data.url);
+    } catch (e: any) {
+      setGifError(e.message);
+    } finally {
+      setCreatingGif(false);
+    }
+  };
+
+  const handleUseCreatedGif = async () => {
+    if (!createdGifUrl) return;
+    updateInterview((t) => ({ ...t, interviewerGifUrl: createdGifUrl }));
+    setSpriteFile(null);
+    setCreatedGifUrl(null);
+    setGifState("done");
+  };
+
   const handleSiteMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -399,13 +445,88 @@ export default function SpeakingEditClient({ test: initial, isLocked }: Props) {
             <h2 className="text-sm font-semibold text-slate-900">인터뷰 — 인터뷰어 애니메이션</h2>
           </div>
 
+          {/* GIF 생성 섹션 */}
+          <div className="space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/50 p-4">
+            <p className="text-xs font-semibold text-emerald-700">✨ 스프라이트 시트로부터 GIF 생성</p>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-600">
+                스프라이트 시트 (PNG/JPG)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSpriteFile(e.target.files?.[0] ?? null)}
+                className="rounded-lg border bg-white px-3 py-2 text-xs"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-xs font-medium text-slate-600">행</label>
+                <input
+                  type="number"
+                  value={spriteRows}
+                  onChange={(e) => setSpriteRows(e.target.value)}
+                  min="1"
+                  className="w-full rounded-lg border bg-white px-2 py-1 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600">열</label>
+                <input
+                  type="number"
+                  value={spriteCols}
+                  onChange={(e) => setSpriteCols(e.target.value)}
+                  min="1"
+                  className="w-full rounded-lg border bg-white px-2 py-1 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600">간격(ms)</label>
+                <input
+                  type="number"
+                  value={spriteDuration}
+                  onChange={(e) => setSpriteDuration(e.target.value)}
+                  min="10"
+                  step="10"
+                  className="w-full rounded-lg border bg-white px-2 py-1 text-xs"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleCreateGif}
+              disabled={!spriteFile || creatingGif}
+              className="w-full rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+            >
+              {creatingGif ? "생성 중…" : "GIF 생성"}
+            </button>
+
+            {gifError && <p className="text-xs text-red-500">{gifError}</p>}
+
+            {createdGifUrl && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-600">생성된 GIF</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={createdGifUrl} alt="Created GIF" className="h-32 w-auto rounded-lg border" />
+                <button
+                  onClick={handleUseCreatedGif}
+                  className="w-full rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-600"
+                >
+                  이 GIF 사용
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 직접 업로드 섹션 */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-600">인터뷰어 GIF 업로드</p>
+            <p className="text-xs font-semibold text-slate-600">또는 파일 직접 업로드</p>
             <div className="flex items-center gap-3">
               <label className={`cursor-pointer rounded-lg border px-4 py-2 text-xs font-medium
                 ${gifState === "uploading" ? "opacity-50 pointer-events-none" : "hover:bg-slate-50"}`}>
-                {gifState === "uploading" ? "업로드 중…" : gifState === "done" ? "GIF 변경" : "GIF 선택"}
-                <input type="file" accept="image/gif,video/*" className="hidden" onChange={handleGifUpload} />
+                {gifState === "uploading" ? "업로드 중…" : gifState === "done" ? "파일 변경" : "파일 선택"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleGifUpload} />
               </label>
               {gifState === "done" && <span className="text-xs text-emerald-600">✓ 업로드 완료</span>}
               {gifState === "error" && <span className="text-xs text-red-500">업로드 실패</span>}
@@ -414,7 +535,7 @@ export default function SpeakingEditClient({ test: initial, isLocked }: Props) {
 
           {interview.interviewerGifUrl && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-600">미리보기</p>
+              <p className="text-xs font-semibold text-slate-600">현재 사용 중인 GIF</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={interview.interviewerGifUrl}

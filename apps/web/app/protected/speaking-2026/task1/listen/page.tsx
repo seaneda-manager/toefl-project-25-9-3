@@ -26,23 +26,40 @@ export default function Task1ListenPage() {
     window.addEventListener('keydown', handleKeyDown);
 
     // 문장 오디오 재생
-    const audio = new Audio('/audio/sentence-' + (currentItemIndex + 1) + '.mp3');
-    setIsPlaying(true);
+    let audio: HTMLAudioElement | null = null;
+    let playTimer: NodeJS.Timeout | null = null;
 
-    audio.play().catch(() => {
-      console.warn('Sentence audio failed to play');
-      setTimeout(() => proceedToRecord(), 8000);
-    });
+    try {
+      audio = new Audio('/audio/sentence-' + (currentItemIndex + 1) + '.mp3');
+      setIsPlaying(true);
 
-    audio.onended = () => {
+      audio.play().catch(() => {
+        console.warn('Sentence audio failed to play, continuing anyway');
+        setIsPlaying(false);
+        playTimer = setTimeout(() => proceedToRecord(), 8000);
+      });
+
+      audio.onended = () => {
+        setIsPlaying(false);
+        // 0.2초 후 Record 화면으로 전환
+        playTimer = setTimeout(() => proceedToRecord(), 200);
+      };
+
+      // 8초 타임아웃 (오디오가 끝나지 않으면 강제 진행)
+      playTimer = setTimeout(() => {
+        setIsPlaying(false);
+        proceedToRecord();
+      }, 8000);
+    } catch (err) {
+      console.warn('Audio creation failed, continuing anyway');
       setIsPlaying(false);
-      // 0.2초 후 Record 화면으로 전환
-      setTimeout(() => proceedToRecord(), 200);
-    };
+      playTimer = setTimeout(() => proceedToRecord(), 8000);
+    }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      audio.pause();
+      if (audio) audio.pause();
+      if (playTimer) clearTimeout(playTimer);
     };
   }, [currentItemIndex]);
 

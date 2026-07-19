@@ -4,11 +4,35 @@
 import { createClient } from "@supabase/supabase-js";
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
-const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Adam (남성, 중립적 억양)
+
+// Voice Pool (환경 변수에서 로드)
+let VOICE_POOL: string[] = [
+  "GZ4PpFJV8ikEGUtBrjK7", // 0: Laura (US 여)
+  "uIZsnBL0YK1S5j69bAih", // 1: Samantha (US 여)
+  "ynUcJpglne1SRSNHFg1k", // 2: Bill (US 남)
+  "Gubgw9l4dtIoQA9YZHgx", // 3: Brian (US 남)
+  "Ix8C14HEHgIQkJswik2o", // 4: Peter (UK 남)
+  "6fZce9LFNG3iEITDfqZZ", // 5: Charlotte (UK 여)
+  "roYauZ4bOLAKvVZTPLre", // 6: Lena (Canada 여)
+  "SHJeg1jtED7EW6Zr6rHc", // 7: Alex (Canada 남)
+];
+
+if (process.env.SPEAKING_VOICE_POOL) {
+  try {
+    VOICE_POOL = JSON.parse(process.env.SPEAKING_VOICE_POOL);
+  } catch (error) {
+    console.warn("Failed to parse SPEAKING_VOICE_POOL, using defaults:", error);
+  }
+}
+
+const getVoiceId = (voiceIndex: number = 0): string => {
+  return VOICE_POOL[voiceIndex % VOICE_POOL.length];
+};
 
 export type SpeechGenerationOptions = {
   voiceId?: string;
-  modelId?: "eleven_monolingual_v1" | "eleven_multilingual_v2";
+  voiceIndex?: number; // 0~7 (8명 중 선택)
+  modelId?: "eleven_multilingual_v2" | "eleven_v3" | "eleven_flash_v2_5";
   stability?: number; // 0~1
   similarityBoost?: number; // 0~1
 };
@@ -19,14 +43,17 @@ async function generateSpeechBlob(
   options: SpeechGenerationOptions = {}
 ): Promise<Blob> {
   const {
-    voiceId = VOICE_ID,
-    modelId = "eleven_monolingual_v1",
+    voiceId,
+    voiceIndex = 0,
+    modelId = "eleven_multilingual_v2",
     stability = 0.5,
     similarityBoost = 0.75,
   } = options;
 
+  const finalVoiceId = voiceId || getVoiceId(voiceIndex);
+
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${finalVoiceId}/stream`,
     {
       method: "POST",
       headers: {
@@ -45,8 +72,10 @@ async function generateSpeechBlob(
   );
 
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("ElevenLabs error response:", errorBody);
     throw new Error(
-      `ElevenLabs API error: ${response.status} ${response.statusText}`
+      `ElevenLabs API error: ${response.status} ${response.statusText} - ${errorBody}`
     );
   }
 
@@ -64,7 +93,7 @@ async function uploadToSupabase(
   );
 
   const { data, error } = await supabase.storage
-    .from("toefl-audio")
+    .from("content")
     .upload(fileName, blob, {
       contentType: "audio/mpeg",
       upsert: false,
@@ -76,7 +105,7 @@ async function uploadToSupabase(
 
   // 공개 URL 생성
   const { data: publicUrlData } = supabase.storage
-    .from("toefl-audio")
+    .from("content")
     .getPublicUrl(data.path);
 
   return publicUrlData.publicUrl;

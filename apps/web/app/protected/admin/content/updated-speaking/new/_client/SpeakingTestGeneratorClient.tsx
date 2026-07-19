@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useGenerateSpeech } from "@/lib/elevenlabs/use-generate-speech";
 import type {
   SpeakingTest2026,
   SpeakingTaskListenRepeat2026,
@@ -12,12 +13,16 @@ type Phase = "input" | "generating" | "edit" | "saving" | "locked";
 
 export default function SpeakingTestGeneratorClient() {
   const router = useRouter();
+  const { generateAudio, loading: audioLoading } = useGenerateSpeech();
   const [phase, setPhase] = useState<Phase>("input");
   const [listenRepeatTopic, setListenRepeatTopic] = useState("");
   const [interviewTopic, setInterviewTopic] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [test, setTest] = useState<SpeakingTest2026 | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [sentenceAudioUrls, setSentenceAudioUrls] = useState<Record<string, string>>({});
+  const [questionAudioUrls, setQuestionAudioUrls] = useState<Record<string, string>>({});
+  const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
 
   const handleGenerate = useCallback(async () => {
     if (!listenRepeatTopic.trim() || !interviewTopic.trim()) return;
@@ -84,6 +89,27 @@ export default function SpeakingTestGeneratorClient() {
       setPhase("edit");
     }
   }, [savedId, test]);
+
+  const handleGenerateAudio = async (id: string, text: string, type: "sentence" | "question") => {
+    if (!text.trim()) return;
+    setGeneratingIds((prev) => new Set([...prev, id]));
+    try {
+      const result = await generateAudio(text);
+      if (result) {
+        if (type === "sentence") {
+          setSentenceAudioUrls((prev) => ({ ...prev, [id]: result.url }));
+        } else {
+          setQuestionAudioUrls((prev) => ({ ...prev, [id]: result.url }));
+        }
+      }
+    } finally {
+      setGeneratingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
 
   // ── helpers ────────────────────────────────────────────────────
 
@@ -238,18 +264,34 @@ export default function SpeakingTestGeneratorClient() {
                         return { ...t, sentences };
                       })}
                     />
-                    <div className="shrink-0 flex flex-col items-end gap-1">
-                      <span className="text-[10px] text-gray-400">말하기(초)</span>
-                      <input
-                        type="number"
-                        className="w-14 rounded-lg border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-400"
-                        value={s.speakingSeconds}
-                        onChange={(e) => updateListenRepeat((t) => {
-                          const sentences = [...t.sentences];
-                          sentences[i] = { ...sentences[i], speakingSeconds: Number(e.target.value) };
-                          return { ...t, sentences };
-                        })}
-                      />
+                    <div className="shrink-0 flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] text-gray-400">말하기(초)</span>
+                        <input
+                          type="number"
+                          className="w-14 rounded-lg border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-400"
+                          value={s.speakingSeconds}
+                          onChange={(e) => updateListenRepeat((t) => {
+                            const sentences = [...t.sentences];
+                            sentences[i] = { ...sentences[i], speakingSeconds: Number(e.target.value) };
+                            return { ...t, sentences };
+                          })}
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleGenerateAudio(s.id, s.text, "sentence")}
+                        disabled={generatingIds.has(s.id) || audioLoading}
+                        className="text-xs px-2 py-1 bg-sky-500 text-white rounded hover:bg-sky-600 disabled:bg-gray-400"
+                      >
+                        {generatingIds.has(s.id) ? "중..." : "🎤"}
+                      </button>
+                      {sentenceAudioUrls[s.id] && (
+                        <audio
+                          controls
+                          src={sentenceAudioUrls[s.id]}
+                          className="w-full max-w-xs"
+                        />
+                      )}
                     </div>
                     <button
                       onClick={() => updateListenRepeat((t) => ({
@@ -309,19 +351,35 @@ export default function SpeakingTestGeneratorClient() {
                           return { ...t, questions };
                         })}
                       />
+                      {questionAudioUrls[q.id] && (
+                        <audio
+                          controls
+                          src={questionAudioUrls[q.id]}
+                          className="w-full"
+                        />
+                      )}
                     </div>
-                    <div className="shrink-0 flex flex-col items-end gap-1">
-                      <span className="text-[10px] text-gray-400">말하기(초)</span>
-                      <input
-                        type="number"
-                        className="w-14 rounded-lg border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-400"
-                        value={q.speakingSeconds}
-                        onChange={(e) => updateInterview((t) => {
-                          const questions = [...t.questions];
-                          questions[i] = { ...questions[i], speakingSeconds: Number(e.target.value) };
-                          return { ...t, questions };
-                        })}
-                      />
+                    <div className="shrink-0 flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] text-gray-400">말하기(초)</span>
+                        <input
+                          type="number"
+                          className="w-14 rounded-lg border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-400"
+                          value={q.speakingSeconds}
+                          onChange={(e) => updateInterview((t) => {
+                            const questions = [...t.questions];
+                            questions[i] = { ...questions[i], speakingSeconds: Number(e.target.value) };
+                            return { ...t, questions };
+                          })}
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleGenerateAudio(q.id, q.text, "question")}
+                        disabled={generatingIds.has(q.id) || audioLoading}
+                        className="text-xs px-2 py-1 bg-violet-500 text-white rounded hover:bg-violet-600 disabled:bg-gray-400"
+                      >
+                        {generatingIds.has(q.id) ? "중..." : "🎤"}
+                      </button>
                     </div>
                     <button
                       onClick={() => updateInterview((t) => ({

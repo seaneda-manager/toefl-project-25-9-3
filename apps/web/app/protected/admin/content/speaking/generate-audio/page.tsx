@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useGenerateSpeech } from "@/lib/elevenlabs/use-generate-speech";
 
-export default function GenerateAudioPage() {
+export default function AdminGenerateSpeakingAudioPage() {
   const [text, setText] = useState("");
   const [results, setResults] = useState<Array<{ text: string; url: string; fileName: string }>>([]);
   const { generateAudio, loading, error } = useGenerateSpeech();
@@ -14,27 +14,6 @@ export default function GenerateAudioPage() {
     if (result) {
       setResults((prev) => [{ text, ...result }, ...prev]);
       setText("");
-    }
-  };
-
-  const handleGenerateSentences = async () => {
-    const sentences = [
-      "The student center closes earlier on Fridays.",
-      "Many international students attend orientation in the first week.",
-      "Please remember to submit your assignment before midnight.",
-      "The library will be under renovation during the summer term.",
-      "Group projects help students develop communication skills.",
-      "Some classes are offered both online and in person.",
-      "You can book an appointment with your advisor using the portal.",
-    ];
-
-    for (const sentence of sentences) {
-      const result = await generateAudio(sentence);
-      if (result) {
-        setResults((prev) => [{ text: sentence, ...result }, ...prev]);
-      }
-      // 레이트 제한 방지
-      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
   };
 
@@ -62,7 +41,7 @@ export default function GenerateAudioPage() {
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: 40 }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 20 }}>
-        🎵 TTS 음성 생성 도구
+        🎵 Speaking 음성 생성 도구
       </h1>
 
       {/* 입력 영역 */}
@@ -96,22 +75,7 @@ export default function GenerateAudioPage() {
               fontWeight: 600,
             }}
           >
-            {loading ? "생성 중..." : "생성"}
-          </button>
-          <button
-            onClick={handleGenerateSentences}
-            disabled={loading}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: loading ? "#ccc" : "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 600,
-            }}
-          >
-            {loading ? "생성 중..." : "Demo 문장 일괄 생성"}
+            {loading ? "생성 중..." : "텍스트 생성"}
           </button>
           <button
             onClick={handleGenerateTask1Audio}
@@ -173,38 +137,13 @@ export default function GenerateAudioPage() {
                       fontWeight: 600,
                     }}
                   >
-                    📋 Copy URL
+                    📋 URL 복사
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* 코드 예제 */}
-      <div
-        style={{
-          marginTop: 40,
-          padding: 20,
-          backgroundColor: "#f0f0f0",
-          borderRadius: 8,
-          fontFamily: "monospace",
-          fontSize: 12,
-          whiteSpace: "pre-wrap",
-          overflowX: "auto",
-        }}
-      >
-        {`// 생성된 URL을 page.tsx에 복붙해서 사용:
-
-const demoItems: ListenRepeatItem[] = [
-  {
-    id: "s1",
-    sentence: "The student center closes earlier on Fridays.",
-    audioUrl: "${results[0]?.url || 'https://...'}",
-  },
-  // ...
-];`}
       </div>
     </div>
   );
